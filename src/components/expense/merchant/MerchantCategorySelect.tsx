@@ -62,7 +62,7 @@ const MerchantCategorySelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        {open && (
+        {open && sortedMccCodes.length > 0 && (
           <Command>
             <CommandInput placeholder="Search category code..." />
             <CommandEmpty>No category code found.</CommandEmpty>
@@ -87,6 +87,9 @@ const MerchantCategorySelect = ({
               ))}
             </CommandGroup>
           </Command>
+        )}
+        {open && sortedMccCodes.length === 0 && (
+          <div className="py-6 text-center text-sm">No category codes available.</div>
         )}
       </PopoverContent>
     </Popover>

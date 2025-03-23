@@ -92,7 +92,7 @@ const MerchantAddressSelect = ({
         )}
       />
 
-      {/* Places Selection Dialog */}
+      {/* Only render the CommandDialog when it's explicitly shown and we have places */}
       {showDialog && (
         <CommandDialog open={showDialog} onOpenChange={setShowDialog}>
           <CommandDialogInput placeholder="Search places..." />
