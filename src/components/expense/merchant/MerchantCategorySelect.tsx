@@ -38,10 +38,12 @@ const MerchantCategorySelect = ({
   const effectiveSelected = selected || selectedMCC || null;
   const effectiveOnSelect = onSelect || onSelectMCC || (() => {});
   
-  // Sort MCC codes by the numeric code and ensure it's not undefined
-  const sortedMccCodes = MCC_CODES ? [...MCC_CODES].sort((a, b) => {
-    return a.code.localeCompare(b.code);
-  }) : [];
+  // Ensure MCC_CODES is defined and make a safe copy for sorting
+  const mccCodes = MCC_CODES || [];
+  // Sort MCC codes by the numeric code
+  const sortedMccCodes = [...mccCodes].sort((a, b) => 
+    a.code.localeCompare(b.code)
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
