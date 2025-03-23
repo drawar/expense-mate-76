@@ -1,12 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
-import { Transaction, Currency, PaymentMethod } from '@/types';
+import { Transaction, PaymentMethod } from '@/types';
 import { getTotalRewardPoints } from '@/utils/rewardPoints';
-import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import SummaryCardGrid from './SummaryCardGrid';
+import SummaryCharts from './SummaryCharts';
 
 interface SummaryProps {
   transactions: Transaction[];
@@ -75,6 +74,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   // Group expenses by merchant category
   const expensesByCategory = filteredTransactions.reduce<Record<string, number>>(
     (acc, tx) => {
+      // Get the merchant category from MCC, fallback to 'Uncategorized' if not available
       const category = tx.merchant.mcc?.description || 'Uncategorized';
       if (!acc[category]) {
         acc[category] = 0;
@@ -85,28 +85,27 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   );
   
   // Prepare data for payment method chart
-  const paymentMethodChartData = Object.entries(expensesByPaymentMethod).map(
-    ([name, amount], index) => ({
+  const paymentMethodChartData = Object.entries(expensesByPaymentMethod)
+    .map(([name, amount], index) => ({
       name,
       value: amount,
       color: COLORS[index % COLORS.length]
-    })
-  );
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by value in descending order
   
   // Prepare data for category chart
-  const categoryChartData = Object.entries(expensesByCategory).map(
-    ([name, amount], index) => ({
+  const categoryChartData = Object.entries(expensesByCategory)
+    .map(([name, amount], index) => ({
       name,
       value: amount,
       color: COLORS[index % COLORS.length]
-    })
-  );
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by value in descending order
   
-  // Custom label for pie charts
-  const renderCustomizedLabel = ({ name, percent }: { name: string; percent: number }) => {
-    const shortName = name.length > 10 ? `${name.substring(0, 10)}...` : name;
-    return `${shortName} ${(percent * 100).toFixed(0)}%`;
-  };
+  // Get the top payment method for display in the summary card
+  const topPaymentMethod = paymentMethodChartData.length > 0 
+    ? { name: paymentMethodChartData[0].name, value: paymentMethodChartData[0].value } 
+    : undefined;
   
   return (
     <div className="space-y-6 w-full">
@@ -123,139 +122,20 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         
         <TabsContent value={activeTab} className="mt-4 space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Expenses</CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(totalExpenses, 'USD')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-muted-foreground">
-                  {transactionCount} transactions
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Average Transaction</CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(averageAmount, 'USD')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-muted-foreground flex items-center">
-                  <TrendingUpIcon className="w-3.5 h-3.5 mr-1" /> 
-                  Per transaction
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Most Used Payment</CardDescription>
-                <CardTitle className="text-xl line-clamp-1">
-                  {paymentMethodChartData[0]?.name || 'None'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-muted-foreground flex items-center">
-                  <CreditCardIcon className="w-3.5 h-3.5 mr-1" />
-                  {paymentMethodChartData[0] 
-                    ? formatCurrency(paymentMethodChartData[0].value, 'USD')
-                    : 'No data'}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Reward Points</CardDescription>
-                <CardTitle className="text-2xl">{totalRewardPoints.toLocaleString()}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-muted-foreground flex items-center">
-                  <CoinsIcon className="w-3.5 h-3.5 mr-1" /> 
-                  Points earned
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <SummaryCardGrid
+            filteredTransactions={filteredTransactions}
+            totalExpenses={totalExpenses}
+            transactionCount={transactionCount}
+            averageAmount={averageAmount}
+            topPaymentMethod={topPaymentMethod}
+            totalRewardPoints={totalRewardPoints}
+          />
           
           {/* Charts Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Payment Methods Chart */}
-            <Card className="p-4">
-              <CardHeader className="pb-0 pt-0">
-                <CardTitle className="text-lg">Expenses by Payment Method</CardTitle>
-              </CardHeader>
-              <CardContent className="h-64">
-                {paymentMethodChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentMethodChartData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={40}
-                        paddingAngle={2}
-                        dataKey="value"
-                        labelLine={false}
-                        label={renderCustomizedLabel}
-                      >
-                        {paymentMethodChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => formatCurrency(value, 'USD')}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    No data available
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Categories Chart */}
-            <Card className="p-4">
-              <CardHeader className="pb-0 pt-0">
-                <CardTitle className="text-lg">Expenses by Category</CardTitle>
-              </CardHeader>
-              <CardContent className="h-64">
-                {categoryChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryChartData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={40}
-                        paddingAngle={2}
-                        dataKey="value"
-                        labelLine={false}
-                        label={renderCustomizedLabel}
-                      >
-                        {categoryChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => formatCurrency(value, 'USD')}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    No data available
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <SummaryCharts
+            paymentMethodChartData={paymentMethodChartData}
+            categoryChartData={categoryChartData}
+          />
         </TabsContent>
       </Tabs>
     </div>
