@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CoinsIcon } from 'lucide-react';
 
@@ -56,7 +57,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     const actualBonusPoints = Math.min(potentialBonusPoints, 4000 - usedBonusPoints);
     
     return (
-      <div className="space-y-2">
+      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 space-y-2">
         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
           Base Points: {basePoints}
         </p>
@@ -64,7 +65,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
           Bonus Points: {actualBonusPoints}
           {potentialBonusPoints > 0 && actualBonusPoints === 0 && ' (Monthly cap reached)'}
         </p>
-        <p className="text-xs text-blue-500 dark:text-blue-300">
+        <p className="text-sm text-blue-500 dark:text-blue-300">
           Total Points: {basePoints + actualBonusPoints}
         </p>
         {isEligibleTransaction && usedBonusPoints < 4000 && (
@@ -108,14 +109,14 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     const totalPoints = Math.min(basePoints + bonusPoints, 8000);
     
     return (
-      <div className="space-y-2">
+      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 space-y-2">
         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
           Base Points: {basePoints}
         </p>
         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
           {bonusPointMessage}
         </p>
-        <p className="text-xs text-blue-500 dark:text-blue-300">
+        <p className="text-sm text-blue-500 dark:text-blue-300">
           Total Points: {totalPoints}
         </p>
       </div>
@@ -146,7 +147,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     const actualBonusPoints = Math.min(potentialBonusPoints, 4000 - usedBonusPoints);
     
     return (
-      <div className="space-y-2">
+      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 space-y-2">
         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
           Base Points: {basePoints}
         </p>
@@ -154,7 +155,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
           Bonus Points: {actualBonusPoints}
           {potentialBonusPoints > 0 && actualBonusPoints === 0 && ' (Monthly cap reached)'}
         </p>
-        <p className="text-xs text-blue-500 dark:text-blue-300">
+        <p className="text-sm text-blue-500 dark:text-blue-300">
           Total Points: {basePoints + actualBonusPoints}
         </p>
         {isEligibleTransaction && usedBonusPoints < 4000 && (
@@ -175,9 +176,15 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
           <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
             Estimated Reward Points: {estimatedPoints.totalPoints}
           </p>
-          <p className="text-xs text-blue-500 dark:text-blue-300">
-            Based on your selected payment method
-          </p>
+          {estimatedPoints.basePoints !== undefined && (
+            <p className="text-xs text-blue-500 dark:text-blue-300">
+              Base: {estimatedPoints.basePoints}, 
+              Bonus: {estimatedPoints.bonusPoints || 0}
+            </p>
+          )}
+          {estimatedPoints.messageText && (
+            <p className="text-xs text-blue-500 dark:text-blue-300">{estimatedPoints.messageText}</p>
+          )}
         </div>
       </div>
     );

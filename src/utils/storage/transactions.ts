@@ -120,26 +120,42 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 
 // Add a new transaction
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction> => {
+  console.log('Adding transaction to database:', transaction);
+  
   // First ensure the merchant exists
+  if (!transaction.merchant || !transaction.merchant.name) {
+    throw new Error('Merchant information is missing');
+  }
+  
+  if (!transaction.paymentMethod || !transaction.paymentMethod.id) {
+    throw new Error('Payment method information is missing');
+  }
+  
   const savedMerchant = await addOrUpdateMerchant(transaction.merchant);
+  console.log('Merchant saved:', savedMerchant);
+  
+  // Prepare the transaction data for Supabase
+  const transactionData = {
+    date: transaction.date,
+    merchant_id: savedMerchant.id,
+    amount: transaction.amount,
+    currency: transaction.currency,
+    payment_method_id: transaction.paymentMethod.id,
+    payment_amount: transaction.paymentAmount,
+    payment_currency: transaction.paymentCurrency,
+    reward_points: transaction.rewardPoints,
+    notes: transaction.notes,
+    // Add category based on MCC code or use provided category
+    category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
+    is_contactless: transaction.isContactless,
+  };
+  
+  console.log('Sending to Supabase:', transactionData);
   
   // Then add the transaction
   const { data, error } = await supabase
     .from('transactions')
-    .insert({
-      date: transaction.date,
-      merchant_id: savedMerchant.id,
-      amount: transaction.amount,
-      currency: transaction.currency,
-      payment_method_id: transaction.paymentMethod.id,
-      payment_amount: transaction.paymentAmount,
-      payment_currency: transaction.paymentCurrency,
-      reward_points: transaction.rewardPoints,
-      notes: transaction.notes,
-      // Add category based on MCC code or use provided category
-      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
-      is_contactless: transaction.isContactless,
-    })
+    .insert(transactionData)
     .select()
     .single();
     
@@ -147,6 +163,8 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     console.error('Error adding transaction:', error);
     throw error;
   }
+  
+  console.log('Transaction saved successfully:', data);
   
   // Return the newly created transaction
   return {

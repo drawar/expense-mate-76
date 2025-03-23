@@ -54,6 +54,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     basePoints?: number;
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
+    messageText?: string;
   }>(0);
   
   const form = useForm<FormValues>({
@@ -64,7 +65,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       isOnline: defaultValues?.isOnline ?? false,
       isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || '',
-      currency: defaultValues?.currency || 'USD',
+      currency: defaultValues?.currency || 'SGD',
       paymentMethodId: defaultValues?.paymentMethodId || (paymentMethods[0]?.id || ''),
       paymentAmount: defaultValues?.paymentAmount || '',
       date: defaultValues?.date || new Date(),
@@ -74,7 +75,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   
   const merchantName = form.watch('merchantName');
   useEffect(() => {
-    if (merchantName.trim().length >= 3) {
+    if (merchantName && merchantName.trim().length >= 3) {
       const fetchMerchant = async () => {
         try {
           const existingMerchant = await getMerchantByName(merchantName);
@@ -135,16 +136,20 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     
     const simulatePoints = async () => {
       try {
+        const mccCode = selectedMCC?.code;
+        console.log('Simulating points with MCC:', mccCode);
+        
         const points = await simulateRewardPoints(
           amount,
           currency,
           selectedPaymentMethod,
-          selectedMCC?.code,
+          mccCode,
           merchantName,
           isOnline,
           isContactless
         );
         
+        console.log('Estimated points:', points);
         setEstimatedPoints(points);
       } catch (error) {
         console.error('Error simulating points:', error);
@@ -157,14 +162,24 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   
   const handleFormSubmit = async (values: FormValues) => {
     try {
+      if (!values.merchantName || values.merchantName.trim() === '') {
+        toast({
+          title: 'Error',
+          description: 'Merchant name is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       const merchant: Merchant = {
         id: '',
-        name: values.merchantName,
-        address: values.merchantAddress,
+        name: values.merchantName.trim(),
+        address: values.merchantAddress?.trim(),
         isOnline: values.isOnline,
         mcc: selectedMCC,
       };
       
+      console.log('Adding/updating merchant:', merchant);
       const savedMerchant = await addOrUpdateMerchant(merchant);
       
       const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
@@ -191,6 +206,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         category: getCategoryFromMCC(selectedMCC?.code),
       };
       
+      console.log('Submitting transaction:', transaction);
       onSubmit(transaction);
     } catch (error) {
       console.error('Error submitting form:', error);

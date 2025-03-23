@@ -6,10 +6,12 @@ import { getPaymentMethods, addTransaction } from '@/utils/storageUtils';
 import ExpenseForm from '@/components/expense/ExpenseForm';
 import Navbar from '@/components/layout/Navbar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AddExpense = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -36,8 +38,21 @@ const AddExpense = () => {
   
   const handleSubmit = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
+      setSaveError(null);
       setIsLoading(true);
-      await addTransaction(transactionData);
+      
+      console.log('Saving transaction data:', transactionData);
+      
+      // Ensure all required fields are present
+      if (!transactionData.merchant || !transactionData.merchant.name) {
+        throw new Error('Merchant information is missing');
+      }
+      
+      if (!transactionData.paymentMethod || !transactionData.paymentMethod.id) {
+        throw new Error('Payment method is missing');
+      }
+      
+      const result = await addTransaction(transactionData);
       
       toast({
         title: 'Success',
@@ -48,9 +63,20 @@ const AddExpense = () => {
       navigate('/');
     } catch (error) {
       console.error('Error saving transaction:', error);
+      
+      // Detailed error information for debugging
+      if (error instanceof Error) {
+        setSaveError(error.message);
+        
+        // Check for Supabase specific errors
+        if (error.message.includes('violates foreign key constraint')) {
+          setSaveError('Database error: Referenced payment method or merchant not found');
+        }
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to save transaction',
+        description: 'Failed to save transaction. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -70,7 +96,13 @@ const AddExpense = () => {
           </p>
         </div>
         
-        {isLoading ? (
+        {saveError && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md">
+            {saveError}
+          </div>
+        )}
+        
+        {isLoading && paymentMethods.length === 0 ? (
           <div className="animate-pulse-slow text-center py-10">Loading...</div>
         ) : (
           <ExpenseForm
