@@ -38,12 +38,13 @@ const MerchantCategorySelect = ({
   const effectiveSelected = selected || selectedMCC || null;
   const effectiveOnSelect = onSelect || onSelectMCC || (() => {});
   
-  // Ensure MCC_CODES is defined and make a safe copy for sorting
-  const mccCodes = MCC_CODES || [];
-  // Sort MCC codes by the numeric code
-  const sortedMccCodes = [...mccCodes].sort((a, b) => 
-    a.code.localeCompare(b.code)
-  );
+  // Always ensure we have an array of MCC codes
+  const mccCodes = Array.isArray(MCC_CODES) ? MCC_CODES : [];
+  
+  // Sort MCC codes by the numeric code (only if we have mccCodes)
+  const sortedMccCodes = mccCodes.length > 0 
+    ? [...mccCodes].sort((a, b) => a.code.localeCompare(b.code))
+    : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -61,30 +62,32 @@ const MerchantCategorySelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder="Search category code..." />
-          <CommandEmpty>No category code found.</CommandEmpty>
-          <CommandGroup className="max-h-64 overflow-y-auto">
-            {sortedMccCodes.map((mccItem) => (
-              <CommandItem
-                key={mccItem.code}
-                value={`${mccItem.code} ${mccItem.description}`}
-                onSelect={() => {
-                  effectiveOnSelect(mccItem);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    effectiveSelected?.code === mccItem.code ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span className="font-mono">{mccItem.code}</span> - {mccItem.description}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
+        {open && (
+          <Command>
+            <CommandInput placeholder="Search category code..." />
+            <CommandEmpty>No category code found.</CommandEmpty>
+            <CommandGroup className="max-h-64 overflow-y-auto">
+              {sortedMccCodes.map((mccItem) => (
+                <CommandItem
+                  key={mccItem.code}
+                  value={`${mccItem.code} ${mccItem.description}`}
+                  onSelect={() => {
+                    effectiveOnSelect(mccItem);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      effectiveSelected?.code === mccItem.code ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span className="font-mono">{mccItem.code}</span> - {mccItem.description}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        )}
       </PopoverContent>
     </Popover>
   );

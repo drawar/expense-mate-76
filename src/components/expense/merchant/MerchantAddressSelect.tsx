@@ -98,20 +98,22 @@ const MerchantAddressSelect = ({
           <CommandDialogInput placeholder="Search places..." />
           <CommandDialogList>
             <CommandDialogEmpty>No places found.</CommandDialogEmpty>
-            <CommandDialogGroup heading="Suggested Places">
-              {safePlaces.map((place, index) => (
-                <CommandDialogItem
-                  key={index}
-                  onSelect={() => handleSelectPlace(place)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{place.name}</span>
-                    <span className="text-sm text-muted-foreground">{place.address}</span>
-                  </div>
-                </CommandDialogItem>
-              ))}
-            </CommandDialogGroup>
+            {safePlaces.length > 0 && (
+              <CommandDialogGroup heading="Suggested Places">
+                {safePlaces.map((place, index) => (
+                  <CommandDialogItem
+                    key={index}
+                    onSelect={() => handleSelectPlace(place)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{place.name}</span>
+                      <span className="text-sm text-muted-foreground">{place.address}</span>
+                    </div>
+                  </CommandDialogItem>
+                ))}
+              </CommandDialogGroup>
+            )}
           </CommandDialogList>
         </CommandDialog>
       )}
