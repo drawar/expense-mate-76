@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency, Transaction } from '@/types';
-import { CreditCardIcon, CoinsIcon } from 'lucide-react';
+import { CreditCardIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { currencyOptions } from '@/utils/currencyFormatter';
 import {
@@ -16,6 +16,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -58,11 +59,7 @@ const PaymentDetailsForm = ({
   const currency = form.watch('currency') as Currency;
   const mcc = form.watch('mcc')?.code;
   const isContactless = form.watch('isContactless');
-  const paymentMethodId = form.watch('paymentMethodId');
   
-  const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
-  const isCash = paymentMethod?.type === 'cash';
-
   // State for transactions
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
@@ -110,22 +107,28 @@ const PaymentDetailsForm = ({
   
   // Set isContactless to true if credit card and not online
   useEffect(() => {
+    const paymentMethodId = form.watch('paymentMethodId');
+    const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
+    
     if (!isOnline && paymentMethod?.type === 'credit_card') {
       form.setValue('isContactless', true);
     }
-  }, [isOnline, paymentMethod, form]);
+  }, [isOnline, form, paymentMethods]);
 
   // State for UOB Visa Signature calculation
   const [nonSgdSpendTotal, setNonSgdSpendTotal] = useState<number>(0);
   const [hasSgdTransactions, setHasSgdTransactions] = useState<boolean>(false);
   
   useEffect(() => {
-    if (selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Visa Signature' && transactions.length > 0) {
+    const paymentMethodId = form.watch('paymentMethodId');
+    const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
+    
+    if (paymentMethod?.issuer === 'UOB' && paymentMethod?.name === 'Visa Signature' && transactions.length > 0) {
       let statementTotal = 0;
       let hasAnySgdTransaction = false;
       
       const statementTransactions = transactions.filter(tx => 
-        tx.paymentMethod.id === selectedPaymentMethod.id
+        tx.paymentMethod.id === paymentMethod.id
       );
       
       statementTransactions.forEach(tx => {
@@ -139,16 +142,20 @@ const PaymentDetailsForm = ({
       setNonSgdSpendTotal(statementTotal);
       setHasSgdTransactions(hasAnySgdTransaction);
     }
-  }, [selectedPaymentMethod, transactions]);
+  }, [form, paymentMethods, transactions]);
   
   // State for bonus points tracking
   const [usedBonusPoints, setUsedBonusPoints] = useState<number>(0);
   
   useEffect(() => {
+    // Get current payment method
+    const paymentMethodId = form.watch('paymentMethodId');
+    const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
+    
     // Used for both UOB Preferred Visa Platinum and Citibank Rewards Visa Signature 
     // since they have similar bonus points mechanics
-    if (((selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Preferred Visa Platinum') ||
-        (selectedPaymentMethod?.issuer === 'Citibank' && selectedPaymentMethod?.name === 'Rewards Visa Signature')) &&
+    if (((paymentMethod?.issuer === 'UOB' && paymentMethod?.name === 'Preferred Visa Platinum') ||
+        (paymentMethod?.issuer === 'Citibank' && paymentMethod?.name === 'Rewards Visa Signature')) &&
         transactions.length > 0) {
       
       const currentDate = new Date();
@@ -156,15 +163,15 @@ const PaymentDetailsForm = ({
       
       const currentMonthTransactions = transactions.filter(tx => {
         const txDate = new Date(tx.date);
-        return tx.paymentMethod.id === selectedPaymentMethod.id && 
+        return tx.paymentMethod.id === paymentMethod.id && 
                txDate.getMonth() === currentDate.getMonth() &&
                txDate.getFullYear() === currentDate.getFullYear();
       });
       
       currentMonthTransactions.forEach(tx => {
         if (tx.rewardPoints > 0) {
-          const multiplier = selectedPaymentMethod.issuer === 'UOB' ? 5 : 1;
-          const baseMultiplier = selectedPaymentMethod.issuer === 'UOB' ? 0.4 : 0.4;
+          const multiplier = paymentMethod.issuer === 'UOB' ? 5 : 1;
+          const baseMultiplier = paymentMethod.issuer === 'UOB' ? 0.4 : 0.4;
           
           const txAmount = Math.floor(tx.amount / multiplier) * multiplier;
           const basePoints = Math.round(txAmount * baseMultiplier);
@@ -175,7 +182,7 @@ const PaymentDetailsForm = ({
       
       setUsedBonusPoints(Math.min(totalMonthBonusPoints, 4000));
     }
-  }, [selectedPaymentMethod, transactions]);
+  }, [form, paymentMethods, transactions]);
   
   return (
     <Card>
@@ -194,9 +201,7 @@ const PaymentDetailsForm = ({
               <FormLabel>Payment Method</FormLabel>
               <Select 
                 value={field.value} 
-                onValueChange={(value) => {
-                  field.onChange(value);
-                }}
+                onValueChange={field.onChange}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -204,7 +209,17 @@ const PaymentDetailsForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <PaymentCardRender paymentMethods={paymentMethods} />
+                  {paymentMethods.map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      <div className="flex items-center gap-2">
+                        <CreditCardIcon className="h-4 w-4" style={{ color: method.color }} />
+                        <span>{method.name}</span>
+                        {method.type === 'credit_card' && method.lastFourDigits && (
+                          <span className="text-gray-500 text-xs">...{method.lastFourDigits}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -212,7 +227,10 @@ const PaymentDetailsForm = ({
           )}
         />
         
-        <ContactlessToggle isOnline={isOnline} isCash={isCash || false} />
+        <ContactlessToggle 
+          isOnline={isOnline} 
+          isCash={selectedPaymentMethod?.type === 'cash' || false} 
+        />
         
         {shouldOverridePayment && (
           <FormField

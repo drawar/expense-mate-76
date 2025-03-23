@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Transaction, Merchant, PaymentMethod, Currency, MerchantCategoryCode } from '@/types';
-import { MCC_CODES, addOrUpdateMerchant, getMerchantByName } from '@/utils/storageUtils';
+import { addOrUpdateMerchant, getMerchantByName } from '@/utils/storageUtils';
 import { simulateRewardPoints } from '@/utils/rewardPoints';
 import { useToast } from '@/hooks/use-toast';
 import { findCashPaymentMethodForCurrency } from '@/utils/defaults/paymentMethods';
@@ -57,6 +57,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     messageText?: string;
   }>(0);
   
+  console.log('ExpenseForm rendered with payment methods:', paymentMethods.length);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -66,12 +68,33 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || '',
       currency: defaultValues?.currency || 'SGD',
-      paymentMethodId: defaultValues?.paymentMethodId || (paymentMethods[0]?.id || ''),
+      paymentMethodId: defaultValues?.paymentMethodId || (paymentMethods.length > 0 ? paymentMethods[0].id : ''),
       paymentAmount: defaultValues?.paymentAmount || '',
       date: defaultValues?.date || new Date(),
       notes: defaultValues?.notes || '',
     },
   });
+  
+  // Initialize selected payment method
+  useEffect(() => {
+    if (paymentMethods.length > 0) {
+      const initialId = form.getValues('paymentMethodId') || paymentMethods[0].id;
+      const initialMethod = paymentMethods.find(pm => pm.id === initialId);
+      
+      if (initialMethod) {
+        console.log('Setting initial payment method:', initialMethod.name);
+        setSelectedPaymentMethod(initialMethod);
+        form.setValue('paymentMethodId', initialMethod.id);
+      } else {
+        console.log('Using first payment method:', paymentMethods[0].name);
+        setSelectedPaymentMethod(paymentMethods[0]);
+        form.setValue('paymentMethodId', paymentMethods[0].id);
+      }
+      
+      // Force form refresh
+      form.trigger('paymentMethodId');
+    }
+  }, [paymentMethods, form]);
   
   const merchantName = form.watch('merchantName');
   useEffect(() => {
@@ -98,6 +121,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   
+  console.log('Current payment method ID:', paymentMethodId);
+  
   // When currency changes, try to find a matching cash payment method
   useEffect(() => {
     if (currency) {
@@ -106,6 +131,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         // Only auto-select cash if no payment method has been selected yet or
         // if we're setting initial values (defaultValues is undefined or not yet processed)
         if (!paymentMethodId || !selectedPaymentMethod) {
+          console.log('Auto-selecting cash method for currency:', currency);
           form.setValue('paymentMethodId', cashMethod.id);
         }
       }
@@ -114,17 +140,23 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
 
   useEffect(() => {
     const method = paymentMethods.find(pm => pm.id === paymentMethodId);
-    setSelectedPaymentMethod(method);
     
-    if (method && currency !== method.currency) {
-      setShouldOverridePayment(true);
+    if (method) {
+      console.log('Payment method selected:', method.name);
+      setSelectedPaymentMethod(method);
+      
+      if (currency !== method.currency) {
+        setShouldOverridePayment(true);
+      } else {
+        setShouldOverridePayment(false);
+        form.setValue('paymentAmount', form.watch('amount'));
+      }
+      
+      if (!isOnline && method.type === 'credit_card') {
+        form.setValue('isContactless', true);
+      }
     } else {
-      setShouldOverridePayment(false);
-      form.setValue('paymentAmount', form.watch('amount'));
-    }
-    
-    if (!isOnline && method?.type === 'credit_card') {
-      form.setValue('isContactless', true);
+      console.log('No payment method found for ID:', paymentMethodId);
     }
   }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
   
@@ -162,10 +194,32 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   
   const handleFormSubmit = async (values: FormValues) => {
     try {
+      console.log('Form submitted with values:', values);
+      
       if (!values.merchantName || values.merchantName.trim() === '') {
         toast({
           title: 'Error',
           description: 'Merchant name is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      if (!values.paymentMethodId) {
+        toast({
+          title: 'Error',
+          description: 'Payment method is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
+      if (!paymentMethod) {
+        console.error('Selected payment method not found:', values.paymentMethodId);
+        toast({
+          title: 'Error',
+          description: 'Selected payment method not found',
           variant: 'destructive',
         });
         return;
@@ -182,17 +236,12 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       console.log('Adding/updating merchant:', merchant);
       const savedMerchant = await addOrUpdateMerchant(merchant);
       
-      const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
-      if (!paymentMethod) {
-        throw new Error('Payment method not found');
-      }
-      
       const transaction: Omit<Transaction, 'id'> = {
         date: format(values.date, 'yyyy-MM-dd'),
         merchant: savedMerchant,
         amount: Number(values.amount),
         currency: values.currency as Currency,
-        paymentMethod,
+        paymentMethod: paymentMethod,
         paymentAmount: shouldOverridePayment && values.paymentAmount 
           ? Number(values.paymentAmount) 
           : Number(values.amount),
@@ -206,7 +255,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         category: getCategoryFromMCC(selectedMCC?.code),
       };
       
-      console.log('Submitting transaction:', transaction);
+      console.log('Submitting final transaction:', transaction);
       onSubmit(transaction);
     } catch (error) {
       console.error('Error submitting form:', error);

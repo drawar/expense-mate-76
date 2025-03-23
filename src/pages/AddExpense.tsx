@@ -6,7 +6,6 @@ import { getPaymentMethods, addTransaction } from '@/utils/storageUtils';
 import ExpenseForm from '@/components/expense/ExpenseForm';
 import Navbar from '@/components/layout/Navbar';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const AddExpense = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -19,7 +18,20 @@ const AddExpense = () => {
     // Load payment methods
     const loadData = async () => {
       try {
+        console.log('Loading payment methods...');
         const methods = await getPaymentMethods();
+        
+        if (!methods || methods.length === 0) {
+          console.error('No payment methods found');
+          toast({
+            title: 'Warning',
+            description: 'No payment methods found. Please add some payment methods first.',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('Payment methods loaded:', methods.length);
+        }
+        
         setPaymentMethods(methods);
       } catch (error) {
         console.error('Error loading payment methods:', error);
@@ -38,21 +50,39 @@ const AddExpense = () => {
   
   const handleSubmit = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
+      console.log('Starting transaction save process...');
       setSaveError(null);
       setIsLoading(true);
       
-      console.log('Saving transaction data:', transactionData);
+      console.log('Transaction data before validation:', transactionData);
       
-      // Ensure all required fields are present
+      // Validate merchant information
       if (!transactionData.merchant || !transactionData.merchant.name) {
         throw new Error('Merchant information is missing');
       }
       
+      // Validate payment method
       if (!transactionData.paymentMethod || !transactionData.paymentMethod.id) {
-        throw new Error('Payment method is missing');
+        console.error('Payment method validation failed:', transactionData.paymentMethod);
+        throw new Error('Payment method is missing or invalid');
       }
       
+      // Validate payment amount
+      if (isNaN(transactionData.paymentAmount) || transactionData.paymentAmount <= 0) {
+        throw new Error('Invalid payment amount');
+      }
+      
+      console.log('Validated transaction data:', {
+        merchant: transactionData.merchant.name,
+        amount: transactionData.amount,
+        currency: transactionData.currency,
+        paymentMethod: transactionData.paymentMethod.name,
+        date: transactionData.date
+      });
+      
       const result = await addTransaction(transactionData);
+      
+      console.log('Transaction saved successfully:', result);
       
       toast({
         title: 'Success',
@@ -72,6 +102,8 @@ const AddExpense = () => {
         if (error.message.includes('violates foreign key constraint')) {
           setSaveError('Database error: Referenced payment method or merchant not found');
         }
+      } else {
+        setSaveError('Unknown error occurred');
       }
       
       toast({
@@ -103,7 +135,7 @@ const AddExpense = () => {
         )}
         
         {isLoading && paymentMethods.length === 0 ? (
-          <div className="animate-pulse-slow text-center py-10">Loading...</div>
+          <div className="animate-pulse text-center py-10">Loading...</div>
         ) : (
           <ExpenseForm
             paymentMethods={paymentMethods}
