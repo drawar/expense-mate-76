@@ -29,20 +29,27 @@ interface MerchantCategorySelectProps {
 const MerchantCategorySelect = ({ selectedMCC, onSelectMCC }: MerchantCategorySelectProps) => {
   const [showMCCDialog, setShowMCCDialog] = useState(false);
   const [mccSearchQuery, setMccSearchQuery] = useState('');
-  const [filteredMCC, setFilteredMCC] = useState(MCC_CODES);
+  const [filteredMCC, setFilteredMCC] = useState<MerchantCategoryCode[]>([]);
   const { toast } = useToast();
+  
+  // Sort MCC codes in ascending order by code number
+  useEffect(() => {
+    const sortedMCC = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
+    setFilteredMCC(sortedMCC);
+  }, []);
   
   // Filter MCC codes based on search query
   useEffect(() => {
     if (mccSearchQuery.trim() === '') {
-      setFilteredMCC(MCC_CODES);
+      const sortedMCC = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
+      setFilteredMCC(sortedMCC);
     } else {
       const query = mccSearchQuery.toLowerCase();
       const filtered = MCC_CODES.filter(
         mcc => 
           mcc.description.toLowerCase().includes(query) || 
           mcc.code.includes(query)
-      );
+      ).sort((a, b) => a.code.localeCompare(b.code));
       setFilteredMCC(filtered);
     }
   }, [mccSearchQuery]);
