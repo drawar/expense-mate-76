@@ -1,4 +1,5 @@
-import { Transaction } from '@/types';
+
+import { Transaction, Currency } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { getCategoryFromMCC } from '../categoryMapping';
 import { getMerchantByName, addOrUpdateMerchant } from './merchants';
@@ -58,7 +59,7 @@ export const getTransactions = async (): Promise<Transaction[]> => {
       id: paymentMethod.id,
       name: paymentMethod.name,
       type: paymentMethod.type,
-      currency: paymentMethod.currency,
+      currency: paymentMethod.currency as Currency,
       rewardRules: paymentMethod.reward_rules || [],
       active: paymentMethod.active,
       lastFourDigits: paymentMethod.last_four_digits,
@@ -69,6 +70,30 @@ export const getTransactions = async (): Promise<Transaction[]> => {
       color: paymentMethod.color,
     };
     
+    // Process MCC
+    let mcc = undefined;
+    if (merchant.mcc) {
+      try {
+        if (typeof merchant.mcc === 'object') {
+          mcc = merchant.mcc;
+        }
+      } catch (e) {
+        console.error('Error parsing MCC:', e);
+      }
+    }
+    
+    // Process coordinates
+    let coordinates = undefined;
+    if (merchant.coordinates) {
+      try {
+        if (typeof merchant.coordinates === 'object') {
+          coordinates = merchant.coordinates;
+        }
+      } catch (e) {
+        console.error('Error parsing coordinates:', e);
+      }
+    }
+    
     return {
       id: tx.id,
       date: tx.date,
@@ -76,14 +101,15 @@ export const getTransactions = async (): Promise<Transaction[]> => {
         id: merchant.id,
         name: merchant.name,
         address: merchant.address,
-        mcc: merchant.mcc,
+        mcc,
+        coordinates,
         isOnline: merchant.is_online,
       },
       amount: Number(tx.amount),
-      currency: tx.currency,
+      currency: tx.currency as Currency,
       paymentMethod: matchedPaymentMethod,
       paymentAmount: Number(tx.payment_amount),
-      paymentCurrency: tx.payment_currency,
+      paymentCurrency: tx.payment_currency as Currency,
       rewardPoints: tx.reward_points,
       notes: tx.notes,
       category: tx.category,
@@ -128,10 +154,10 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     date: data.date,
     merchant: savedMerchant,
     amount: Number(data.amount),
-    currency: data.currency,
+    currency: data.currency as Currency,
     paymentMethod: transaction.paymentMethod,
     paymentAmount: Number(data.payment_amount),
-    paymentCurrency: data.payment_currency,
+    paymentCurrency: data.payment_currency as Currency,
     rewardPoints: data.reward_points,
     notes: data.notes,
     category: data.category,
@@ -176,10 +202,10 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
     date: data.date,
     merchant: savedMerchant,
     amount: Number(data.amount),
-    currency: data.currency,
+    currency: data.currency as Currency,
     paymentMethod: updatedTransaction.paymentMethod,
     paymentAmount: Number(data.payment_amount),
-    paymentCurrency: data.payment_currency,
+    paymentCurrency: data.payment_currency as Currency,
     rewardPoints: data.reward_points,
     notes: data.notes,
     category: data.category,

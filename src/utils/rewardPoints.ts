@@ -8,10 +8,10 @@ import { getTransactions } from './storage/transactions';
 import { isDateInStatementPeriod } from './dateUtils';
 
 // Calculate reward points for a single transaction
-export const calculateTransactionPoints = (
+export const calculateTransactionPoints = async (
   transaction: Transaction,
   allTransactions: Transaction[]
-): number => {
+): Promise<number> => {
   const { paymentMethod } = transaction;
   
   // Special case for UOB Preferred Visa Platinum
@@ -48,7 +48,7 @@ export const calculateTransactionPoints = (
 };
 
 // Calculate points that would be earned for a potential transaction
-export const simulateRewardPoints = (
+export const simulateRewardPoints = async (
   amount: number,
   currency: string,
   paymentMethod: PaymentMethod,
@@ -57,17 +57,17 @@ export const simulateRewardPoints = (
   isOnline?: boolean,
   isContactless?: boolean,
   currentDate: Date = new Date()
-): {
+): Promise<{
   totalPoints: number;
   basePoints?: number;
   bonusPoints?: number;
   remainingMonthlyBonusPoints?: number;
-} => {
+}> => {
   if (paymentMethod.type === 'cash') {
     return { totalPoints: 0 };
   }
   
-  const allTransactions = getTransactions();
+  const allTransactions = await getTransactions();
   
   // Special case for UOB Preferred Visa Platinum
   if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Preferred Visa Platinum') {

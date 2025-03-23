@@ -9,7 +9,11 @@ export {
   deleteTransaction,
   exportTransactionsToCSV
 } from './storage/transactions';
-export { getPaymentMethods, savePaymentMethods, initializePaymentMethods } from './storage/paymentMethods';
+export { 
+  getPaymentMethods, 
+  savePaymentMethods, 
+  initializePaymentMethods 
+} from './storage/paymentMethods';
 export { 
   getMerchants, 
   getMerchantByName, 

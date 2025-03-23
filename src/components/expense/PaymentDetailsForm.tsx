@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { PaymentMethod, Currency } from '@/types';
+import { PaymentMethod, Currency, Transaction } from '@/types';
 import { CreditCardIcon, CoinsIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { currencyOptions } from '@/utils/currencyFormatter';
@@ -63,6 +63,24 @@ const PaymentDetailsForm = ({
   const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
   const isCash = paymentMethod?.type === 'cash';
 
+  // State for transactions
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  // Load transactions
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        const allTransactions = await getTransactions();
+        setTransactions(allTransactions);
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+        setTransactions([]);
+      }
+    };
+    
+    loadTransactions();
+  }, []);
+
   // Handle currency conversion when payment method currency differs from transaction currency
   useEffect(() => {
     if (shouldOverridePayment && selectedPaymentMethod && currency && amount > 0) {
@@ -102,13 +120,11 @@ const PaymentDetailsForm = ({
   const [hasSgdTransactions, setHasSgdTransactions] = useState<boolean>(false);
   
   useEffect(() => {
-    if (selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Visa Signature') {
-      const allTransactions = getTransactions();
-      const currentDate = new Date();
+    if (selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Visa Signature' && transactions.length > 0) {
       let statementTotal = 0;
       let hasAnySgdTransaction = false;
       
-      const statementTransactions = allTransactions.filter(tx => 
+      const statementTransactions = transactions.filter(tx => 
         tx.paymentMethod.id === selectedPaymentMethod.id
       );
       
@@ -123,7 +139,7 @@ const PaymentDetailsForm = ({
       setNonSgdSpendTotal(statementTotal);
       setHasSgdTransactions(hasAnySgdTransaction);
     }
-  }, [selectedPaymentMethod]);
+  }, [selectedPaymentMethod, transactions]);
   
   // State for bonus points tracking
   const [usedBonusPoints, setUsedBonusPoints] = useState<number>(0);
@@ -131,14 +147,14 @@ const PaymentDetailsForm = ({
   useEffect(() => {
     // Used for both UOB Preferred Visa Platinum and Citibank Rewards Visa Signature 
     // since they have similar bonus points mechanics
-    if ((selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Preferred Visa Platinum') ||
-        (selectedPaymentMethod?.issuer === 'Citibank' && selectedPaymentMethod?.name === 'Rewards Visa Signature')) {
+    if (((selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Preferred Visa Platinum') ||
+        (selectedPaymentMethod?.issuer === 'Citibank' && selectedPaymentMethod?.name === 'Rewards Visa Signature')) &&
+        transactions.length > 0) {
       
-      const allTransactions = getTransactions();
       const currentDate = new Date();
       let totalMonthBonusPoints = 0;
       
-      const currentMonthTransactions = allTransactions.filter(tx => {
+      const currentMonthTransactions = transactions.filter(tx => {
         const txDate = new Date(tx.date);
         return tx.paymentMethod.id === selectedPaymentMethod.id && 
                txDate.getMonth() === currentDate.getMonth() &&
@@ -159,7 +175,7 @@ const PaymentDetailsForm = ({
       
       setUsedBonusPoints(Math.min(totalMonthBonusPoints, 4000));
     }
-  }, [selectedPaymentMethod]);
+  }, [selectedPaymentMethod, transactions]);
   
   return (
     <Card>

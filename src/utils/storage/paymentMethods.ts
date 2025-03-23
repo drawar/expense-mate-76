@@ -1,5 +1,5 @@
 
-import { PaymentMethod } from '@/types';
+import { PaymentMethod, Currency, RewardRule } from '@/types';
 import { defaultPaymentMethods } from '../defaults/paymentMethods';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,30 +21,31 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
     return;
   }
   
-  // Then insert all the payment methods
-  const formattedMethods = paymentMethods.map(method => ({
-    name: method.name,
-    type: method.type,
-    currency: method.currency,
-    reward_rules: method.rewardRules,
-    statement_start_day: method.statementStartDay,
-    is_monthly_statement: method.isMonthlyStatement,
-    active: method.active,
-    last_four_digits: method.lastFourDigits,
-    issuer: method.issuer,
-    icon: method.icon,
-    color: method.color,
-    conversion_rate: method.conversionRate,
-  }));
-  
-  const { error: insertError } = await supabase
-    .from('payment_methods')
-    .insert(formattedMethods);
-    
-  if (insertError) {
-    console.error('Error inserting payment methods:', insertError);
-    // Fallback to localStorage
-    localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
+  // Then insert all the payment methods one by one
+  for (const method of paymentMethods) {
+    const { error: insertError } = await supabase
+      .from('payment_methods')
+      .insert({
+        name: method.name,
+        type: method.type,
+        currency: method.currency,
+        reward_rules: method.rewardRules,
+        statement_start_day: method.statementStartDay,
+        is_monthly_statement: method.isMonthlyStatement,
+        active: method.active,
+        last_four_digits: method.lastFourDigits,
+        issuer: method.issuer,
+        icon: method.icon,
+        color: method.color,
+        conversion_rate: method.conversionRate,
+      });
+      
+    if (insertError) {
+      console.error('Error inserting payment method:', insertError);
+      // Fallback to localStorage
+      localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
+      return;
+    }
   }
 };
 
@@ -72,8 +73,8 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     id: method.id,
     name: method.name,
     type: method.type as 'cash' | 'credit_card',
-    currency: method.currency,
-    rewardRules: method.reward_rules || [],
+    currency: method.currency as Currency,
+    rewardRules: method.reward_rules as RewardRule[] || [],
     statementStartDay: method.statement_start_day,
     isMonthlyStatement: method.is_monthly_statement,
     active: method.active,
