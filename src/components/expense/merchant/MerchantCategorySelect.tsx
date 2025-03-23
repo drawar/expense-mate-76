@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
-import { MCC_CODES } from '@/utils/storageUtils';
+import { MCC_CODES } from '@/utils/constants/mcc';
 import { Label } from '@/components/ui/label';
 import { TagIcon, SearchIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -29,16 +29,26 @@ interface MerchantCategorySelectProps {
 const MerchantCategorySelect = ({ selectedMCC, onSelectMCC }: MerchantCategorySelectProps) => {
   const [showMCCDialog, setShowMCCDialog] = useState(false);
   const [mccSearchQuery, setMccSearchQuery] = useState('');
-  const [filteredMCC, setFilteredMCC] = useState(MCC_CODES);
+  const [filteredMCC, setFilteredMCC] = useState<MerchantCategoryCode[]>([]);
   const { toast } = useToast();
+  
+  // Sort MCC_CODES in ascending order by code and set as initial state
+  useEffect(() => {
+    const sortedMccCodes = [...MCC_CODES].sort((a, b) => {
+      return a.code.localeCompare(b.code);
+    });
+    setFilteredMCC(sortedMccCodes);
+  }, []);
   
   // Filter MCC codes based on search query
   useEffect(() => {
+    const sortedMccCodes = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
+    
     if (mccSearchQuery.trim() === '') {
-      setFilteredMCC(MCC_CODES);
+      setFilteredMCC(sortedMccCodes);
     } else {
       const query = mccSearchQuery.toLowerCase();
-      const filtered = MCC_CODES.filter(
+      const filtered = sortedMccCodes.filter(
         mcc => 
           mcc.description.toLowerCase().includes(query) || 
           mcc.code.includes(query)
@@ -88,8 +98,8 @@ const MerchantCategorySelect = ({ selectedMCC, onSelectMCC }: MerchantCategorySe
                     onSelect={() => handleSelectMCC(mcc)}
                     className="cursor-pointer"
                   >
+                    <span className="text-xs font-mono text-muted-foreground mr-2">{mcc.code}</span>
                     <span>{mcc.description}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">({mcc.code})</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
