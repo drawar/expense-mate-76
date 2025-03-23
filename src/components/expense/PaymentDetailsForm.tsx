@@ -68,6 +68,7 @@ const PaymentDetailsForm = ({
     const loadTransactions = async () => {
       try {
         const allTransactions = await getTransactions();
+        console.log('Loaded transactions:', allTransactions.length);
         setTransactions(allTransactions);
       } catch (error) {
         console.error('Error loading transactions:', error);
@@ -201,7 +202,10 @@ const PaymentDetailsForm = ({
               <FormLabel>Payment Method</FormLabel>
               <Select 
                 value={field.value} 
-                onValueChange={field.onChange}
+                onValueChange={(value) => {
+                  console.log('Payment method selected:', value);
+                  field.onChange(value);
+                }}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -232,7 +236,7 @@ const PaymentDetailsForm = ({
           isCash={selectedPaymentMethod?.type === 'cash' || false} 
         />
         
-        {shouldOverridePayment && (
+        {shouldOverridePayment && selectedPaymentMethod && (
           <FormField
             control={form.control}
             name="paymentAmount"

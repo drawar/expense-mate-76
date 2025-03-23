@@ -139,24 +139,46 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   }, [currency, form, paymentMethodId, selectedPaymentMethod]);
 
   useEffect(() => {
-    const method = paymentMethods.find(pm => pm.id === paymentMethodId);
-    
-    if (method) {
-      console.log('Payment method selected:', method.name);
-      setSelectedPaymentMethod(method);
+    if (paymentMethodId) {
+      const method = paymentMethods.find(pm => pm.id === paymentMethodId);
       
-      if (currency !== method.currency) {
-        setShouldOverridePayment(true);
+      if (method) {
+        console.log('Payment method selected:', method.name);
+        setSelectedPaymentMethod(method);
+        
+        if (currency !== method.currency) {
+          setShouldOverridePayment(true);
+          
+          // Set initial payment amount
+          if (amount > 0) {
+            const conversionRates: Record<string, Record<string, number>> = {
+              USD: { SGD: 1.35, EUR: 0.92, GBP: 0.78 },
+              SGD: { USD: 0.74, EUR: 0.68, GBP: 0.58 },
+              EUR: { USD: 1.09, SGD: 1.47, GBP: 0.85 },
+              GBP: { USD: 1.28, SGD: 1.73, EUR: 1.17 }
+            };
+            
+            const rate = conversionRates[currency]?.[method.currency] || 1;
+            const convertedAmount = (amount * rate).toFixed(2);
+            form.setValue('paymentAmount', convertedAmount);
+          }
+        } else {
+          setShouldOverridePayment(false);
+          form.setValue('paymentAmount', form.watch('amount'));
+        }
+        
+        if (!isOnline && method.type === 'credit_card') {
+          form.setValue('isContactless', true);
+        }
       } else {
+        console.log('No payment method found for ID:', paymentMethodId);
+        setSelectedPaymentMethod(undefined);
         setShouldOverridePayment(false);
-        form.setValue('paymentAmount', form.watch('amount'));
-      }
-      
-      if (!isOnline && method.type === 'credit_card') {
-        form.setValue('isContactless', true);
       }
     } else {
-      console.log('No payment method found for ID:', paymentMethodId);
+      console.log('No payment method ID provided');
+      setSelectedPaymentMethod(undefined);
+      setShouldOverridePayment(false);
     }
   }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
   
@@ -235,6 +257,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       
       console.log('Adding/updating merchant:', merchant);
       const savedMerchant = await addOrUpdateMerchant(merchant);
+      console.log('Merchant saved:', savedMerchant);
       
       const transaction: Omit<Transaction, 'id'> = {
         date: format(values.date, 'yyyy-MM-dd'),

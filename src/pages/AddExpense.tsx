@@ -20,6 +20,7 @@ const AddExpense = () => {
       try {
         console.log('Loading payment methods...');
         const methods = await getPaymentMethods();
+        console.log('Payment methods loaded:', methods);
         
         if (!methods || methods.length === 0) {
           console.error('No payment methods found');
@@ -74,9 +75,11 @@ const AddExpense = () => {
       
       console.log('Validated transaction data:', {
         merchant: transactionData.merchant.name,
+        merchantId: transactionData.merchant.id,
         amount: transactionData.amount,
         currency: transactionData.currency,
         paymentMethod: transactionData.paymentMethod.name,
+        paymentMethodId: transactionData.paymentMethod.id,
         date: transactionData.date
       });
       
@@ -101,6 +104,10 @@ const AddExpense = () => {
         // Check for Supabase specific errors
         if (error.message.includes('violates foreign key constraint')) {
           setSaveError('Database error: Referenced payment method or merchant not found');
+        } else if (error.message.includes('network error')) {
+          setSaveError('Network error: Please check your internet connection');
+        } else if (error.message.includes('timeout')) {
+          setSaveError('Request timeout: Server took too long to respond');
         }
       } else {
         setSaveError('Unknown error occurred');
@@ -130,7 +137,8 @@ const AddExpense = () => {
         
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md">
-            {saveError}
+            <p className="font-semibold">Error saving transaction:</p>
+            <p>{saveError}</p>
           </div>
         )}
         
