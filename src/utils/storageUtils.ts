@@ -139,7 +139,17 @@ const defaultPaymentMethods: PaymentMethod[] = [
       USD: 1.35,
       EUR: 1.47,
       GBP: 1.73,
-      SGD: 1
+      SGD: 1,
+      JPY: 0.0091,
+      AUD: 0.89,
+      CAD: 0.99,
+      CNY: 0.19,
+      INR: 0.016,
+      NTD: 0.042,
+      VND: 0.000054,
+      IDR: 0.000086,
+      THB: 0.038,
+      MYR: 0.31
     }
   },
 ];

@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency } from '@/types';
 import { CreditCardIcon, BanknoteIcon, CoinsIcon, WifiIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { currencyOptions } from '@/utils/currencyFormatter';
 import {
   FormControl,
   FormDescription,
@@ -56,14 +56,11 @@ const PaymentDetailsForm = ({
   const isContactless = form.watch('isContactless');
   const paymentMethodId = form.watch('paymentMethodId');
   
-  // Get payment method
   const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
   const isCash = paymentMethod?.type === 'cash';
 
-  // Get suggested conversion rate
   useEffect(() => {
     if (shouldOverridePayment && selectedPaymentMethod && currency && amount > 0) {
-      // Default conversion rates (in practice, this would come from an API)
       const conversionRates: Record<string, Record<string, number>> = {
         USD: { SGD: 1.35, EUR: 0.92, GBP: 0.78 },
         SGD: { USD: 0.74, EUR: 0.68, GBP: 0.58 },
@@ -71,7 +68,6 @@ const PaymentDetailsForm = ({
         GBP: { USD: 1.28, SGD: 1.73, EUR: 1.17 }
       };
       
-      // Set default conversion rates for all currencies
       for (const fromCurr of Object.keys(conversionRates)) {
         for (const toCurr of currencyOptions.map(c => c.value)) {
           if (!conversionRates[fromCurr]?.[toCurr] && fromCurr !== toCurr) {
@@ -83,21 +79,18 @@ const PaymentDetailsForm = ({
         }
       }
       
-      // Calculate converted amount
       const rate = conversionRates[currency]?.[selectedPaymentMethod.currency] || 1;
       const convertedAmount = (amount * rate).toFixed(2);
       form.setValue('paymentAmount', convertedAmount);
     }
   }, [currency, amount, selectedPaymentMethod, shouldOverridePayment, form]);
   
-  // Set contactless to true by default for credit cards when not online
   useEffect(() => {
     if (!isOnline && paymentMethod?.type === 'credit_card') {
       form.setValue('isContactless', true);
     }
   }, [isOnline, paymentMethod, form]);
 
-  // Get all transactions for calculating the UOB Visa Signature minimum spending status
   const [nonSgdSpendTotal, setNonSgdSpendTotal] = useState<number>(0);
   const [hasSgdTransactions, setHasSgdTransactions] = useState<boolean>(false);
   
@@ -108,17 +101,15 @@ const PaymentDetailsForm = ({
       let statementTotal = 0;
       let hasAnySgdTransaction = false;
       
-      // Filter transactions for this payment method in the current statement period
       const statementTransactions = allTransactions.filter(tx => 
         tx.paymentMethod.id === selectedPaymentMethod.id
       );
       
-      // Calculate total non-SGD spend and check for any SGD transactions
       statementTransactions.forEach(tx => {
         if (tx.currency === 'SGD') {
           hasAnySgdTransaction = true;
         } else {
-          statementTotal += tx.paymentAmount; // This is already in SGD
+          statementTotal += tx.paymentAmount;
         }
       });
       
@@ -127,7 +118,6 @@ const PaymentDetailsForm = ({
     }
   }, [selectedPaymentMethod]);
   
-  // Calculate the UOB Preferred Visa Platinum used bonus points
   const [usedBonusPoints, setUsedBonusPoints] = useState<number>(0);
   
   useEffect(() => {
@@ -136,7 +126,6 @@ const PaymentDetailsForm = ({
       const currentDate = new Date();
       let totalMonthBonusPoints = 0;
       
-      // Get current month's transactions for this payment method
       const currentMonthTransactions = allTransactions.filter(tx => {
         const txDate = new Date(tx.date);
         return tx.paymentMethod.id === selectedPaymentMethod.id && 
@@ -144,7 +133,6 @@ const PaymentDetailsForm = ({
                txDate.getFullYear() === currentDate.getFullYear();
       });
       
-      // Calculate total bonus points from these transactions
       currentMonthTransactions.forEach(tx => {
         if (tx.rewardPoints > 0) {
           const txAmount = Math.floor(tx.amount / 5) * 5;
@@ -159,7 +147,6 @@ const PaymentDetailsForm = ({
   }, [selectedPaymentMethod]);
   
   const getPointsMessage = () => {
-    // Handle UOB Preferred Visa Platinum
     if (selectedPaymentMethod?.issuer === 'UOB' && 
         selectedPaymentMethod?.name === 'Preferred Visa Platinum' &&
         amount > 0) {
@@ -200,7 +187,6 @@ const PaymentDetailsForm = ({
       );
     }
     
-    // Handle UOB Visa Signature
     if (selectedPaymentMethod?.issuer === 'UOB' && 
         selectedPaymentMethod?.name === 'Visa Signature' &&
         amount > 0) {
@@ -208,19 +194,15 @@ const PaymentDetailsForm = ({
       const roundedAmount = Math.floor(paymentAmount / 5) * 5;
       const basePoints = Math.round((roundedAmount / 5) * 2);
       
-      // Calculate potential bonus points
       let bonusPointMessage = "";
       let bonusPoints = 0;
       
-      // Check if transaction is in non-SGD currency
       if (currency !== 'SGD') {
-        // Convert to SGD for minimum spend calculation if needed
-        const sgdEquivalent = shouldOverridePayment ? paymentAmount : amount * 1.35; // Default USD to SGD rate
+        const sgdEquivalent = shouldOverridePayment ? paymentAmount : amount * 1.35;
         const totalNonSgdSpend = nonSgdSpendTotal + sgdEquivalent;
         
         if (!hasSgdTransactions) {
           if (totalNonSgdSpend >= 1000) {
-            // Calculate bonus points - all eligible transactions (rounded down to nearest 5) * 18 / 5
             bonusPoints = Math.round((Math.floor(totalNonSgdSpend / 5) * 5 / 5) * 18);
             bonusPointMessage = `Bonus Points: ${bonusPoints} (Minimum spend reached)`;
           } else {
@@ -235,7 +217,6 @@ const PaymentDetailsForm = ({
         bonusPointMessage = "No bonus points (SGD currency)";
       }
       
-      // Cap total at 8000 per statement
       const totalPoints = Math.min(basePoints + bonusPoints, 8000);
       
       return (
@@ -253,7 +234,6 @@ const PaymentDetailsForm = ({
       );
     }
     
-    // Default message for other cards
     if (typeof estimatedPoints === 'object' && estimatedPoints.totalPoints > 0) {
       return (
         <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 flex items-center gap-2">
