@@ -15,26 +15,11 @@ serve(async (req) => {
   }
 
   try {
-    // Check if API key is available
-    if (!GOOGLE_MAPS_API_KEY) {
-      console.error('No Google Maps API key available');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Configuration error: Google Maps API key not available',
-          places: [] 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
     const { query } = await req.json();
     
     if (!query || query.trim() === '') {
       return new Response(
-        JSON.stringify({ error: 'Search query is required', places: [] }),
+        JSON.stringify({ error: 'Search query is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -52,25 +37,16 @@ serve(async (req) => {
     
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
       console.error('Google Places API error:', data.status, data.error_message);
-      // Return an empty array with the error message
-      return new Response(
-        JSON.stringify({ 
-          error: `Google Places API error: ${data.status}`,
-          places: [] 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      throw new Error(`Google Places API error: ${data.status}`);
     }
     
     // Extract relevant information from the results
-    const places = data.results?.map((place: any) => ({
+    const places = data.results.map((place: any) => ({
       name: place.name,
       address: place.formatted_address,
-      location: place.geometry?.location,
+      location: place.geometry.location,
       placeId: place.place_id,
-    })) || [];
+    }));
     
     return new Response(
       JSON.stringify({ places }),
@@ -79,7 +55,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in search-places function:', error);
     return new Response(
-      JSON.stringify({ error: error.message, places: [] }),
+      JSON.stringify({ error: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

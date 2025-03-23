@@ -107,7 +107,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
   },
   {
     id: '3',
-    name: 'Sapphire Reserve',
+    name: 'Chase Sapphire Reserve',
     type: 'credit_card',
     currency: 'USD',
     issuer: 'Chase',
@@ -218,3 +218,4 @@ export const findCashPaymentMethodForCurrency = (currency: string): PaymentMetho
     method.type === 'cash' && method.currency === currency
   );
 };
+

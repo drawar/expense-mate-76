@@ -49,7 +49,7 @@ const MerchantDetailsForm = () => {
   
   useEffect(() => {
     const fetchMerchantData = async () => {
-      if (merchantName && merchantName.trim().length >= 3) {
+      if (merchantName.trim().length >= 3) {
         try {
           const existingMerchant = await getMerchantByName(merchantName);
           if (existingMerchant?.mcc) {
@@ -73,7 +73,7 @@ const MerchantDetailsForm = () => {
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
     const fetchAddressSuggestions = async () => {
-      if (!debouncedMerchantName || debouncedMerchantName.trim().length < 3 || isOnline) {
+      if (debouncedMerchantName.trim().length < 3 || isOnline) {
         setPlaces([]);
         return;
       }
@@ -86,11 +86,10 @@ const MerchantDetailsForm = () => {
 
         if (error) {
           console.error('Error fetching places:', error);
-          setPlaces([]);
           return;
         }
 
-        if (data?.places && Array.isArray(data.places) && data.places.length > 0) {
+        if (data.places && data.places.length > 0) {
           setPlaces(data.places);
           setShowPlacesDialog(true);
         } else {
@@ -98,7 +97,6 @@ const MerchantDetailsForm = () => {
         }
       } catch (error) {
         console.error('Error fetching places:', error);
-        setPlaces([]);
       } finally {
         setIsAddressLoading(false);
       }
@@ -106,8 +104,6 @@ const MerchantDetailsForm = () => {
 
     if (!isOnline) {
       fetchAddressSuggestions();
-    } else {
-      setPlaces([]);
     }
   }, [debouncedMerchantName, isOnline]);
 
@@ -141,7 +137,7 @@ const MerchantDetailsForm = () => {
         
         <OnlineMerchantToggle />
         
-        {!isOnline && (
+        {!form.watch('isOnline') && (
           <MerchantAddressSelect 
             places={places}
             isLoading={isAddressLoading}
@@ -151,8 +147,8 @@ const MerchantDetailsForm = () => {
         )}
         
         <MerchantCategorySelect 
-          selected={selectedMCC}
-          onSelect={handleSelectMCC}
+          selectedMCC={selectedMCC}
+          onSelectMCC={handleSelectMCC}
         />
       </CardContent>
     </Card>
