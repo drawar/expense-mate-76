@@ -3,9 +3,10 @@ import { PaymentMethod } from '@/types';
 
 // Default payment methods
 export const defaultPaymentMethods: PaymentMethod[] = [
+  // Cash options for different currencies
   {
     id: '1',
-    name: 'Cash',
+    name: 'Cash (USD)',
     type: 'cash',
     currency: 'USD',
     rewardRules: [],
@@ -13,6 +14,57 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     icon: 'banknote',
     color: '#22c55e',
   },
+  {
+    id: '1-sgd',
+    name: 'Cash (SGD)',
+    type: 'cash',
+    currency: 'SGD',
+    rewardRules: [],
+    active: true,
+    icon: 'banknote',
+    color: '#22c55e',
+  },
+  {
+    id: '1-ntd',
+    name: 'Cash (NTD)',
+    type: 'cash',
+    currency: 'NTD',
+    rewardRules: [],
+    active: true,
+    icon: 'banknote',
+    color: '#22c55e',
+  },
+  {
+    id: '1-cad',
+    name: 'Cash (CAD)',
+    type: 'cash',
+    currency: 'CAD',
+    rewardRules: [],
+    active: true,
+    icon: 'banknote',
+    color: '#22c55e',
+  },
+  {
+    id: '1-vnd',
+    name: 'Cash (VND)',
+    type: 'cash',
+    currency: 'VND',
+    rewardRules: [],
+    active: true,
+    icon: 'banknote',
+    color: '#22c55e',
+  },
+  {
+    id: '1-thb',
+    name: 'Cash (THB)',
+    type: 'cash',
+    currency: 'THB',
+    rewardRules: [],
+    active: true,
+    icon: 'banknote',
+    color: '#22c55e',
+  },
+  // Credit cards
   {
     id: '2',
     name: 'Blue Cash Preferred',
@@ -159,3 +211,11 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     }
   },
 ];
+
+// Helper function to find cash payment method for a specific currency
+export const findCashPaymentMethodForCurrency = (currency: string): PaymentMethod | undefined => {
+  return defaultPaymentMethods.find(method => 
+    method.type === 'cash' && method.currency === currency
+  );
+};
+

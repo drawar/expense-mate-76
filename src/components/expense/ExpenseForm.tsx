@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -7,6 +8,8 @@ import { Transaction, Merchant, PaymentMethod, Currency, MerchantCategoryCode } 
 import { MCC_CODES, addOrUpdateMerchant, getMerchantByName } from '@/utils/storageUtils';
 import { simulateRewardPoints } from '@/utils/rewardPoints';
 import { useToast } from '@/hooks/use-toast';
+import { findCashPaymentMethodForCurrency } from '@/utils/defaults/paymentMethods';
+import { getCategoryFromMCC } from '@/utils/categoryMapping';
 
 // Import component sections
 import MerchantDetailsForm from './MerchantDetailsForm';
@@ -86,6 +89,20 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   
+  // When currency changes, try to find a matching cash payment method
+  useEffect(() => {
+    if (currency) {
+      const cashMethod = findCashPaymentMethodForCurrency(currency);
+      if (cashMethod) {
+        // Only auto-select cash if no payment method has been selected yet or
+        // if we're setting initial values (defaultValues is undefined or not yet processed)
+        if (!paymentMethodId || !selectedPaymentMethod) {
+          form.setValue('paymentMethodId', cashMethod.id);
+        }
+      }
+    }
+  }, [currency, form, paymentMethodId, selectedPaymentMethod]);
+
   useEffect(() => {
     const method = paymentMethods.find(pm => pm.id === paymentMethodId);
     setSelectedPaymentMethod(method);
@@ -153,6 +170,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           : (typeof estimatedPoints === 'number' ? estimatedPoints : 0),
         notes: values.notes,
         isContactless: !values.isOnline ? values.isContactless : false,
+        // Add category based on MCC code
+        category: getCategoryFromMCC(selectedMCC?.code),
       };
       
       onSubmit(transaction);

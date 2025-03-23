@@ -1,5 +1,6 @@
 
 import { Transaction } from '@/types';
+import { getCategoryFromMCC } from '../categoryMapping';
 
 // LocalStorage key
 const TRANSACTIONS_KEY = 'expenseTracker_transactions';
@@ -21,6 +22,8 @@ export const addTransaction = (transaction: Omit<Transaction, 'id'>): Transactio
   const newTransaction = {
     ...transaction,
     id: Date.now().toString(),
+    // Add category based on MCC code
+    category: getCategoryFromMCC(transaction.merchant.mcc?.code),
   };
   
   transactions.push(newTransaction);
@@ -38,6 +41,8 @@ export const editTransaction = (id: string, updatedTransaction: Omit<Transaction
   const editedTransaction = {
     ...updatedTransaction,
     id,
+    // Update category based on MCC code
+    category: getCategoryFromMCC(updatedTransaction.merchant.mcc?.code),
   };
   
   transactions[index] = editedTransaction;
@@ -85,7 +90,7 @@ export const exportTransactionsToCSV = (transactions: Transaction[]): string => 
     tx.id,
     tx.date,
     tx.merchant.name,
-    tx.merchant.mcc?.description || 'Uncategorized',
+    tx.category || tx.merchant.mcc?.description || 'Uncategorized',
     tx.amount,
     tx.currency,
     tx.paymentMethod.name,
@@ -98,3 +103,4 @@ export const exportTransactionsToCSV = (transactions: Transaction[]): string => 
   
   return [headers, ...rows].join('\n');
 };
+
