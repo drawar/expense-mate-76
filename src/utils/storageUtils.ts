@@ -152,6 +152,36 @@ const defaultPaymentMethods: PaymentMethod[] = [
       MYR: 0.31
     }
   },
+  {
+    id: '6',
+    name: 'Rewards Visa Signature',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'Citibank',
+    lastFourDigits: '7890',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#0891b2',
+    rewardRules: [], // Special handling in rewardPoints.ts
+    conversionRate: {
+      USD: 1.35,
+      EUR: 1.47,
+      GBP: 1.73,
+      SGD: 1,
+      JPY: 0.0091,
+      AUD: 0.89,
+      CAD: 0.99,
+      CNY: 0.19,
+      INR: 0.016,
+      NTD: 0.042,
+      VND: 0.000054,
+      IDR: 0.000086,
+      THB: 0.038,
+      MYR: 0.31
+    }
+  },
 ];
 
 // Save transactions to localStorage

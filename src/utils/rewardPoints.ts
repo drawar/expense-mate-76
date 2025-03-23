@@ -1,4 +1,3 @@
-
 import { Transaction, PaymentMethod, RewardRule } from '@/types';
 import { isDateInStatementPeriod } from './dateUtils';
 import { startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
@@ -23,6 +22,11 @@ export const calculateTransactionPoints = (
   // Special case for UOB Visa Signature
   if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Visa Signature') {
     return calculateUOBSignaturePoints(transaction, allTransactions);
+  }
+  
+  // Special case for Citibank Rewards Visa Signature
+  if (paymentMethod.issuer === 'Citibank' && paymentMethod.name === 'Rewards Visa Signature') {
+    return calculateCitibankRewardsPoints(transaction, allTransactions);
   }
   
   // Get total spend in the current statement period for this payment method
@@ -203,6 +207,66 @@ const calculateUOBSignaturePoints = (
   return Math.min(Math.round(totalPoints), 8000);
 };
 
+// Special calculation for Citibank Rewards Visa Signature
+const calculateCitibankRewardsPoints = (
+  transaction: Transaction,
+  allTransactions: Transaction[]
+): number => {
+  const { amount, merchant } = transaction;
+  
+  // Round down to nearest whole number
+  const roundedAmount = Math.floor(amount);
+  
+  // Calculate base points (0.4x rounded amount)
+  const basePoints = roundedAmount * 0.4;
+  
+  // Check if transaction is eligible for bonus points
+  const exclusionMCCs = [
+    // Airlines (3000-3999)
+    ...[...Array(1000)].map((_, i) => `${3000 + i}`),
+    // Other exclusions
+    '4511', '7512', '7011', '4111', '4112', '4789', '4411', '4722', '4723', '5962', '7012'
+  ];
+  
+  const inclusionMCCs = [
+    '5311', '5611', '5621', '5631', '5641', '5651', '5655', '5661', '5691', '5699', '5948'
+  ];
+  
+  const isExcludedMCC = merchant.mcc && exclusionMCCs.includes(merchant.mcc.code);
+  const isIncludedMCC = merchant.mcc && inclusionMCCs.includes(merchant.mcc.code);
+  const isEligibleTransaction = (merchant.isOnline && !isExcludedMCC) || isIncludedMCC;
+  
+  if (!isEligibleTransaction) {
+    return Math.round(basePoints);
+  }
+  
+  // Calculate total bonus points earned this calendar month
+  const currentDate = new Date(transaction.date);
+  
+  const monthTransactions = allTransactions.filter(t => 
+    t.paymentMethod.id === transaction.paymentMethod.id &&
+    isSameMonth(new Date(t.date), currentDate)
+  );
+  
+  const totalMonthBonusPoints = monthTransactions.reduce((sum, tx) => {
+    if (tx.id === transaction.id) return sum; // Exclude current transaction
+    
+    const txAmount = Math.floor(tx.amount);
+    const txBasePoints = txAmount * 0.4;
+    const txTotalPoints = tx.rewardPoints;
+    const txBonusPoints = Math.max(0, txTotalPoints - Math.round(txBasePoints));
+    
+    return sum + txBonusPoints;
+  }, 0);
+  
+  // Calculate bonus points for current transaction
+  const potentialBonusPoints = roundedAmount * 3.6;
+  const remainingBonusPoints = 4000 - totalMonthBonusPoints;
+  const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
+  
+  return Math.round(basePoints + actualBonusPoints);
+};
+
 // Get total reward points earned across all transactions
 export const getTotalRewardPoints = (transactions: Transaction[]): number => {
   return transactions.reduce((total, transaction) => total + transaction.rewardPoints, 0);
@@ -275,6 +339,45 @@ export const simulateRewardPoints = (
       totalPoints: Math.round(basePoints),
       basePoints: Math.round(basePoints),
       bonusPoints: 0
+    };
+  }
+  
+  // Special case for Citibank Rewards Visa Signature
+  if (paymentMethod.issuer === 'Citibank' && paymentMethod.name === 'Rewards Visa Signature') {
+    const roundedAmount = Math.floor(amount);
+    const basePoints = roundedAmount * 0.4;
+    
+    const exclusionMCCs = [
+      // Airlines (3000-3999)
+      ...[...Array(1000)].map((_, i) => `${3000 + i}`),
+      // Other exclusions
+      '4511', '7512', '7011', '4111', '4112', '4789', '4411', '4722', '4723', '5962', '7012'
+    ];
+    
+    const inclusionMCCs = [
+      '5311', '5611', '5621', '5631', '5641', '5651', '5655', '5661', '5691', '5699', '5948'
+    ];
+    
+    const isExcludedMCC = mcc && exclusionMCCs.includes(mcc);
+    const isIncludedMCC = mcc && inclusionMCCs.includes(mcc);
+    const isEligibleTransaction = (isOnline && !isExcludedMCC) || isIncludedMCC;
+    
+    if (!isEligibleTransaction) {
+      return {
+        totalPoints: Math.round(basePoints),
+        basePoints: Math.round(basePoints),
+        bonusPoints: 0,
+        remainingMonthlyBonusPoints: 4000
+      };
+    }
+    
+    const bonusPoints = Math.min(roundedAmount * 3.6, 4000);
+    
+    return {
+      totalPoints: Math.round(basePoints + bonusPoints),
+      basePoints: Math.round(basePoints),
+      bonusPoints: Math.round(bonusPoints),
+      remainingMonthlyBonusPoints: 4000 - Math.round(bonusPoints)
     };
   }
   
