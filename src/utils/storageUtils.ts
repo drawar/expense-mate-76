@@ -11,12 +11,12 @@ export {
 } from './storage/merchants';
 export { defaultPaymentMethods } from './defaults/paymentMethods';
 
+// Import directly to avoid using require()
+import { getPaymentMethods, savePaymentMethods } from './storage/paymentMethods';
+import { defaultPaymentMethods } from './defaults/paymentMethods';
+
 // Initialize storage with default data
 export const initializeStorage = (): void => {
-  // Import dynamically to avoid circular dependencies
-  const { getPaymentMethods, savePaymentMethods } = require('./storage/paymentMethods');
-  const { defaultPaymentMethods } = require('./defaults/paymentMethods');
-  
   // Set up default payment methods if none exist
   if (!localStorage.getItem('expenseTracker_paymentMethods')) {
     savePaymentMethods(defaultPaymentMethods);
