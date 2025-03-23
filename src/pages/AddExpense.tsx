@@ -67,7 +67,8 @@ const AddExpense = () => {
     const loadData = async () => {
       try {
         console.log('Loading payment methods with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
-        const methods = await getPaymentMethods(USE_LOCAL_STORAGE_DEFAULT);
+        // Fix: Remove the argument from getPaymentMethods call to match the function signature
+        const methods = await getPaymentMethods();
         console.log('Payment methods loaded:', methods);
         
         if (!methods || methods.length === 0) {
