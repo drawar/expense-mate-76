@@ -68,33 +68,12 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || '',
       currency: defaultValues?.currency || 'SGD',
-      paymentMethodId: defaultValues?.paymentMethodId || (paymentMethods.length > 0 ? paymentMethods[0].id : ''),
+      paymentMethodId: defaultValues?.paymentMethodId || '',
       paymentAmount: defaultValues?.paymentAmount || '',
       date: defaultValues?.date || new Date(),
       notes: defaultValues?.notes || '',
     },
   });
-  
-  // Initialize selected payment method
-  useEffect(() => {
-    if (paymentMethods.length > 0) {
-      const initialId = form.getValues('paymentMethodId') || paymentMethods[0].id;
-      const initialMethod = paymentMethods.find(pm => pm.id === initialId);
-      
-      if (initialMethod) {
-        console.log('Setting initial payment method:', initialMethod.name);
-        setSelectedPaymentMethod(initialMethod);
-        form.setValue('paymentMethodId', initialMethod.id);
-      } else {
-        console.log('Using first payment method:', paymentMethods[0].name);
-        setSelectedPaymentMethod(paymentMethods[0]);
-        form.setValue('paymentMethodId', paymentMethods[0].id);
-      }
-      
-      // Force form refresh
-      form.trigger('paymentMethodId');
-    }
-  }, [paymentMethods, form]);
   
   const merchantName = form.watch('merchantName');
   useEffect(() => {
@@ -123,21 +102,37 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   
   console.log('Current payment method ID:', paymentMethodId);
   
-  // When currency changes, try to find a matching cash payment method
+  // Initialize selected payment method based on stored payment methods
   useEffect(() => {
-    if (currency) {
+    if (paymentMethods.length > 0 && !paymentMethodId) {
+      // Find default cash payment method for the selected currency
       const cashMethod = findCashPaymentMethodForCurrency(currency);
       if (cashMethod) {
-        // Only auto-select cash if no payment method has been selected yet or
-        // if we're setting initial values (defaultValues is undefined or not yet processed)
-        if (!paymentMethodId || !selectedPaymentMethod) {
-          console.log('Auto-selecting cash method for currency:', currency);
-          form.setValue('paymentMethodId', cashMethod.id);
-        }
+        console.log('Setting initial cash payment method:', cashMethod.name);
+        form.setValue('paymentMethodId', cashMethod.id);
+        form.trigger('paymentMethodId');
+      } else {
+        // Use the first payment method as fallback
+        console.log('Setting first payment method as default:', paymentMethods[0].name);
+        form.setValue('paymentMethodId', paymentMethods[0].id);
+        form.trigger('paymentMethodId');
       }
     }
-  }, [currency, form, paymentMethodId, selectedPaymentMethod]);
+  }, [paymentMethods, form, paymentMethodId, currency]);
 
+  // When currency changes, try to find a matching cash payment method
+  useEffect(() => {
+    if (currency && !paymentMethodId) {
+      const cashMethod = findCashPaymentMethodForCurrency(currency);
+      if (cashMethod) {
+        console.log('Auto-selecting cash method for currency:', currency);
+        form.setValue('paymentMethodId', cashMethod.id);
+        form.trigger('paymentMethodId');
+      }
+    }
+  }, [currency, form, paymentMethodId]);
+
+  // Handle payment method selection changes
   useEffect(() => {
     if (paymentMethodId) {
       const method = paymentMethods.find(pm => pm.id === paymentMethodId);
@@ -146,6 +141,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         console.log('Payment method selected:', method.name);
         setSelectedPaymentMethod(method);
         
+        // Check if we need to handle currency conversion
         if (currency !== method.currency) {
           setShouldOverridePayment(true);
           
@@ -167,6 +163,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           form.setValue('paymentAmount', form.watch('amount'));
         }
         
+        // Set contactless for credit cards when not online
         if (!isOnline && method.type === 'credit_card') {
           form.setValue('isContactless', true);
         }
@@ -182,6 +179,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     }
   }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
   
+  // Calculate reward points when relevant data changes
   useEffect(() => {
     if (!selectedPaymentMethod || amount <= 0) {
       setEstimatedPoints(0);

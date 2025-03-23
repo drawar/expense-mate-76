@@ -59,6 +59,7 @@ const PaymentDetailsForm = ({
   const currency = form.watch('currency') as Currency;
   const mcc = form.watch('mcc')?.code;
   const isContactless = form.watch('isContactless');
+  const paymentMethodId = form.watch('paymentMethodId');
   
   // State for transactions
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -100,7 +101,7 @@ const PaymentDetailsForm = ({
         }
       }
       
-      const rate = conversionRates[currency]?.[selectedPaymentMethod.currency] || 1;
+      const rate = conversionRates[currency]?.[selectedPaymentMethod?.currency] || 1;
       const convertedAmount = (amount * rate).toFixed(2);
       form.setValue('paymentAmount', convertedAmount);
     }
@@ -201,10 +202,12 @@ const PaymentDetailsForm = ({
             <FormItem>
               <FormLabel>Payment Method</FormLabel>
               <Select 
-                value={field.value} 
+                value={field.value ? String(field.value) : ''} 
                 onValueChange={(value) => {
                   console.log('Payment method selected:', value);
                   field.onChange(value);
+                  // Force form validation after selection
+                  form.trigger('paymentMethodId');
                 }}
               >
                 <FormControl>
