@@ -8,6 +8,7 @@ import Navbar from '@/components/layout/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle } from 'lucide-react';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const AddExpense = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -130,16 +131,14 @@ const AddExpense = () => {
         date: transactionData.date
       });
       
-      // Force local storage usage
+      // Make sure we're using local storage if set to default
       const result = await addTransaction(transactionData, useLocalStorage);
       
       console.log('Transaction saved successfully:', result);
       
       toast({
         title: 'Success',
-        description: useLocalStorage 
-          ? 'Transaction saved successfully to local storage' 
-          : 'Transaction saved successfully to Supabase',
+        description: 'Transaction saved successfully to ' + (useLocalStorage ? 'local storage' : 'Supabase'),
       });
       
       // Navigate back to the dashboard
@@ -147,25 +146,25 @@ const AddExpense = () => {
     } catch (error) {
       console.error('Error saving transaction:', error);
       
+      let errorMessage = 'Failed to save transaction';
+      
       // Detailed error information for debugging
       if (error instanceof Error) {
-        setSaveError(error.message);
+        errorMessage = error.message;
         
-        // Check for Supabase specific errors
-        if (error.message.includes('violates foreign key constraint')) {
-          setSaveError('Database error: Referenced payment method or merchant not found');
-        } else if (error.message.includes('network error')) {
-          setSaveError('Network error: Please check your internet connection');
-        } else if (error.message.includes('timeout')) {
-          setSaveError('Request timeout: Server took too long to respond');
+        // Check for specific errors
+        if (error.message.includes('duplicate key') || error.message.includes('constraint')) {
+          errorMessage = 'A merchant with this name already exists';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error - please check your connection';
         }
-      } else {
-        setSaveError('Unknown error occurred');
       }
+      
+      setSaveError(errorMessage);
       
       toast({
         title: 'Error',
-        description: 'Failed to save transaction. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -186,20 +185,21 @@ const AddExpense = () => {
         </div>
         
         {useLocalStorage && (
-          <div className="mb-4 p-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-md flex items-start gap-2">
-            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold">Using local storage</p>
-              <p>Transactions will be saved to local storage. Your data will only be available on this device.</p>
-            </div>
-          </div>
+          <Alert className="mb-4 bg-amber-50 text-amber-700 border-amber-200">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle>Using local storage</AlertTitle>
+            <AlertDescription>
+              Transactions will be saved to local storage. Your data will only be available on this device.
+            </AlertDescription>
+          </Alert>
         )}
         
         {saveError && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md">
-            <p className="font-semibold">Error saving transaction:</p>
-            <p>{saveError}</p>
-          </div>
+          <Alert className="mb-4 bg-red-50 text-red-700 border-red-200">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle>Error saving transaction</AlertTitle>
+            <AlertDescription>{saveError}</AlertDescription>
+          </Alert>
         )}
         
         {isLoading && paymentMethods.length === 0 ? (

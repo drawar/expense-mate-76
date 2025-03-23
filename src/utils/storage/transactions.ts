@@ -35,6 +35,7 @@ const saveTransactionsToLocalStorage = (transactions: Transaction[]): void => {
     console.log('Transactions saved to local storage:', transactions.length);
   } catch (error) {
     console.error('Error saving transactions to local storage:', error);
+    throw new Error('Failed to save transaction to local storage');
   }
 };
 
@@ -161,7 +162,17 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
   // If we're forcing local storage, skip Supabase attempt
   if (forceLocalStorage) {
     console.log('Directly using local storage for transaction');
-    return saveTransactionToLocalStorage(transaction);
+    try {
+      // For local storage, we need to handle merchant lookup ourselves
+      // to avoid duplicate merchant entries
+      const existingMerchant = await getMerchantByName(transaction.merchant.name);
+      const merchant = existingMerchant || transaction.merchant;
+      
+      return saveTransactionToLocalStorage(transaction, merchant);
+    } catch (error) {
+      console.error('Error saving to local storage:', error);
+      throw new Error('Failed to save transaction to local storage');
+    }
   }
   
   try {
@@ -221,7 +232,14 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
   } catch (error) {
     console.error('Exception in addTransaction, using local storage fallback:', error);
     
-    return saveTransactionToLocalStorage(transaction);
+    try {
+      // For fallback, try to get existing merchant to prevent duplicates
+      const existingMerchant = await getMerchantByName(transaction.merchant.name);
+      return saveTransactionToLocalStorage(transaction, existingMerchant);
+    } catch (innerError) {
+      console.error('Error in local storage fallback:', innerError);
+      throw new Error('Failed to save transaction');
+    }
   }
 };
 
@@ -230,44 +248,70 @@ const saveTransactionToLocalStorage = async (
   transaction: Omit<Transaction, 'id'>, 
   savedMerchant?: any
 ): Promise<Transaction> => {
-  // Generate a random UUID for the transaction
-  const id = crypto.randomUUID();
-  
-  // Ensure we have a merchant with an ID
-  const merchant = savedMerchant || {
-    ...transaction.merchant,
-    id: crypto.randomUUID(),
-  };
-  
-  // Create the transaction object
-  const newTransaction: Transaction = {
-    id,
-    date: transaction.date,
-    merchant,
-    amount: Number(transaction.amount),
-    currency: transaction.currency,
-    paymentMethod: transaction.paymentMethod,
-    paymentAmount: Number(transaction.paymentAmount),
-    paymentCurrency: transaction.paymentCurrency,
-    rewardPoints: transaction.rewardPoints,
-    notes: transaction.notes,
-    category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
-    isContactless: transaction.isContactless,
-  };
-  
-  // Get existing transactions from local storage
-  const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
-  const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
-  
-  // Add the new transaction
-  transactions.push(newTransaction);
-  
-  // Save to local storage
-  saveTransactionsToLocalStorage(transactions);
-  
-  console.log('Transaction saved to local storage:', newTransaction);
-  
-  return newTransaction;
+  try {
+    // Generate a random UUID for the transaction
+    const id = crypto.randomUUID();
+    
+    // If we don't have a saved merchant, create one with a unique ID
+    let merchant;
+    if (!savedMerchant) {
+      // Try to find an existing merchant with the same name to prevent duplicates
+      const existingMerchants = JSON.parse(localStorage.getItem('expenseTracker_merchants') || '[]');
+      merchant = existingMerchants.find((m: any) => 
+        m.name.toLowerCase() === transaction.merchant.name.toLowerCase()
+      );
+      
+      if (!merchant) {
+        // Create a new merchant if none exists
+        merchant = {
+          ...transaction.merchant,
+          id: crypto.randomUUID(),
+        };
+        
+        // Save the new merchant to localStorage
+        existingMerchants.push(merchant);
+        localStorage.setItem('expenseTracker_merchants', JSON.stringify(existingMerchants));
+        console.log('New merchant saved to local storage:', merchant);
+      } else {
+        console.log('Using existing merchant from local storage:', merchant);
+      }
+    } else {
+      merchant = savedMerchant;
+    }
+    
+    // Create the transaction object
+    const newTransaction: Transaction = {
+      id,
+      date: transaction.date,
+      merchant,
+      amount: Number(transaction.amount),
+      currency: transaction.currency,
+      paymentMethod: transaction.paymentMethod,
+      paymentAmount: Number(transaction.paymentAmount || transaction.amount),
+      paymentCurrency: transaction.paymentCurrency || transaction.currency,
+      rewardPoints: transaction.rewardPoints || 0,
+      notes: transaction.notes || '',
+      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code) || 'Uncategorized',
+      isContactless: transaction.isContactless || false,
+    };
+    
+    // Get existing transactions from local storage
+    const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
+    const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
+    
+    // Add the new transaction
+    transactions.push(newTransaction);
+    
+    // Save to local storage
+    saveTransactionsToLocalStorage(transactions);
+    
+    console.log('Transaction saved to local storage:', newTransaction);
+    
+    return newTransaction;
+  } catch (error) {
+    console.error('Error in saveTransactionToLocalStorage:', error);
+    throw new Error('Failed to save transaction to local storage');
+  }
 };
 
 // Edit an existing transaction
