@@ -1,7 +1,14 @@
 
 // Centralized exports from refactored modules
 export { MCC_CODES } from './constants/mcc';
-export { getTransactions, saveTransactions, addTransaction } from './storage/transactions';
+export { 
+  getTransactions, 
+  saveTransactions, 
+  addTransaction,
+  editTransaction,
+  deleteTransaction,
+  exportTransactionsToCSV
+} from './storage/transactions';
 export { getPaymentMethods, savePaymentMethods } from './storage/paymentMethods';
 export { 
   getMerchants, 

@@ -2,11 +2,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction, PaymentMethod, Currency } from '@/types';
-import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
+import { getTransactions, getPaymentMethods, deleteTransaction, editTransaction } from '@/utils/storageUtils';
 import { formatDate } from '@/utils/dateUtils';
 import Navbar from '@/components/layout/Navbar';
 import TransactionCard from '@/components/expense/TransactionCard';
+import TransactionTable from '@/components/expense/TransactionTable';
+import TransactionDialog from '@/components/expense/TransactionDialog';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import {
   PlusCircleIcon,
   FilterIcon,
@@ -15,6 +18,8 @@ import {
   SearchIcon,
   CheckIcon,
   XIcon,
+  TableIcon,
+  GridIcon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,8 +36,17 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { currencyOptions } from '@/utils/currencyFormatter';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
 
@@ -44,7 +58,10 @@ type FilterOptions = {
   endDate: string;
 };
 
+type ViewMode = 'grid' | 'table';
+
 const Transactions = () => {
+  const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
@@ -59,24 +76,31 @@ const Transactions = () => {
   });
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('view');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   
   // Load data
   useEffect(() => {
-    const loadedTransactions = getTransactions();
-    const loadedPaymentMethods = getPaymentMethods();
+    const loadData = () => {
+      const loadedTransactions = getTransactions();
+      const loadedPaymentMethods = getPaymentMethods();
+      
+      setTransactions(loadedTransactions);
+      setPaymentMethods(loadedPaymentMethods);
+      setIsLoading(false);
+    };
     
-    setTransactions(loadedTransactions);
-    setPaymentMethods(loadedPaymentMethods);
-    setIsLoading(false);
+    loadData();
     
     // Add event listener for storage changes
-    window.addEventListener('storage', () => {
-      setTransactions(getTransactions());
-      setPaymentMethods(getPaymentMethods());
-    });
+    window.addEventListener('storage', loadData);
     
     return () => {
-      window.removeEventListener('storage', () => {});
+      window.removeEventListener('storage', loadData);
     };
   }, []);
   
@@ -166,6 +190,82 @@ const Transactions = () => {
       startDate: '',
       endDate: '',
     });
+  };
+  
+  const handleViewTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDialogMode('view');
+    setIsTransactionDialogOpen(true);
+  };
+  
+  const handleEditTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDialogMode('edit');
+    setIsTransactionDialogOpen(true);
+  };
+  
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+    setDeleteConfirmOpen(true);
+  };
+  
+  const confirmDeleteTransaction = () => {
+    if (!transactionToDelete) return;
+    
+    const success = deleteTransaction(transactionToDelete.id);
+    
+    if (success) {
+      // Update the local state
+      setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+      
+      toast({
+        title: "Transaction deleted",
+        description: "The transaction has been successfully deleted.",
+      });
+      
+      // Trigger storage event to update other components
+      window.dispatchEvent(new Event('storage'));
+      
+      // Close dialogs
+      setDeleteConfirmOpen(false);
+      setIsTransactionDialogOpen(false);
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete the transaction.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleSaveEdit = (updatedTransaction: Omit<Transaction, 'id'>) => {
+    if (!selectedTransaction) return;
+    
+    const result = editTransaction(selectedTransaction.id, updatedTransaction);
+    
+    if (result) {
+      // Update the local state
+      setTransactions(prev => 
+        prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
+      );
+      
+      toast({
+        title: "Transaction updated",
+        description: "The transaction has been successfully updated.",
+      });
+      
+      // Trigger storage event to update other components
+      window.dispatchEvent(new Event('storage'));
+      
+      // Close dialog
+      setIsTransactionDialogOpen(false);
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update the transaction.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
@@ -349,6 +449,27 @@ const Transactions = () => {
                   </SelectItem>
                 </SelectContent>
               </Select>
+              
+              <div className="hidden sm:flex border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="icon"
+                  className="rounded-r-none"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <GridIcon className="h-4 w-4" />
+                  <span className="sr-only">Grid View</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="icon"
+                  className="rounded-l-none"
+                  onClick={() => setViewMode('table')}
+                >
+                  <TableIcon className="h-4 w-4" />
+                  <span className="sr-only">Table View</span>
+                </Button>
+              </div>
             </div>
           </div>
           
@@ -399,51 +520,106 @@ const Transactions = () => {
             )}
           </div>
         ) : (
-          <>
-            {/* Transaction List */}
-            <div className="space-y-4">
-              {/* Group transactions by date */}
-              {Object.entries(
-                filteredTransactions.reduce<Record<string, Transaction[]>>((groups, transaction) => {
-                  const date = transaction.date;
-                  if (!groups[date]) {
-                    groups[date] = [];
-                  }
-                  groups[date].push(transaction);
-                  return groups;
-                }, {})
-              )
-                .sort(([dateA], [dateB]) => {
-                  return sortOption.includes('desc')
-                    ? new Date(dateB).getTime() - new Date(dateA).getTime()
-                    : new Date(dateA).getTime() - new Date(dateB).getTime();
-                })
-                .map(([date, dateTransactions]) => (
-                  <div key={date}>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 sticky top-[146px] bg-background py-2 z-10">
-                      {formatDate(date)}
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                      {dateTransactions.map((transaction) => (
-                        <TransactionCard
-                          key={transaction.id}
-                          transaction={transaction}
-                          className="animate-fade-in"
-                        />
-                      ))}
+          <div className="space-y-8">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="sm:hidden">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="grid">Card View</TabsTrigger>
+                <TabsTrigger value="table">Table View</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <TabsContent value="grid" className="mt-0">
+              {/* Grid View: Group transactions by date */}
+              <div className="space-y-6">
+                {Object.entries(
+                  filteredTransactions.reduce<Record<string, Transaction[]>>((groups, transaction) => {
+                    const date = transaction.date;
+                    if (!groups[date]) {
+                      groups[date] = [];
+                    }
+                    groups[date].push(transaction);
+                    return groups;
+                  }, {})
+                )
+                  .sort(([dateA], [dateB]) => {
+                    return sortOption.includes('desc')
+                      ? new Date(dateB).getTime() - new Date(dateA).getTime()
+                      : new Date(dateA).getTime() - new Date(dateB).getTime();
+                  })
+                  .map(([date, dateTransactions]) => (
+                    <div key={date}>
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 sticky top-[146px] bg-background py-2 z-10">
+                        {formatDate(date)}
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                        {dateTransactions.map((transaction) => (
+                          <TransactionCard
+                            key={transaction.id}
+                            transaction={transaction}
+                            className="cursor-pointer animate-fade-in"
+                            onClick={() => handleViewTransaction(transaction)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-            </div>
+                  ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="table" className="mt-0">
+              {/* Table View */}
+              <TransactionTable
+                transactions={filteredTransactions}
+                paymentMethods={paymentMethods}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+                onView={handleViewTransaction}
+              />
+            </TabsContent>
             
             {/* Summary */}
-            <div className="mt-8 text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               Showing {filteredTransactions.length} of {transactions.length} transactions
             </div>
-          </>
+          </div>
         )}
       </main>
+      
+      {/* Transaction Dialog */}
+      {selectedTransaction && (
+        <TransactionDialog
+          transaction={selectedTransaction}
+          paymentMethods={paymentMethods}
+          allTransactions={transactions}
+          isOpen={isTransactionDialogOpen}
+          mode={dialogMode}
+          onClose={() => setIsTransactionDialogOpen(false)}
+          onEdit={handleEditTransaction}
+          onDelete={handleDeleteTransaction}
+          onSave={handleSaveEdit}
+        />
+      )}
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteTransaction}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

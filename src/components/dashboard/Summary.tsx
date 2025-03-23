@@ -102,6 +102,12 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     })
   );
   
+  // Custom label for pie charts
+  const renderCustomizedLabel = ({ name, percent }: { name: string; percent: number }) => {
+    const shortName = name.length > 10 ? `${name.substring(0, 10)}...` : name;
+    return `${shortName} ${(percent * 100).toFixed(0)}%`;
+  };
+  
   return (
     <div className="space-y-6 w-full">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -194,7 +200,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
                         paddingAngle={2}
                         dataKey="value"
                         labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={renderCustomizedLabel}
                       >
                         {paymentMethodChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -231,10 +237,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
                         paddingAngle={2}
                         dataKey="value"
                         labelLine={false}
-                        label={({ name, percent }) => {
-                          const shortName = name.length > 15 ? `${name.substring(0, 12)}...` : name;
-                          return `${shortName} ${(percent * 100).toFixed(0)}%`;
-                        }}
+                        label={renderCustomizedLabel}
                       >
                         {categoryChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
