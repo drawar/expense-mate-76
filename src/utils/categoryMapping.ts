@@ -86,8 +86,16 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
     return 'Financial Services';
   }
   
-  // For any other MCC code that starts with 5 and is not explicitly categorized
+  // Default categorization logic by prefix
+  
+  // For any other MCC code that starts with 5
   if (mccCode.startsWith('5')) {
+    // Restaurant-like establishments (added for common restaurant MCCs)
+    if (['5812', '5813', '5814'].includes(mccCode) || 
+        mccCode.includes('581') || // Any code starting with 581 is food-related
+        mccCode.includes('58')) {  // Any code starting with 58 is likely food-related
+      return 'Food & Drinks';
+    }
     return 'Shopping';
   }
   
@@ -97,4 +105,20 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   return 'Uncategorized';
+};
+
+// Function to determine if a merchant name suggests it's a food establishment
+export const isFoodMerchant = (merchantName: string): boolean => {
+  const foodKeywords = [
+    'restaurant', 'cafe', 'coffee', 'diner', 'bistro', 'pizzeria', 'bakery',
+    'grill', 'eatery', 'kitchen', 'bar', 'pub', 'tavern', 'food court',
+    'steakhouse', 'bbq', 'barbecue', 'sushi', 'thai', 'chinese', 'italian',
+    'mexican', 'burger', 'sandwich', 'noodle', 'chicken', 'kopitiam',
+    'hawker', 'food', 'dining', 'dine', 'eat', 'meal', 'lunch', 'dinner',
+    'breakfast', 'brunch', 'snack', 'tea', 'drink', 'juice', 'smoothie'
+  ];
+  
+  const lowerName = merchantName.toLowerCase();
+  
+  return foodKeywords.some(keyword => lowerName.includes(keyword));
 };

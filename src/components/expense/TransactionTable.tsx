@@ -94,7 +94,11 @@ const TransactionTable = ({
                       {transaction.isContactless && !transaction.merchant.isOnline && ' • Contactless'}
                     </div>
                   </TableCell>
-                  <TableCell>{transaction.merchant.mcc?.description || 'Uncategorized'}</TableCell>
+                  <TableCell>
+                    {transaction.category || 
+                     (transaction.merchant.mcc?.description ? 
+                      `${transaction.merchant.mcc.description}` : 'Uncategorized')}
+                  </TableCell>
                   <TableCell>
                     <div>{formatCurrency(transaction.amount, transaction.currency)}</div>
                     {transaction.currency !== transaction.paymentCurrency && (
@@ -110,6 +114,8 @@ const TransactionTable = ({
                   <TableCell>
                     {transaction.rewardPoints > 0 ? (
                       <div className="font-medium">{transaction.rewardPoints.toLocaleString()}</div>
+                    ) : transaction.paymentMethod.type === 'credit_card' ? (
+                      <div className="text-muted-foreground">0</div>
                     ) : (
                       <div className="text-muted-foreground">-</div>
                     )}
