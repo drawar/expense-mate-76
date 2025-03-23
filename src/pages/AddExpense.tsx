@@ -7,47 +7,58 @@ import ExpenseForm from '@/components/expense/ExpenseForm';
 import Navbar from '@/components/layout/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 
 const AddExpense = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);
+  const [useLocalStorage, setUseLocalStorage] = useState<boolean>(USE_LOCAL_STORAGE_DEFAULT);
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check Supabase connection
+  // Check Supabase connection only if not defaulting to local storage
   useEffect(() => {
-    const checkSupabaseConnection = async () => {
-      try {
-        console.log('Checking Supabase connection...');
-        const { data, error } = await supabase.from('payment_methods').select('id').limit(1);
-        
-        if (error) {
-          console.error('Supabase connection error:', error);
+    if (!USE_LOCAL_STORAGE_DEFAULT) {
+      const checkSupabaseConnection = async () => {
+        try {
+          console.log('Checking Supabase connection...');
+          const { data, error } = await supabase.from('payment_methods').select('id').limit(1);
+          
+          if (error) {
+            console.error('Supabase connection error:', error);
+            setSupabaseConnected(false);
+            setUseLocalStorage(true);
+            toast({
+              title: 'Warning',
+              description: 'Supabase connection failed. Using local storage fallback.',
+              variant: 'destructive',
+            });
+          } else {
+            console.log('Supabase connection successful');
+            setSupabaseConnected(true);
+            setUseLocalStorage(false);
+          }
+        } catch (error) {
+          console.error('Error checking Supabase connection:', error);
           setSupabaseConnected(false);
+          setUseLocalStorage(true);
           toast({
             title: 'Warning',
             description: 'Supabase connection failed. Using local storage fallback.',
             variant: 'destructive',
           });
-        } else {
-          console.log('Supabase connection successful');
-          setSupabaseConnected(true);
         }
-      } catch (error) {
-        console.error('Error checking Supabase connection:', error);
-        setSupabaseConnected(false);
-        toast({
-          title: 'Warning',
-          description: 'Supabase connection failed. Using local storage fallback.',
-          variant: 'destructive',
-        });
-      }
-    };
-    
-    checkSupabaseConnection();
+      };
+      
+      checkSupabaseConnection();
+    } else {
+      // Default to local storage without checking Supabase
+      setSupabaseConnected(false);
+      setUseLocalStorage(true);
+      console.log('Using local storage by default.');
+    }
   }, [toast]);
   
   useEffect(() => {
@@ -119,15 +130,16 @@ const AddExpense = () => {
         date: transactionData.date
       });
       
-      const result = await addTransaction(transactionData);
+      // Force local storage usage
+      const result = await addTransaction(transactionData, useLocalStorage);
       
       console.log('Transaction saved successfully:', result);
       
       toast({
         title: 'Success',
-        description: supabaseConnected 
-          ? 'Transaction saved successfully to Supabase' 
-          : 'Transaction saved successfully to local storage',
+        description: useLocalStorage 
+          ? 'Transaction saved successfully to local storage' 
+          : 'Transaction saved successfully to Supabase',
       });
       
       // Navigate back to the dashboard
@@ -173,12 +185,12 @@ const AddExpense = () => {
           </p>
         </div>
         
-        {supabaseConnected === false && (
+        {useLocalStorage && (
           <div className="mb-4 p-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-md flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Supabase connection unavailable</p>
-              <p>Transactions will be saved to local storage instead. Your data will only be available on this device.</p>
+              <p className="font-semibold">Using local storage</p>
+              <p>Transactions will be saved to local storage. Your data will only be available on this device.</p>
             </div>
           </div>
         )}

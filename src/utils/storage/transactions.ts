@@ -39,7 +39,14 @@ const saveTransactionsToLocalStorage = (transactions: Transaction[]): void => {
 };
 
 // Get transactions from Supabase with local storage fallback
-export const getTransactions = async (): Promise<Transaction[]> => {
+export const getTransactions = async (forceLocalStorage = false): Promise<Transaction[]> => {
+  // If we're forcing local storage, skip Supabase attempt
+  if (forceLocalStorage) {
+    console.log('Forcing local storage for transactions');
+    const stored = localStorage.getItem(TRANSACTIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  }
+  
   try {
     const { data, error } = await supabase
       .from('transactions')
@@ -139,8 +146,8 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 };
 
 // Add a new transaction with local storage fallback
-export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction> => {
-  console.log('Adding transaction to database:', transaction);
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>, forceLocalStorage = false): Promise<Transaction> => {
+  console.log('Adding transaction, force local storage:', forceLocalStorage);
   
   // First ensure the merchant exists
   if (!transaction.merchant || !transaction.merchant.name) {
@@ -149,6 +156,12 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   
   if (!transaction.paymentMethod || !transaction.paymentMethod.id) {
     throw new Error('Payment method information is missing');
+  }
+  
+  // If we're forcing local storage, skip Supabase attempt
+  if (forceLocalStorage) {
+    console.log('Directly using local storage for transaction');
+    return saveTransactionToLocalStorage(transaction);
   }
   
   try {
@@ -185,38 +198,7 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
       // If Supabase fails, fall back to local storage
       console.error('Error adding transaction to Supabase, using local storage fallback:', error);
       
-      // Generate a random UUID for the transaction
-      const id = crypto.randomUUID();
-      
-      // Create the transaction object
-      const newTransaction: Transaction = {
-        id,
-        date: transaction.date,
-        merchant: savedMerchant,
-        amount: Number(transaction.amount),
-        currency: transaction.currency,
-        paymentMethod: transaction.paymentMethod,
-        paymentAmount: Number(transaction.paymentAmount),
-        paymentCurrency: transaction.paymentCurrency,
-        rewardPoints: transaction.rewardPoints,
-        notes: transaction.notes,
-        category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
-        isContactless: transaction.isContactless,
-      };
-      
-      // Get existing transactions from local storage
-      const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
-      const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
-      
-      // Add the new transaction
-      transactions.push(newTransaction);
-      
-      // Save to local storage
-      saveTransactionsToLocalStorage(transactions);
-      
-      console.log('Transaction saved to local storage:', newTransaction);
-      
-      return newTransaction;
+      return saveTransactionToLocalStorage(transaction, savedMerchant);
     }
     
     console.log('Transaction saved successfully to Supabase:', data);
@@ -239,42 +221,53 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   } catch (error) {
     console.error('Exception in addTransaction, using local storage fallback:', error);
     
-    // Generate a random UUID for the transaction
-    const id = crypto.randomUUID();
-    
-    // Create the transaction object
-    const newTransaction: Transaction = {
-      id,
-      date: transaction.date,
-      merchant: {
-        ...transaction.merchant,
-        id: crypto.randomUUID(),
-      },
-      amount: Number(transaction.amount),
-      currency: transaction.currency,
-      paymentMethod: transaction.paymentMethod,
-      paymentAmount: Number(transaction.paymentAmount),
-      paymentCurrency: transaction.paymentCurrency,
-      rewardPoints: transaction.rewardPoints,
-      notes: transaction.notes,
-      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
-      isContactless: transaction.isContactless,
-    };
-    
-    // Get existing transactions from local storage
-    const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
-    const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
-    
-    // Add the new transaction
-    transactions.push(newTransaction);
-    
-    // Save to local storage
-    saveTransactionsToLocalStorage(transactions);
-    
-    console.log('Transaction saved to local storage due to exception:', newTransaction);
-    
-    return newTransaction;
+    return saveTransactionToLocalStorage(transaction);
   }
+};
+
+// Helper function to save a transaction to local storage
+const saveTransactionToLocalStorage = async (
+  transaction: Omit<Transaction, 'id'>, 
+  savedMerchant?: any
+): Promise<Transaction> => {
+  // Generate a random UUID for the transaction
+  const id = crypto.randomUUID();
+  
+  // Ensure we have a merchant with an ID
+  const merchant = savedMerchant || {
+    ...transaction.merchant,
+    id: crypto.randomUUID(),
+  };
+  
+  // Create the transaction object
+  const newTransaction: Transaction = {
+    id,
+    date: transaction.date,
+    merchant,
+    amount: Number(transaction.amount),
+    currency: transaction.currency,
+    paymentMethod: transaction.paymentMethod,
+    paymentAmount: Number(transaction.paymentAmount),
+    paymentCurrency: transaction.paymentCurrency,
+    rewardPoints: transaction.rewardPoints,
+    notes: transaction.notes,
+    category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
+    isContactless: transaction.isContactless,
+  };
+  
+  // Get existing transactions from local storage
+  const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
+  const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
+  
+  // Add the new transaction
+  transactions.push(newTransaction);
+  
+  // Save to local storage
+  saveTransactionsToLocalStorage(transactions);
+  
+  console.log('Transaction saved to local storage:', newTransaction);
+  
+  return newTransaction;
 };
 
 // Edit an existing transaction
