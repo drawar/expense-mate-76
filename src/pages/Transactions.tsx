@@ -1,69 +1,28 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Transaction, PaymentMethod, Currency } from '@/types';
+import { Transaction } from '@/types';
 import { getTransactions, getPaymentMethods, deleteTransaction, editTransaction } from '@/utils/storageUtils';
-import { formatDate } from '@/utils/dateUtils';
 import Navbar from '@/components/layout/Navbar';
-import TransactionCard from '@/components/expense/TransactionCard';
-import TransactionTable from '@/components/expense/TransactionTable';
 import TransactionDialog from '@/components/expense/TransactionDialog';
+import { PlusCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import {
-  PlusCircleIcon,
-  FilterIcon,
-  SortAscIcon,
-  SortDescIcon,
-  SearchIcon,
-  CheckIcon,
-  XIcon,
-  TableIcon,
-  GridIcon,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { currencyOptions } from '@/utils/currencyFormatter';
-import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
-type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
-
-type FilterOptions = {
-  merchantName: string;
-  paymentMethodId: string;
-  currency: string;
-  startDate: string;
-  endDate: string;
-};
-
-type ViewMode = 'grid' | 'table';
+// Import new components
+import TransactionSearchBar from '@/components/transaction/TransactionSearchBar';
+import TransactionFilters, { FilterOptions } from '@/components/transaction/TransactionFilters';
+import TransactionSortAndView, { SortOption, ViewMode } from '@/components/transaction/TransactionSortAndView';
+import TransactionGroupView from '@/components/transaction/TransactionGroupView';
+import TransactionTable from '@/components/expense/TransactionTable';
+import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
+import TransactionEmptyState from '@/components/transaction/TransactionEmptyState';
 
 const Transactions = () => {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -292,206 +251,31 @@ const Transactions = () => {
         {/* Search and Filter Bar */}
         <div className="sticky top-[72px] z-20 bg-background py-4 mb-6 border-b">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search transactions..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            {/* Search Bar */}
+            <TransactionSearchBar 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
             
             <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <FilterIcon className="h-4 w-4" />
-                    Filter
-                    {activeFilters.length > 0 && (
-                      <Badge variant="secondary" className="ml-1 px-1 min-w-[20px]">
-                        {activeFilters.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Filter Transactions</h4>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="merchant-filter">Merchant</Label>
-                      <Input
-                        id="merchant-filter"
-                        placeholder="Enter merchant name"
-                        value={filterOptions.merchantName}
-                        onChange={(e) => handleFilterChange('merchantName', e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="payment-method-filter">Payment Method</Label>
-                      <Select
-                        value={filterOptions.paymentMethodId}
-                        onValueChange={(value) => handleFilterChange('paymentMethodId', value)}
-                      >
-                        <SelectTrigger id="payment-method-filter">
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Payment Methods</SelectItem>
-                          {paymentMethods.map((method) => (
-                            <SelectItem key={method.id} value={method.id}>
-                              {method.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="currency-filter">Currency</Label>
-                      <Select
-                        value={filterOptions.currency}
-                        onValueChange={(value) => handleFilterChange('currency', value)}
-                      >
-                        <SelectTrigger id="currency-filter">
-                          <SelectValue placeholder="Select currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Currencies</SelectItem>
-                          {currencyOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="start-date">Start Date</Label>
-                        <Input
-                          id="start-date"
-                          type="date"
-                          value={filterOptions.startDate}
-                          onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="end-date">End Date</Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={filterOptions.endDate}
-                          onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={resetFilters}
-                      >
-                        <XIcon className="h-4 w-4" />
-                        Reset
-                      </Button>
-                      
-                      <Button
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => document.body.click()} // Close popover
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              {/* Filters */}
+              <TransactionFilters
+                filterOptions={filterOptions}
+                activeFilters={activeFilters}
+                paymentMethods={paymentMethods}
+                onFilterChange={handleFilterChange}
+                onResetFilters={resetFilters}
+              />
               
-              <Select
-                value={sortOption}
-                onValueChange={(value) => setSortOption(value as SortOption)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date-desc">
-                    <div className="flex items-center">
-                      <SortDescIcon className="h-4 w-4 mr-2" />
-                      Newest First
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="date-asc">
-                    <div className="flex items-center">
-                      <SortAscIcon className="h-4 w-4 mr-2" />
-                      Oldest First
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="amount-desc">
-                    <div className="flex items-center">
-                      <SortDescIcon className="h-4 w-4 mr-2" />
-                      Highest Amount
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="amount-asc">
-                    <div className="flex items-center">
-                      <SortAscIcon className="h-4 w-4 mr-2" />
-                      Lowest Amount
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="hidden sm:flex border rounded-md">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="icon"
-                  className="rounded-r-none"
-                  onClick={() => setViewMode('grid')}
-                >
-                  <GridIcon className="h-4 w-4" />
-                  <span className="sr-only">Grid View</span>
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="icon"
-                  className="rounded-l-none"
-                  onClick={() => setViewMode('table')}
-                >
-                  <TableIcon className="h-4 w-4" />
-                  <span className="sr-only">Table View</span>
-                </Button>
-              </div>
+              {/* Sort and View Options */}
+              <TransactionSortAndView
+                sortOption={sortOption}
+                viewMode={viewMode}
+                onSortChange={setSortOption}
+                onViewChange={setViewMode}
+              />
             </div>
           </div>
-          
-          {/* Active Filters */}
-          {activeFilters.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {activeFilters.map((filter) => (
-                <Badge key={filter} variant="secondary" className="gap-1">
-                  {filter}
-                </Badge>
-              ))}
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={resetFilters}
-              >
-                Clear All
-              </Button>
-            </div>
-          )}
         </div>
         
         {isLoading ? (
@@ -499,26 +283,10 @@ const Transactions = () => {
             Loading transactions...
           </div>
         ) : filteredTransactions.length === 0 ? (
-          <div className="glass-card rounded-xl p-8 text-center">
-            <p className="text-muted-foreground mb-4">
-              {transactions.length === 0
-                ? 'No transactions recorded yet.'
-                : 'No transactions match your filters.'}
-            </p>
-            
-            {transactions.length === 0 ? (
-              <Link to="/add-expense">
-                <Button>
-                  <PlusCircleIcon className="mr-2 h-4 w-4" />
-                  Record Your First Expense
-                </Button>
-              </Link>
-            ) : (
-              <Button variant="outline" onClick={resetFilters}>
-                Reset Filters
-              </Button>
-            )}
-          </div>
+          <TransactionEmptyState 
+            hasTransactions={transactions.length > 0}
+            onResetFilters={resetFilters}
+          />
         ) : (
           <div className="space-y-8">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="sm:hidden">
@@ -529,42 +297,12 @@ const Transactions = () => {
             </Tabs>
             
             <TabsContent value="grid" className="mt-0">
-              {/* Grid View: Group transactions by date */}
-              <div className="space-y-6">
-                {Object.entries(
-                  filteredTransactions.reduce<Record<string, Transaction[]>>((groups, transaction) => {
-                    const date = transaction.date;
-                    if (!groups[date]) {
-                      groups[date] = [];
-                    }
-                    groups[date].push(transaction);
-                    return groups;
-                  }, {})
-                )
-                  .sort(([dateA], [dateB]) => {
-                    return sortOption.includes('desc')
-                      ? new Date(dateB).getTime() - new Date(dateA).getTime()
-                      : new Date(dateA).getTime() - new Date(dateB).getTime();
-                  })
-                  .map(([date, dateTransactions]) => (
-                    <div key={date}>
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 sticky top-[146px] bg-background py-2 z-10">
-                        {formatDate(date)}
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                        {dateTransactions.map((transaction) => (
-                          <TransactionCard
-                            key={transaction.id}
-                            transaction={transaction}
-                            className="cursor-pointer animate-fade-in"
-                            onClick={() => handleViewTransaction(transaction)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </div>
+              {/* Grid View */}
+              <TransactionGroupView
+                transactions={filteredTransactions}
+                sortOption={sortOption}
+                onViewTransaction={handleViewTransaction}
+              />
             </TabsContent>
             
             <TabsContent value="table" className="mt-0">
@@ -602,24 +340,11 @@ const Transactions = () => {
       )}
       
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this transaction? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteTransaction}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TransactionDeleteDialog
+        isOpen={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirmDelete={confirmDeleteTransaction}
+      />
     </div>
   );
 };
