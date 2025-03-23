@@ -9,7 +9,150 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      merchants: {
+        Row: {
+          address: string | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          is_online: boolean | null
+          mcc: Json | null
+          name: string
+        }
+        Insert: {
+          address?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          mcc?: Json | null
+          name: string
+        }
+        Update: {
+          address?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          mcc?: Json | null
+          name?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          active: boolean
+          color: string | null
+          conversion_rate: Json | null
+          created_at: string | null
+          currency: string
+          icon: string | null
+          id: string
+          is_monthly_statement: boolean | null
+          issuer: string | null
+          last_four_digits: string | null
+          name: string
+          reward_rules: Json | null
+          statement_start_day: number | null
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string | null
+          conversion_rate?: Json | null
+          created_at?: string | null
+          currency: string
+          icon?: string | null
+          id?: string
+          is_monthly_statement?: boolean | null
+          issuer?: string | null
+          last_four_digits?: string | null
+          name: string
+          reward_rules?: Json | null
+          statement_start_day?: number | null
+          type: string
+        }
+        Update: {
+          active?: boolean
+          color?: string | null
+          conversion_rate?: Json | null
+          created_at?: string | null
+          currency?: string
+          icon?: string | null
+          id?: string
+          is_monthly_statement?: boolean | null
+          issuer?: string | null
+          last_four_digits?: string | null
+          name?: string
+          reward_rules?: Json | null
+          statement_start_day?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          currency: string
+          date: string
+          id: string
+          is_contactless: boolean | null
+          merchant_id: string
+          notes: string | null
+          payment_amount: number
+          payment_currency: string
+          payment_method_id: string
+          reward_points: number | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          currency: string
+          date: string
+          id?: string
+          is_contactless?: boolean | null
+          merchant_id: string
+          notes?: string | null
+          payment_amount: number
+          payment_currency: string
+          payment_method_id: string
+          reward_points?: number | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          currency?: string
+          date?: string
+          id?: string
+          is_contactless?: boolean | null
+          merchant_id?: string
+          notes?: string | null
+          payment_amount?: number
+          payment_currency?: string
+          payment_method_id?: string
+          reward_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PaymentMethod, Currency, RewardRule } from '@/types';
@@ -23,8 +22,6 @@ import {
   ToggleRightIcon,
   CoinsIcon,
   CalendarIcon,
-  CheckIcon,
-  XIcon,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,27 +50,53 @@ const PaymentMethods = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentMethod, setCurrentMethod] = useState<PaymentMethod | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
   // Load payment methods
   useEffect(() => {
-    const methods = getPaymentMethods();
-    setPaymentMethods(methods);
-  }, []);
+    const loadPaymentMethods = async () => {
+      try {
+        setIsLoading(true);
+        const methods = await getPaymentMethods();
+        setPaymentMethods(methods);
+      } catch (error) {
+        console.error('Error loading payment methods:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load payment methods',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPaymentMethods();
+  }, [toast]);
   
   // Toggle payment method active status
-  const toggleActiveStatus = (id: string) => {
-    const updatedMethods = paymentMethods.map(method => 
-      method.id === id ? { ...method, active: !method.active } : method
-    );
-    
-    setPaymentMethods(updatedMethods);
-    savePaymentMethods(updatedMethods);
-    
-    toast({
-      title: 'Status Updated',
-      description: `Payment method ${updatedMethods.find(m => m.id === id)?.active ? 'activated' : 'deactivated'}`,
-    });
+  const toggleActiveStatus = async (id: string) => {
+    try {
+      const updatedMethods = paymentMethods.map(method => 
+        method.id === id ? { ...method, active: !method.active } : method
+      );
+      
+      setPaymentMethods(updatedMethods);
+      await savePaymentMethods(updatedMethods);
+      
+      toast({
+        title: 'Status Updated',
+        description: `Payment method ${updatedMethods.find(m => m.id === id)?.active ? 'activated' : 'deactivated'}`,
+      });
+    } catch (error) {
+      console.error('Error toggling payment method status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update payment method status',
+        variant: 'destructive',
+      });
+    }
   };
   
   // Open dialog to edit a payment method
@@ -101,62 +123,88 @@ const PaymentMethods = () => {
   };
   
   // Handle form submission
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
     
-    const name = formData.get('name') as string;
-    const type = formData.get('type') as 'cash' | 'credit_card';
-    const currency = formData.get('currency') as Currency;
-    const active = !!formData.get('active');
-    
-    // Credit card specific fields
-    const lastFourDigits = type === 'credit_card' ? formData.get('lastFourDigits') as string : undefined;
-    const issuer = type === 'credit_card' ? formData.get('issuer') as string : undefined;
-    const statementStartDay = type === 'credit_card' ? Number(formData.get('statementStartDay')) : undefined;
-    const isMonthlyStatement = type === 'credit_card' ? formData.get('isMonthlyStatement') === 'on' : undefined;
-    
-    // Create payment method object
-    const paymentMethod: PaymentMethod = {
-      id: isEditing && currentMethod ? currentMethod.id : Date.now().toString(),
-      name,
-      type,
-      currency,
-      active,
-      lastFourDigits,
-      issuer,
-      statementStartDay,
-      isMonthlyStatement,
-      rewardRules: isEditing && currentMethod ? currentMethod.rewardRules : [],
-      icon: type === 'credit_card' ? 'credit-card' : 'banknote',
-      color: type === 'credit_card' ? '#3b82f6' : '#22c55e',
-    };
-    
-    // Update payment methods
-    let updatedMethods: PaymentMethod[];
-    
-    if (isEditing && currentMethod) {
-      updatedMethods = paymentMethods.map(method => 
-        method.id === currentMethod.id ? paymentMethod : method
-      );
-    } else {
-      updatedMethods = [...paymentMethods, paymentMethod];
+    try {
+      setIsLoading(true);
+      const formData = new FormData(event.currentTarget);
+      
+      const name = formData.get('name') as string;
+      const type = formData.get('type') as 'cash' | 'credit_card';
+      const currency = formData.get('currency') as Currency;
+      const active = !!formData.get('active');
+      
+      // Credit card specific fields
+      const lastFourDigits = type === 'credit_card' ? formData.get('lastFourDigits') as string : undefined;
+      const issuer = type === 'credit_card' ? formData.get('issuer') as string : undefined;
+      const statementStartDay = type === 'credit_card' ? Number(formData.get('statementStartDay')) : undefined;
+      const isMonthlyStatement = type === 'credit_card' ? formData.get('isMonthlyStatement') === 'on' : undefined;
+      
+      // Create payment method object
+      const paymentMethod: PaymentMethod = {
+        id: isEditing && currentMethod ? currentMethod.id : Date.now().toString(),
+        name,
+        type,
+        currency,
+        active,
+        lastFourDigits,
+        issuer,
+        statementStartDay,
+        isMonthlyStatement,
+        rewardRules: isEditing && currentMethod ? currentMethod.rewardRules : [],
+        icon: type === 'credit_card' ? 'credit-card' : 'banknote',
+        color: type === 'credit_card' ? '#3b82f6' : '#22c55e',
+      };
+      
+      // Update payment methods
+      let updatedMethods: PaymentMethod[];
+      
+      if (isEditing && currentMethod) {
+        updatedMethods = paymentMethods.map(method => 
+          method.id === currentMethod.id ? paymentMethod : method
+        );
+      } else {
+        updatedMethods = [...paymentMethods, paymentMethod];
+      }
+      
+      setPaymentMethods(updatedMethods);
+      await savePaymentMethods(updatedMethods);
+      
+      toast({
+        title: isEditing ? 'Payment Method Updated' : 'Payment Method Added',
+        description: `${name} has been ${isEditing ? 'updated' : 'added'} successfully`,
+      });
+      
+      handleDialogClose();
+    } catch (error) {
+      console.error('Error saving payment method:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save payment method',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setPaymentMethods(updatedMethods);
-    savePaymentMethods(updatedMethods);
-    
-    toast({
-      title: isEditing ? 'Payment Method Updated' : 'Payment Method Added',
-      description: `${name} has been ${isEditing ? 'updated' : 'added'} successfully`,
-    });
-    
-    handleDialogClose();
   };
   
   // Group payment methods by type
   const creditCards = paymentMethods.filter(method => method.type === 'credit_card');
   const cashMethods = paymentMethods.filter(method => method.type === 'cash');
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container max-w-4xl mx-auto pt-24 pb-20 px-4 sm:px-6">
+          <div className="animate-pulse-slow flex items-center justify-center py-12">
+            Loading payment methods...
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-background">
@@ -513,8 +561,8 @@ const PaymentMethods = () => {
                 <Button type="button" variant="outline" onClick={handleDialogClose}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {isEditing ? 'Update' : 'Add'}
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Saving...' : (isEditing ? 'Update' : 'Add')}
                 </Button>
               </DialogFooter>
             </form>

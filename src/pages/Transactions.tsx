@@ -8,8 +8,8 @@ import { PlusCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
-// Import new components
 import TransactionSearchBar from '@/components/transaction/TransactionSearchBar';
 import TransactionFilters, { FilterOptions } from '@/components/transaction/TransactionFilters';
 import TransactionSortAndView, { SortOption, ViewMode } from '@/components/transaction/TransactionSortAndView';
@@ -42,23 +42,44 @@ const Transactions = () => {
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   
   useEffect(() => {
-    const loadData = () => {
-      const loadedTransactions = getTransactions();
-      const loadedPaymentMethods = getPaymentMethods();
-      
-      setTransactions(loadedTransactions);
-      setPaymentMethods(loadedPaymentMethods);
-      setIsLoading(false);
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const loadedTransactions = await getTransactions();
+        const loadedPaymentMethods = await getPaymentMethods();
+        
+        setTransactions(loadedTransactions);
+        setPaymentMethods(loadedPaymentMethods);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load transaction data',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     loadData();
     
-    window.addEventListener('storage', loadData);
+    const channel = supabase
+      .channel('public:transactions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'transactions'
+      }, async () => {
+        const updatedTransactions = await getTransactions();
+        setTransactions(updatedTransactions);
+      })
+      .subscribe();
     
     return () => {
-      window.removeEventListener('storage', loadData);
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [toast]);
   
   useEffect(() => {
     let filtered = [...transactions];
@@ -160,56 +181,76 @@ const Transactions = () => {
     setDeleteConfirmOpen(true);
   };
   
-  const confirmDeleteTransaction = () => {
+  const confirmDeleteTransaction = async () => {
     if (!transactionToDelete) return;
     
-    const success = deleteTransaction(transactionToDelete.id);
-    
-    if (success) {
-      setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+    try {
+      setIsLoading(true);
+      const success = await deleteTransaction(transactionToDelete.id);
       
-      toast({
-        title: "Transaction deleted",
-        description: "The transaction has been successfully deleted.",
-      });
-      
-      window.dispatchEvent(new Event('storage'));
-      
-      setDeleteConfirmOpen(false);
-      setIsTransactionDialogOpen(false);
-    } else {
+      if (success) {
+        setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+        
+        toast({
+          title: "Transaction deleted",
+          description: "The transaction has been successfully deleted.",
+        });
+        
+        setDeleteConfirmOpen(false);
+        setIsTransactionDialogOpen(false);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete the transaction.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
       toast({
         title: "Error",
         description: "Failed to delete the transaction.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const handleSaveEdit = (updatedTransaction: Omit<Transaction, 'id'>) => {
+  const handleSaveEdit = async (updatedTransaction: Omit<Transaction, 'id'>) => {
     if (!selectedTransaction) return;
     
-    const result = editTransaction(selectedTransaction.id, updatedTransaction);
-    
-    if (result) {
-      setTransactions(prev => 
-        prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
-      );
+    try {
+      setIsLoading(true);
+      const result = await editTransaction(selectedTransaction.id, updatedTransaction);
       
-      toast({
-        title: "Transaction updated",
-        description: "The transaction has been successfully updated.",
-      });
-      
-      window.dispatchEvent(new Event('storage'));
-      
-      setIsTransactionDialogOpen(false);
-    } else {
+      if (result) {
+        setTransactions(prev => 
+          prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
+        );
+        
+        toast({
+          title: "Transaction updated",
+          description: "The transaction has been successfully updated.",
+        });
+        
+        setIsTransactionDialogOpen(false);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update the transaction.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating transaction:', error);
       toast({
         title: "Error",
         description: "Failed to update the transaction.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   

@@ -9,23 +9,20 @@ export {
   deleteTransaction,
   exportTransactionsToCSV
 } from './storage/transactions';
-export { getPaymentMethods, savePaymentMethods } from './storage/paymentMethods';
+export { getPaymentMethods, savePaymentMethods, initializePaymentMethods } from './storage/paymentMethods';
 export { 
   getMerchants, 
-  saveMerchants, 
   getMerchantByName, 
   addOrUpdateMerchant 
 } from './storage/merchants';
 export { defaultPaymentMethods } from './defaults/paymentMethods';
-
-// Import directly to avoid using require()
-import { getPaymentMethods, savePaymentMethods } from './storage/paymentMethods';
-import { defaultPaymentMethods } from './defaults/paymentMethods';
+export { getCategoryFromMCC } from './categoryMapping';
 
 // Initialize storage with default data
-export const initializeStorage = (): void => {
+export const initializeStorage = async (): Promise<void> => {
   // Set up default payment methods if none exist
-  if (!localStorage.getItem('expenseTracker_paymentMethods')) {
-    savePaymentMethods(defaultPaymentMethods);
+  const paymentMethods = await getPaymentMethods();
+  if (paymentMethods.length === 0) {
+    await initializePaymentMethods();
   }
 };

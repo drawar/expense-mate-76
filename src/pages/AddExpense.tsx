@@ -15,14 +15,29 @@ const AddExpense = () => {
   
   useEffect(() => {
     // Load payment methods
-    const methods = getPaymentMethods();
-    setPaymentMethods(methods);
-    setIsLoading(false);
-  }, []);
+    const loadData = async () => {
+      try {
+        const methods = await getPaymentMethods();
+        setPaymentMethods(methods);
+      } catch (error) {
+        console.error('Error loading payment methods:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load payment methods',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [toast]);
   
-  const handleSubmit = (transactionData: Omit<Transaction, 'id'>) => {
+  const handleSubmit = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
-      const newTransaction = addTransaction(transactionData);
+      setIsLoading(true);
+      await addTransaction(transactionData);
       
       toast({
         title: 'Success',
@@ -38,6 +53,8 @@ const AddExpense = () => {
         description: 'Failed to save transaction',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   

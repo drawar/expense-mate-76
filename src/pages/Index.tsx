@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, ArrowUpRightIcon } from 'lucide-react';
 import { Transaction, PaymentMethod } from '@/types';
 import { getTransactions, getPaymentMethods, initializeStorage } from '@/utils/storageUtils';
-import { getCurrentDateString } from '@/utils/dateUtils';
 import TransactionCard from '@/components/expense/TransactionCard';
 import Summary from '@/components/dashboard/Summary';
 import Navbar from '@/components/layout/Navbar';
@@ -16,26 +15,41 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Initialize storage with defaults if needed
-    initializeStorage();
-    
-    // Load transactions and payment methods
-    const loadData = () => {
-      const loadedTransactions = getTransactions();
-      const loadedPaymentMethods = getPaymentMethods();
-      
-      setTransactions(loadedTransactions);
-      setPaymentMethods(loadedPaymentMethods);
-      setLoading(false);
+    // Initialize storage with defaults if needed and load data
+    const loadData = async () => {
+      try {
+        await initializeStorage();
+        
+        const loadedTransactions = await getTransactions();
+        const loadedPaymentMethods = await getPaymentMethods();
+        
+        setTransactions(loadedTransactions);
+        setPaymentMethods(loadedPaymentMethods);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     
     loadData();
     
-    // Add event listener for storage changes
-    window.addEventListener('storage', loadData);
+    // Set up real-time subscription for transactions
+    const channel = supabase
+      .channel('public:transactions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'transactions'
+      }, async () => {
+        // Reload transactions when changes occur
+        const updatedTransactions = await getTransactions();
+        setTransactions(updatedTransactions);
+      })
+      .subscribe();
     
     return () => {
-      window.removeEventListener('storage', loadData);
+      supabase.removeChannel(channel);
     };
   }, []);
   

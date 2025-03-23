@@ -54,13 +54,22 @@ const MerchantDetailsForm = () => {
   const isOnline = form.watch('isOnline');
   
   useEffect(() => {
-    if (merchantName.trim().length >= 3) {
-      const existingMerchant = getMerchantByName(merchantName);
-      if (existingMerchant?.mcc) {
-        setSelectedMCC(existingMerchant.mcc);
+    const fetchMerchantData = async () => {
+      if (merchantName.trim().length >= 3) {
+        try {
+          const existingMerchant = await getMerchantByName(merchantName);
+          if (existingMerchant?.mcc) {
+            setSelectedMCC(existingMerchant.mcc);
+            form.setValue('mcc', existingMerchant.mcc);
+          }
+        } catch (error) {
+          console.error('Error fetching merchant data:', error);
+        }
       }
-    }
-  }, [merchantName]);
+    };
+    
+    fetchMerchantData();
+  }, [merchantName, form]);
 
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
@@ -202,6 +211,7 @@ const MerchantDetailsForm = () => {
             onValueChange={(value) => {
               const mcc = MCC_CODES.find(m => m.code === value);
               setSelectedMCC(mcc);
+              form.setValue('mcc', mcc);
             }}
           >
             <SelectTrigger className="w-full mt-1">
