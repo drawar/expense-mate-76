@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
@@ -19,7 +18,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   
-  // Filter transactions based on selected time period
   useEffect(() => {
     const now = new Date();
     const filteredTxs = transactions.filter(tx => {
@@ -44,22 +42,17 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     setFilteredTransactions(filteredTxs);
   }, [activeTab, transactions]);
   
-  // Calculate total expenses in default currency (USD)
   const totalExpenses = filteredTransactions.reduce(
     (sum, tx) => sum + (tx.currency === 'USD' ? tx.amount : tx.paymentAmount), 
     0
   );
   
-  // Calculate total reward points
   const totalRewardPoints = getTotalRewardPoints(filteredTransactions);
   
-  // Transaction count
   const transactionCount = filteredTransactions.length;
   
-  // Average transaction amount (in USD)
   const averageAmount = transactionCount ? totalExpenses / transactionCount : 0;
   
-  // Group expenses by payment method
   const expensesByPaymentMethod = filteredTransactions.reduce<Record<string, number>>(
     (acc, tx) => {
       const methodName = tx.paymentMethod.name;
@@ -71,10 +64,8 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     }, {}
   );
   
-  // Group expenses by merchant category
   const expensesByCategory = filteredTransactions.reduce<Record<string, number>>(
     (acc, tx) => {
-      // Get the merchant category from MCC, fallback to 'Uncategorized' if not available
       const category = tx.merchant.mcc?.description || 'Uncategorized';
       if (!acc[category]) {
         acc[category] = 0;
@@ -84,25 +75,22 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     }, {}
   );
   
-  // Prepare data for payment method chart
   const paymentMethodChartData = Object.entries(expensesByPaymentMethod)
     .map(([name, amount], index) => ({
       name,
       value: amount,
       color: COLORS[index % COLORS.length]
     }))
-    .sort((a, b) => b.value - a.value); // Sort by value in descending order
+    .sort((a, b) => b.value - a.value);
   
-  // Prepare data for category chart
   const categoryChartData = Object.entries(expensesByCategory)
     .map(([name, amount], index) => ({
       name,
       value: amount,
       color: COLORS[index % COLORS.length]
     }))
-    .sort((a, b) => b.value - a.value); // Sort by value in descending order
+    .sort((a, b) => b.value - a.value);
   
-  // Get the top payment method for display in the summary card
   const topPaymentMethod = paymentMethodChartData.length > 0 
     ? { name: paymentMethodChartData[0].name, value: paymentMethodChartData[0].value } 
     : undefined;
@@ -111,7 +99,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     <div className="space-y-6 w-full">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Expense Summary</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Expense Summary</h2>
           <TabsList>
             <TabsTrigger value="thisMonth">This Month</TabsTrigger>
             <TabsTrigger value="lastMonth">Last Month</TabsTrigger>
@@ -121,7 +109,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         </div>
         
         <TabsContent value="thisMonth" className="mt-4 space-y-6">
-          {/* Summary Cards */}
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
             totalExpenses={totalExpenses}
@@ -131,7 +118,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
             totalRewardPoints={totalRewardPoints}
           />
           
-          {/* Charts Section */}
           <SummaryCharts
             paymentMethodChartData={paymentMethodChartData}
             categoryChartData={categoryChartData}
@@ -139,7 +125,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         </TabsContent>
         
         <TabsContent value="lastMonth" className="mt-4 space-y-6">
-          {/* Summary Cards */}
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
             totalExpenses={totalExpenses}
@@ -149,7 +134,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
             totalRewardPoints={totalRewardPoints}
           />
           
-          {/* Charts Section */}
           <SummaryCharts
             paymentMethodChartData={paymentMethodChartData}
             categoryChartData={categoryChartData}
@@ -157,7 +141,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         </TabsContent>
         
         <TabsContent value="lastThreeMonths" className="mt-4 space-y-6">
-          {/* Summary Cards */}
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
             totalExpenses={totalExpenses}
@@ -167,7 +150,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
             totalRewardPoints={totalRewardPoints}
           />
           
-          {/* Charts Section */}
           <SummaryCharts
             paymentMethodChartData={paymentMethodChartData}
             categoryChartData={categoryChartData}
@@ -175,7 +157,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         </TabsContent>
         
         <TabsContent value="thisYear" className="mt-4 space-y-6">
-          {/* Summary Cards */}
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
             totalExpenses={totalExpenses}
@@ -185,7 +166,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
             totalRewardPoints={totalRewardPoints}
           />
           
-          {/* Charts Section */}
           <SummaryCharts
             paymentMethodChartData={paymentMethodChartData}
             categoryChartData={categoryChartData}

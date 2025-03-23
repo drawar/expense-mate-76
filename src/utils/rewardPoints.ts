@@ -149,5 +149,13 @@ export const simulateRewardPoints = (
   return { totalPoints: points };
 };
 
-// Re-export getTotalRewardPoints for convenience
-export { getTotalRewardPoints };
+// Update getTotalRewardPoints function to handle both number and object
+export const getTotalRewardPoints = (transactions: Transaction[]): number => {
+  return transactions.reduce((total, transaction) => {
+    // Ensure reward points is a number
+    const points = typeof transaction.rewardPoints === 'number' 
+      ? transaction.rewardPoints 
+      : 0;
+    return total + points;
+  }, 0);
+};

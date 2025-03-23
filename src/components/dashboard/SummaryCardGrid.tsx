@@ -47,7 +47,9 @@ const SummaryCardGrid = ({
             
       <SummaryCard
         title="Total Reward Points"
-        value={totalRewardPoints.toLocaleString()}
+        value={typeof totalRewardPoints === 'number' 
+          ? totalRewardPoints.toLocaleString() 
+          : '0'}
         description="Points earned"
         icon={<CoinsIcon className="w-3.5 h-3.5 mr-1" />}
       />

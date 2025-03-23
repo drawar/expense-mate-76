@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -70,7 +69,6 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     },
   });
   
-  // When merchant name changes, check for existing merchant data
   const merchantName = form.watch('merchantName');
   useEffect(() => {
     if (merchantName.trim().length >= 3) {
@@ -82,7 +80,6 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     }
   }, [merchantName, form]);
   
-  // When currency or payment method changes, check if we need to override payment amount
   const currency = form.watch('currency') as Currency;
   const paymentMethodId = form.watch('paymentMethodId');
   const amount = Number(form.watch('amount')) || 0;
@@ -100,13 +97,11 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       form.setValue('paymentAmount', form.watch('amount'));
     }
     
-    // Set contactless to true by default for credit cards when not online
     if (!isOnline && method?.type === 'credit_card') {
       form.setValue('isContactless', true);
     }
   }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
   
-  // Calculate estimated reward points
   useEffect(() => {
     if (!selectedPaymentMethod || amount <= 0) {
       setEstimatedPoints(0);
@@ -128,9 +123,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   
   const handleFormSubmit = (values: FormValues) => {
     try {
-      // Create or update merchant
       const merchant: Merchant = {
-        id: '', // Will be set by addOrUpdateMerchant
+        id: '',
         name: values.merchantName,
         address: values.merchantAddress,
         isOnline: values.isOnline,
@@ -139,13 +133,11 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       
       const savedMerchant = addOrUpdateMerchant(merchant);
       
-      // Get selected payment method
       const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
       if (!paymentMethod) {
         throw new Error('Payment method not found');
       }
       
-      // Prepare transaction
       const transaction: Omit<Transaction, 'id'> = {
         date: format(values.date, 'yyyy-MM-dd'),
         merchant: savedMerchant,
@@ -158,7 +150,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         paymentCurrency: paymentMethod.currency,
         rewardPoints: typeof estimatedPoints === 'object' 
           ? estimatedPoints.totalPoints 
-          : estimatedPoints,
+          : (typeof estimatedPoints === 'number' ? estimatedPoints : 0),
         notes: values.notes,
         isContactless: !values.isOnline ? values.isContactless : false,
       };
