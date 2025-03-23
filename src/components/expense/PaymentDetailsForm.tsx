@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency } from '@/types';
-import { CreditCardIcon, BanknoteIcon, CoinsIcon } from 'lucide-react';
+import { CreditCardIcon, BanknoteIcon, CoinsIcon, WifiIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   FormControl,
@@ -27,6 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 
 interface PaymentDetailsFormProps {
   paymentMethods: PaymentMethod[];
@@ -42,6 +43,7 @@ const PaymentDetailsForm = ({
   estimatedPoints
 }: PaymentDetailsFormProps) => {
   const form = useFormContext();
+  const isOnline = form.watch('isOnline');
   
   return (
     <Card>
@@ -91,6 +93,32 @@ const PaymentDetailsForm = ({
             </FormItem>
           )}
         />
+        
+        {!isOnline && (
+          <FormField
+            control={form.control}
+            name="isContactless"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Contactless Payment</FormLabel>
+                  <FormDescription>
+                    Toggle if the payment was made contactless
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <div className="flex items-center space-x-2">
+                    <WifiIcon className="h-4 w-4 text-muted-foreground" />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        )}
         
         {shouldOverridePayment && (
           <FormField

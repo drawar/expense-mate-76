@@ -18,6 +18,7 @@ const formSchema = z.object({
   merchantName: z.string().min(1, 'Merchant name is required'),
   merchantAddress: z.string().optional(),
   isOnline: z.boolean().default(false),
+  isContactless: z.boolean().default(false),
   amount: z.string().min(1, 'Amount is required').refine(value => !isNaN(Number(value)) && Number(value) > 0, {
     message: 'Amount must be a positive number',
   }),
@@ -53,6 +54,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       merchantName: defaultValues?.merchantName || '',
       merchantAddress: defaultValues?.merchantAddress || '',
       isOnline: defaultValues?.isOnline ?? false,
+      isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || '',
       currency: defaultValues?.currency || 'USD',
       paymentMethodId: defaultValues?.paymentMethodId || (paymentMethods[0]?.id || ''),
@@ -140,6 +142,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
         paymentCurrency: paymentMethod.currency,
         rewardPoints: estimatedPoints,
         notes: values.notes,
+        isContactless: !values.isOnline ? values.isContactless : false,
       };
       
       onSubmit(transaction);

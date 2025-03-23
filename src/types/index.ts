@@ -1,3 +1,4 @@
+
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'NTD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export type MerchantCategoryCode = {
@@ -58,6 +59,7 @@ export interface Transaction {
   notes?: string;
   category?: string;
   tags?: string[];
+  isContactless?: boolean;
 }
 
 export interface ExpenseSummary {
