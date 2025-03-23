@@ -8,6 +8,7 @@ import { getTransactions, getPaymentMethods, initializeStorage } from '@/utils/s
 import TransactionCard from '@/components/expense/TransactionCard';
 import Summary from '@/components/dashboard/Summary';
 import Navbar from '@/components/layout/Navbar';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

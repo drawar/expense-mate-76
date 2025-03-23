@@ -2,9 +2,27 @@
 import { PaymentMethod, Currency, RewardRule } from '@/types';
 import { defaultPaymentMethods } from '../defaults/paymentMethods';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 // LocalStorage key for fallback
 const PAYMENT_METHODS_KEY = 'expenseTracker_paymentMethods';
+
+// Helper function to convert RewardRule[] to Json for Supabase
+const convertRewardRulesToJson = (rules: RewardRule[]): Json => {
+  return rules as unknown as Json;
+};
+
+// Helper function to convert Json back to RewardRule[]
+const convertJsonToRewardRules = (json: Json | null): RewardRule[] => {
+  if (!json) return [];
+  return json as unknown as RewardRule[];
+};
+
+// Helper function to convert conversionRate Record to Json
+const convertConversionRateToJson = (rate: Record<Currency, number> | undefined): Json | null => {
+  if (!rate) return null;
+  return rate as unknown as Json;
+};
 
 // Save payment methods to Supabase
 export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promise<void> => {
@@ -26,10 +44,11 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
     const { error: insertError } = await supabase
       .from('payment_methods')
       .insert({
+        id: method.id,
         name: method.name,
         type: method.type,
         currency: method.currency,
-        reward_rules: method.rewardRules,
+        reward_rules: convertRewardRulesToJson(method.rewardRules),
         statement_start_day: method.statementStartDay,
         is_monthly_statement: method.isMonthlyStatement,
         active: method.active,
@@ -37,7 +56,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
         issuer: method.issuer,
         icon: method.icon,
         color: method.color,
-        conversion_rate: method.conversionRate,
+        conversion_rate: convertConversionRateToJson(method.conversionRate),
       });
       
     if (insertError) {
@@ -74,7 +93,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     name: method.name,
     type: method.type as 'cash' | 'credit_card',
     currency: method.currency as Currency,
-    rewardRules: method.reward_rules as RewardRule[] || [],
+    rewardRules: convertJsonToRewardRules(method.reward_rules),
     statementStartDay: method.statement_start_day,
     isMonthlyStatement: method.is_monthly_statement,
     active: method.active,
@@ -82,7 +101,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     issuer: method.issuer,
     icon: method.icon,
     color: method.color,
-    conversionRate: method.conversion_rate,
+    conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
   }));
 };
 
