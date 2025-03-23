@@ -1,11 +1,7 @@
 
-import { useState, useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
-import { MerchantCategoryCode } from '@/types';
-import { MCC_CODES } from '@/utils/storageUtils';
-import { Label } from '@/components/ui/label';
-import { TagIcon, SearchIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -13,108 +9,70 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList,
 } from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { MCC_CODES } from '@/utils/constants/mcc';
+import { MerchantCategoryCode } from '@/types';
 
 interface MerchantCategorySelectProps {
-  selectedMCC?: MerchantCategoryCode;
-  onSelectMCC: (mcc: MerchantCategoryCode) => void;
+  selected: MerchantCategoryCode | null;
+  onSelect: (category: MerchantCategoryCode) => void;
 }
 
-const MerchantCategorySelect = ({ selectedMCC, onSelectMCC }: MerchantCategorySelectProps) => {
-  const [showMCCDialog, setShowMCCDialog] = useState(false);
-  const [mccSearchQuery, setMccSearchQuery] = useState('');
-  const [filteredMCC, setFilteredMCC] = useState<MerchantCategoryCode[]>([]);
-  const { toast } = useToast();
+const MerchantCategorySelect = ({ selected, onSelect }: MerchantCategorySelectProps) => {
+  const [open, setOpen] = useState(false);
   
-  // Sort MCC codes in ascending order by code number
-  useEffect(() => {
-    const sortedMCC = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
-    setFilteredMCC(sortedMCC);
-  }, []);
-  
-  // Filter MCC codes based on search query
-  useEffect(() => {
-    if (mccSearchQuery.trim() === '') {
-      const sortedMCC = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
-      setFilteredMCC(sortedMCC);
-    } else {
-      const query = mccSearchQuery.toLowerCase();
-      const filtered = MCC_CODES.filter(
-        mcc => 
-          mcc.description.toLowerCase().includes(query) || 
-          mcc.code.includes(query)
-      ).sort((a, b) => a.code.localeCompare(b.code));
-      setFilteredMCC(filtered);
-    }
-  }, [mccSearchQuery]);
-
-  const handleSelectMCC = (mcc: MerchantCategoryCode) => {
-    onSelectMCC(mcc);
-    setShowMCCDialog(false);
-
-    toast({
-      title: "Category selected",
-      description: `Selected category: ${mcc.description} (${mcc.code})`,
-    });
-  };
+  // Sort MCC codes by the numeric code
+  const sortedMccCodes = [...MCC_CODES].sort((a, b) => {
+    return a.code.localeCompare(b.code);
+  });
 
   return (
-    <div>
-      <Label>Merchant Category</Label>
-      <Popover open={showMCCDialog} onOpenChange={setShowMCCDialog}>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            role="combobox" 
-            aria-expanded={showMCCDialog}
-            className="w-full justify-between mt-1"
-          >
-            {selectedMCC ? `${selectedMCC.description} (${selectedMCC.code})` : "Select merchant category"}
-            <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
-          <Command>
-            <CommandInput 
-              placeholder="Search categories..." 
-              value={mccSearchQuery}
-              onValueChange={setMccSearchQuery}
-            />
-            <CommandList>
-              <CommandEmpty>No categories found.</CommandEmpty>
-              <CommandGroup>
-                {filteredMCC.map((mcc) => (
-                  <CommandItem
-                    key={mcc.code}
-                    onSelect={() => handleSelectMCC(mcc)}
-                    className="cursor-pointer"
-                  >
-                    <span>{mcc.description}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">({mcc.code})</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      <p className="text-sm text-muted-foreground mt-1">
-        {selectedMCC ? (
-          <span className="flex items-center">
-            <TagIcon className="h-3.5 w-3.5 mr-1.5" />
-            {selectedMCC.description} ({selectedMCC.code})
-          </span>
-        ) : (
-          "Optional - Search and select a merchant category code"
-        )}
-      </p>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {selected
+            ? `${selected.code} - ${selected.description}`
+            : "Select category code"}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command>
+          <CommandInput placeholder="Search category code..." />
+          <CommandEmpty>No category code found.</CommandEmpty>
+          <CommandGroup className="max-h-64 overflow-y-auto">
+            {sortedMccCodes.map((mccItem) => (
+              <CommandItem
+                key={mccItem.code}
+                value={`${mccItem.code} ${mccItem.description}`}
+                onSelect={() => {
+                  onSelect(mccItem);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selected?.code === mccItem.code ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="font-mono">{mccItem.code}</span> - {mccItem.description}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 

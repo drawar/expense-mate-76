@@ -30,7 +30,7 @@ serve(async (req) => {
     // Call Google Places API to find places based on the query
     const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
     url.searchParams.append('query', query);
-    url.searchParams.append('key', GOOGLE_MAPS_API_KEY);
+    url.searchParams.append('key', GOOGLE_MAPS_API_KEY || '');
     
     const response = await fetch(url.toString());
     const data = await response.json();
