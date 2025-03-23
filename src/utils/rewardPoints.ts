@@ -1,6 +1,6 @@
 
 import { Transaction, PaymentMethod } from '@/types';
-import { calculateBasicPoints, getTotalRewardPoints } from './rewards/baseCalculations';
+import { calculateBasicPoints } from './rewards/baseCalculations';
 import { calculateUOBPlatinumPoints, simulateUOBPlatinumPoints } from './rewards/uobPlatinum';
 import { calculateUOBSignaturePoints, simulateUOBSignaturePoints } from './rewards/uobSignature';
 import { calculateCitibankRewardsPoints, simulateCitibankRewardsPoints } from './rewards/citibankRewards';
@@ -149,8 +149,8 @@ export const simulateRewardPoints = (
   return { totalPoints: points };
 };
 
-// Update getTotalRewardPoints function to handle both number and object
-export const getTotalRewardPoints = (transactions: Transaction[]): number => {
+// Calculate the total reward points from a list of transactions
+export const calculateTotalRewardPoints = (transactions: Transaction[]): number => {
   return transactions.reduce((total, transaction) => {
     // Ensure reward points is a number
     const points = typeof transaction.rewardPoints === 'number' 

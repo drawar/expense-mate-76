@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Transaction, PaymentMethod } from '@/types';
-import { getTotalRewardPoints } from '@/utils/rewardPoints';
+import { calculateTotalRewardPoints } from '@/utils/rewardPoints';
 import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
 
@@ -47,7 +47,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     0
   );
   
-  const totalRewardPoints = getTotalRewardPoints(filteredTransactions);
+  const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
   
   const transactionCount = filteredTransactions.length;
   
