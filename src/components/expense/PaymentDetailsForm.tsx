@@ -207,7 +207,7 @@ const PaymentDetailsForm = ({
                   console.log('Payment method selected:', value);
                   field.onChange(value);
                   // Force form validation after selection
-                  form.trigger('paymentMethodId');
+                  setTimeout(() => form.trigger('paymentMethodId'), 100);
                 }}
               >
                 <FormControl>

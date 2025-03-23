@@ -6,13 +6,49 @@ import { getPaymentMethods, addTransaction } from '@/utils/storageUtils';
 import ExpenseForm from '@/components/expense/ExpenseForm';
 import Navbar from '@/components/layout/Navbar';
 import { useToast } from '@/hooks/use-toast';
+import { AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const AddExpense = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check Supabase connection
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        console.log('Checking Supabase connection...');
+        const { data, error } = await supabase.from('payment_methods').select('id').limit(1);
+        
+        if (error) {
+          console.error('Supabase connection error:', error);
+          setSupabaseConnected(false);
+          toast({
+            title: 'Warning',
+            description: 'Supabase connection failed. Using local storage fallback.',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('Supabase connection successful');
+          setSupabaseConnected(true);
+        }
+      } catch (error) {
+        console.error('Error checking Supabase connection:', error);
+        setSupabaseConnected(false);
+        toast({
+          title: 'Warning',
+          description: 'Supabase connection failed. Using local storage fallback.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    checkSupabaseConnection();
+  }, [toast]);
   
   useEffect(() => {
     // Load payment methods
@@ -89,7 +125,9 @@ const AddExpense = () => {
       
       toast({
         title: 'Success',
-        description: 'Transaction saved successfully',
+        description: supabaseConnected 
+          ? 'Transaction saved successfully to Supabase' 
+          : 'Transaction saved successfully to local storage',
       });
       
       // Navigate back to the dashboard
@@ -134,6 +172,16 @@ const AddExpense = () => {
             Record a new expense transaction
           </p>
         </div>
+        
+        {supabaseConnected === false && (
+          <div className="mb-4 p-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-md flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Supabase connection unavailable</p>
+              <p>Transactions will be saved to local storage instead. Your data will only be available on this device.</p>
+            </div>
+          </div>
+        )}
         
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md">
