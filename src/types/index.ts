@@ -1,5 +1,4 @@
-
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'NTD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export type MerchantCategoryCode = {
   code: string;

@@ -10,14 +10,20 @@ const currencySymbols: Record<Currency, string> = {
   CAD: 'C$',
   CNY: '¥',
   INR: '₹',
+  NTD: 'NT$',
+  SGD: 'S$',
+  VND: '₫',
+  IDR: 'Rp',
+  THB: '฿',
+  MYR: 'RM',
 };
 
 export const formatCurrency = (amount: number, currency: Currency): string => {
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-    minimumFractionDigits: currency === 'JPY' ? 0 : 2,
-    maximumFractionDigits: currency === 'JPY' ? 0 : 2,
+    minimumFractionDigits: ['JPY', 'VND', 'IDR'].includes(currency) ? 0 : 2,
+    maximumFractionDigits: ['JPY', 'VND', 'IDR'].includes(currency) ? 0 : 2,
   });
   
   return formatter.format(amount);
@@ -36,4 +42,10 @@ export const currencyOptions: { value: Currency; label: string }[] = [
   { value: 'CAD', label: 'CAD - Canadian Dollar (C$)' },
   { value: 'CNY', label: 'CNY - Chinese Yuan (¥)' },
   { value: 'INR', label: 'INR - Indian Rupee (₹)' },
+  { value: 'NTD', label: 'NTD - New Taiwan Dollar (NT$)' },
+  { value: 'SGD', label: 'SGD - Singapore Dollar (S$)' },
+  { value: 'VND', label: 'VND - Vietnamese Dong (₫)' },
+  { value: 'IDR', label: 'IDR - Indonesian Rupiah (Rp)' },
+  { value: 'THB', label: 'THB - Thai Baht (฿)' },
+  { value: 'MYR', label: 'MYR - Malaysian Ringgit (RM)' },
 ];
