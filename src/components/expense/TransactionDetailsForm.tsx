@@ -61,6 +61,14 @@ const TransactionDetailsForm = () => {
                     step="0.01"
                     placeholder="0.00"
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Update payment amount automatically when transaction amount changes
+                      const currentPaymentMethod = form.getValues('paymentMethodId');
+                      if (currentPaymentMethod) {
+                        form.setValue('paymentAmount', e.target.value);
+                      }
+                    }}
                   />
                 </FormControl>
                 <FormMessage />

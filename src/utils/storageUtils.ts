@@ -122,6 +122,26 @@ const defaultPaymentMethods: PaymentMethod[] = [
     color: '#1e3a8a',
     rewardRules: [], // Special handling in rewardPoints.ts
   },
+  {
+    id: '5',
+    name: 'Visa Signature',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'UOB',
+    lastFourDigits: '3456',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#7e22ce',
+    rewardRules: [], // Special handling in rewardPoints.ts
+    conversionRate: {
+      USD: 1.35,
+      EUR: 1.47,
+      GBP: 1.73,
+      SGD: 1
+    }
+  },
 ];
 
 // Save transactions to localStorage

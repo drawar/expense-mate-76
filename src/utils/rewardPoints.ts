@@ -1,3 +1,4 @@
+
 import { Transaction, PaymentMethod, RewardRule } from '@/types';
 import { isDateInStatementPeriod } from './dateUtils';
 import { startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
@@ -16,7 +17,12 @@ export const calculateTransactionPoints = (
   
   // Special case for UOB Preferred Visa Platinum
   if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Preferred Visa Platinum') {
-    return calculateUOBPoints(transaction, allTransactions);
+    return calculateUOBPlatinumPoints(transaction, allTransactions);
+  }
+  
+  // Special case for UOB Visa Signature
+  if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Visa Signature') {
+    return calculateUOBSignaturePoints(transaction, allTransactions);
   }
   
   // Get total spend in the current statement period for this payment method
@@ -82,7 +88,7 @@ export const calculateTransactionPoints = (
 };
 
 // Special calculation for UOB Preferred Visa Platinum
-const calculateUOBPoints = (
+const calculateUOBPlatinumPoints = (
   transaction: Transaction,
   allTransactions: Transaction[]
 ): number => {
@@ -124,8 +130,13 @@ const calculateUOBPoints = (
   
   const totalMonthBonusPoints = monthTransactions.reduce((sum, tx) => {
     if (tx.id === transaction.id) return sum; // Exclude current transaction
+    
     const txAmount = Math.floor(tx.amount / 5) * 5;
-    return sum + (txAmount * 3.6);
+    const txBasePoints = txAmount * 0.4;
+    const txTotalPoints = tx.rewardPoints;
+    const txBonusPoints = Math.max(0, txTotalPoints - Math.round(txBasePoints));
+    
+    return sum + txBonusPoints;
   }, 0);
   
   // Calculate bonus points for current transaction
@@ -134,6 +145,62 @@ const calculateUOBPoints = (
   const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
   
   return Math.round(basePoints + actualBonusPoints);
+};
+
+// Special calculation for UOB Visa Signature
+const calculateUOBSignaturePoints = (
+  transaction: Transaction,
+  allTransactions: Transaction[]
+): number => {
+  const { paymentAmount, currency } = transaction;
+  
+  // Round down payment amount to nearest multiple of 5
+  const roundedAmount = Math.floor(paymentAmount / 5) * 5;
+  
+  // Calculate base points (2x for every SGD 5)
+  const basePoints = (roundedAmount / 5) * 2;
+  
+  // Check conditions for bonus points
+  // 1. All transactions must be in non-SGD currency
+  // 2. Total spend must be at least SGD 1000
+  
+  // Get transactions for this payment method in the current statement period
+  const currentDate = new Date(transaction.date);
+  const statementTransactions = allTransactions.filter(t => 
+    t.paymentMethod.id === transaction.paymentMethod.id &&
+    isDateInStatementPeriod(new Date(t.date), transaction.paymentMethod)
+  );
+  
+  // Check if any transactions are in SGD
+  const hasSgdTransactions = statementTransactions.some(t => t.currency === 'SGD');
+  
+  if (hasSgdTransactions) {
+    return Math.round(basePoints);
+  }
+  
+  // Calculate total spend including current transaction
+  let totalSpend = statementTransactions.reduce((sum, tx) => {
+    if (tx.id !== transaction.id) { // Exclude current transaction
+      return sum + tx.paymentAmount;
+    }
+    return sum;
+  }, 0);
+  
+  // Add current transaction
+  totalSpend += paymentAmount;
+  
+  // Check if minimum spend is met
+  if (totalSpend < 1000) {
+    return Math.round(basePoints);
+  }
+  
+  // Calculate bonus points based on total spend
+  const roundedTotal = Math.floor(totalSpend / 5) * 5;
+  const bonusPoints = (roundedTotal / 5) * 18;
+  
+  // Cap at 8000 points total
+  const totalPoints = basePoints + bonusPoints;
+  return Math.min(Math.round(totalPoints), 8000);
 };
 
 // Get total reward points earned across all transactions
@@ -195,6 +262,19 @@ export const simulateRewardPoints = (
       basePoints: Math.round(basePoints),
       bonusPoints: Math.round(bonusPoints),
       remainingMonthlyBonusPoints: 4000 - Math.round(bonusPoints)
+    };
+  }
+  
+  // Special case for UOB Visa Signature
+  if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Visa Signature') {
+    const roundedAmount = Math.floor(amount / 5) * 5;
+    const basePoints = (roundedAmount / 5) * 2;
+    
+    // For simulation, we can only show basic points since we don't know other transactions
+    return {
+      totalPoints: Math.round(basePoints),
+      basePoints: Math.round(basePoints),
+      bonusPoints: 0
     };
   }
   

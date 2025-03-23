@@ -1,4 +1,3 @@
-
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'NTD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export type MerchantCategoryCode = {
@@ -32,6 +31,7 @@ export interface PaymentMethod {
   issuer?: string; // For credit cards
   icon?: string; // Icon identifier
   color?: string; // Color for the card
+  conversionRate?: Record<Currency, number>; // Exchange rates for currency conversion
 }
 
 export interface Merchant {

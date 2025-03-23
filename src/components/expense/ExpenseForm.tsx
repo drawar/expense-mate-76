@@ -31,6 +31,7 @@ const formSchema = z.object({
     required_error: 'Date is required',
   }),
   notes: z.string().optional(),
+  mcc: z.any().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,7 +47,12 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | undefined>();
   const [shouldOverridePayment, setShouldOverridePayment] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | undefined>();
-  const [estimatedPoints, setEstimatedPoints] = useState(0);
+  const [estimatedPoints, setEstimatedPoints] = useState<number | {
+    totalPoints: number;
+    basePoints?: number;
+    bonusPoints?: number;
+    remainingMonthlyBonusPoints?: number;
+  }>(0);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,14 +77,17 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       const existingMerchant = getMerchantByName(merchantName);
       if (existingMerchant?.mcc) {
         setSelectedMCC(existingMerchant.mcc);
+        form.setValue('mcc', existingMerchant.mcc);
       }
     }
-  }, [merchantName]);
+  }, [merchantName, form]);
   
   // When currency or payment method changes, check if we need to override payment amount
   const currency = form.watch('currency') as Currency;
   const paymentMethodId = form.watch('paymentMethodId');
   const amount = Number(form.watch('amount')) || 0;
+  const isOnline = form.watch('isOnline');
+  const isContactless = form.watch('isContactless');
   
   useEffect(() => {
     const method = paymentMethods.find(pm => pm.id === paymentMethodId);
@@ -90,7 +99,12 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       setShouldOverridePayment(false);
       form.setValue('paymentAmount', form.watch('amount'));
     }
-  }, [currency, paymentMethodId, form, paymentMethods, amount]);
+    
+    // Set contactless to true by default for credit cards when not online
+    if (!isOnline && method?.type === 'credit_card') {
+      form.setValue('isContactless', true);
+    }
+  }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
   
   // Calculate estimated reward points
   useEffect(() => {
@@ -104,11 +118,13 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       currency,
       selectedPaymentMethod,
       selectedMCC?.code,
-      merchantName
+      merchantName,
+      isOnline,
+      isContactless
     );
     
     setEstimatedPoints(points);
-  }, [amount, currency, selectedPaymentMethod, selectedMCC, merchantName]);
+  }, [amount, currency, selectedPaymentMethod, selectedMCC, merchantName, isOnline, isContactless]);
   
   const handleFormSubmit = (values: FormValues) => {
     try {
@@ -140,7 +156,9 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           ? Number(values.paymentAmount) 
           : Number(values.amount),
         paymentCurrency: paymentMethod.currency,
-        rewardPoints: estimatedPoints,
+        rewardPoints: typeof estimatedPoints === 'object' 
+          ? estimatedPoints.totalPoints 
+          : estimatedPoints,
         notes: values.notes,
         isContactless: !values.isOnline ? values.isContactless : false,
       };
