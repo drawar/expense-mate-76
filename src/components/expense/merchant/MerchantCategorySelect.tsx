@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,19 +33,27 @@ const MerchantCategorySelect = ({
   onSelectMCC
 }: MerchantCategorySelectProps) => {
   const [open, setOpen] = useState(false);
+  const [mccCodesReady, setMccCodesReady] = useState(false);
+  const [sortedMccCodes, setSortedMccCodes] = useState<MerchantCategoryCode[]>([]);
   
   // Use either the new or old prop naming based on what's provided
   const effectiveSelected = selected || selectedMCC || null;
   const effectiveOnSelect = onSelect || onSelectMCC || (() => {});
   
-  // Always ensure we have an array of MCC codes
-  const mccCodes = Array.isArray(MCC_CODES) ? MCC_CODES : [];
-  
-  // Sort MCC codes by the numeric code (only if we have mccCodes)
-  const sortedMccCodes = mccCodes.length > 0 
-    ? [...mccCodes].sort((a, b) => a.code.localeCompare(b.code))
-    : [];
+  // Initialize and sort the MCC codes on mount, not during render
+  useEffect(() => {
+    if (Array.isArray(MCC_CODES) && MCC_CODES.length > 0) {
+      // Create a new array and sort it
+      const sorted = [...MCC_CODES].sort((a, b) => a.code.localeCompare(b.code));
+      setSortedMccCodes(sorted);
+      setMccCodesReady(true);
+    } else {
+      setSortedMccCodes([]);
+      setMccCodesReady(true);
+    }
+  }, []);
 
+  // Don't render the Command component until MCC codes are properly initialized
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -62,8 +70,8 @@ const MerchantCategorySelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        {open && sortedMccCodes.length > 0 && (
-          <Command>
+        {open && mccCodesReady && sortedMccCodes.length > 0 && (
+          <Command className="w-full">
             <CommandInput placeholder="Search category code..." />
             <CommandEmpty>No category code found.</CommandEmpty>
             <CommandGroup className="max-h-64 overflow-y-auto">
@@ -88,7 +96,7 @@ const MerchantCategorySelect = ({
             </CommandGroup>
           </Command>
         )}
-        {open && sortedMccCodes.length === 0 && (
+        {open && mccCodesReady && sortedMccCodes.length === 0 && (
           <div className="py-6 text-center text-sm">No category codes available.</div>
         )}
       </PopoverContent>

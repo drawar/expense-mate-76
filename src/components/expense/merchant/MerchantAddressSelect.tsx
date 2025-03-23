@@ -1,17 +1,17 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { MapPinIcon, Loader } from 'lucide-react';
+import { MapPinIcon, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import {
   CommandDialog,
-  CommandGroup as CommandDialogGroup,
-  CommandEmpty as CommandDialogEmpty,
-  CommandInput as CommandDialogInput,
-  CommandItem as CommandDialogItem,
-  CommandList as CommandDialogList,
+  CommandGroup,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from '@/components/ui/command';
 
 interface Place {
@@ -38,6 +38,18 @@ const MerchantAddressSelect = ({
 }: MerchantAddressSelectProps) => {
   const form = useFormContext();
   const { toast } = useToast();
+  const [safePlaces, setSafePlaces] = useState<Place[]>([]);
+  const [isDialogReady, setIsDialogReady] = useState(false);
+
+  // Process places into safe state
+  useEffect(() => {
+    setSafePlaces(Array.isArray(places) ? places : []);
+  }, [places]);
+
+  // Make sure dialog is only shown after places are processed
+  useEffect(() => {
+    setIsDialogReady(true);
+  }, []);
 
   const handleSelectPlace = (place: Place) => {
     form.setValue('merchantAddress', place.address, { shouldValidate: true });
@@ -48,9 +60,6 @@ const MerchantAddressSelect = ({
       description: `Selected address: ${place.address}`,
     });
   };
-
-  // Ensure places is always an array
-  const safePlaces = Array.isArray(places) ? places : [];
 
   return (
     <>
@@ -73,7 +82,7 @@ const MerchantAddressSelect = ({
                 />
                 {isLoading ? (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin">
-                    <Loader className="h-4 w-4 text-gray-400" />
+                    <Loader2 className="h-4 w-4 text-gray-400" />
                   </div>
                 ) : (
                   <MapPinIcon 
@@ -92,16 +101,15 @@ const MerchantAddressSelect = ({
         )}
       />
 
-      {/* Only render the CommandDialog when it's explicitly shown and we have places */}
-      {showDialog && (
+      {isDialogReady && showDialog && (
         <CommandDialog open={showDialog} onOpenChange={setShowDialog}>
-          <CommandDialogInput placeholder="Search places..." />
-          <CommandDialogList>
-            <CommandDialogEmpty>No places found.</CommandDialogEmpty>
+          <CommandInput placeholder="Search places..." />
+          <CommandList>
+            <CommandEmpty>No places found.</CommandEmpty>
             {safePlaces.length > 0 && (
-              <CommandDialogGroup heading="Suggested Places">
+              <CommandGroup heading="Suggested Places">
                 {safePlaces.map((place, index) => (
-                  <CommandDialogItem
+                  <CommandItem
                     key={index}
                     onSelect={() => handleSelectPlace(place)}
                     className="cursor-pointer"
@@ -110,11 +118,11 @@ const MerchantAddressSelect = ({
                       <span className="font-medium">{place.name}</span>
                       <span className="text-sm text-muted-foreground">{place.address}</span>
                     </div>
-                  </CommandDialogItem>
+                  </CommandItem>
                 ))}
-              </CommandDialogGroup>
+              </CommandGroup>
             )}
-          </CommandDialogList>
+          </CommandList>
         </CommandDialog>
       )}
     </>
