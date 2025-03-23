@@ -3,96 +3,27 @@ import React from 'react';
 import { PaymentMethod } from '@/types';
 import { SelectItem } from '@/components/ui/select';
 import { BanknoteIcon, CreditCardIcon } from 'lucide-react';
+import { US, SG, JP, IN, CA, EU, GB, AU } from 'country-flag-icons/react/3x2';
 
-// Currency flag components as SVGs
+// Currency flag components
 const CurrencyFlag = ({ currency }: { currency: string }) => {
   switch (currency) {
     case 'USD':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#F0F0F0" />
-          <rect y="0" width="24" height="1.85" fill="#D80027" />
-          <rect y="3.7" width="24" height="1.85" fill="#D80027" />
-          <rect y="7.4" width="24" height="1.85" fill="#D80027" />
-          <rect y="11.1" width="24" height="1.85" fill="#D80027" />
-          <rect y="14.8" width="24" height="1.85" fill="#D80027" />
-          <rect y="18.5" width="24" height="1.85" fill="#D80027" />
-          <rect y="22.15" width="24" height="1.85" fill="#D80027" />
-          <rect width="12" height="12.9" fill="#2E52B2" />
-        </svg>
-      );
+      return <US title="United States" className="w-4 h-4 mr-2" />;
     case 'SGD':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#F0F0F0" />
-          <rect width="24" height="12" fill="#D80027" />
-          <path d="M6 6 A 2 2 0 1 0 6 10 A 2 2 0 1 0 6 6" fill="#F0F0F0" />
-          <path d="M8 8 L 9 8.5 L 8.5 9.5 L 7.5 9 L 7 10 L 6 9.5 L 5.5 10.5 L 5 9.5 L 4 10 L 3.5 9 L 2.5 9.5 L 2 8.5 L 3 8" fill="#F0F0F0" />
-        </svg>
-      );
+      return <SG title="Singapore" className="w-4 h-4 mr-2" />;
     case 'JPY':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#F0F0F0" />
-          <circle cx="12" cy="12" r="4" fill="#D80027" />
-        </svg>
-      );
+      return <JP title="Japan" className="w-4 h-4 mr-2" />;
     case 'INR':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="8" fill="#FF9933" />
-          <rect y="8" width="24" height="8" fill="#F0F0F0" />
-          <rect y="16" width="24" height="8" fill="#138808" />
-          <circle cx="12" cy="12" r="2" fill="#000080" />
-        </svg>
-      );
+      return <IN title="India" className="w-4 h-4 mr-2" />;
     case 'CAD':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#F0F0F0" />
-          <rect width="6" height="24" fill="#D80027" />
-          <rect x="18" width="6" height="24" fill="#D80027" />
-          <path d="M14 10 L 12 8 L 10 10 L 11 12 L 9 14 L 12 14 L 12 16 L 15 14 L 13 12 Z" fill="#D80027" />
-        </svg>
-      );
+      return <CA title="Canada" className="w-4 h-4 mr-2" />;
     case 'EUR':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#0052B4" />
-          <path d="M12 6 L 12.5 7 L 13.5 7 L 12.75 8 L 13 9 L 12 8.5 L 11 9 L 11.25 8 L 10.5 7 L 11.5 7 Z" fill="#FFDA44" />
-          <path d="M12 10 L 12.5 11 L 13.5 11 L 12.75 12 L 13 13 L 12 12.5 L 11 13 L 11.25 12 L 10.5 11 L 11.5 11 Z" fill="#FFDA44" />
-          <path d="M12 14 L 12.5 15 L 13.5 15 L 12.75 16 L 13 17 L 12 16.5 L 11 17 L 11.25 16 L 10.5 15 L 11.5 15 Z" fill="#FFDA44" />
-          <path d="M8 8 L 8.5 9 L 9.5 9 L 8.75 10 L 9 11 L 8 10.5 L 7 11 L 7.25 10 L 6.5 9 L 7.5 9 Z" fill="#FFDA44" />
-          <path d="M16 8 L 16.5 9 L 17.5 9 L 16.75 10 L 17 11 L 16 10.5 L 15 11 L 15.25 10 L 14.5 9 L 15.5 9 Z" fill="#FFDA44" />
-          <path d="M8 16 L 8.5 17 L 9.5 17 L 8.75 18 L 9 19 L 8 18.5 L 7 19 L 7.25 18 L 6.5 17 L 7.5 17 Z" fill="#FFDA44" />
-          <path d="M16 16 L 16.5 17 L 17.5 17 L 16.75 18 L 17 19 L 16 18.5 L 15 19 L 15.25 18 L 14.5 17 L 15.5 17 Z" fill="#FFDA44" />
-        </svg>
-      );
+      return <EU title="European Union" className="w-4 h-4 mr-2" />;
     case 'GBP':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#0052B4" />
-          <path d="M24 0 H 0 V 24 H 24 V 0 Z" fill="#0052B4" />
-          <path d="M13.5 0 V 10.5 H 24 V 13.5 H 13.5 V 24 H 10.5 V 13.5 H 0 V 10.5 H 10.5 V 0 H 13.5 Z" fill="#F0F0F0" />
-          <path d="M16.25 8 L 24 2 V 0 H 21.75 L 12 7 H 9 L 0 0 V 2 L 7.75 8 H 0 V 16 H 7.75 L 0 22 V 24 H 2.25 L 12 17 H 15 L 24 24 V 22 L 16.25 16 H 24 V 8 H 16.25 Z" fill="#D80027" />
-        </svg>
-      );
+      return <GB title="United Kingdom" className="w-4 h-4 mr-2" />;
     case 'AUD':
-      return (
-        <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="4" fill="#0052B4" />
-          <rect width="12" height="12" fill="#F0F0F0" />
-          <path d="M0 0 L 12 6 L 0 12 Z" fill="#F0F0F0" />
-          <path d="M6 0 V 12 H 0 V 0 Z" fill="#F0F0F0" />
-          <path d="M0 0 L 12 6 L 0 12 Z" fill="#D80027" />
-          <path d="M1 0 V 12 M 0 1 H 12 M 0 11 H 12 M 11 0 V 12" stroke="#F0F0F0" strokeWidth="0.5" />
-          <path d="M20 6 L 20.5 7 L 21.5 7 L 20.75 8 L 21 9 L 20 8.5 L 19 9 L 19.25 8 L 18.5 7 L 19.5 7 Z" fill="#F0F0F0" />
-          <path d="M16 17 L 16.25 17.5 L 16.75 17.5 L 16.25 18 L 16.5 18.5 L 16 18.25 L 15.5 18.5 L 15.75 18 L 15.25 17.5 L 15.75 17.5 Z" fill="#F0F0F0" />
-          <path d="M20 17 L 20.25 17.5 L 20.75 17.5 L 20.25 18 L 20.5 18.5 L 20 18.25 L 19.5 18.5 L 19.75 18 L 19.25 17.5 L 19.75 17.5 Z" fill="#F0F0F0" />
-          <path d="M18 14 L 18.25 14.5 L 18.75 14.5 L 18.25 15 L 18.5 15.5 L 18 15.25 L 17.5 15.5 L 17.75 15 L 17.25 14.5 L 17.75 14.5 Z" fill="#F0F0F0" />
-          <path d="M18 19 L 18.25 19.5 L 18.75 19.5 L 18.25 20 L 18.5 20.5 L 18 20.25 L 17.5 20.5 L 17.75 20 L 17.25 19.5 L 17.75 19.5 Z" fill="#F0F0F0" />
-        </svg>
-      );
+      return <AU title="Australia" className="w-4 h-4 mr-2" />;
     default:
       return <BanknoteIcon className="h-4 w-4 mr-2" />;
   }

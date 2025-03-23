@@ -19,12 +19,24 @@ import { MCC_CODES } from '@/utils/constants/mcc';
 import { MerchantCategoryCode } from '@/types';
 
 interface MerchantCategorySelectProps {
-  selected: MerchantCategoryCode | null;
+  selected?: MerchantCategoryCode | null;
   onSelect: (category: MerchantCategoryCode) => void;
+  // For backward compatibility with MerchantDetailsForm.tsx
+  selectedMCC?: MerchantCategoryCode;
+  onSelectMCC?: (mcc: MerchantCategoryCode) => void;
 }
 
-const MerchantCategorySelect = ({ selected, onSelect }: MerchantCategorySelectProps) => {
+const MerchantCategorySelect = ({ 
+  selected, 
+  onSelect,
+  selectedMCC,
+  onSelectMCC
+}: MerchantCategorySelectProps) => {
   const [open, setOpen] = useState(false);
+  
+  // Use either the new or old prop naming based on what's provided
+  const effectiveSelected = selected || selectedMCC || null;
+  const effectiveOnSelect = onSelect || onSelectMCC || (() => {});
   
   // Sort MCC codes by the numeric code
   const sortedMccCodes = [...MCC_CODES].sort((a, b) => {
@@ -40,8 +52,8 @@ const MerchantCategorySelect = ({ selected, onSelect }: MerchantCategorySelectPr
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selected
-            ? `${selected.code} - ${selected.description}`
+          {effectiveSelected
+            ? `${effectiveSelected.code} - ${effectiveSelected.description}`
             : "Select category code"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -56,14 +68,14 @@ const MerchantCategorySelect = ({ selected, onSelect }: MerchantCategorySelectPr
                 key={mccItem.code}
                 value={`${mccItem.code} ${mccItem.description}`}
                 onSelect={() => {
-                  onSelect(mccItem);
+                  effectiveOnSelect(mccItem);
                   setOpen(false);
                 }}
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    selected?.code === mccItem.code ? "opacity-100" : "opacity-0"
+                    effectiveSelected?.code === mccItem.code ? "opacity-100" : "opacity-0"
                   )}
                 />
                 <span className="font-mono">{mccItem.code}</span> - {mccItem.description}

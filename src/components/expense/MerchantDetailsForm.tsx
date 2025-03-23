@@ -147,8 +147,8 @@ const MerchantDetailsForm = () => {
         )}
         
         <MerchantCategorySelect 
-          selectedMCC={selectedMCC}
-          onSelectMCC={handleSelectMCC}
+          selected={selectedMCC}
+          onSelect={handleSelectMCC}
         />
       </CardContent>
     </Card>
