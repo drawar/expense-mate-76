@@ -4,7 +4,7 @@ import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
 import { MCC_CODES, getMerchantByName } from '@/utils/storageUtils';
 import { Input } from '@/components/ui/input';
-import { MapPinIcon, StoreIcon, TagIcon, LucideLoader } from 'lucide-react';
+import { MapPinIcon, StoreIcon, TagIcon, LucideLoader, SearchIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,12 +18,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Card,
   CardContent,
@@ -32,13 +38,15 @@ import {
 } from '@/components/ui/card';
 import {
   CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+  CommandGroup as CommandDialogGroup,
+  CommandEmpty as CommandDialogEmpty,
+  CommandInput as CommandDialogInput,
+  CommandItem as CommandDialogItem,
+  CommandList as CommandDialogList,
 } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const MerchantDetailsForm = () => {
   const form = useFormContext();
@@ -46,12 +54,30 @@ const MerchantDetailsForm = () => {
   const [isAddressLoading, setIsAddressLoading] = useState(false);
   const [places, setPlaces] = useState<Array<{name: string, address: string, location: {lat: number, lng: number}}>>([]);
   const [showPlacesDialog, setShowPlacesDialog] = useState(false);
+  const [showMCCDialog, setShowMCCDialog] = useState(false);
+  const [mccSearchQuery, setMccSearchQuery] = useState('');
+  const [filteredMCC, setFilteredMCC] = useState(MCC_CODES);
   const { toast } = useToast();
   
   // When merchant name changes, check for existing merchant data
   const merchantName = form.watch('merchantName');
   const debouncedMerchantName = useDebounce(merchantName, 500);
   const isOnline = form.watch('isOnline');
+  
+  // Filter MCC codes based on search query
+  useEffect(() => {
+    if (mccSearchQuery.trim() === '') {
+      setFilteredMCC(MCC_CODES);
+    } else {
+      const query = mccSearchQuery.toLowerCase();
+      const filtered = MCC_CODES.filter(
+        mcc => 
+          mcc.description.toLowerCase().includes(query) || 
+          mcc.code.includes(query)
+      );
+      setFilteredMCC(filtered);
+    }
+  }, [mccSearchQuery]);
   
   useEffect(() => {
     const fetchMerchantData = async () => {
@@ -61,6 +87,11 @@ const MerchantDetailsForm = () => {
           if (existingMerchant?.mcc) {
             setSelectedMCC(existingMerchant.mcc);
             form.setValue('mcc', existingMerchant.mcc);
+            // Show toast to inform user about the suggested category
+            toast({
+              title: "Merchant category suggested",
+              description: `Using ${existingMerchant.mcc.description} (${existingMerchant.mcc.code}) based on previous entries`,
+            });
           }
         } catch (error) {
           console.error('Error fetching merchant data:', error);
@@ -69,7 +100,7 @@ const MerchantDetailsForm = () => {
     };
     
     fetchMerchantData();
-  }, [merchantName, form]);
+  }, [merchantName, form, toast]);
 
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
@@ -115,6 +146,17 @@ const MerchantDetailsForm = () => {
     toast({
       title: "Address selected",
       description: `Selected address: ${place.address}`,
+    });
+  };
+
+  const handleSelectMCC = (mcc: MerchantCategoryCode) => {
+    setSelectedMCC(mcc);
+    form.setValue('mcc', mcc);
+    setShowMCCDialog(false);
+
+    toast({
+      title: "Category selected",
+      description: `Selected category: ${mcc.description} (${mcc.code})`,
     });
   };
 
@@ -206,25 +248,43 @@ const MerchantDetailsForm = () => {
         
         <div>
           <Label>Merchant Category</Label>
-          <Select 
-            value={selectedMCC?.code} 
-            onValueChange={(value) => {
-              const mcc = MCC_CODES.find(m => m.code === value);
-              setSelectedMCC(mcc);
-              form.setValue('mcc', mcc);
-            }}
-          >
-            <SelectTrigger className="w-full mt-1">
-              <SelectValue placeholder="Select merchant category" />
-            </SelectTrigger>
-            <SelectContent>
-              {MCC_CODES.map((mcc) => (
-                <SelectItem key={mcc.code} value={mcc.code}>
-                  {mcc.description} ({mcc.code})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={showMCCDialog} onOpenChange={setShowMCCDialog}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                role="combobox" 
+                aria-expanded={showMCCDialog}
+                className="w-full justify-between mt-1"
+              >
+                {selectedMCC ? `${selectedMCC.description} (${selectedMCC.code})` : "Select merchant category"}
+                <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0">
+              <Command>
+                <CommandInput 
+                  placeholder="Search categories..." 
+                  value={mccSearchQuery}
+                  onValueChange={setMccSearchQuery}
+                />
+                <CommandList>
+                  <CommandEmpty>No categories found.</CommandEmpty>
+                  <CommandGroup>
+                    {filteredMCC.map((mcc) => (
+                      <CommandItem
+                        key={mcc.code}
+                        onSelect={() => handleSelectMCC(mcc)}
+                        className="cursor-pointer"
+                      >
+                        <span>{mcc.description}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">({mcc.code})</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <p className="text-sm text-muted-foreground mt-1">
             {selectedMCC ? (
               <span className="flex items-center">
@@ -232,19 +292,19 @@ const MerchantDetailsForm = () => {
                 {selectedMCC.description} ({selectedMCC.code})
               </span>
             ) : (
-              "Optional - Select a merchant category code"
+              "Optional - Search and select a merchant category code"
             )}
           </p>
         </div>
 
         {/* Places Selection Dialog */}
         <CommandDialog open={showPlacesDialog} onOpenChange={setShowPlacesDialog}>
-          <CommandInput placeholder="Search places..." />
-          <CommandList>
-            <CommandEmpty>No places found.</CommandEmpty>
-            <CommandGroup heading="Suggested Places">
+          <CommandDialogInput placeholder="Search places..." />
+          <CommandDialogList>
+            <CommandDialogEmpty>No places found.</CommandDialogEmpty>
+            <CommandDialogGroup heading="Suggested Places">
               {places.map((place, index) => (
-                <CommandItem
+                <CommandDialogItem
                   key={index}
                   onSelect={() => handleSelectPlace(place)}
                   className="cursor-pointer"
@@ -253,10 +313,10 @@ const MerchantDetailsForm = () => {
                     <span className="font-medium">{place.name}</span>
                     <span className="text-sm text-muted-foreground">{place.address}</span>
                   </div>
-                </CommandItem>
+                </CommandDialogItem>
               ))}
-            </CommandGroup>
-          </CommandList>
+            </CommandDialogGroup>
+          </CommandDialogList>
         </CommandDialog>
       </CardContent>
     </Card>
