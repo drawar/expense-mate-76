@@ -66,8 +66,8 @@ const AddExpense = () => {
     // Load payment methods
     const loadData = async () => {
       try {
-        console.log('Loading payment methods...');
-        const methods = await getPaymentMethods();
+        console.log('Loading payment methods with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
+        const methods = await getPaymentMethods(USE_LOCAL_STORAGE_DEFAULT);
         console.log('Payment methods loaded:', methods);
         
         if (!methods || methods.length === 0) {
@@ -142,7 +142,7 @@ const AddExpense = () => {
       });
       
       // Navigate back to the dashboard
-      navigate('/');
+      navigate('/transactions');
     } catch (error) {
       console.error('Error saving transaction:', error);
       

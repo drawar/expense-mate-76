@@ -39,13 +39,27 @@ const saveTransactionsToLocalStorage = (transactions: Transaction[]): void => {
   }
 };
 
+// Helper function to get transactions from local storage
+const getTransactionsFromLocalStorage = (): Transaction[] => {
+  try {
+    const stored = localStorage.getItem(TRANSACTIONS_KEY);
+    if (!stored) return [];
+    
+    const transactions = JSON.parse(stored);
+    console.log('Successfully loaded transactions from local storage:', transactions.length);
+    return transactions;
+  } catch (error) {
+    console.error('Error loading transactions from local storage:', error);
+    return [];
+  }
+};
+
 // Get transactions from Supabase with local storage fallback
 export const getTransactions = async (forceLocalStorage = false): Promise<Transaction[]> => {
   // If we're forcing local storage, skip Supabase attempt
   if (forceLocalStorage) {
     console.log('Forcing local storage for transactions');
-    const stored = localStorage.getItem(TRANSACTIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    return getTransactionsFromLocalStorage();
   }
   
   try {
@@ -60,9 +74,8 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
     if (error) {
       console.error('Error fetching transactions from Supabase:', error);
       // Fallback to localStorage
-      const stored = localStorage.getItem(TRANSACTIONS_KEY);
       console.log('Falling back to local storage for transactions');
-      return stored ? JSON.parse(stored) : [];
+      return getTransactionsFromLocalStorage();
     }
     
     // Transform payment methods
@@ -140,9 +153,8 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
   } catch (error) {
     console.error('Exception in getTransactions:', error);
     // Fallback to localStorage on any error
-    const stored = localStorage.getItem(TRANSACTIONS_KEY);
     console.log('Falling back to local storage due to exception');
-    return stored ? JSON.parse(stored) : [];
+    return getTransactionsFromLocalStorage();
   }
 };
 
@@ -296,8 +308,7 @@ const saveTransactionToLocalStorage = async (
     };
     
     // Get existing transactions from local storage
-    const existingTransactions = localStorage.getItem(TRANSACTIONS_KEY);
-    const transactions: Transaction[] = existingTransactions ? JSON.parse(existingTransactions) : [];
+    const transactions = getTransactionsFromLocalStorage();
     
     // Add the new transaction
     transactions.push(newTransaction);
@@ -316,54 +327,108 @@ const saveTransactionToLocalStorage = async (
 
 // Edit an existing transaction
 export const editTransaction = async (id: string, updatedTransaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
-  // First ensure the merchant exists
-  const savedMerchant = await addOrUpdateMerchant(updatedTransaction.merchant);
+  // Get existing transactions to check if we're in local storage mode
+  const existingTransactions = getTransactionsFromLocalStorage();
+  const transaction = existingTransactions.find(t => t.id === id);
   
-  // Then update the transaction
-  const { data, error } = await supabase
-    .from('transactions')
-    .update({
-      date: updatedTransaction.date,
-      merchant_id: savedMerchant.id,
-      amount: updatedTransaction.amount,
-      currency: updatedTransaction.currency,
-      payment_method_id: updatedTransaction.paymentMethod.id,
-      payment_amount: updatedTransaction.paymentAmount,
-      payment_currency: updatedTransaction.paymentCurrency,
-      reward_points: updatedTransaction.rewardPoints,
-      notes: updatedTransaction.notes,
-      // Add category based on MCC code or use provided category
-      category: updatedTransaction.category || getCategoryFromMCC(updatedTransaction.merchant.mcc?.code),
-      is_contactless: updatedTransaction.isContactless,
-    })
-    .eq('id', id)
-    .select()
-    .single();
-    
-  if (error) {
-    console.error('Error updating transaction:', error);
-    return null;
+  // If transaction exists in local storage, update it there
+  if (transaction) {
+    try {
+      // Update in local storage
+      const updatedTransactions = existingTransactions.map(t => {
+        if (t.id === id) {
+          // For local storage, we need to handle merchant lookup ourselves
+          // to avoid duplicate merchant entries
+          return {
+            id,
+            ...updatedTransaction,
+          };
+        }
+        return t;
+      });
+      
+      saveTransactionsToLocalStorage(updatedTransactions);
+      
+      // Find and return the updated transaction
+      const updated = updatedTransactions.find(t => t.id === id);
+      return updated || null;
+    } catch (error) {
+      console.error('Error updating transaction in local storage:', error);
+      return null;
+    }
   }
   
-  // Return the updated transaction
-  return {
-    id: data.id,
-    date: data.date,
-    merchant: savedMerchant,
-    amount: Number(data.amount),
-    currency: data.currency as Currency,
-    paymentMethod: updatedTransaction.paymentMethod,
-    paymentAmount: Number(data.payment_amount),
-    paymentCurrency: data.payment_currency as Currency,
-    rewardPoints: data.reward_points,
-    notes: data.notes,
-    category: data.category,
-    isContactless: data.is_contactless,
-  };
+  // Otherwise try Supabase
+  try {
+    // First ensure the merchant exists
+    const savedMerchant = await addOrUpdateMerchant(updatedTransaction.merchant);
+    
+    // Then update the transaction
+    const { data, error } = await supabase
+      .from('transactions')
+      .update({
+        date: updatedTransaction.date,
+        merchant_id: savedMerchant.id,
+        amount: updatedTransaction.amount,
+        currency: updatedTransaction.currency,
+        payment_method_id: updatedTransaction.paymentMethod.id,
+        payment_amount: updatedTransaction.paymentAmount,
+        payment_currency: updatedTransaction.paymentCurrency,
+        reward_points: updatedTransaction.rewardPoints,
+        notes: updatedTransaction.notes,
+        // Add category based on MCC code or use provided category
+        category: updatedTransaction.category || getCategoryFromMCC(updatedTransaction.merchant.mcc?.code),
+        is_contactless: updatedTransaction.isContactless,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating transaction:', error);
+      return null;
+    }
+    
+    // Return the updated transaction
+    return {
+      id: data.id,
+      date: data.date,
+      merchant: savedMerchant,
+      amount: Number(data.amount),
+      currency: data.currency as Currency,
+      paymentMethod: updatedTransaction.paymentMethod,
+      paymentAmount: Number(data.payment_amount),
+      paymentCurrency: data.payment_currency as Currency,
+      rewardPoints: data.reward_points,
+      notes: data.notes,
+      category: data.category,
+      isContactless: data.is_contactless,
+    };
+  } catch (error) {
+    console.error('Error in editTransaction:', error);
+    return null;
+  }
 };
 
 // Delete a transaction
 export const deleteTransaction = async (id: string): Promise<boolean> => {
+  // Get existing transactions to check if we're in local storage mode
+  const existingTransactions = getTransactionsFromLocalStorage();
+  const transaction = existingTransactions.find(t => t.id === id);
+  
+  // If transaction exists in local storage, delete it there
+  if (transaction) {
+    try {
+      const updatedTransactions = existingTransactions.filter(t => t.id !== id);
+      saveTransactionsToLocalStorage(updatedTransactions);
+      return true;
+    } catch (error) {
+      console.error('Error deleting transaction from local storage:', error);
+      return false;
+    }
+  }
+  
+  // Otherwise try Supabase
   const { error } = await supabase
     .from('transactions')
     .delete()

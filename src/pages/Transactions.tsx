@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction } from '@/types';
@@ -8,7 +9,7 @@ import { PlusCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 
 import TransactionSearchBar from '@/components/transaction/TransactionSearchBar';
 import TransactionFilters, { FilterOptions } from '@/components/transaction/TransactionFilters';
@@ -45,9 +46,12 @@ const Transactions = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const loadedTransactions = await getTransactions();
+        console.log('Loading transactions with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
+        // Force using local storage if it's the default
+        const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
         const loadedPaymentMethods = await getPaymentMethods();
         
+        console.log('Loaded transactions:', loadedTransactions.length);
         setTransactions(loadedTransactions);
         setPaymentMethods(loadedPaymentMethods);
       } catch (error) {
@@ -64,21 +68,34 @@ const Transactions = () => {
     
     loadData();
     
-    const channel = supabase
-      .channel('public:transactions')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'transactions'
-      }, async () => {
-        const updatedTransactions = await getTransactions();
+    // Only set up the Supabase channel if we're not defaulting to local storage
+    if (!USE_LOCAL_STORAGE_DEFAULT) {
+      const channel = supabase
+        .channel('public:transactions')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'transactions'
+        }, async () => {
+          const updatedTransactions = await getTransactions();
+          setTransactions(updatedTransactions);
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // For local storage, we need to check for changes periodically
+      const checkInterval = setInterval(async () => {
+        const updatedTransactions = await getTransactions(true);
         setTransactions(updatedTransactions);
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      }, 5000); // Check every 5 seconds
+      
+      return () => {
+        clearInterval(checkInterval);
+      };
+    }
   }, [toast]);
   
   useEffect(() => {
@@ -186,6 +203,7 @@ const Transactions = () => {
     
     try {
       setIsLoading(true);
+      // Force local storage if it's the default
       const success = await deleteTransaction(transactionToDelete.id);
       
       if (success) {
