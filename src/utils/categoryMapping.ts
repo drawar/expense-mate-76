@@ -16,7 +16,7 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   // Travel and Transport
-  if (['4121', '4112', '3000', '7011', '4225'].includes(mccCode) || 
+  if (['4121', '4112', '3000', '7011', '4225', '4119'].includes(mccCode) || 
       (mccCode.startsWith('4') && !['4814', '4899'].includes(mccCode))) {
     return 'Travel';
   }
@@ -59,7 +59,8 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   // Health & Beauty
-  if (['5912', '5977', '7230', '7298'].includes(mccCode)) {
+  if (['5912', '5977', '7230', '7298', '8011', '8021', '8031', '8041', '8042', 
+       '8043', '8049', '8050', '8062', '8071', '8099', '5122', '5975', '5976'].includes(mccCode)) {
     return 'Health & Beauty';
   }
   
@@ -69,7 +70,7 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   // Professional Services
-  if (['7273', '7277', '7278', '7296', '7297', '7321', '7361', '7379', '7392'].includes(mccCode) ||
+  if (['7273', '7277', '7278', '7296', '7297', '7321', '7339', '7361', '7379', '7392'].includes(mccCode) ||
       (mccCode.startsWith('7') && !['7011', '7230', '7298', '7832', '7622', '7623', '7629', '7631', '7641', '7993'].includes(mccCode))) {
     return 'Services';
   }
@@ -93,6 +94,27 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   // Appliance Repair
   if (['7623', '7629'].includes(mccCode)) {
     return 'Repairs & Maintenance';
+  }
+  
+  // Education
+  if (['8211', '8220', '8241', '8244', '8249', '8299'].includes(mccCode)) {
+    return 'Education';
+  }
+  
+  // Government Services
+  if (['9211', '9222', '9223', '9311', '9399', '9402'].includes(mccCode)) {
+    return 'Government';
+  }
+  
+  // Financial Services
+  if (['6010', '6011', '6012', '6051', '6211', '6300'].includes(mccCode) || 
+      mccCode.startsWith('6')) {
+    return 'Financial Services';
+  }
+  
+  // Charitable & Social Service
+  if (['8398', '8641', '8651', '8661'].includes(mccCode)) {
+    return 'Charity & Organizations';
   }
   
   // Political & Organizations

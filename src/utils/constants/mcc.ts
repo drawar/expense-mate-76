@@ -1,3 +1,4 @@
+
 // MCC codes for merchant category classification
 export const MCC_CODES = [
   { code: '5411', description: 'Grocery Stores & Supermarkets' },
@@ -132,5 +133,52 @@ export const MCC_CODES = [
   { code: '7993', description: 'Video Amusement Game Supplies' },
   { code: '8351', description: 'Organizations, Political' },
   { code: '9751', description: 'UK Supermarkets, Electronic Hot File' },
+  
+  // Educational
+  { code: '8211', description: 'Elementary and Secondary Schools' },
+  { code: '8220', description: 'Colleges, Universities' },
+  { code: '8241', description: 'Correspondence Schools' },
+  { code: '8244', description: 'Business and Secretarial Schools' },
+  { code: '8249', description: 'Vocational and Trade Schools' },
+  { code: '8299', description: 'Schools and Educational Services' },
+  
+  // Government Services
+  { code: '9211', description: 'Court Costs, Including Alimony and Child Support' },
+  { code: '9222', description: 'Fines, Government Administrative Entities' },
+  { code: '9223', description: 'Bail and Bond Payments' },
+  { code: '9311', description: 'Tax Payments, Government Agencies' },
+  { code: '9399', description: 'Government Services' },
+  { code: '9402', description: 'Postal Services' },
+  
+  // Financial Services
+  { code: '6010', description: 'Financial Institutions - Manual Cash Disbursements' },
+  { code: '6011', description: 'Financial Institutions - Automated Cash Disbursements' },
+  { code: '6012', description: 'Financial Institutions - Merchandise and Services' },
+  { code: '6051', description: 'Non-Financial Institutions - Foreign Currency, Money Orders' },
+  { code: '6211', description: 'Securities Brokers/Dealers' },
+  { code: '6300', description: 'Insurance Sales, Underwriting, and Premiums' },
+  
+  // Charitable & Social Service
+  { code: '8398', description: 'Charitable and Social Service Organizations' },
+  { code: '8641', description: 'Civic, Social, and Fraternal Associations' },
+  { code: '8651', description: 'Political Organizations' },
+  { code: '8661', description: 'Religious Organizations' },
+  
+  // Medical & Healthcare
+  { code: '4119', description: 'Ambulance Services' },
+  { code: '5122', description: 'Drugs, Drug Proprietaries, and Druggist Sundries' },
+  { code: '5975', description: 'Hearing Aids Sales, Service, and Supplies' },
+  { code: '5976', description: 'Orthopedic Goods - Prosthetic Devices' },
+  { code: '7339', description: 'Stenographic and Secretarial Support Services' },
+  { code: '8011', description: 'Doctors and Physicians' },
+  { code: '8021', description: 'Dentists and Orthodontists' },
+  { code: '8031', description: 'Osteopaths' },
+  { code: '8041', description: 'Chiropractors' },
+  { code: '8042', description: 'Optometrists and Ophthalmologists' },
+  { code: '8043', description: 'Opticians, Optical Goods, and Eyeglasses' },
+  { code: '8049', description: 'Podiatrists and Chiropodists' },
+  { code: '8050', description: 'Nursing and Personal Care Facilities' },
+  { code: '8062', description: 'Hospitals' },
+  { code: '8071', description: 'Medical and Dental Laboratories' },
+  { code: '8099', description: 'Medical Services and Health Practitioners' }
 ];
-
