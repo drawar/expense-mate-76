@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -256,27 +257,6 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       const savedMerchant = await addOrUpdateMerchant(merchant);
       console.log('Merchant saved:', savedMerchant);
       
-      // Determine the proper category
-      let category = getCategoryFromMCC(selectedMCC?.code);
-      
-      // If still uncategorized and it's a food-related name
-      if ((category === 'Uncategorized' || !category) && 
-          values.merchantName.toLowerCase().includes('kopitiam')) {
-        category = 'Food & Drinks';
-      }
-      
-      // Ensure we have reward points
-      const calculatedPoints = typeof estimatedPoints === 'object' 
-        ? estimatedPoints.totalPoints 
-        : (typeof estimatedPoints === 'number' ? estimatedPoints : 0);
-      
-      // Use a minimum of base points for credit cards
-      let finalPoints = calculatedPoints;
-      if (finalPoints === 0 && paymentMethod.type === 'credit_card') {
-        const baseRate = 0.4;
-        finalPoints = Math.round(Number(values.amount) * baseRate);
-      }
-      
       const transaction: Omit<Transaction, 'id'> = {
         date: format(values.date, 'yyyy-MM-dd'),
         merchant: savedMerchant,
@@ -287,10 +267,13 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           ? Number(values.paymentAmount) 
           : Number(values.amount),
         paymentCurrency: paymentMethod.currency,
-        rewardPoints: finalPoints,
+        rewardPoints: typeof estimatedPoints === 'object' 
+          ? estimatedPoints.totalPoints 
+          : (typeof estimatedPoints === 'number' ? estimatedPoints : 0),
         notes: values.notes,
         isContactless: !values.isOnline ? values.isContactless : false,
-        category: category,
+        // Add category based on MCC code
+        category: getCategoryFromMCC(selectedMCC?.code),
       };
       
       console.log('Submitting final transaction:', transaction);

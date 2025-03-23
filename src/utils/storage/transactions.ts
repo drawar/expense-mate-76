@@ -291,49 +291,6 @@ const saveTransactionToLocalStorage = async (
       merchant = savedMerchant;
     }
     
-    // Import here to avoid circular dependencies
-    const { getCategoryFromMCC } = await import('../categoryMapping');
-    const { isFoodMerchant } = await import('../categoryMapping');
-    
-    // Determine category - use multiple approaches for better categorization
-    let category = transaction.category;
-    
-    if (!category || category === 'Uncategorized') {
-      // Try to get category from MCC code
-      if (merchant.mcc?.code) {
-        category = getCategoryFromMCC(merchant.mcc.code);
-      }
-      
-      // If still uncategorized, try to infer from merchant name
-      if (!category || category === 'Uncategorized') {
-        if (isFoodMerchant(merchant.name)) {
-          category = 'Food & Drinks';
-        }
-      }
-      
-      // Still no category, default to a general one
-      if (!category || category === 'Uncategorized') {
-        category = 'Uncategorized';
-      }
-    }
-    
-    // Calculate points if not already set
-    let rewardPoints = transaction.rewardPoints || 0;
-    if (rewardPoints === 0 && transaction.paymentMethod.type === 'credit_card') {
-      // Simple point calculation if none was provided
-      const basePointRate = 0.4; // Default rate for basic points
-      rewardPoints = Math.round(transaction.amount * basePointRate);
-      
-      // Extra points for UOB cards
-      if (transaction.paymentMethod.issuer === 'UOB' && 
-          transaction.paymentMethod.name.includes('Platinum') && 
-          transaction.isContactless) {
-        const bonusPointRate = 3.6; // UOB bonus rate
-        const bonusPoints = Math.round(transaction.amount * bonusPointRate);
-        rewardPoints += bonusPoints;
-      }
-    }
-    
     // Create the transaction object
     const newTransaction: Transaction = {
       id,
@@ -344,9 +301,9 @@ const saveTransactionToLocalStorage = async (
       paymentMethod: transaction.paymentMethod,
       paymentAmount: Number(transaction.paymentAmount || transaction.amount),
       paymentCurrency: transaction.paymentCurrency || transaction.currency,
-      rewardPoints: rewardPoints,
+      rewardPoints: transaction.rewardPoints || 0,
       notes: transaction.notes || '',
-      category: category,
+      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code) || 'Uncategorized',
       isContactless: transaction.isContactless || false,
     };
     
