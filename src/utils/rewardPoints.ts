@@ -1,6 +1,6 @@
-
 import { Transaction, PaymentMethod, RewardRule } from '@/types';
 import { isDateInStatementPeriod } from './dateUtils';
+import { startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 
 // Calculate reward points for a single transaction
 export const calculateTransactionPoints = (
@@ -12,6 +12,11 @@ export const calculateTransactionPoints = (
   // Cash doesn't earn rewards
   if (paymentMethod.type === 'cash') {
     return 0;
+  }
+  
+  // Special case for UOB Preferred Visa Platinum
+  if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Preferred Visa Platinum') {
+    return calculateUOBPoints(transaction, allTransactions);
   }
   
   // Get total spend in the current statement period for this payment method
@@ -76,6 +81,61 @@ export const calculateTransactionPoints = (
   return Math.round(points);
 };
 
+// Special calculation for UOB Preferred Visa Platinum
+const calculateUOBPoints = (
+  transaction: Transaction,
+  allTransactions: Transaction[]
+): number => {
+  const { amount, merchant, isContactless } = transaction;
+  
+  // Round down to nearest multiple of 5
+  const roundedAmount = Math.floor(amount / 5) * 5;
+  
+  // Calculate base points (0.4x rounded amount)
+  const basePoints = roundedAmount * 0.4;
+  
+  // Check if transaction is eligible for bonus points
+  const eligibleMCCs = [
+    '4816', '5262', '5306', '5309', '5310', '5311', '5331', '5399', 
+    '5611', '5621', '5631', '5641', '5651', '5661', '5691', '5699',
+    '5732', '5733', '5734', '5735', '5912', '5942', '5944', '5945',
+    '5946', '5947', '5948', '5949', '5964', '5965', '5966', '5967',
+    '5968', '5969', '5970', '5992', '5999', '5811', '5812', '5814',
+    '5333', '5411', '5441', '5462', '5499', '8012', '9751', '7278',
+    '7832', '7841', '7922', '7991', '7996', '7998', '7999'
+  ];
+  
+  const isEligibleMCC = merchant.mcc && eligibleMCCs.includes(merchant.mcc.code);
+  const isEligibleTransaction = isContactless || (merchant.isOnline && isEligibleMCC);
+  
+  if (!isEligibleTransaction) {
+    return Math.round(basePoints);
+  }
+  
+  // Calculate total bonus points earned this calendar month
+  const currentDate = new Date(transaction.date);
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  
+  const monthTransactions = allTransactions.filter(t => 
+    t.paymentMethod.id === transaction.paymentMethod.id &&
+    isSameMonth(new Date(t.date), currentDate)
+  );
+  
+  const totalMonthBonusPoints = monthTransactions.reduce((sum, tx) => {
+    if (tx.id === transaction.id) return sum; // Exclude current transaction
+    const txAmount = Math.floor(tx.amount / 5) * 5;
+    return sum + (txAmount * 3.6);
+  }, 0);
+  
+  // Calculate bonus points for current transaction
+  const potentialBonusPoints = roundedAmount * 3.6;
+  const remainingBonusPoints = 4000 - totalMonthBonusPoints;
+  const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
+  
+  return Math.round(basePoints + actualBonusPoints);
+};
+
 // Get total reward points earned across all transactions
 export const getTotalRewardPoints = (transactions: Transaction[]): number => {
   return transactions.reduce((total, transaction) => total + transaction.rewardPoints, 0);
@@ -87,10 +147,55 @@ export const simulateRewardPoints = (
   currency: string,
   paymentMethod: PaymentMethod,
   mcc?: string,
-  merchantName?: string
-): number => {
+  merchantName?: string,
+  isOnline?: boolean,
+  isContactless?: boolean,
+  currentDate: Date = new Date()
+): {
+  totalPoints: number;
+  basePoints?: number;
+  bonusPoints?: number;
+  remainingMonthlyBonusPoints?: number;
+} => {
   if (paymentMethod.type === 'cash') {
-    return 0;
+    return { totalPoints: 0 };
+  }
+  
+  // Special case for UOB Preferred Visa Platinum
+  if (paymentMethod.issuer === 'UOB' && paymentMethod.name === 'Preferred Visa Platinum') {
+    const roundedAmount = Math.floor(amount / 5) * 5;
+    const basePoints = roundedAmount * 0.4;
+    
+    const eligibleMCCs = [
+      '4816', '5262', '5306', '5309', '5310', '5311', '5331', '5399', 
+      '5611', '5621', '5631', '5641', '5651', '5661', '5691', '5699',
+      '5732', '5733', '5734', '5735', '5912', '5942', '5944', '5945',
+      '5946', '5947', '5948', '5949', '5964', '5965', '5966', '5967',
+      '5968', '5969', '5970', '5992', '5999', '5811', '5812', '5814',
+      '5333', '5411', '5441', '5462', '5499', '8012', '9751', '7278',
+      '7832', '7841', '7922', '7991', '7996', '7998', '7999'
+    ];
+    
+    const isEligibleMCC = mcc && eligibleMCCs.includes(mcc);
+    const isEligibleTransaction = isContactless || (isOnline && isEligibleMCC);
+    
+    if (!isEligibleTransaction) {
+      return {
+        totalPoints: Math.round(basePoints),
+        basePoints: Math.round(basePoints),
+        bonusPoints: 0,
+        remainingMonthlyBonusPoints: 4000
+      };
+    }
+    
+    const bonusPoints = Math.min(roundedAmount * 3.6, 4000);
+    
+    return {
+      totalPoints: Math.round(basePoints + bonusPoints),
+      basePoints: Math.round(basePoints),
+      bonusPoints: Math.round(bonusPoints),
+      remainingMonthlyBonusPoints: 4000 - Math.round(bonusPoints)
+    };
   }
   
   let points = 0;
@@ -136,5 +241,5 @@ export const simulateRewardPoints = (
     points = amount * basePointRate;
   }
   
-  return Math.round(points);
+  return { totalPoints: Math.round(points) };
 };

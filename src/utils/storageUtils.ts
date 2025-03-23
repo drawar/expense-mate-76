@@ -1,4 +1,3 @@
-
 import { Transaction, PaymentMethod, Merchant, Currency } from '@/types';
 
 // LocalStorage keys
@@ -108,6 +107,20 @@ const defaultPaymentMethods: PaymentMethod[] = [
         pointsMultiplier: 3,
       },
     ],
+  },
+  {
+    id: '4',
+    name: 'Preferred Visa Platinum',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'UOB',
+    lastFourDigits: '9012',
+    statementStartDay: 1,
+    isMonthlyStatement: false,
+    active: true,
+    icon: 'credit-card',
+    color: '#1e3a8a',
+    rewardRules: [], // Special handling in rewardPoints.ts
   },
 ];
 
