@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction } from '@/types';
@@ -42,7 +41,6 @@ const Transactions = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   
-  // Load data
   useEffect(() => {
     const loadData = () => {
       const loadedTransactions = getTransactions();
@@ -55,7 +53,6 @@ const Transactions = () => {
     
     loadData();
     
-    // Add event listener for storage changes
     window.addEventListener('storage', loadData);
     
     return () => {
@@ -63,11 +60,9 @@ const Transactions = () => {
     };
   }, []);
   
-  // Apply filters and sorting
   useEffect(() => {
     let filtered = [...transactions];
     
-    // Apply search query
     if (searchQuery) {
       filtered = filtered.filter(tx => 
         tx.merchant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -75,7 +70,6 @@ const Transactions = () => {
       );
     }
     
-    // Apply filters
     if (filterOptions.merchantName) {
       filtered = filtered.filter(tx => 
         tx.merchant.name.toLowerCase().includes(filterOptions.merchantName.toLowerCase())
@@ -106,7 +100,6 @@ const Transactions = () => {
       );
     }
     
-    // Apply sorting
     switch (sortOption) {
       case 'date-desc':
         filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -124,7 +117,6 @@ const Transactions = () => {
     
     setFilteredTransactions(filtered);
     
-    // Update active filters
     const newActiveFilters: string[] = [];
     if (filterOptions.merchantName) newActiveFilters.push('Merchant');
     if (filterOptions.paymentMethodId) newActiveFilters.push('Payment Method');
@@ -174,7 +166,6 @@ const Transactions = () => {
     const success = deleteTransaction(transactionToDelete.id);
     
     if (success) {
-      // Update the local state
       setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
       
       toast({
@@ -182,10 +173,8 @@ const Transactions = () => {
         description: "The transaction has been successfully deleted.",
       });
       
-      // Trigger storage event to update other components
       window.dispatchEvent(new Event('storage'));
       
-      // Close dialogs
       setDeleteConfirmOpen(false);
       setIsTransactionDialogOpen(false);
     } else {
@@ -203,7 +192,6 @@ const Transactions = () => {
     const result = editTransaction(selectedTransaction.id, updatedTransaction);
     
     if (result) {
-      // Update the local state
       setTransactions(prev => 
         prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
       );
@@ -213,10 +201,8 @@ const Transactions = () => {
         description: "The transaction has been successfully updated.",
       });
       
-      // Trigger storage event to update other components
       window.dispatchEvent(new Event('storage'));
       
-      // Close dialog
       setIsTransactionDialogOpen(false);
     } else {
       toast({
@@ -248,17 +234,14 @@ const Transactions = () => {
           </Link>
         </div>
         
-        {/* Search and Filter Bar */}
         <div className="sticky top-[72px] z-20 bg-background py-4 mb-6 border-b">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Search Bar */}
             <TransactionSearchBar 
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
             
             <div className="flex items-center gap-2">
-              {/* Filters */}
               <TransactionFilters
                 filterOptions={filterOptions}
                 activeFilters={activeFilters}
@@ -267,7 +250,6 @@ const Transactions = () => {
                 onResetFilters={resetFilters}
               />
               
-              {/* Sort and View Options */}
               <TransactionSortAndView
                 sortOption={sortOption}
                 viewMode={viewMode}
@@ -294,29 +276,44 @@ const Transactions = () => {
                 <TabsTrigger value="grid">Card View</TabsTrigger>
                 <TabsTrigger value="table">Table View</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="grid">
+                <TransactionGroupView
+                  transactions={filteredTransactions}
+                  sortOption={sortOption}
+                  onViewTransaction={handleViewTransaction}
+                />
+              </TabsContent>
+              
+              <TabsContent value="table">
+                <TransactionTable
+                  transactions={filteredTransactions}
+                  paymentMethods={paymentMethods}
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                  onView={handleViewTransaction}
+                />
+              </TabsContent>
             </Tabs>
             
-            <TabsContent value="grid" className="mt-0">
-              {/* Grid View */}
-              <TransactionGroupView
-                transactions={filteredTransactions}
-                sortOption={sortOption}
-                onViewTransaction={handleViewTransaction}
-              />
-            </TabsContent>
+            <div className="hidden sm:block">
+              {viewMode === 'grid' ? (
+                <TransactionGroupView
+                  transactions={filteredTransactions}
+                  sortOption={sortOption}
+                  onViewTransaction={handleViewTransaction}
+                />
+              ) : (
+                <TransactionTable
+                  transactions={filteredTransactions}
+                  paymentMethods={paymentMethods}
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                  onView={handleViewTransaction}
+                />
+              )}
+            </div>
             
-            <TabsContent value="table" className="mt-0">
-              {/* Table View */}
-              <TransactionTable
-                transactions={filteredTransactions}
-                paymentMethods={paymentMethods}
-                onEdit={handleEditTransaction}
-                onDelete={handleDeleteTransaction}
-                onView={handleViewTransaction}
-              />
-            </TabsContent>
-            
-            {/* Summary */}
             <div className="text-sm text-gray-500 dark:text-gray-400">
               Showing {filteredTransactions.length} of {transactions.length} transactions
             </div>
@@ -324,7 +321,6 @@ const Transactions = () => {
         )}
       </main>
       
-      {/* Transaction Dialog */}
       {selectedTransaction && (
         <TransactionDialog
           transaction={selectedTransaction}
@@ -339,7 +335,6 @@ const Transactions = () => {
         />
       )}
       
-      {/* Delete Confirmation Dialog */}
       <TransactionDeleteDialog
         isOpen={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
