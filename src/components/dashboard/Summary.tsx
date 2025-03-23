@@ -120,7 +120,61 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
           </TabsList>
         </div>
         
-        <TabsContent value={activeTab} className="mt-4 space-y-6">
+        <TabsContent value="thisMonth" className="mt-4 space-y-6">
+          {/* Summary Cards */}
+          <SummaryCardGrid
+            filteredTransactions={filteredTransactions}
+            totalExpenses={totalExpenses}
+            transactionCount={transactionCount}
+            averageAmount={averageAmount}
+            topPaymentMethod={topPaymentMethod}
+            totalRewardPoints={totalRewardPoints}
+          />
+          
+          {/* Charts Section */}
+          <SummaryCharts
+            paymentMethodChartData={paymentMethodChartData}
+            categoryChartData={categoryChartData}
+          />
+        </TabsContent>
+        
+        <TabsContent value="lastMonth" className="mt-4 space-y-6">
+          {/* Summary Cards */}
+          <SummaryCardGrid
+            filteredTransactions={filteredTransactions}
+            totalExpenses={totalExpenses}
+            transactionCount={transactionCount}
+            averageAmount={averageAmount}
+            topPaymentMethod={topPaymentMethod}
+            totalRewardPoints={totalRewardPoints}
+          />
+          
+          {/* Charts Section */}
+          <SummaryCharts
+            paymentMethodChartData={paymentMethodChartData}
+            categoryChartData={categoryChartData}
+          />
+        </TabsContent>
+        
+        <TabsContent value="lastThreeMonths" className="mt-4 space-y-6">
+          {/* Summary Cards */}
+          <SummaryCardGrid
+            filteredTransactions={filteredTransactions}
+            totalExpenses={totalExpenses}
+            transactionCount={transactionCount}
+            averageAmount={averageAmount}
+            topPaymentMethod={topPaymentMethod}
+            totalRewardPoints={totalRewardPoints}
+          />
+          
+          {/* Charts Section */}
+          <SummaryCharts
+            paymentMethodChartData={paymentMethodChartData}
+            categoryChartData={categoryChartData}
+          />
+        </TabsContent>
+        
+        <TabsContent value="thisYear" className="mt-4 space-y-6">
           {/* Summary Cards */}
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
