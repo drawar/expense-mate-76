@@ -57,11 +57,12 @@ export interface Transaction {
   paymentAmount: number;
   paymentCurrency: Currency;
   rewardPoints: number;
-  basePoints?: number; // Added this field
+  basePoints?: number; 
   notes?: string;
   category?: string;
   tags?: string[];
   isContactless?: boolean;
+  is_deleted?: boolean; // Add this field to match the backend schema
 }
 
 export interface ExpenseSummary {
