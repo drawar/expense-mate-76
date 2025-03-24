@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PaymentMethod, Currency } from '@/types';
 import { currencyOptions, getCurrencySymbol } from '@/utils/currencyFormatter';
+import { v4 as uuidv4 } from 'uuid';
 import {
   DialogContent,
   DialogDescription,

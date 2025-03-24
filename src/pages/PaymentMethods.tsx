@@ -11,6 +11,7 @@ import PaymentMethodCard from '@/components/payment-method/PaymentMethodCard';
 import EmptyPaymentMethodsCard from '@/components/payment-method/EmptyPaymentMethodsCard';
 import ImageUploadDialog from '@/components/payment-method/ImageUploadDialog';
 import { uploadCardImage } from '@/utils/storage/paymentMethods'; // Using direct import path
+import { v4 as uuidv4 } from 'uuid';
 
 const PaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -49,6 +50,49 @@ const PaymentMethods = () => {
   const handleEditMethod = (method: PaymentMethod) => {
     setEditingMethod(method);
     setIsFormOpen(true);
+  };
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const formData = new FormData(event.currentTarget);
+      
+      const method: PaymentMethod = {
+        id: editingMethod?.id || uuidv4(),
+        name: formData.get('name') as string,
+        type: formData.get('type') as 'cash' | 'credit_card',
+        currency: formData.get('currency') as any,
+        rewardRules: editingMethod?.rewardRules || [],
+        active: formData.get('active') === 'on',
+        imageUrl: editingMethod?.imageUrl,
+      };
+      
+      // Add credit card specific fields if applicable
+      if (method.type === 'credit_card') {
+        method.issuer = formData.get('issuer') as string || undefined;
+        method.lastFourDigits = formData.get('lastFourDigits') as string || undefined;
+        
+        const statementDay = formData.get('statementStartDay') as string;
+        if (statementDay) {
+          method.statementStartDay = parseInt(statementDay, 10);
+        }
+        
+        method.isMonthlyStatement = formData.get('isMonthlyStatement') === 'on';
+      }
+      
+      await handleSaveMethod(method);
+    } catch (error) {
+      console.error('Error saving payment method:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save payment method',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveMethod = async (method: PaymentMethod) => {
@@ -235,13 +279,14 @@ const PaymentMethods = () => {
         
         {isFormOpen && (
           <PaymentMethodForm
-            isOpen={isFormOpen}
+            currentMethod={editingMethod}
+            isEditing={!!editingMethod}
+            isLoading={isLoading}
             onClose={() => {
               setIsFormOpen(false);
               setEditingMethod(null);
             }}
-            onSave={handleSaveMethod}
-            initialData={editingMethod}
+            onSubmit={handleFormSubmit}
           />
         )}
         
