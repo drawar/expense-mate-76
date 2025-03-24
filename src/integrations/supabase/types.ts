@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_deleted: boolean
           merchant_name: string
           most_common_mcc: Json | null
           occurrence_count: number
@@ -21,6 +22,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean
           merchant_name: string
           most_common_mcc?: Json | null
           occurrence_count?: number
@@ -29,6 +31,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean
           merchant_name?: string
           most_common_mcc?: Json | null
           occurrence_count?: number

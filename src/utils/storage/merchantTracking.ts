@@ -7,7 +7,7 @@ interface MerchantCategoryMapping {
   merchantName: string;
   occurrenceCount: number;
   mostCommonMCC?: MerchantCategoryCode;
-  isDeleted?: boolean;
+  isDeleted: boolean;
 }
 
 // Get current merchant category mapping
