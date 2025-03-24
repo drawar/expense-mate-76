@@ -1,14 +1,23 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, CreditCard, Receipt, Menu, X } from 'lucide-react';
+import { Home, Plus, CreditCard, Receipt, Menu, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/components/theme/theme-provider';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
 
   const links = [
     { to: '/', icon: <Home size={20} />, label: 'Dashboard' },
@@ -18,6 +27,8 @@ const Navbar = () => {
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border transition-all duration-300 shadow-sm">
@@ -33,7 +44,7 @@ const Navbar = () => {
               key={link.to}
               to={link.to}
               className={`flex items-center px-3 py-2 rounded-full transition-colors ${
-                location.pathname === link.to
+                isActive(link.to)
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
@@ -47,42 +58,36 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Navigation with Dropdown */}
         <div className="flex items-center space-x-2 md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="px-2 py-1 h-8">
+                <span className="mr-2">Navigate</span>
+                <ChevronDown size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px] bg-background border-border">
+              {links.map((link) => (
+                <DropdownMenuItem key={link.to} asChild>
+                  <Link 
+                    to={link.to} 
+                    className={`w-full flex items-center ${
+                      isActive(link.to) ? 'bg-accent/50' : ''
+                    }`}
+                  >
+                    {link.icon}
+                    <span className="ml-2">{link.label}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ThemeToggle />
-          <button
-            onClick={toggleMenu}
-            className="p-2 rounded-full hover:bg-accent hover:text-accent-foreground"
-          >
-            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <div
-        className={`md:hidden absolute top-full left-0 right-0 bg-background border-b border-border transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-y-0 animate-enter shadow-md' : '-translate-y-full animate-exit'
-        }`}
-      >
-        <div className="container mx-auto px-4 py-3 space-y-2">
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`flex items-center p-3 rounded-md transition-colors ${
-                location.pathname === link.to
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {link.icon}
-              <span className="ml-3">{link.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* Remove old Mobile Menu */}
     </nav>
   );
 };
