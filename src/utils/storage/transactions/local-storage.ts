@@ -13,13 +13,31 @@ export const saveTransactionsToLocalStorage = (transactions: Transaction[]): voi
   }
 };
 
+// Cache the transactions to avoid multiple JSON.parse operations
+let cachedTransactions: Transaction[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 5000; // 5 seconds cache lifetime
+
 export const getTransactionsFromLocalStorage = (): Transaction[] => {
   try {
+    const now = Date.now();
+    
+    // Use cached transactions if available and not expired
+    if (cachedTransactions && (now - lastCacheTime) < CACHE_TTL) {
+      console.log('Using cached transactions from memory:', cachedTransactions.length);
+      return cachedTransactions;
+    }
+    
     const stored = localStorage.getItem(TRANSACTIONS_KEY);
     if (!stored) return [];
     
     const transactions = JSON.parse(stored);
     console.log('Successfully loaded transactions from local storage:', transactions.length);
+    
+    // Update cache
+    cachedTransactions = transactions;
+    lastCacheTime = now;
+    
     return transactions;
   } catch (error) {
     console.error('Error loading transactions from local storage:', error);
@@ -27,6 +45,7 @@ export const getTransactionsFromLocalStorage = (): Transaction[] => {
   }
 };
 
+// Clear the cache when a new transaction is saved
 export const saveTransactionToLocalStorage = async (
   transaction: Omit<Transaction, 'id'>, 
   savedMerchant?: any
@@ -106,6 +125,9 @@ export const saveTransactionToLocalStorage = async (
     const transactions = getTransactionsFromLocalStorage();
     transactions.push(newTransaction);
     saveTransactionsToLocalStorage(transactions);
+    
+    // Invalidate cache
+    cachedTransactions = null;
     
     console.log('Transaction saved to local storage:', newTransaction);
     

@@ -58,37 +58,44 @@ export const useTransactionList = () => {
     }
   }, [toast]);
   
-  // Reload only if something changed
+  // Modified to prevent state updates that trigger re-renders
   const refreshTransactions = useCallback(() => {
-    setLastRefresh(Date.now());
-  }, []);
+    // Only trigger a refresh if we're not currently loading
+    if (!isLoading) {
+      setLastRefresh(Date.now());
+    }
+  }, [isLoading]);
   
+  // Set up Supabase listener and polling only once on mount
   useEffect(() => {
+    // Initial load
     loadTransactions();
     
     // Only set up the Supabase channel if we're not defaulting to local storage
-    const channel = supabase
+    const channel = !USE_LOCAL_STORAGE_DEFAULT ? supabase
       .channel('public:transactions')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'transactions'
       }, refreshTransactions)
-      .subscribe();
+      .subscribe() : null;
     
-    // For all storage types, set up a polling mechanism for changes
-    const checkInterval = setInterval(refreshTransactions, 3000); // Check every 3 seconds
+    // For all storage types, set up a polling mechanism, but with a longer interval
+    const checkInterval = setInterval(refreshTransactions, 10000); // Check every 10 seconds instead of 3
     
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
       clearInterval(checkInterval);
     };
-  }, [loadTransactions, refreshTransactions]);
+  }, []); // Empty dependency array to ensure this only runs once
   
-  // Reload data when refresh signal is received
+  // Reload data when refresh signal is received, but avoid the dependency on loadTransactions
   useEffect(() => {
-    loadTransactions();
-  }, [lastRefresh, loadTransactions]);
+    if (lastRefresh > 0) {
+      loadTransactions();
+    }
+  }, [lastRefresh]);
   
   // Apply filters and sort (memoized with dependencies)
   useEffect(() => {
