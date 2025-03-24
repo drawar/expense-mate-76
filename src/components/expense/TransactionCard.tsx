@@ -4,14 +4,16 @@ import { formatCurrency } from '@/utils/currencyFormatter';
 import { formatDate } from '@/utils/dateUtils';
 import { CreditCardIcon, BanknoteIcon, TagIcon, MapPinIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CSSProperties } from 'react';
 
 interface TransactionCardProps {
   transaction: Transaction;
   onClick?: () => void;
   className?: string;
+  style?: CSSProperties;
 }
 
-const TransactionCard = ({ transaction, onClick, className }: TransactionCardProps) => {
+const TransactionCard = ({ transaction, onClick, className, style }: TransactionCardProps) => {
   const { 
     merchant, 
     amount, 
@@ -32,6 +34,7 @@ const TransactionCard = ({ transaction, onClick, className }: TransactionCardPro
         className
       )}
       onClick={onClick}
+      style={style}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0 pr-2">

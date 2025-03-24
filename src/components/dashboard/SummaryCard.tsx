@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { CSSProperties, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SummaryCardProps {
@@ -7,11 +7,13 @@ interface SummaryCardProps {
   value: string;
   description?: ReactNode;
   icon?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
 }
 
-const SummaryCard = ({ title, value, description, icon }: SummaryCardProps) => {
+const SummaryCard = ({ title, value, description, icon, className, style }: SummaryCardProps) => {
   return (
-    <Card className="summary-card overflow-hidden">
+    <Card className={`summary-card overflow-hidden ${className || ''}`} style={style}>
       <CardHeader className="pb-2">
         <CardDescription className="text-sm font-medium">{title}</CardDescription>
         <CardTitle className="text-xl sm:text-2xl truncate" title={value}>
