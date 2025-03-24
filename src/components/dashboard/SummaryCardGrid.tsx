@@ -50,7 +50,11 @@ const SummaryCardGrid = ({
       {/* Average Transaction Card */}
       <SummaryCard
         title="Average Transaction"
-        value={formatCurrency(averageAmount, displayCurrency)}
+        customContent={
+          <div className="text-3xl font-bold truncate">
+            {formatCurrency(averageAmount, displayCurrency)}
+          </div>
+        }
         description={`Per transaction in ${displayCurrency}`}
         icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500" />}
       />
