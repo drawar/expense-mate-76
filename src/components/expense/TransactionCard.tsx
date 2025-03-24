@@ -27,21 +27,25 @@ const TransactionCard = ({ transaction, onClick, className }: TransactionCardPro
   return (
     <div 
       className={cn(
-        "glass-card p-4 rounded-xl transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg cursor-pointer",
-        onClick && "hover:ring-1 hover:ring-primary/20",
+        "modern-card p-4 overflow-hidden",
+        onClick && "cursor-pointer hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200",
         className
       )}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0 pr-2">
-          <h3 className="font-medium text-lg line-clamp-1 break-words">{merchant.name}</h3>
+          <h3 className="font-semibold text-base md:text-lg truncate" title={merchant.name}>
+            {merchant.name}
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{formatDate(date)}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="font-semibold text-lg whitespace-nowrap">{formatCurrency(amount, currency)}</p>
+          <p className="font-semibold text-base md:text-lg whitespace-nowrap" title={formatCurrency(amount, currency)}>
+            {formatCurrency(amount, currency)}
+          </p>
           {isPaymentDifferent && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap" title={`Paid: ${formatCurrency(transaction.paymentAmount, transaction.paymentCurrency)}`}>
               Paid: {formatCurrency(transaction.paymentAmount, transaction.paymentCurrency)}
             </p>
           )}
@@ -49,32 +53,38 @@ const TransactionCard = ({ transaction, onClick, className }: TransactionCardPro
       </div>
 
       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2">
-        <div className="flex items-center text-sm rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 max-w-full">
+        <div className="flex items-center text-xs rounded-full px-3 py-1 bg-blue-50 dark:bg-blue-900/30 max-w-full">
           {paymentMethod.type === 'credit_card' ? (
             <CreditCardIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" style={{ color: paymentMethod.color }} />
           ) : (
             <BanknoteIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" style={{ color: paymentMethod.color }} />
           )}
-          <span className="truncate max-w-[120px]">{paymentMethod.name}</span>
+          <span className="truncate max-w-[120px]" title={paymentMethod.name}>
+            {paymentMethod.name}
+          </span>
         </div>
 
         {merchant.mcc && (
-          <div className="flex items-center text-sm rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 max-w-full">
+          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-purple-50 dark:bg-purple-900/30 max-w-full">
             <TagIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-purple-500" />
-            <span className="truncate">{merchant.mcc.description}</span>
+            <span className="truncate" title={merchant.mcc.description}>
+              {merchant.mcc.description}
+            </span>
           </div>
         )}
 
         {rewardPoints > 0 && (
-          <div className="flex items-center text-sm rounded-full px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
             <span>+{rewardPoints} points</span>
           </div>
         )}
 
         {merchant.address && (
-          <div className="flex items-center text-sm rounded-full px-3 py-1 bg-gray-100 dark:bg-gray-800 w-full mt-1 max-w-full">
+          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 w-full mt-1 max-w-full">
             <MapPinIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-red-500" />
-            <span className="truncate">{merchant.address}</span>
+            <span className="truncate" title={merchant.address}>
+              {merchant.address}
+            </span>
           </div>
         )}
       </div>

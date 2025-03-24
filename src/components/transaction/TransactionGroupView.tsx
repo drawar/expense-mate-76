@@ -41,18 +41,19 @@ const TransactionGroupView = ({
 
   return (
     <div className="space-y-6">
-      {sortedDates.map((date) => (
-        <div key={date}>
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 sticky top-[146px] bg-background py-2 z-10">
+      {sortedDates.map((date, dateIndex) => (
+        <div key={date} className="animate-enter" style={{ animationDelay: `${dateIndex * 50}ms` }}>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 sticky top-[146px] bg-background py-2 z-10 backdrop-blur-sm">
             {formatDate(date)}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-            {groupedTransactions[date].map((transaction) => (
+            {groupedTransactions[date].map((transaction, txIndex) => (
               <TransactionCard
                 key={transaction.id}
                 transaction={transaction}
-                className="cursor-pointer animate-fade-in"
+                className="animate-enter"
+                style={{ animationDelay: `${(txIndex + 1) * 30 + dateIndex * 50}ms` }}
                 onClick={() => onViewTransaction(transaction)}
               />
             ))}

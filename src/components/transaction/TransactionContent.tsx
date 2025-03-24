@@ -51,14 +51,14 @@ const TransactionContent = ({
   }
   
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-enter">
       <Tabs value={viewMode} onValueChange={(value) => onViewChange(value as ViewMode)} className="sm:hidden">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="grid">Card View</TabsTrigger>
           <TabsTrigger value="table">Table View</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="grid">
+        <TabsContent value="grid" className="animate-enter">
           <TransactionGroupView
             transactions={filteredTransactions}
             sortOption={sortOption}
@@ -66,7 +66,7 @@ const TransactionContent = ({
           />
         </TabsContent>
         
-        <TabsContent value="table">
+        <TabsContent value="table" className="animate-enter">
           <TransactionTable
             transactions={filteredTransactions}
             paymentMethods={paymentMethods}
@@ -77,7 +77,7 @@ const TransactionContent = ({
         </TabsContent>
       </Tabs>
       
-      <div className="hidden sm:block">
+      <div className="hidden sm:block animate-enter">
         {viewMode === 'grid' ? (
           <TransactionGroupView
             transactions={filteredTransactions}

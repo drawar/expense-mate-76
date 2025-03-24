@@ -29,9 +29,9 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="chart-container h-full">
       <CardHeader className="pb-0 pt-0">
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent className="h-64">
         {data.length > 0 ? (
@@ -55,6 +55,13 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
               <Tooltip 
                 formatter={(value: number) => formatCurrency(value, 'USD')}
                 labelFormatter={(name) => name}
+                contentStyle={{
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  padding: '8px 12px',
+                  backgroundColor: 'white'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -66,11 +73,11 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
         
         {/* Add a legend below the chart to solve text scaling issues */}
         {data.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 max-h-40 overflow-y-auto">
             {data.map((entry, index) => (
               <div key={`legend-${index}`} className="flex items-center text-xs">
                 <div 
-                  className="w-3 h-3 rounded-sm mr-2" 
+                  className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
                   style={{ backgroundColor: entry.color }}
                 />
                 <span className="truncate max-w-[80%]">{entry.name}</span>

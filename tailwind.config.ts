@@ -54,6 +54,11 @@ export default {
 					foreground: 'hsl(var(--card-foreground))'
 				}
 			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				display: ['Inter', 'sans-serif'],
+				mono: ['Roboto Mono', 'monospace'],
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
@@ -155,7 +160,14 @@ export default {
 			boxShadow: {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
 				'elevation': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02)',
-				'dark-glow': '0 0 15px rgba(76, 29, 149, 0.5)'
+				'dark-glow': '0 0 15px rgba(76, 29, 149, 0.5)',
+				'card': '0 2px 10px rgba(0, 0, 0, 0.08)',
+				'card-hover': '0 10px 30px rgba(0, 0, 0, 0.12)'
+			},
+			gradients: {
+				'blue-purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+				'teal-blue': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+				'orange-yellow': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'
 			}
 		}
 	},

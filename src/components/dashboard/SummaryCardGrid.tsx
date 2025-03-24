@@ -1,7 +1,7 @@
 
 import { Transaction, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/utils/currencyFormatter';
-import { CreditCardIcon, TrendingUpIcon, CoinsIcon } from 'lucide-react';
+import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
 
 interface SummaryCardGridProps {
@@ -27,13 +27,14 @@ const SummaryCardGrid = ({
         title="Total Expenses"
         value={formatCurrency(totalExpenses, 'USD')}
         description={`${transactionCount} transactions`}
+        icon={<CalendarIcon className="w-3.5 h-3.5 text-primary" />}
       />
             
       <SummaryCard
         title="Average Transaction"
         value={formatCurrency(averageAmount, 'USD')}
         description="Per transaction"
-        icon={<TrendingUpIcon className="w-3.5 h-3.5 mr-1" />}
+        icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500 mr-1" />}
       />
             
       <SummaryCard
@@ -42,14 +43,14 @@ const SummaryCardGrid = ({
         description={topPaymentMethod 
           ? formatCurrency(topPaymentMethod.value, 'USD')
           : 'No data'}
-        icon={<CreditCardIcon className="w-3.5 h-3.5 mr-1" />}
+        icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500 mr-1" />}
       />
             
       <SummaryCard
         title="Total Reward Points"
         value={totalRewardPoints.toLocaleString()}
         description="Points earned"
-        icon={<CoinsIcon className="w-3.5 h-3.5 mr-1" />}
+        icon={<CoinsIcon className="w-3.5 h-3.5 text-amber-500 mr-1" />}
       />
     </div>
   );

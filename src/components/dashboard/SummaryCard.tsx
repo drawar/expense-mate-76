@@ -11,15 +11,17 @@ interface SummaryCardProps {
 
 const SummaryCard = ({ title, value, description, icon }: SummaryCardProps) => {
   return (
-    <Card>
+    <Card className="summary-card overflow-hidden">
       <CardHeader className="pb-2">
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl line-clamp-1">{value}</CardTitle>
+        <CardDescription className="text-sm font-medium">{title}</CardDescription>
+        <CardTitle className="text-xl sm:text-2xl truncate" title={value}>
+          {value}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-xs text-muted-foreground flex items-center">
+        <div className="text-xs text-muted-foreground flex items-center gap-1">
           {icon}
-          {description}
+          <span className="truncate">{description}</span>
         </div>
       </CardContent>
     </Card>

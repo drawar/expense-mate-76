@@ -81,14 +81,14 @@ const Index = () => {
         {/* Title and Add Expense Button */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Expense Tracker</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gradient">Expense Tracker</h1>
             <p className="text-muted-foreground mt-1">
               Track and manage your expenses
             </p>
           </div>
           
           <Link to="/add-expense">
-            <Button className="mt-4 sm:mt-0 gap-2">
+            <Button className="mt-4 sm:mt-0 gap-2 btn-hover-effect">
               <PlusCircleIcon className="h-4 w-4" />
               Add Expense
             </Button>
@@ -102,7 +102,7 @@ const Index = () => {
         ) : (
           <>
             {/* Summary Section */}
-            <div className="mb-10">
+            <div className="mb-10 animate-enter">
               <Summary 
                 transactions={transactions} 
                 paymentMethods={paymentMethods}
@@ -110,10 +110,10 @@ const Index = () => {
             </div>
             
             {/* Recent Transactions */}
-            <div className="mt-10">
+            <div className="mt-10 animate-enter" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Recent Transactions</h2>
-                <Link to="/transactions" className="text-primary flex items-center text-sm font-medium">
+                <Link to="/transactions" className="text-primary flex items-center text-sm font-medium interactive-link">
                   View All <ArrowUpRightIcon className="ml-1 h-4 w-4" />
                 </Link>
               </div>
@@ -122,7 +122,7 @@ const Index = () => {
                 <div className="glass-card rounded-xl p-8 text-center">
                   <p className="text-muted-foreground mb-4">No transactions recorded yet.</p>
                   <Link to="/add-expense">
-                    <Button>
+                    <Button className="btn-hover-effect">
                       <PlusCircleIcon className="mr-2 h-4 w-4" />
                       Record Your First Expense
                     </Button>
@@ -130,10 +130,12 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recentTransactions.map((transaction) => (
+                  {recentTransactions.map((transaction, index) => (
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
+                      className="animate-enter"
+                      style={{ animationDelay: `${(index + 1) * 50}ms` }}
                       onClick={() => {
                         // You could navigate to a transaction detail page here
                       }}
