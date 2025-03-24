@@ -1,14 +1,13 @@
 
 import { useState } from 'react';
 import { ViewMode } from '@/components/transaction/TransactionSortAndView';
-import Navbar from '@/components/layout/Navbar';
-import TransactionDialog from '@/components/expense/TransactionDialog';
-import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
 import { useTransactionList } from '@/hooks/useTransactionList';
 import { useTransactionActions } from '@/hooks/useTransactionActions';
 import TransactionHeader from '@/components/transaction/TransactionHeader';
-import TransactionFilterControls from '@/components/transaction/TransactionFilterControls';
 import TransactionContent from '@/components/transaction/TransactionContent';
+import TransactionLayout from '@/components/transaction/layout/TransactionLayout';
+import TransactionFiltersContainer from '@/components/transaction/container/TransactionFiltersContainer';
+import TransactionDialogsContainer from '@/components/transaction/container/TransactionDialogsContainer';
 
 const Transactions = () => {
   const {
@@ -45,61 +44,52 @@ const Transactions = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <TransactionLayout>
+      <TransactionHeader />
       
-      <main className="container max-w-6xl mx-auto pt-24 pb-20 px-4 sm:px-6">
-        <TransactionHeader />
-        
-        <TransactionFilterControls
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filterOptions={filterOptions}
-          activeFilters={activeFilters}
-          paymentMethods={paymentMethods}
-          onFilterChange={handleFilterChange}
-          onResetFilters={resetFilters}
-          sortOption={sortOption}
-          viewMode={viewMode}
-          onSortChange={setSortOption}
-          onViewChange={setViewMode}
-        />
-        
-        <TransactionContent 
-          isLoading={isLoading}
-          transactions={transactions}
-          filteredTransactions={filteredTransactions}
-          paymentMethods={paymentMethods}
-          viewMode={viewMode}
-          sortOption={sortOption}
-          onViewChange={setViewMode}
-          onResetFilters={resetFilters}
-          onViewTransaction={handleViewTransaction}
-          onEditTransaction={handleEditTransaction}
-          onDeleteTransaction={handleDeleteTransaction}
-        />
-      </main>
+      <TransactionFiltersContainer
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filterOptions={filterOptions}
+        activeFilters={activeFilters}
+        paymentMethods={paymentMethods}
+        onFilterChange={handleFilterChange}
+        onResetFilters={resetFilters}
+        sortOption={sortOption}
+        viewMode={viewMode}
+        onSortChange={setSortOption}
+        onViewChange={setViewMode}
+      />
       
-      {selectedTransaction && (
-        <TransactionDialog
-          transaction={selectedTransaction}
-          paymentMethods={paymentMethods}
-          allTransactions={transactions}
-          isOpen={isTransactionDialogOpen}
-          mode={dialogMode}
-          onClose={() => setIsTransactionDialogOpen(false)}
-          onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
-          onSave={handleSaveEdit}
-        />
-      )}
+      <TransactionContent 
+        isLoading={isLoading}
+        transactions={transactions}
+        filteredTransactions={filteredTransactions}
+        paymentMethods={paymentMethods}
+        viewMode={viewMode}
+        sortOption={sortOption}
+        onViewChange={setViewMode}
+        onResetFilters={resetFilters}
+        onViewTransaction={handleViewTransaction}
+        onEditTransaction={handleEditTransaction}
+        onDeleteTransaction={handleDeleteTransaction}
+      />
       
-      <TransactionDeleteDialog
-        isOpen={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
+      <TransactionDialogsContainer 
+        selectedTransaction={selectedTransaction}
+        isTransactionDialogOpen={isTransactionDialogOpen}
+        setIsTransactionDialogOpen={setIsTransactionDialogOpen}
+        dialogMode={dialogMode}
+        deleteConfirmOpen={deleteConfirmOpen}
+        setDeleteConfirmOpen={setDeleteConfirmOpen}
+        transactions={transactions}
+        paymentMethods={paymentMethods}
+        onEdit={handleEditTransaction}
+        onDelete={handleDeleteTransaction}
+        onSave={handleSaveEdit}
         onConfirmDelete={confirmDeleteTransaction}
       />
-    </div>
+    </TransactionLayout>
   );
 };
 
