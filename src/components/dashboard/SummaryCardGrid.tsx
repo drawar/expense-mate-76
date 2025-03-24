@@ -4,6 +4,7 @@ import { formatCurrency } from '@/utils/currencyFormatter';
 import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
 import PaymentCardDisplay from '../expense/PaymentCardDisplay';
+import { CardTitle } from '@/components/ui/card';
 
 interface SummaryCardGridProps {
   filteredTransactions: Transaction[];
