@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      merchant_category_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          merchant_name: string
+          most_common_mcc: Json | null
+          occurrence_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          merchant_name: string
+          most_common_mcc?: Json | null
+          occurrence_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          merchant_name?: string
+          most_common_mcc?: Json | null
+          occurrence_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           address: string | null
