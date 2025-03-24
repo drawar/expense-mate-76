@@ -277,18 +277,18 @@ const PaymentMethods = () => {
           </div>
         )}
         
-        {isFormOpen && (
-          <PaymentMethodForm
-            currentMethod={editingMethod}
-            isEditing={!!editingMethod}
-            isLoading={isLoading}
-            onClose={() => {
-              setIsFormOpen(false);
-              setEditingMethod(null);
-            }}
-            onSubmit={handleFormSubmit}
-          />
-        )}
+        {/* Pass isOpen prop to PaymentMethodForm */}
+        <PaymentMethodForm
+          currentMethod={editingMethod}
+          isEditing={!!editingMethod}
+          isLoading={isLoading}
+          isOpen={isFormOpen}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingMethod(null);
+          }}
+          onSubmit={handleFormSubmit}
+        />
         
         <ImageUploadDialog
           open={!!imageUploadMethod}
