@@ -146,7 +146,6 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         <TabsContent 
           value={activeTab} 
           className="mt-4 space-y-6"
-          forceMount={false}
         >
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
