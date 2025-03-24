@@ -1,5 +1,5 @@
 
-import { Transaction } from '@/types';
+import { Transaction, PaymentMethod } from '@/types';
 import {
   DialogHeader,
   DialogTitle,
