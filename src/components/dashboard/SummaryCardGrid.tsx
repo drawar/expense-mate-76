@@ -3,7 +3,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
-import PaymentCardRender from '../expense/PaymentCardRender';
+import PaymentCardDisplay from '../expense/PaymentCardDisplay';
 
 interface SummaryCardGridProps {
   filteredTransactions: Transaction[];
@@ -60,7 +60,7 @@ const SummaryCardGrid = ({
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500 mr-1" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
           <div className="mt-2 scale-[0.65] origin-top-left">
-            <PaymentCardRender paymentMethod={topPaymentMethodObject} />
+            <PaymentCardDisplay paymentMethod={topPaymentMethodObject} />
           </div>
         ) : undefined}
       />
