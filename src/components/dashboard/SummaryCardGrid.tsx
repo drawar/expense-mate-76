@@ -41,14 +41,14 @@ const SummaryCardGrid = ({
         title="Total Expenses"
         value={formatCurrency(totalExpenses, 'USD')}
         description={`${transactionCount} transactions`}
-        icon={<CalendarIcon className="w-3.5 h-3.5 text-primary" />}
+        icon={<CalendarIcon className="w-4 h-4 text-primary" />}
       />
             
       <SummaryCard
         title="Average Transaction"
         value={formatCurrency(averageAmount, 'USD')}
         description="Per transaction"
-        icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500 mr-1" />}
+        icon={<TrendingUpIcon className="w-4 h-4 text-green-500" />}
       />
             
       <SummaryCard
@@ -57,24 +57,28 @@ const SummaryCardGrid = ({
         description={topPaymentMethod 
           ? formatCurrency(topPaymentMethod.value, 'USD')
           : 'No data'}
-        icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500 mr-1" />}
+        icon={<CreditCardIcon className="w-4 h-4 text-blue-500" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-          <div className="mt-2 h-14 flex items-center">
-            <div className="scale-[0.6] origin-left">
+          <div className="mt-1 h-12 flex items-center">
+            <div className="scale-[0.55] origin-left">
               <PaymentCardDisplay 
                 paymentMethod={topPaymentMethodObject} 
                 customImage={topPaymentMethodObject.imageUrl}
               />
             </div>
           </div>
-        ) : undefined}
+        ) : (
+          <CardTitle className="text-2xl font-bold mt-1 truncate">
+            {topPaymentMethod?.name || 'None'}
+          </CardTitle>
+        )}
       />
             
       <SummaryCard
         title="Total Reward Points"
         value={totalRewardPoints.toLocaleString()}
         description="Points earned"
-        icon={<CoinsIcon className="w-3.5 h-3.5 text-amber-500 mr-1" />}
+        icon={<CoinsIcon className="w-4 h-4 text-amber-500" />}
       />
     </div>
   );
