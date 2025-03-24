@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, CreditCard, Receipt, Menu, X, ChevronDown } from 'lucide-react';
+import { Home, Plus, CreditCard, Receipt, Menu, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/components/theme/theme-provider';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
@@ -62,9 +62,8 @@ const Navbar = () => {
         <div className="flex items-center space-x-2 md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2 py-1 h-8">
-                <span className="mr-2">Navigate</span>
-                <ChevronDown size={16} />
+              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                <Menu size={20} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px] bg-background border-border">
