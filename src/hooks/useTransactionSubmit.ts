@@ -14,13 +14,15 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
   const handleSubmit = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
       console.log('Starting transaction save process...');
+      console.log('Initial transaction data:', JSON.stringify(transactionData, null, 2));
+      console.log('Using local storage flag:', useLocalStorage);
+      
       setSaveError(null);
       setIsLoading(true);
       
-      console.log('Transaction data before validation:', transactionData);
-      
       // Validate merchant information
       if (!transactionData.merchant || !transactionData.merchant.name) {
+        console.error('Merchant validation failed:', transactionData.merchant);
         throw new Error('Merchant information is missing');
       }
       
@@ -32,6 +34,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       
       // Validate payment amount
       if (isNaN(transactionData.paymentAmount) || transactionData.paymentAmount <= 0) {
+        console.error('Payment amount validation failed:', transactionData.paymentAmount);
         throw new Error('Invalid payment amount');
       }
       
@@ -66,6 +69,10 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       // Detailed error information for debugging
       if (error instanceof Error) {
         errorMessage = error.message;
+        console.error('Error instance details:', {
+          message: error.message,
+          stack: error.stack
+        });
         
         // Check for specific errors
         if (error.message.includes('duplicate key') || error.message.includes('constraint')) {

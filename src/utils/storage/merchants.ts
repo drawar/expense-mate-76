@@ -52,16 +52,25 @@ export const getMerchants = async (): Promise<Merchant[]> => {
 
 // Get merchant by name (case insensitive) or return undefined
 export const getMerchantByName = async (name: string): Promise<Merchant | undefined> => {
+  console.log('Looking for merchant by name:', name);
+  
   const { data, error } = await supabase
     .from('merchants')
     .select('*')
     .ilike('name', name)
     .maybeSingle();
     
-  if (error || !data) {
+  if (error) {
     console.error('Error fetching merchant by name:', error);
     return undefined;
   }
+  
+  if (!data) {
+    console.log('No merchant found with name:', name);
+    return undefined;
+  }
+  
+  console.log('Merchant found:', data);
   
   // Process coordinates to ensure correct type
   let coordinates = undefined;
@@ -100,10 +109,14 @@ export const getMerchantByName = async (name: string): Promise<Merchant | undefi
 
 // Add a new merchant or update if already exists
 export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant> => {
+  console.log('Adding or updating merchant:', JSON.stringify(merchant, null, 2));
+  
   // Check if merchant with same name exists
   const existingMerchant = await getMerchantByName(merchant.name);
   
   if (existingMerchant) {
+    console.log('Merchant already exists, updating:', existingMerchant.id);
+    
     // Update existing merchant
     const { data, error } = await supabase
       .from('merchants')
@@ -119,8 +132,11 @@ export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant>
       
     if (error) {
       console.error('Error updating merchant:', error);
+      console.error('Error details:', error.message, error.details, error.hint);
       throw error;
     }
+    
+    console.log('Merchant updated successfully:', data);
     
     // Process coordinates to ensure correct type
     let coordinates = undefined;
@@ -155,6 +171,8 @@ export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant>
       isOnline: data.is_online,
     };
   } else {
+    console.log('Adding new merchant:', merchant.name);
+    
     // Add new merchant
     const { data, error } = await supabase
       .from('merchants')
@@ -170,8 +188,11 @@ export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant>
       
     if (error) {
       console.error('Error adding merchant:', error);
+      console.error('Error details:', error.message, error.details, error.hint);
       throw error;
     }
+    
+    console.log('New merchant added successfully:', data);
     
     // Process coordinates to ensure correct type
     let coordinates = undefined;

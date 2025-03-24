@@ -10,22 +10,30 @@ interface BonusPointsMovement {
 
 export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
   try {
+    console.log('Recording bonus points movement:', JSON.stringify(movement, null, 2));
+    
+    const bonusData = {
+      transaction_id: movement.transactionId,
+      payment_method_id: movement.paymentMethodId,
+      bonus_points: movement.bonusPoints
+    };
+    
+    console.log('Sending bonus points data to Supabase:', JSON.stringify(bonusData, null, 2));
+    
     const { data, error } = await supabase
       .from('bonus_points_movements')
-      .insert({
-        transaction_id: movement.transactionId,
-        payment_method_id: movement.paymentMethodId,
-        bonus_points: movement.bonusPoints
-      })
-      .select()
-      .single();
+      .insert(bonusData)
+      .select();
       
     if (error) {
       console.error('Error recording bonus points movement:', error);
+      console.error('Error details:', error.message, error.details, error.hint);
       // Don't throw here, we'll still consider the transaction a success
       // even if bonus points recording fails
       return null;
     }
+    
+    console.log('Bonus points movement recorded successfully:', data);
     
     // Trigger background task to update monthly totals
     // Using setTimeout as a background task since we're in browser context
@@ -34,7 +42,7 @@ export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
         .catch(err => console.error('Error in background task:', err));
     }, 0);
     
-    return data;
+    return data ? data[0] : null;
   } catch (error) {
     console.error('Exception in addBonusPointsMovement:', error);
     // Don't throw here, we'll still consider the transaction a success
@@ -45,8 +53,12 @@ export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
 
 const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
   try {
+    console.log('Updating monthly bonus points totals for payment method:', paymentMethodId);
+    
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    
+    console.log('Fetching bonus points movements since:', firstDayOfMonth.toISOString());
     
     const { data: movements, error } = await supabase
       .from('bonus_points_movements')
@@ -56,14 +68,20 @@ const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
       
     if (error) {
       console.error('Error fetching bonus points movements:', error);
+      console.error('Error details:', error.message, error.details, error.hint);
       return;
     }
+    
+    console.log('Fetched bonus points movements:', movements);
     
     const totalBonusPoints = movements.reduce((sum, movement) => sum + movement.bonus_points, 0);
     const remainingPoints = Math.max(0, 4000 - totalBonusPoints);
     
-    // We can't use the hook directly here, so we'll use the imported toast function
-    const { toast } = require('@/hooks/use-toast');
+    console.log('Total bonus points used this month:', totalBonusPoints);
+    console.log('Remaining bonus points available:', remainingPoints);
+    
+    // We can't use the hook directly here
+    const { toast } = useToast();
     
     toast({
       title: "Bonus Points Update",
