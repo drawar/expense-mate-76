@@ -16,7 +16,7 @@ const PaymentCardDisplay: React.FC<PaymentCardDisplayProps> = ({
 }) => {
   // Determine classes based on size
   const containerClasses = size === 'small' 
-    ? "relative rounded-lg overflow-hidden w-24 h-16" 
+    ? "relative rounded-lg overflow-hidden w-24 h-14" 
     : "relative rounded-lg overflow-hidden w-48 h-28";
   
   const textClasses = size === 'small' ? "text-[8px]" : "text-xs";
