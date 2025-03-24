@@ -56,13 +56,13 @@ const TransactionCard = ({ transaction, onClick, className, style }: Transaction
       </div>
 
       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2">
-        <div className="flex items-center text-xs rounded-full px-3 py-1 bg-blue-50 dark:bg-blue-900/30 inline-flex max-w-full">
+        <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-blue-50 dark:bg-blue-900/30 max-w-full">
           {paymentMethod.type === 'credit_card' ? (
             <CreditCardIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" style={{ color: paymentMethod.color }} />
           ) : (
             <BanknoteIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" style={{ color: paymentMethod.color }} />
           )}
-          <span className="truncate max-w-[120px]" title={paymentMethod.name}>
+          <span className="truncate" title={paymentMethod.name}>
             {paymentMethod.name}
           </span>
         </div>
@@ -83,7 +83,7 @@ const TransactionCard = ({ transaction, onClick, className, style }: Transaction
         )}
 
         {merchant.address && (
-          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 inline-flex max-w-full">
+          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 max-w-full">
             <MapPinIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-red-500" />
             <span className="truncate" title={merchant.address}>
               {merchant.address}
