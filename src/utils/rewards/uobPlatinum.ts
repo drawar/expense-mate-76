@@ -21,10 +21,10 @@ export const calculateUOBPlatinumPoints = (
   const { amount, merchant, isContactless } = transaction;
   
   // Round down to nearest multiple of 5
-  const roundedAmount = Math.floor(amount / 5) * 5;
+  const roundedAmount = Math.floor(amount / 5);
   
-  // Calculate base points (0.4x rounded amount)
-  const basePoints = roundedAmount * 0.4;
+  // Calculate base points 
+  const basePoints = roundedAmount * 2;
   
   // Check if transaction is eligible for bonus points
   const isEligibleMCC = merchant.mcc && UOB_PLATINUM_ELIGIBLE_MCCS.includes(merchant.mcc.code);
@@ -45,8 +45,8 @@ export const calculateUOBPlatinumPoints = (
   const totalMonthBonusPoints = monthTransactions.reduce((sum, tx) => {
     if (tx.id === transaction.id) return sum; // Exclude current transaction
     
-    const txAmount = Math.floor(tx.amount / 5) * 5;
-    const txBasePoints = txAmount * 0.4;
+    const txAmount = Math.floor(tx.amount / 5);
+    const txBasePoints = txAmount * 2;
     const txTotalPoints = tx.rewardPoints;
     const txBonusPoints = Math.max(0, txTotalPoints - Math.round(txBasePoints));
     
@@ -54,7 +54,7 @@ export const calculateUOBPlatinumPoints = (
   }, 0);
   
   // Calculate bonus points for current transaction
-  const potentialBonusPoints = roundedAmount * 9.6; // Changed from 3.6 to 9.6 to match 10x total
+  const potentialBonusPoints = roundedAmount * 18; 
   const remainingBonusPoints = 4000 - totalMonthBonusPoints;
   const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
   
@@ -74,8 +74,8 @@ export const simulateUOBPlatinumPoints = (
   bonusPoints: number;
   remainingMonthlyBonusPoints: number;
 } => {
-  const roundedAmount = Math.floor(amount / 5) * 5;
-  const basePoints = Math.round(roundedAmount * 0.4);
+  const roundedAmount = Math.floor(amount / 5);
+  const basePoints = Math.round(roundedAmount * 2);
   
   const isEligibleMCC = mcc && UOB_PLATINUM_ELIGIBLE_MCCS.includes(mcc);
   const isEligibleTransaction = isContactless || (isOnline && isEligibleMCC);
@@ -89,7 +89,7 @@ export const simulateUOBPlatinumPoints = (
     };
   }
   
-  const potentialBonusPoints = roundedAmount * 9.6; // Changed from 3.6 to 9.6 to match 10x total
+  const potentialBonusPoints = roundedAmount * 18; 
   const remainingBonusPoints = 4000 - usedMonthlyBonusPoints;
   const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
   
