@@ -1,131 +1,136 @@
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Transaction } from '@/types';
-import { FilterOptions, SortOption } from './types';
+import { SortOption } from '@/components/transaction/TransactionSortAndView';
+import { FilterOptions } from '@/components/transaction/TransactionFilters';
+
+const initialFilterOptions: FilterOptions = {
+  merchantName: '',
+  paymentMethodId: 'all', // Changed from empty string to 'all'
+  currency: 'all', // Changed from empty string to 'all'
+  startDate: '',
+  endDate: '',
+};
 
 export const useTransactionFilters = (transactions: Transaction[], isLoading: boolean) => {
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    merchantName: '',
-    paymentMethodId: '',
-    currency: '',
-    startDate: '',
-    endDate: '',
-  });
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(initialFilterOptions);
 
-  // Apply filters and compute derived state
+  // Reset filters when transactions load
   useEffect(() => {
-    // Skip filtering if no transactions or still loading
-    if (transactions.length === 0 || isLoading) {
-      setFilteredTransactions([]);
-      return;
+    if (!isLoading && transactions.length > 0) {
+      setFilterOptions(initialFilterOptions);
     }
-    
-    const lowerSearchQuery = searchQuery.toLowerCase();
-    const lowerMerchantName = filterOptions.merchantName.toLowerCase();
-    const startDate = filterOptions.startDate ? new Date(filterOptions.startDate) : null;
-    const endDate = filterOptions.endDate ? new Date(filterOptions.endDate) : null;
-    
-    // Performance optimization: Only create a new array if filters/sort are applied
+  }, [isLoading, transactions.length]);
+
+  const handleFilterChange = (key: keyof FilterOptions, value: string) => {
+    setFilterOptions(prev => ({ ...prev, [key]: value }));
+  };
+
+  const resetFilters = () => {
+    setFilterOptions(initialFilterOptions);
+    setSearchQuery('');
+  };
+
+  // Get active filters for displaying in UI
+  const activeFilters = useMemo(() => {
+    const filters: string[] = [];
+
+    if (searchQuery) {
+      filters.push(`Search: ${searchQuery}`);
+    }
+
+    if (filterOptions.merchantName) {
+      filters.push(`Merchant: ${filterOptions.merchantName}`);
+    }
+
+    if (filterOptions.paymentMethodId && filterOptions.paymentMethodId !== 'all') {
+      const method = transactions.find(t => t.paymentMethod.id === filterOptions.paymentMethodId)?.paymentMethod.name;
+      if (method) filters.push(`Payment Method: ${method}`);
+    }
+
+    if (filterOptions.currency && filterOptions.currency !== 'all') {
+      filters.push(`Currency: ${filterOptions.currency}`);
+    }
+
+    if (filterOptions.startDate) {
+      filters.push(`From: ${filterOptions.startDate}`);
+    }
+
+    if (filterOptions.endDate) {
+      filters.push(`To: ${filterOptions.endDate}`);
+    }
+
+    return filters;
+  }, [filterOptions, searchQuery, transactions]);
+
+  // Apply filters and sort
+  const filteredTransactions = useMemo(() => {
+    if (isLoading) return [];
+
+    // Filter by search query
     let filtered = transactions;
-    let shouldFilter = false;
     
-    // Check if any filters are actually active
-    if (searchQuery || filterOptions.merchantName || filterOptions.paymentMethodId || 
-        filterOptions.currency || startDate || endDate) {
-      shouldFilter = true;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.merchant.name.toLowerCase().includes(query) ||
+        (tx.notes && tx.notes.toLowerCase().includes(query))
+      );
     }
     
-    if (shouldFilter) {
-      filtered = transactions.filter(tx => {
-        // Search query
-        if (searchQuery && 
-            !(tx.merchant.name.toLowerCase().includes(lowerSearchQuery) || 
-              tx.notes?.toLowerCase().includes(lowerSearchQuery))) {
-          return false;
-        }
-        
-        // Merchant name
-        if (filterOptions.merchantName && 
-            !tx.merchant.name.toLowerCase().includes(lowerMerchantName)) {
-          return false;
-        }
-        
-        // Payment method
-        if (filterOptions.paymentMethodId && 
-            tx.paymentMethod.id !== filterOptions.paymentMethodId) {
-          return false;
-        }
-        
-        // Currency
-        if (filterOptions.currency && 
-            tx.currency !== filterOptions.currency) {
-          return false;
-        }
-        
-        // Date range
+    // Apply filters
+    if (filterOptions.merchantName) {
+      const merchantQuery = filterOptions.merchantName.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.merchant.name.toLowerCase().includes(merchantQuery)
+      );
+    }
+    
+    if (filterOptions.paymentMethodId && filterOptions.paymentMethodId !== 'all') {
+      filtered = filtered.filter(tx => 
+        tx.paymentMethod.id === filterOptions.paymentMethodId
+      );
+    }
+    
+    if (filterOptions.currency && filterOptions.currency !== 'all') {
+      filtered = filtered.filter(tx => 
+        tx.currency === filterOptions.currency
+      );
+    }
+    
+    if (filterOptions.startDate) {
+      const startDate = new Date(filterOptions.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(tx => {
         const txDate = new Date(tx.date);
-        if (startDate && txDate < startDate) {
-          return false;
-        }
-        
-        if (endDate && txDate > endDate) {
-          return false;
-        }
-        
-        return true;
+        return txDate >= startDate;
       });
     }
     
-    // Only sort if needed
-    const sorted = [...filtered]; // Create a new array for sorting
-    
-    switch (sortOption) {
-      case 'date-desc':
-        sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case 'date-asc':
-        sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case 'amount-desc':
-        sorted.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'amount-asc':
-        sorted.sort((a, b) => a.amount - b.amount);
-        break;
+    if (filterOptions.endDate) {
+      const endDate = new Date(filterOptions.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate <= endDate;
+      });
     }
     
-    setFilteredTransactions(sorted);
-    
-    // Compute active filters
-    const newActiveFilters: string[] = [];
-    if (filterOptions.merchantName) newActiveFilters.push('Merchant');
-    if (filterOptions.paymentMethodId) newActiveFilters.push('Payment Method');
-    if (filterOptions.currency) newActiveFilters.push('Currency');
-    if (filterOptions.startDate || filterOptions.endDate) newActiveFilters.push('Date Range');
-    
-    setActiveFilters(newActiveFilters);
-  }, [transactions, searchQuery, filterOptions, sortOption, isLoading]);
-
-  const handleFilterChange = useCallback((key: keyof FilterOptions, value: string) => {
-    setFilterOptions(prev => ({
-      ...prev,
-      [key]: value,
-    }));
-  }, []);
-  
-  const resetFilters = useCallback(() => {
-    setFilterOptions({
-      merchantName: '',
-      paymentMethodId: '',
-      currency: '',
-      startDate: '',
-      endDate: '',
+    // Apply sorting
+    return [...filtered].sort((a, b) => {
+      if (sortOption === 'date-desc') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else if (sortOption === 'date-asc') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortOption === 'amount-desc') {
+        return b.amount - a.amount;
+      } else {
+        return a.amount - b.amount;
+      }
     });
-  }, []);
+  }, [isLoading, transactions, searchQuery, filterOptions, sortOption]);
 
   return {
     filteredTransactions,

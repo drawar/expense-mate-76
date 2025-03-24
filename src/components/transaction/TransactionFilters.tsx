@@ -80,7 +80,7 @@ const TransactionFilters = ({
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Payment Methods</SelectItem>
+                  <SelectItem value="all">All Payment Methods</SelectItem>
                   {paymentMethods.map((method) => (
                     <SelectItem key={method.id} value={method.id}>
                       {method.name}
@@ -100,7 +100,7 @@ const TransactionFilters = ({
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Currencies</SelectItem>
+                  <SelectItem value="all">All Currencies</SelectItem>
                   {currencyOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
