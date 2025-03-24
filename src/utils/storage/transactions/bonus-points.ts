@@ -17,6 +17,15 @@ export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
       bonus_points: movement.bonusPoints
     };
     
+    // Only try to save to Supabase if we have a valid transaction ID format
+    // (local storage transactions might use a different ID format than Supabase UUIDs)
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movement.transactionId);
+    
+    if (!isValidUUID) {
+      console.log('Skipping bonus points recording for local storage transaction (non-UUID format)');
+      return null;
+    }
+    
     console.log('Sending bonus points data to Supabase:', JSON.stringify(bonusData, null, 2));
     
     const { data, error } = await supabase

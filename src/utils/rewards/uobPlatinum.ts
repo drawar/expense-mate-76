@@ -54,7 +54,7 @@ export const calculateUOBPlatinumPoints = (
   }, 0);
   
   // Calculate bonus points for current transaction
-  const potentialBonusPoints = roundedAmount * 3.6;
+  const potentialBonusPoints = roundedAmount * 9.6; // Changed from 3.6 to 9.6 to match 10x total
   const remainingBonusPoints = 4000 - totalMonthBonusPoints;
   const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
   
@@ -89,7 +89,7 @@ export const simulateUOBPlatinumPoints = (
     };
   }
   
-  const potentialBonusPoints = roundedAmount * 3.6;
+  const potentialBonusPoints = roundedAmount * 9.6; // Changed from 3.6 to 9.6 to match 10x total
   const remainingBonusPoints = 4000 - usedMonthlyBonusPoints;
   const actualBonusPoints = Math.min(potentialBonusPoints, Math.max(0, remainingBonusPoints));
   

@@ -17,7 +17,7 @@ export const useTransactionData = () => {
       setIsLoading(true);
       console.log('Loading transactions with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
       
-      // Force using local storage if it's the default
+      // Use the global setting for storage preference
       const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
       const loadedPaymentMethods = await getPaymentMethods();
       
@@ -57,7 +57,7 @@ export const useTransactionData = () => {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [loadTransactions]); // Add loadTransactions to the dependency array
+  }, [loadTransactions]);
 
   return {
     transactions,

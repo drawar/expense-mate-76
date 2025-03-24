@@ -12,4 +12,4 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Flag to indicate we should use local storage by default
-export const USE_LOCAL_STORAGE_DEFAULT = true;
+export const USE_LOCAL_STORAGE_DEFAULT = false;
