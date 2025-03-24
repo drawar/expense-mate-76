@@ -19,6 +19,14 @@ export {
   getMerchantByName, 
   addOrUpdateMerchant 
 } from './storage/merchants';
+export {
+  getMerchantCategoryMappings,
+  getMerchantCategoryMappingByName,
+  incrementMerchantOccurrence,
+  decrementMerchantOccurrence,
+  hasMerchantCategorySuggestions,
+  getSuggestedMerchantCategory
+} from './storage/merchantTracking';
 export { defaultPaymentMethods } from './defaults/paymentMethods';
 export { getCategoryFromMCC } from './categoryMapping';
 

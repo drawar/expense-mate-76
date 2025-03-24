@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
 import { getMerchantByName } from '@/utils/storageUtils';
@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import MerchantCategorySelect from './merchant/MerchantCategorySelect';
 import MerchantAddressSelect from './merchant/MerchantAddressSelect';
 import OnlineMerchantToggle from './merchant/OnlineMerchantToggle';
+import { getSuggestedMerchantCategory, hasMerchantCategorySuggestions } from '@/utils/storage/merchantTracking';
 
 interface Place {
   name: string;
@@ -45,50 +46,54 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
   const [places, setPlaces] = useState<Place[]>([]);
   const [showPlacesDialog, setShowPlacesDialog] = useState(false);
   const { toast } = useToast();
-  const [processedMerchants, setProcessedMerchants] = useState<Set<string>>(new Set());
+  const [suggestionsChecked, setSuggestionsChecked] = useState(false);
   
   // When merchant name changes, check for existing merchant data
   const merchantName = form.watch('merchantName');
   const debouncedMerchantName = useDebounce(merchantName, 500);
   const isOnline = form.watch('isOnline');
   
+  // Only check for suggestions once per merchant name and when no MCC is selected
   useEffect(() => {
-    const fetchMerchantData = async () => {
-      if (merchantName.trim().length >= 3 && !processedMerchants.has(merchantName)) {
+    const checkMerchantSuggestions = async () => {
+      if (debouncedMerchantName.trim().length >= 3 && !suggestionsChecked && !selectedMCC) {
         try {
-          const existingMerchant = await getMerchantByName(merchantName);
-          if (existingMerchant?.mcc && 
-              (!selectedMCC || existingMerchant.mcc.code !== selectedMCC.code)) {
+          // Mark that we've checked suggestions for this merchant name
+          setSuggestionsChecked(true);
+          
+          // Check if we have a suggestion for this merchant name
+          const hasSuggestions = await hasMerchantCategorySuggestions(debouncedMerchantName);
+          
+          if (hasSuggestions) {
+            const suggestedMCC = await getSuggestedMerchantCategory(debouncedMerchantName);
             
-            // Update our processed merchants set to prevent duplicate processing
-            setProcessedMerchants(prev => new Set(prev).add(merchantName));
-            
-            // Set the MCC in the form and update the parent
-            onSelectMCC(existingMerchant.mcc);
-            form.setValue('mcc', existingMerchant.mcc);
-            
-            // Show toast to inform user about the suggested category
-            toast({
-              title: "Merchant category suggested",
-              description: `Using ${existingMerchant.mcc.description} (${existingMerchant.mcc.code}) based on previous entries`,
-            });
+            if (suggestedMCC) {
+              // Set the MCC in the form and update the parent
+              onSelectMCC(suggestedMCC);
+              form.setValue('mcc', suggestedMCC);
+              
+              // Show toast to inform user about the suggested category
+              toast({
+                title: "Merchant category suggested",
+                description: `Using ${suggestedMCC.description} (${suggestedMCC.code}) based on previous entries`,
+              });
+            }
           }
         } catch (error) {
-          console.error('Error fetching merchant data:', error);
+          console.error('Error checking merchant suggestions:', error);
         }
       }
     };
     
-    fetchMerchantData();
-    // Dependencies include the current selectedMCC to prevent re-suggesting the same MCC
-  }, [merchantName, form, toast, onSelectMCC, selectedMCC, processedMerchants]);
+    checkMerchantSuggestions();
+  }, [debouncedMerchantName, form, toast, onSelectMCC, selectedMCC, suggestionsChecked]);
 
-  // Reset processed merchants when merchant name changes significantly
+  // Reset suggestion check when merchant name changes significantly
   useEffect(() => {
-    if (debouncedMerchantName.trim().length < 3) {
-      setProcessedMerchants(new Set());
+    if (merchantName.trim().length < 3) {
+      setSuggestionsChecked(false);
     }
-  }, [debouncedMerchantName]);
+  }, [merchantName]);
 
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
@@ -163,7 +168,10 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
         
         <MerchantCategorySelect 
           selectedMCC={selectedMCC}
-          onSelectMCC={onSelectMCC}
+          onSelectMCC={(mcc) => {
+            onSelectMCC(mcc);
+            setSuggestionsChecked(true); // Mark as checked when user manually selects
+          }}
         />
       </CardContent>
     </Card>
