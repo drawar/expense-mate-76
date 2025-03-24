@@ -27,7 +27,7 @@ const SummaryCard = ({ title, value, description, icon, className, style, custom
           </CardTitle>
         )}
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent>
         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
           {icon}
           <span className="truncate">{description}</span>
