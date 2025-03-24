@@ -26,7 +26,7 @@ const SummaryCard = ({ title, value, description, icon, className, style, custom
           {customContent ? (
             customContent
           ) : (
-            <CardTitle className="text-2xl font-bold truncate" title={value}>
+            <CardTitle className="text-3xl font-bold truncate" title={value}>
               {value}
             </CardTitle>
           )}

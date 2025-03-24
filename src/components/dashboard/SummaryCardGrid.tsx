@@ -64,7 +64,7 @@ const SummaryCardGrid = ({
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
         customContent={
           topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-            <div>
+            <div className="mt-1">
               <PaymentCardDisplay 
                 paymentMethod={topPaymentMethodObject} 
                 customImage={topPaymentMethodObject.imageUrl}
@@ -72,7 +72,7 @@ const SummaryCardGrid = ({
               />
             </div>
           ) : (
-            <div className="text-2xl font-bold truncate">
+            <div className="text-3xl font-bold truncate">
               {topPaymentMethod?.name || 'None'}
             </div>
           )
