@@ -45,7 +45,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         date: transactionData.date
       });
       
-      // Save the transaction
+      // Save the transaction, with explicit useLocalStorage parameter
       const result = await addTransaction(transactionData, useLocalStorage);
       
       console.log('Transaction saved successfully:', result);
@@ -57,6 +57,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       
       // Navigate back to the dashboard
       navigate('/transactions');
+      return result;
     } catch (error) {
       console.error('Error saving transaction:', error);
       
@@ -83,6 +84,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       });
       
       // Don't navigate when there's an error, let user fix and try again
+      return null;
     } finally {
       setIsLoading(false);
     }

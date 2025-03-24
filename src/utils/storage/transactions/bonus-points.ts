@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface BonusPointsMovement {
   transactionId: string;
@@ -9,29 +9,38 @@ interface BonusPointsMovement {
 }
 
 export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
-  const { data, error } = await supabase
-    .from('bonus_points_movements')
-    .insert({
-      transaction_id: movement.transactionId,
-      payment_method_id: movement.paymentMethodId,
-      bonus_points: movement.bonusPoints
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('bonus_points_movements')
+      .insert({
+        transaction_id: movement.transactionId,
+        payment_method_id: movement.paymentMethodId,
+        bonus_points: movement.bonusPoints
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error recording bonus points movement:', error);
+      // Don't throw here, we'll still consider the transaction a success
+      // even if bonus points recording fails
+      return null;
+    }
     
-  if (error) {
-    console.error('Error recording bonus points movement:', error);
-    throw error;
+    // Trigger background task to update monthly totals
+    // Using setTimeout as a background task since we're in browser context
+    setTimeout(() => {
+      updateMonthlyBonusPointsTotals(movement.paymentMethodId)
+        .catch(err => console.error('Error in background task:', err));
+    }, 0);
+    
+    return data;
+  } catch (error) {
+    console.error('Exception in addBonusPointsMovement:', error);
+    // Don't throw here, we'll still consider the transaction a success
+    // even if bonus points recording fails
+    return null;
   }
-  
-  // Trigger background task to update monthly totals
-  // Using setTimeout as a background task since EdgeRuntime is not available in browser context
-  setTimeout(() => {
-    updateMonthlyBonusPointsTotals(movement.paymentMethodId)
-      .catch(err => console.error('Error in background task:', err));
-  }, 0);
-  
-  return data;
 };
 
 const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
@@ -52,6 +61,9 @@ const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
     
     const totalBonusPoints = movements.reduce((sum, movement) => sum + movement.bonus_points, 0);
     const remainingPoints = Math.max(0, 4000 - totalBonusPoints);
+    
+    // We can't use the hook directly here, so we'll use the imported toast function
+    const { toast } = require('@/hooks/use-toast');
     
     toast({
       title: "Bonus Points Update",

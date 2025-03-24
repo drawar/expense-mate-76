@@ -64,6 +64,7 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
   }
   
   try {
+    // Try Supabase first
     const savedMerchant = await addOrUpdateMerchant(transaction.merchant);
     console.log('Merchant saved:', savedMerchant);
     
@@ -93,6 +94,14 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       
     if (error) {
       console.error('Error adding transaction to Supabase:', error);
+      
+      // If there's a Supabase error and we're not already using local storage,
+      // fall back to local storage
+      if (!forceLocalStorage) {
+        console.log('Supabase error detected, falling back to local storage...');
+        return addTransaction(transaction, true);
+      }
+      
       throw error;
     }
     
@@ -124,6 +133,14 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
     };
   } catch (error) {
     console.error('Exception in addTransaction:', error);
+    
+    // If there's an error and we're not already using local storage,
+    // fall back to local storage as a last resort
+    if (!forceLocalStorage) {
+      console.log('Exception detected, falling back to local storage as last resort...');
+      return addTransaction(transaction, true);
+    }
+    
     throw error;
   }
 };
