@@ -6,11 +6,16 @@ import ExpenseForm from '@/components/expense/ExpenseForm';
 import Navbar from '@/components/layout/Navbar';
 import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
   const { paymentMethods, isLoading } = usePaymentMethods();
   const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage);
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("expense");
   
   return (
     <div className="min-h-screen bg-background">
