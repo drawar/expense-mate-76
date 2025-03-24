@@ -5,8 +5,8 @@ import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
 
 interface PaymentCardDisplayProps {
   paymentMethod: PaymentMethod;
-  customImage?: string; // Add optional prop for custom image URL
-  size?: 'default' | 'small'; // Add size prop to allow for different sizes
+  customImage?: string;
+  size?: 'default' | 'small';
 }
 
 const PaymentCardDisplay: React.FC<PaymentCardDisplayProps> = ({ 

@@ -4,7 +4,6 @@ import { formatCurrency } from '@/utils/currencyFormatter';
 import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
 import PaymentCardDisplay from '../expense/PaymentCardDisplay';
-import { CardTitle } from '@/components/ui/card';
 
 interface SummaryCardGridProps {
   filteredTransactions: Transaction[];
@@ -40,6 +39,7 @@ const SummaryCardGrid = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Total Expenses Card */}
       <SummaryCard
         title="Total Expenses"
         value={formatCurrency(totalExpenses, displayCurrency)}
@@ -47,6 +47,7 @@ const SummaryCardGrid = ({
         icon={<CalendarIcon className="w-3.5 h-3.5" />}
       />
             
+      {/* Average Transaction Card */}
       <SummaryCard
         title="Average Transaction"
         value={formatCurrency(averageAmount, displayCurrency)}
@@ -54,28 +55,31 @@ const SummaryCardGrid = ({
         icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500" />}
       />
             
+      {/* Most Used Payment Card */}
       <SummaryCard
         title="Most Used Payment"
-        value={topPaymentMethod?.name || 'None'}
         description={topPaymentMethod 
           ? formatCurrency(topPaymentMethod.value, displayCurrency)
           : 'No data'}
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
-        customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-          <div className="flex flex-col items-start">
-            <PaymentCardDisplay 
-              paymentMethod={topPaymentMethodObject} 
-              customImage={topPaymentMethodObject.imageUrl}
-              size="small"
-            />
-          </div>
-        ) : (
-          <CardTitle className="text-2xl font-bold mt-1 truncate">
-            {topPaymentMethod?.name || 'None'}
-          </CardTitle>
-        )}
+        customContent={
+          topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
+            <div>
+              <PaymentCardDisplay 
+                paymentMethod={topPaymentMethodObject} 
+                customImage={topPaymentMethodObject.imageUrl}
+                size="small"
+              />
+            </div>
+          ) : (
+            <div className="text-2xl font-bold truncate">
+              {topPaymentMethod?.name || 'None'}
+            </div>
+          )
+        }
       />
             
+      {/* Total Reward Points Card */}
       <SummaryCard
         title="Total Reward Points"
         value={totalRewardPoints.toLocaleString()}
