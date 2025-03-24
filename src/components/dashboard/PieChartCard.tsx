@@ -70,16 +70,16 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
               </ResponsiveContainer>
             </div>
             
-            {/* Labels on the right in a 2-column grid */}
+            {/* Labels on the right in a single column */}
             <div className="w-full md:w-1/2 md:pl-4 mt-4 md:mt-0 flex items-center">
-              <div className="grid grid-cols-2 gap-2 w-full max-h-56 overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 gap-2 w-full max-h-56 overflow-y-auto pr-2">
                 {data.map((entry, index) => (
                   <div key={`legend-${index}`} className="flex items-center text-xs">
                     <div 
                       className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="truncate max-w-[100px]" title={entry.name}>
+                    <span className="truncate max-w-[180px]" title={entry.name}>
                       {entry.name}
                     </span>
                     <span className="ml-1 font-medium whitespace-nowrap">
