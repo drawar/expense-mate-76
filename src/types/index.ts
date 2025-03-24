@@ -32,6 +32,7 @@ export interface PaymentMethod {
   issuer?: string; // For credit cards
   icon?: string; // Icon identifier
   color?: string; // Color for the card
+  imageUrl?: string; // URL to custom card image
   conversionRate?: Record<Currency, number>; // Exchange rates for currency conversion
 }
 

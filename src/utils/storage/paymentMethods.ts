@@ -56,6 +56,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
         issuer: method.issuer,
         icon: method.icon,
         color: method.color,
+        image_url: method.imageUrl, // Add imageUrl field
         conversion_rate: convertConversionRateToJson(method.conversionRate),
       });
       
@@ -101,6 +102,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     issuer: method.issuer,
     icon: method.icon,
     color: method.color,
+    imageUrl: method.image_url, // Add imageUrl field
     conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
   }));
 };

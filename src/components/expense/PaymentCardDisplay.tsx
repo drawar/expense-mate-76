@@ -5,9 +5,23 @@ import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
 
 interface PaymentCardDisplayProps {
   paymentMethod: PaymentMethod;
+  customImage?: string; // Add optional prop for custom image URL
 }
 
-const PaymentCardDisplay: React.FC<PaymentCardDisplayProps> = ({ paymentMethod }) => {
+const PaymentCardDisplay: React.FC<PaymentCardDisplayProps> = ({ paymentMethod, customImage }) => {
+  // If there's a custom image, render that instead of the default card display
+  if (customImage) {
+    return (
+      <div className="relative rounded-lg overflow-hidden w-48 h-28">
+        <img 
+          src={customImage} 
+          alt={`${paymentMethod.name} card`} 
+          className="w-full h-full object-cover rounded-lg"
+        />
+      </div>
+    );
+  }
+  
   // Render a simplified card display with the payment method information
   return (
     <div

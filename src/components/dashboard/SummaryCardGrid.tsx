@@ -60,7 +60,10 @@ const SummaryCardGrid = ({
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500 mr-1" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
           <div className="mt-2 scale-[0.65] origin-top-left">
-            <PaymentCardDisplay paymentMethod={topPaymentMethodObject} />
+            <PaymentCardDisplay 
+              paymentMethod={topPaymentMethodObject} 
+              customImage={topPaymentMethodObject.imageUrl}
+            />
           </div>
         ) : undefined}
       />
