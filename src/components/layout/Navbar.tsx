@@ -62,7 +62,7 @@ const Navbar = () => {
         <div className="flex items-center space-x-2 md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 p-0 rounded-full">
                 <Menu size={20} />
               </Button>
             </DropdownMenuTrigger>
