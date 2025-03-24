@@ -9,10 +9,4 @@ export type FilterOptions = {
   endDate: string;
 };
 
-export type FilterOption = {
-  key: keyof FilterOptions;
-  label: string;
-  options?: { value: string; label: string }[];
-};
-
 export type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';

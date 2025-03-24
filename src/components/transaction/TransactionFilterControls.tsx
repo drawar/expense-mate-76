@@ -1,5 +1,5 @@
 
-import { FilterOptions } from '@/hooks/transaction-list/types';
+import { FilterOptions } from '@/hooks/useTransactionList';
 import { SortOption, ViewMode } from '@/components/transaction/TransactionSortAndView';
 import TransactionSearchBar from '@/components/transaction/TransactionSearchBar';
 import TransactionFilters from '@/components/transaction/TransactionFilters';
