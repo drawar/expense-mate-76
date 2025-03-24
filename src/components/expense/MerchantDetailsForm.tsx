@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
 import { getMerchantByName } from '@/utils/storageUtils';
@@ -45,6 +45,7 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
   const [places, setPlaces] = useState<Place[]>([]);
   const [showPlacesDialog, setShowPlacesDialog] = useState(false);
   const { toast } = useToast();
+  const [processedMerchants, setProcessedMerchants] = useState<Set<string>>(new Set());
   
   // When merchant name changes, check for existing merchant data
   const merchantName = form.watch('merchantName');
@@ -53,12 +54,19 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
   
   useEffect(() => {
     const fetchMerchantData = async () => {
-      if (merchantName.trim().length >= 3) {
+      if (merchantName.trim().length >= 3 && !processedMerchants.has(merchantName)) {
         try {
           const existingMerchant = await getMerchantByName(merchantName);
-          if (existingMerchant?.mcc) {
+          if (existingMerchant?.mcc && 
+              (!selectedMCC || existingMerchant.mcc.code !== selectedMCC.code)) {
+            
+            // Update our processed merchants set to prevent duplicate processing
+            setProcessedMerchants(prev => new Set(prev).add(merchantName));
+            
+            // Set the MCC in the form and update the parent
             onSelectMCC(existingMerchant.mcc);
             form.setValue('mcc', existingMerchant.mcc);
+            
             // Show toast to inform user about the suggested category
             toast({
               title: "Merchant category suggested",
@@ -72,7 +80,15 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
     };
     
     fetchMerchantData();
-  }, [merchantName, form, toast, onSelectMCC]);
+    // Dependencies include the current selectedMCC to prevent re-suggesting the same MCC
+  }, [merchantName, form, toast, onSelectMCC, selectedMCC, processedMerchants]);
+
+  // Reset processed merchants when merchant name changes significantly
+  useEffect(() => {
+    if (debouncedMerchantName.trim().length < 3) {
+      setProcessedMerchants(new Set());
+    }
+  }, [debouncedMerchantName]);
 
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
