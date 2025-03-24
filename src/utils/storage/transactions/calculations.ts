@@ -16,8 +16,9 @@ export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBre
     };
   }
   
+  // Round down the amount to integer for consistent calculation with simulation
   const roundedAmount = Math.floor(transaction.amount);
-  let basePoints = Math.round(roundedAmount * 0.4);
+  let basePoints = Math.floor(roundedAmount * 0.4); // Use Math.floor to match simulation logic
   let bonusPoints = 0;
   
   // Calculate bonus points based on card type and conditions
@@ -25,8 +26,8 @@ export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBre
       transaction.paymentMethod.name === 'Preferred Visa Platinum') {
     if (transaction.isContactless) {
       // For UOB Preferred Visa Platinum with contactless payment,
-      // the bonus multiplier should be 9 (base points earn 0.4x per $1, contactless earns 10x total, so 9x bonus)
-      bonusPoints = Math.round(basePoints * 9); // 9x base points as bonus (to make 10x total)
+      // calculate points exactly as in simulation logic
+      bonusPoints = basePoints * 9; // 9x base points as bonus (to make 10x total)
     }
   } else if (transaction.paymentMethod.issuer === 'Citibank' && 
              transaction.paymentMethod.name === 'Rewards Visa Signature') {
@@ -35,10 +36,11 @@ export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBre
                                 (transaction.merchant.mcc?.code && eligibleMCCs.includes(transaction.merchant.mcc.code));
     
     if (isEligibleTransaction) {
-      bonusPoints = Math.round(basePoints * 9); // 9x base points as bonus (to make 10x total)
+      bonusPoints = basePoints * 9; // 9x base points as bonus (to make 10x total)
     }
   }
   
+  // Ensure consistent rounding between simulation and actual calculation
   return {
     basePoints,
     bonusPoints,
