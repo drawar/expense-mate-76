@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Transaction } from '@/types';
-import { addTransaction } from '@/utils/storageUtils';
+import { addTransaction } from '@/utils/storage/transactions';
 import { useToast } from '@/hooks/use-toast';
 
 export const useTransactionSubmit = (useLocalStorage: boolean) => {
