@@ -18,7 +18,7 @@ const SummaryCard = ({ title, value, description, icon, className, style, custom
       <CardHeader className="pb-2">
         <CardDescription className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wider">{title}</CardDescription>
         {customContent ? (
-          <div className="overflow-visible mt-1">
+          <div className="mt-2">
             {customContent}
           </div>
         ) : (
