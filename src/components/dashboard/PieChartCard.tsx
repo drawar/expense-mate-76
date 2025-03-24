@@ -71,17 +71,19 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
           </div>
         )}
         
-        {/* Add a legend below the chart to solve text scaling issues */}
+        {/* Improved legend styling to prevent overflow */}
         {data.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 max-h-40 overflow-y-auto">
+          <div className="mt-4 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto px-2">
             {data.map((entry, index) => (
               <div key={`legend-${index}`} className="flex items-center text-xs">
                 <div 
                   className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className="truncate max-w-[80%]">{entry.name}</span>
-                <span className="ml-1 font-medium">
+                <span className="truncate max-w-[120px]" title={entry.name}>
+                  {entry.name}
+                </span>
+                <span className="ml-1 font-medium whitespace-nowrap">
                   {(entry.value / data.reduce((sum, item) => sum + item.value, 0) * 100).toFixed(0)}%
                 </span>
               </div>

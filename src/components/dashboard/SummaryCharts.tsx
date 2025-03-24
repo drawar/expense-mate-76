@@ -22,16 +22,20 @@ const SummaryCharts = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Payment Methods Chart */}
-      <PieChartCard
-        title="Expenses by Payment Method"
-        data={paymentMethodChartData}
-      />
+      <div className="w-full h-full">
+        <PieChartCard
+          title="Expenses by Payment Method"
+          data={paymentMethodChartData}
+        />
+      </div>
             
       {/* Categories Chart */}
-      <PieChartCard
-        title="Expenses by Category"
-        data={categoryChartData}
-      />
+      <div className="w-full h-full">
+        <PieChartCard
+          title="Expenses by Category"
+          data={categoryChartData}
+        />
+      </div>
     </div>
   );
 };
