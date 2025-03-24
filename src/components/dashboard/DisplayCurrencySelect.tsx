@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { currencyOptions, Currency } from '@/utils/currencyFormatter';
+import { currencyOptions } from '@/utils/currencyFormatter';
+import { Currency } from '@/types';
 
 interface DisplayCurrencySelectProps {
   value: Currency;
