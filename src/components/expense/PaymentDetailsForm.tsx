@@ -1,25 +1,8 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency, Transaction } from '@/types';
 import { CreditCardIcon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { currencyOptions } from '@/utils/currencyFormatter';
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Card,
   CardContent,
@@ -31,9 +14,10 @@ import { Button } from '@/components/ui/button';
 import { getTransactions } from '@/utils/storageUtils';
 
 // Import our refactored components
-import PaymentCardRender from './PaymentCardRender';
+import PaymentMethodSelect from './PaymentCardRender';
 import ContactlessToggle from './ContactlessToggle';
 import PointsDisplay from './PointsDisplay';
+import ConvertedAmountField from './ConvertedAmountField';
 
 interface PaymentDetailsFormProps {
   paymentMethods: PaymentMethod[];
@@ -59,7 +43,6 @@ const PaymentDetailsForm = ({
   const currency = form.watch('currency') as Currency;
   const mcc = form.watch('mcc')?.code;
   const isContactless = form.watch('isContactless');
-  const paymentMethodId = form.watch('paymentMethodId');
   
   // State for transactions
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -80,51 +63,20 @@ const PaymentDetailsForm = ({
     loadTransactions();
   }, []);
 
-  // Handle currency conversion when payment method currency differs from transaction currency
-  useEffect(() => {
-    if (shouldOverridePayment && selectedPaymentMethod && currency && amount > 0) {
-      const conversionRates: Record<string, Record<string, number>> = {
-        USD: { SGD: 1.35, EUR: 0.92, GBP: 0.78 },
-        SGD: { USD: 0.74, EUR: 0.68, GBP: 0.58 },
-        EUR: { USD: 1.09, SGD: 1.47, GBP: 0.85 },
-        GBP: { USD: 1.28, SGD: 1.73, EUR: 1.17 }
-      };
-      
-      for (const fromCurr of Object.keys(conversionRates)) {
-        for (const toCurr of currencyOptions.map(c => c.value)) {
-          if (!conversionRates[fromCurr]?.[toCurr] && fromCurr !== toCurr) {
-            conversionRates[fromCurr] = { 
-              ...conversionRates[fromCurr], 
-              [toCurr]: 1.0 
-            };
-          }
-        }
-      }
-      
-      const rate = conversionRates[currency]?.[selectedPaymentMethod?.currency] || 1;
-      const convertedAmount = (amount * rate).toFixed(2);
-      form.setValue('paymentAmount', convertedAmount);
-    }
-  }, [currency, amount, selectedPaymentMethod, shouldOverridePayment, form]);
-  
-  // Set isContactless to true if credit card and not online
-  useEffect(() => {
-    const paymentMethodId = form.watch('paymentMethodId');
-    const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
-    
-    if (!isOnline && paymentMethod?.type === 'credit_card') {
-      form.setValue('isContactless', true);
-    }
-  }, [isOnline, form, paymentMethods]);
-
   // State for UOB Visa Signature calculation
   const [nonSgdSpendTotal, setNonSgdSpendTotal] = useState<number>(0);
   const [hasSgdTransactions, setHasSgdTransactions] = useState<boolean>(false);
   
+  // State for bonus points tracking
+  const [usedBonusPoints, setUsedBonusPoints] = useState<number>(0);
+  
+  // Calculate card-specific metrics based on transactions
   useEffect(() => {
+    // Get current payment method
     const paymentMethodId = form.watch('paymentMethodId');
     const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
     
+    // Calculate for UOB Visa Signature
     if (paymentMethod?.issuer === 'UOB' && paymentMethod?.name === 'Visa Signature' && transactions.length > 0) {
       let statementTotal = 0;
       let hasAnySgdTransaction = false;
@@ -144,18 +96,8 @@ const PaymentDetailsForm = ({
       setNonSgdSpendTotal(statementTotal);
       setHasSgdTransactions(hasAnySgdTransaction);
     }
-  }, [form, paymentMethods, transactions]);
-  
-  // State for bonus points tracking
-  const [usedBonusPoints, setUsedBonusPoints] = useState<number>(0);
-  
-  useEffect(() => {
-    // Get current payment method
-    const paymentMethodId = form.watch('paymentMethodId');
-    const paymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
     
-    // Used for both UOB Preferred Visa Platinum and Citibank Rewards Visa Signature 
-    // since they have similar bonus points mechanics
+    // Calculate bonus points used for UOB Preferred Platinum and Citibank Rewards
     if (((paymentMethod?.issuer === 'UOB' && paymentMethod?.name === 'Preferred Visa Platinum') ||
         (paymentMethod?.issuer === 'Citibank' && paymentMethod?.name === 'Rewards Visa Signature')) &&
         transactions.length > 0) {
@@ -195,74 +137,17 @@ const PaymentDetailsForm = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={form.control}
-          name="paymentMethodId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Payment Method</FormLabel>
-              <Select 
-                value={field.value ? String(field.value) : ''} 
-                onValueChange={(value) => {
-                  console.log('Payment method selected:', value);
-                  field.onChange(value);
-                  // Force form validation after selection
-                  setTimeout(() => form.trigger('paymentMethodId'), 100);
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {paymentMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
-                      <div className="flex items-center gap-2">
-                        <CreditCardIcon className="h-4 w-4" style={{ color: method.color }} />
-                        <span>{method.name}</span>
-                        {method.type === 'credit_card' && method.lastFourDigits && (
-                          <span className="text-gray-500 text-xs">...{method.lastFourDigits}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <PaymentMethodSelect paymentMethods={paymentMethods} />
         
         <ContactlessToggle 
           isOnline={isOnline} 
           isCash={selectedPaymentMethod?.type === 'cash' || false} 
         />
         
-        {shouldOverridePayment && selectedPaymentMethod && (
-          <FormField
-            control={form.control}
-            name="paymentAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Converted Amount ({selectedPaymentMethod?.currency})</FormLabel>
-                <FormDescription>
-                  Currency differs from transaction currency. Enter the actual payment amount.
-                </FormDescription>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <ConvertedAmountField 
+          shouldOverridePayment={shouldOverridePayment} 
+          selectedPaymentMethod={selectedPaymentMethod} 
+        />
         
         <PointsDisplay 
           selectedPaymentMethod={selectedPaymentMethod}
