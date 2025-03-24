@@ -26,46 +26,72 @@ const convertConversionRateToJson = (rate: Record<Currency, number> | undefined)
 
 // Save payment methods to Supabase
 export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promise<void> => {
-  // First delete all existing payment methods
-  const { error: deleteError } = await supabase
-    .from('payment_methods')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000'); // Dummy condition to delete all
-    
-  if (deleteError) {
-    console.error('Error deleting payment methods:', deleteError);
-    // Fallback to localStorage
-    localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
-    return;
-  }
-  
-  // Then insert all the payment methods one by one
-  for (const method of paymentMethods) {
-    const { error: insertError } = await supabase
+  try {
+    // First, get current payment methods to identify what needs to be updated or deleted
+    const { data: currentMethods, error: fetchError } = await supabase
       .from('payment_methods')
-      .insert({
-        id: method.id,
-        name: method.name,
-        type: method.type,
-        currency: method.currency,
-        reward_rules: convertRewardRulesToJson(method.rewardRules),
-        statement_start_day: method.statementStartDay,
-        is_monthly_statement: method.isMonthlyStatement,
-        active: method.active,
-        last_four_digits: method.lastFourDigits,
-        issuer: method.issuer,
-        icon: method.icon,
-        color: method.color,
-        image_url: method.imageUrl, // Fixed property name to match the database column
-        conversion_rate: convertConversionRateToJson(method.conversionRate),
-      });
+      .select('id');
       
-    if (insertError) {
-      console.error('Error inserting payment method:', insertError);
+    if (fetchError) {
+      console.error('Error fetching current payment methods:', fetchError);
       // Fallback to localStorage
       localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
       return;
     }
+    
+    // Get array of existing IDs
+    const existingIds = currentMethods.map(method => method.id);
+    
+    // Get array of new IDs
+    const newIds = paymentMethods.map(method => method.id);
+    
+    // Find IDs to delete (exist in DB but not in new array)
+    const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+    
+    // Delete methods that are no longer needed
+    if (idsToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('payment_methods')
+        .delete()
+        .in('id', idsToDelete);
+        
+      if (deleteError) {
+        console.error('Error deleting payment methods:', deleteError);
+      }
+    }
+    
+    // Upsert all methods
+    for (const method of paymentMethods) {
+      const { error: upsertError } = await supabase
+        .from('payment_methods')
+        .upsert({
+          id: method.id,
+          name: method.name,
+          type: method.type,
+          currency: method.currency,
+          reward_rules: convertRewardRulesToJson(method.rewardRules),
+          statement_start_day: method.statementStartDay,
+          is_monthly_statement: method.isMonthlyStatement,
+          active: method.active,
+          last_four_digits: method.lastFourDigits,
+          issuer: method.issuer,
+          icon: method.icon,
+          color: method.color,
+          image_url: method.imageUrl,
+          conversion_rate: convertConversionRateToJson(method.conversionRate),
+        }, { onConflict: 'id' });
+        
+      if (upsertError) {
+        console.error('Error upserting payment method:', upsertError);
+        // Fallback to localStorage
+        localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Error in savePaymentMethods:', error);
+    // Fallback to localStorage
+    localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(paymentMethods));
   }
 };
 
@@ -102,7 +128,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     issuer: method.issuer,
     icon: method.icon,
     color: method.color,
-    imageUrl: method.image_url, // Fixed property name to match the database column
+    imageUrl: method.image_url,
     conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
   }));
 };

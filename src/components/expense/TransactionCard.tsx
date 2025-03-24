@@ -83,7 +83,7 @@ const TransactionCard = ({ transaction, onClick, className, style }: Transaction
         )}
 
         {merchant.address && (
-          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 w-full mt-1 max-w-full">
+          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 inline-flex max-w-full">
             <MapPinIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-red-500" />
             <span className="truncate" title={merchant.address}>
               {merchant.address}
