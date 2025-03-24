@@ -9,30 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bonus_points_movements: {
+        Row: {
+          bonus_points: number
+          created_at: string
+          id: string
+          payment_method_id: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          bonus_points: number
+          created_at?: string
+          id?: string
+          payment_method_id?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          bonus_points?: number
+          created_at?: string
+          id?: string
+          payment_method_id?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_points_movements_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonus_points_movements_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_category_mappings: {
         Row: {
           created_at: string | null
+          deleted_at: string | null
           id: string
           is_deleted: boolean
           merchant_name: string
+          modified_at: string | null
           most_common_mcc: Json | null
           occurrence_count: number
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           is_deleted?: boolean
           merchant_name: string
+          modified_at?: string | null
           most_common_mcc?: Json | null
           occurrence_count?: number
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           is_deleted?: boolean
           merchant_name?: string
+          modified_at?: string | null
           most_common_mcc?: Json | null
           occurrence_count?: number
           updated_at?: string | null
@@ -44,7 +89,9 @@ export type Database = {
           address: string | null
           coordinates: Json | null
           created_at: string | null
+          deleted_at: string | null
           id: string
+          is_deleted: boolean | null
           is_online: boolean | null
           mcc: Json | null
           name: string
@@ -53,7 +100,9 @@ export type Database = {
           address?: string | null
           coordinates?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_online?: boolean | null
           mcc?: Json | null
           name: string
@@ -62,7 +111,9 @@ export type Database = {
           address?: string | null
           coordinates?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_online?: boolean | null
           mcc?: Json | null
           name?: string
@@ -123,12 +174,15 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          base_points: number | null
           category: string | null
           created_at: string | null
           currency: string
           date: string
+          deleted_at: string | null
           id: string
           is_contactless: boolean | null
+          is_deleted: boolean | null
           merchant_id: string
           notes: string | null
           payment_amount: number
@@ -138,12 +192,15 @@ export type Database = {
         }
         Insert: {
           amount: number
+          base_points?: number | null
           category?: string | null
           created_at?: string | null
           currency: string
           date: string
+          deleted_at?: string | null
           id?: string
           is_contactless?: boolean | null
+          is_deleted?: boolean | null
           merchant_id: string
           notes?: string | null
           payment_amount: number
@@ -153,12 +210,15 @@ export type Database = {
         }
         Update: {
           amount?: number
+          base_points?: number | null
           category?: string | null
           created_at?: string | null
           currency?: string
           date?: string
+          deleted_at?: string | null
           id?: string
           is_contactless?: boolean | null
+          is_deleted?: boolean | null
           merchant_id?: string
           notes?: string | null
           payment_amount?: number

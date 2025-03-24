@@ -1,73 +1,61 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getTransactionsFromLocalStorage, saveTransactionsToLocalStorage } from './local-storage';
+import { addBonusPointsMovement } from './bonus-points';
 
 export const deleteTransaction = async (id: string): Promise<boolean> => {
-  let deletedTransactionMerchant = null;
-  
-  const existingTransactions = getTransactionsFromLocalStorage();
-  const transaction = existingTransactions.find(t => t.id === id);
-  
-  if (transaction) {
-    deletedTransactionMerchant = transaction.merchant;
-  } else {
-    try {
-      const { data } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          merchant:merchant_id(*)
-        `)
-        .eq('id', id)
-        .maybeSingle();
-        
-      if (data) {
-        deletedTransactionMerchant = data.merchant;
-      }
-    } catch (error) {
-      console.error('Error getting transaction before delete:', error);
-    }
-  }
-  
-  if (transaction) {
-    try {
-      const updatedTransactions = existingTransactions.filter(t => t.id !== id);
-      saveTransactionsToLocalStorage(updatedTransactions);
+  try {
+    // Get transaction details before deletion
+    const { data: transaction } = await supabase
+      .from('transactions')
+      .select(`
+        *,
+        merchant:merchant_id(*)
+      `)
+      .eq('id', id)
+      .single();
       
-      if (deletedTransactionMerchant && deletedTransactionMerchant.mcc) {
-        try {
-          const { decrementMerchantOccurrence } = await import('../merchantTracking');
-          await decrementMerchantOccurrence(deletedTransactionMerchant.name);
-        } catch (error) {
-          console.error('Error updating merchant mapping after delete:', error);
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error deleting transaction from local storage:', error);
+    if (!transaction) {
+      console.error('Transaction not found');
       return false;
     }
-  }
-  
-  const { error } = await supabase
-    .from('transactions')
-    .delete()
-    .eq('id', id);
     
-  if (error) {
-    console.error('Error deleting transaction:', error);
+    // Soft delete the transaction
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
+      })
+      .eq('id', id);
+      
+    if (updateError) {
+      console.error('Error soft deleting transaction:', updateError);
+      return false;
+    }
+    
+    // Record negative bonus points movement
+    if (transaction.reward_points > transaction.base_points) {
+      const bonusPoints = transaction.reward_points - transaction.base_points;
+      await addBonusPointsMovement({
+        transactionId: transaction.id,
+        paymentMethodId: transaction.payment_method_id,
+        bonusPoints: -bonusPoints // Negative to offset the original bonus points
+      });
+    }
+    
+    // Update merchant occurrence count
+    if (transaction.merchant) {
+      try {
+        const { decrementMerchantOccurrence } = await import('../merchantTracking');
+        await decrementMerchantOccurrence(transaction.merchant.name);
+      } catch (error) {
+        console.error('Error updating merchant mapping after delete:', error);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteTransaction:', error);
     return false;
   }
-  
-  if (deletedTransactionMerchant && deletedTransactionMerchant.mcc) {
-    try {
-      const { decrementMerchantOccurrence } = await import('../merchantTracking');
-      await decrementMerchantOccurrence(deletedTransactionMerchant.name);
-    } catch (error) {
-      console.error('Error updating merchant mapping after delete:', error);
-    }
-  }
-  
-  return true;
 };

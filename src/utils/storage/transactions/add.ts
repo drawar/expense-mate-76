@@ -5,6 +5,7 @@ import { getCategoryFromMCC, getCategoryFromMerchantName } from '../../categoryM
 import { getMerchantByName, addOrUpdateMerchant } from '../merchants';
 import { saveTransactionToLocalStorage } from './local-storage';
 import { calculatePoints } from './calculations';
+import { addBonusPointsMovement } from './bonus-points';
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>, forceLocalStorage = false): Promise<Transaction> => {
   console.log('Adding transaction, force local storage:', forceLocalStorage);
@@ -26,14 +27,8 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
     }
   }
   
-  let rewardPoints = transaction.rewardPoints;
-  if (!rewardPoints || rewardPoints <= 0) {
-    const transactionWithCategory = {
-      ...transaction,
-      category,
-    };
-    rewardPoints = calculatePoints(transactionWithCategory);
-  }
+  // Calculate points breakdown
+  const pointsBreakdown = calculatePoints(transaction);
   
   if (forceLocalStorage) {
     console.log('Directly using local storage for transaction');
@@ -44,20 +39,24 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       const transactionWithUpdates = {
         ...transaction,
         category,
-        rewardPoints,
-        merchant
+        rewardPoints: pointsBreakdown.totalPoints,
+        merchant,
+        basePoints: pointsBreakdown.basePoints,
+        isDeleted: false
       };
       
-      if (merchant.mcc) {
-        try {
-          const { incrementMerchantOccurrence } = await import('../merchantTracking');
-          await incrementMerchantOccurrence(merchant.name, merchant.mcc);
-        } catch (error) {
-          console.error('Error updating merchant mapping:', error);
-        }
+      const savedTransaction = await saveTransactionToLocalStorage(transactionWithUpdates, merchant);
+      
+      // Record bonus points movement
+      if (pointsBreakdown.bonusPoints > 0) {
+        await addBonusPointsMovement({
+          transactionId: savedTransaction.id,
+          paymentMethodId: savedTransaction.paymentMethod.id,
+          bonusPoints: pointsBreakdown.bonusPoints
+        });
       }
       
-      return saveTransactionToLocalStorage(transactionWithUpdates, merchant);
+      return savedTransaction;
     } catch (error) {
       console.error('Error saving to local storage:', error);
       throw new Error('Failed to save transaction to local storage');
@@ -68,15 +67,6 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
     const savedMerchant = await addOrUpdateMerchant(transaction.merchant);
     console.log('Merchant saved:', savedMerchant);
     
-    if (savedMerchant.mcc) {
-      try {
-        const { incrementMerchantOccurrence } = await import('../merchantTracking');
-        await incrementMerchantOccurrence(savedMerchant.name, savedMerchant.mcc);
-      } catch (error) {
-        console.error('Error updating merchant mapping:', error);
-      }
-    }
-    
     const transactionData = {
       date: transaction.date,
       merchant_id: savedMerchant.id,
@@ -85,10 +75,12 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       payment_method_id: transaction.paymentMethod.id,
       payment_amount: transaction.paymentAmount,
       payment_currency: transaction.paymentCurrency,
-      reward_points: rewardPoints,
+      reward_points: pointsBreakdown.totalPoints,
+      base_points: pointsBreakdown.basePoints,
       notes: transaction.notes,
       category: category,
       is_contactless: transaction.isContactless,
+      is_deleted: false
     };
     
     console.log('Sending to Supabase:', transactionData);
@@ -100,19 +92,20 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       .single();
       
     if (error) {
-      console.error('Error adding transaction to Supabase, using local storage fallback:', error);
-      
-      const transactionWithUpdates = {
-        ...transaction,
-        category,
-        rewardPoints,
-        merchant: savedMerchant
-      };
-      
-      return saveTransactionToLocalStorage(transactionWithUpdates, savedMerchant);
+      console.error('Error adding transaction to Supabase:', error);
+      throw error;
     }
     
     console.log('Transaction saved successfully to Supabase:', data);
+    
+    // Record bonus points movement
+    if (pointsBreakdown.bonusPoints > 0) {
+      await addBonusPointsMovement({
+        transactionId: data.id,
+        paymentMethodId: data.payment_method_id,
+        bonusPoints: pointsBreakdown.bonusPoints
+      });
+    }
     
     return {
       id: data.id,
@@ -124,27 +117,13 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       paymentAmount: Number(data.payment_amount),
       paymentCurrency: data.payment_currency as Currency,
       rewardPoints: data.reward_points,
+      basePoints: data.base_points,
       notes: data.notes,
       category: data.category,
       isContactless: data.is_contactless,
     };
   } catch (error) {
-    console.error('Exception in addTransaction, using local storage fallback:', error);
-    
-    try {
-      const existingMerchant = await getMerchantByName(transaction.merchant.name);
-      
-      const transactionWithUpdates = {
-        ...transaction,
-        category,
-        rewardPoints,
-        merchant: existingMerchant || transaction.merchant
-      };
-      
-      return saveTransactionToLocalStorage(transactionWithUpdates, existingMerchant);
-    } catch (innerError) {
-      console.error('Error in local storage fallback:', innerError);
-      throw new Error('Failed to save transaction');
-    }
+    console.error('Exception in addTransaction:', error);
+    throw error;
   }
 };
