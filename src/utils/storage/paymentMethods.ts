@@ -56,7 +56,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
         issuer: method.issuer,
         icon: method.icon,
         color: method.color,
-        image_url: method.imageUrl, // Add imageUrl field
+        image_url: method.imageUrl,
         conversion_rate: convertConversionRateToJson(method.conversionRate),
       });
       
@@ -102,7 +102,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     issuer: method.issuer,
     icon: method.icon,
     color: method.color,
-    imageUrl: method.image_url, // Add imageUrl field
+    imageUrl: method.image_url,
     conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
   }));
 };
@@ -110,4 +110,35 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
 // Initialize payment methods with defaults
 export const initializePaymentMethods = async (): Promise<void> => {
   await savePaymentMethods(defaultPaymentMethods);
+};
+
+// Upload card image to storage and get a public URL
+export const uploadCardImage = async (file: File, paymentMethodId: string): Promise<string | null> => {
+  try {
+    // Generate a unique file path
+    const filePath = `card-images/${paymentMethodId}/${Date.now()}-${file.name}`;
+    
+    // Upload the file to supabase storage
+    const { data, error } = await supabase.storage
+      .from('payment-methods')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
+      
+    if (error) {
+      console.error('Error uploading card image:', error);
+      return null;
+    }
+    
+    // Get the public URL
+    const { data: urlData } = supabase.storage
+      .from('payment-methods')
+      .getPublicUrl(filePath);
+      
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('Error in uploadCardImage:', error);
+    return null;
+  }
 };
