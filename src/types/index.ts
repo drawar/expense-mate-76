@@ -57,6 +57,7 @@ export interface Transaction {
   paymentAmount: number;
   paymentCurrency: Currency;
   rewardPoints: number;
+  basePoints?: number; // Added this field
   notes?: string;
   category?: string;
   tags?: string[];

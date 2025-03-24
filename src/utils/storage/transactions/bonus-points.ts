@@ -25,7 +25,11 @@ export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
   }
   
   // Trigger background task to update monthly totals
-  EdgeRuntime.waitUntil(updateMonthlyBonusPointsTotals(movement.paymentMethodId));
+  // Using setTimeout as a background task since EdgeRuntime is not available in browser context
+  setTimeout(() => {
+    updateMonthlyBonusPointsTotals(movement.paymentMethodId)
+      .catch(err => console.error('Error in background task:', err));
+  }, 0);
   
   return data;
 };
