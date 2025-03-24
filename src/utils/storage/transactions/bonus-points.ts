@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface BonusPointsMovement {
   transactionId: string;
@@ -80,13 +79,8 @@ const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
     console.log('Total bonus points used this month:', totalBonusPoints);
     console.log('Remaining bonus points available:', remainingPoints);
     
-    // We can't use the hook directly here
-    const { toast } = useToast();
-    
-    toast({
-      title: "Bonus Points Update",
-      description: `Remaining bonus points available this month: ${remainingPoints}`,
-    });
+    // We don't use the toast hook here as it's a non-component context
+    // Information about remaining points will be logged for debugging
   } catch (error) {
     console.error('Error in background task:', error);
   }

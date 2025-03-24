@@ -1,11 +1,11 @@
 
 import { PaymentMethod } from '@/types';
 
-// Default payment methods
+// Default payment methods with proper UUID format
 export const defaultPaymentMethods: PaymentMethod[] = [
   // Cash options for different currencies
   {
-    id: '1',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8501',
     name: 'Cash (USD)',
     type: 'cash',
     currency: 'USD',
@@ -15,7 +15,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#22c55e',
   },
   {
-    id: '1-sgd',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8502',
     name: 'Cash (SGD)',
     type: 'cash',
     currency: 'SGD',
@@ -25,7 +25,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#22c55e',
   },
   {
-    id: '1-ntd',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8503',
     name: 'Cash (NTD)',
     type: 'cash',
     currency: 'NTD',
@@ -35,7 +35,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#22c55e',
   },
   {
-    id: '1-cad',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8504',
     name: 'Cash (CAD)',
     type: 'cash',
     currency: 'CAD',
@@ -45,7 +45,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#22c55e',
   },
   {
-    id: '1-vnd',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8505',
     name: 'Cash (VND)',
     type: 'cash',
     currency: 'VND',
@@ -55,7 +55,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#22c55e',
   },
   {
-    id: '1-thb',
+    id: 'c81d6e04-79bd-44da-8293-d951c35a8506',
     name: 'Cash (THB)',
     type: 'cash',
     currency: 'THB',
@@ -66,7 +66,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
   },
   // Credit cards
   {
-    id: '2',
+    id: 'b5ea3301-a599-47b9-9943-13410d48cdd6',
     name: 'Blue Cash Preferred',
     type: 'credit_card',
     currency: 'USD',
@@ -79,7 +79,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#3b82f6',
     rewardRules: [
       {
-        id: '2-1',
+        id: 'b5ea3301-a599-47b9-9943-13410d48cdd7',
         name: 'Grocery Bonus',
         description: '6% back at U.S. supermarkets',
         type: 'mcc',
@@ -88,7 +88,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
         maxSpend: 6000,
       },
       {
-        id: '2-2',
+        id: 'b5ea3301-a599-47b9-9943-13410d48cdd8',
         name: 'Streaming Bonus',
         description: '6% back on select U.S. streaming',
         type: 'merchant',
@@ -96,7 +96,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
         pointsMultiplier: 6,
       },
       {
-        id: '2-3',
+        id: 'b5ea3301-a599-47b9-9943-13410d48cdd9',
         name: 'Gas Bonus',
         description: '3% back at U.S. gas stations',
         type: 'mcc',
@@ -106,7 +106,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     ],
   },
   {
-    id: '3',
+    id: '2f6b1a24-7e3c-40b4-8582-97357f384612',
     name: 'Chase Sapphire Reserve',
     type: 'credit_card',
     currency: 'USD',
@@ -119,7 +119,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#6366f1',
     rewardRules: [
       {
-        id: '3-1',
+        id: '2f6b1a24-7e3c-40b4-8582-97357f384613',
         name: 'Travel Bonus',
         description: '3x points on travel',
         type: 'mcc',
@@ -127,7 +127,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
         pointsMultiplier: 3,
       },
       {
-        id: '3-2',
+        id: '2f6b1a24-7e3c-40b4-8582-97357f384614',
         name: 'Dining Bonus',
         description: '3x points on dining',
         type: 'mcc',
@@ -137,7 +137,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     ],
   },
   {
-    id: '4',
+    id: '9c5a3e87-1de4-4d1a-9ea3-ce8d932fe728',
     name: 'Preferred Visa Platinum',
     type: 'credit_card',
     currency: 'SGD',
@@ -151,7 +151,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     rewardRules: [], // Special handling in rewardPoints.ts
   },
   {
-    id: '5',
+    id: '7e8c1909-7cca-48e0-84c0-118a9d8fedf1',
     name: 'Visa Signature',
     type: 'credit_card',
     currency: 'SGD',
@@ -181,7 +181,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     }
   },
   {
-    id: '6',
+    id: 'd4b9c8a7-3f6e-42d1-b590-584f5e682ab3',
     name: 'Rewards Visa Signature',
     type: 'credit_card',
     currency: 'SGD',
@@ -218,4 +218,3 @@ export const findCashPaymentMethodForCurrency = (currency: string): PaymentMetho
     method.type === 'cash' && method.currency === currency
   );
 };
-
