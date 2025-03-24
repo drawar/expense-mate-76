@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
@@ -5,6 +6,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { calculateTotalRewardPoints } from '@/utils/rewardPoints';
 import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface SummaryProps {
   transactions: Transaction[];
@@ -18,9 +20,27 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   
+  // Make sure transactions are properly processed
+  const processedTransactions = transactions.map(tx => {
+    // Make sure category is set
+    if (!tx.category || tx.category === 'Uncategorized') {
+      let category = 'Uncategorized';
+      
+      if (tx.merchant.mcc?.code) {
+        category = getCategoryFromMCC(tx.merchant.mcc.code);
+      } else if (tx.merchant.name) {
+        category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
+      }
+      
+      return {...tx, category};
+    }
+    
+    return tx;
+  });
+  
   useEffect(() => {
     const now = new Date();
-    const filteredTxs = transactions.filter(tx => {
+    const filteredTxs = processedTransactions.filter(tx => {
       const txDate = new Date(tx.date);
       
       switch (activeTab) {
@@ -40,7 +60,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     });
     
     setFilteredTransactions(filteredTxs);
-  }, [activeTab, transactions]);
+  }, [activeTab, processedTransactions]);
   
   const totalExpenses = filteredTransactions.reduce(
     (sum, tx) => sum + (tx.currency === 'USD' ? tx.amount : tx.paymentAmount), 
@@ -66,7 +86,16 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   
   const expensesByCategory = filteredTransactions.reduce<Record<string, number>>(
     (acc, tx) => {
-      const category = tx.merchant.mcc?.description || 'Uncategorized';
+      // Get category name, preferring the stored category but falling back to MCC or merchant name
+      let category = tx.category;
+      if (!category || category === 'Uncategorized') {
+        if (tx.merchant.mcc?.code) {
+          category = getCategoryFromMCC(tx.merchant.mcc.code);
+        } else {
+          category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
+        }
+      }
+      
       if (!acc[category]) {
         acc[category] = 0;
       }

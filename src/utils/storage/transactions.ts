@@ -1,8 +1,10 @@
+
 import { Transaction, Currency } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { getCategoryFromMCC } from '../categoryMapping';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '../categoryMapping';
 import { getMerchantByName, addOrUpdateMerchant } from './merchants';
 import { getPaymentMethods } from './paymentMethods';
+import { calculateBasicPoints } from '../rewards/baseCalculations';
 
 // LocalStorage key for fallback
 const TRANSACTIONS_KEY = 'expenseTracker_transactions';
@@ -158,6 +160,36 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
   }
 };
 
+// Calculate basic reward points for a transaction
+const calculatePoints = (transaction: Omit<Transaction, 'id'>): number => {
+  if (transaction.paymentMethod.type === 'cash') {
+    return 0;
+  }
+  
+  // Basic point calculation (can be enhanced later)
+  if (transaction.paymentMethod.type === 'credit_card') {
+    // Default basic rate: 0.4 points per dollar
+    const basePoints = Math.round(transaction.amount * 0.4);
+    
+    // For UOB cards with contactless payments
+    if (transaction.paymentMethod.issuer === 'UOB' && transaction.isContactless) {
+      return Math.round(basePoints * 1.2); // 20% bonus for contactless
+    }
+    
+    // For dining with certain cards
+    const isDining = transaction.category === 'Food & Drinks' || 
+                    (transaction.merchant.mcc?.code && ['5811', '5812', '5813', '5814'].includes(transaction.merchant.mcc.code));
+    
+    if (isDining && ['UOB', 'Citibank'].includes(transaction.paymentMethod.issuer || '')) {
+      return Math.round(basePoints * 2); // 2x points for dining
+    }
+    
+    return basePoints;
+  }
+  
+  return 0;
+};
+
 // Add a new transaction with local storage fallback
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>, forceLocalStorage = false): Promise<Transaction> => {
   console.log('Adding transaction, force local storage:', forceLocalStorage);
@@ -171,6 +203,26 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
     throw new Error('Payment method information is missing');
   }
   
+  // Determine category based on MCC or merchant name if not already set
+  let category = transaction.category;
+  if (!category || category === 'Uncategorized') {
+    if (transaction.merchant.mcc?.code) {
+      category = getCategoryFromMCC(transaction.merchant.mcc.code);
+    } else if (transaction.merchant.name) {
+      category = getCategoryFromMerchantName(transaction.merchant.name) || 'Uncategorized';
+    }
+  }
+  
+  // Calculate reward points if not already set
+  let rewardPoints = transaction.rewardPoints;
+  if (!rewardPoints || rewardPoints <= 0) {
+    const transactionWithCategory = {
+      ...transaction,
+      category,
+    };
+    rewardPoints = calculatePoints(transactionWithCategory);
+  }
+  
   // If we're forcing local storage, skip Supabase attempt
   if (forceLocalStorage) {
     console.log('Directly using local storage for transaction');
@@ -180,7 +232,14 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       const existingMerchant = await getMerchantByName(transaction.merchant.name);
       const merchant = existingMerchant || transaction.merchant;
       
-      return saveTransactionToLocalStorage(transaction, merchant);
+      const transactionWithUpdates = {
+        ...transaction,
+        category,
+        rewardPoints,
+        merchant
+      };
+      
+      return saveTransactionToLocalStorage(transactionWithUpdates, merchant);
     } catch (error) {
       console.error('Error saving to local storage:', error);
       throw new Error('Failed to save transaction to local storage');
@@ -201,10 +260,9 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       payment_method_id: transaction.paymentMethod.id,
       payment_amount: transaction.paymentAmount,
       payment_currency: transaction.paymentCurrency,
-      reward_points: transaction.rewardPoints,
+      reward_points: rewardPoints,
       notes: transaction.notes,
-      // Add category based on MCC code or use provided category
-      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code),
+      category: category,
       is_contactless: transaction.isContactless,
     };
     
@@ -221,7 +279,14 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
       // If Supabase fails, fall back to local storage
       console.error('Error adding transaction to Supabase, using local storage fallback:', error);
       
-      return saveTransactionToLocalStorage(transaction, savedMerchant);
+      const transactionWithUpdates = {
+        ...transaction,
+        category,
+        rewardPoints,
+        merchant: savedMerchant
+      };
+      
+      return saveTransactionToLocalStorage(transactionWithUpdates, savedMerchant);
     }
     
     console.log('Transaction saved successfully to Supabase:', data);
@@ -247,7 +312,15 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>, force
     try {
       // For fallback, try to get existing merchant to prevent duplicates
       const existingMerchant = await getMerchantByName(transaction.merchant.name);
-      return saveTransactionToLocalStorage(transaction, existingMerchant);
+      
+      const transactionWithUpdates = {
+        ...transaction,
+        category,
+        rewardPoints,
+        merchant: existingMerchant || transaction.merchant
+      };
+      
+      return saveTransactionToLocalStorage(transactionWithUpdates, existingMerchant);
     } catch (innerError) {
       console.error('Error in local storage fallback:', innerError);
       throw new Error('Failed to save transaction');
@@ -291,6 +364,40 @@ const saveTransactionToLocalStorage = async (
       merchant = savedMerchant;
     }
     
+    // Determine category if not already set
+    let category = transaction.category;
+    if (!category || category === 'Uncategorized') {
+      if (merchant.mcc?.code) {
+        category = getCategoryFromMCC(merchant.mcc.code);
+      } else {
+        category = getCategoryFromMerchantName(merchant.name) || 'Uncategorized';
+      }
+    }
+    
+    // Calculate reward points if not already set or is zero
+    let rewardPoints = transaction.rewardPoints;
+    if (!rewardPoints || rewardPoints <= 0) {
+      if (transaction.paymentMethod.type === 'credit_card') {
+        // Default basic rate: 0.4 points per dollar
+        rewardPoints = Math.round(transaction.amount * 0.4);
+        
+        // For UOB cards with contactless payments
+        if (transaction.paymentMethod.issuer === 'UOB' && transaction.isContactless) {
+          rewardPoints = Math.round(rewardPoints * 1.2); // 20% bonus for contactless
+        }
+        
+        // For dining with certain cards
+        const isDining = category === 'Food & Drinks' || 
+                      (merchant.mcc?.code && ['5811', '5812', '5813', '5814'].includes(merchant.mcc.code));
+        
+        if (isDining && ['UOB', 'Citibank'].includes(transaction.paymentMethod.issuer || '')) {
+          rewardPoints = Math.round(rewardPoints * 2); // 2x points for dining
+        }
+      } else {
+        rewardPoints = 0;
+      }
+    }
+    
     // Create the transaction object
     const newTransaction: Transaction = {
       id,
@@ -301,9 +408,9 @@ const saveTransactionToLocalStorage = async (
       paymentMethod: transaction.paymentMethod,
       paymentAmount: Number(transaction.paymentAmount || transaction.amount),
       paymentCurrency: transaction.paymentCurrency || transaction.currency,
-      rewardPoints: transaction.rewardPoints || 0,
+      rewardPoints,
       notes: transaction.notes || '',
-      category: transaction.category || getCategoryFromMCC(transaction.merchant.mcc?.code) || 'Uncategorized',
+      category,
       isContactless: transaction.isContactless || false,
     };
     

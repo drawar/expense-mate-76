@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,7 @@ import { addOrUpdateMerchant, getMerchantByName } from '@/utils/storageUtils';
 import { simulateRewardPoints } from '@/utils/rewardPoints';
 import { useToast } from '@/hooks/use-toast';
 import { findCashPaymentMethodForCurrency } from '@/utils/defaults/paymentMethods';
-import { getCategoryFromMCC } from '@/utils/categoryMapping';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 // Import component sections
 import MerchantDetailsForm from './MerchantDetailsForm';
@@ -57,8 +57,6 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     messageText?: string;
   }>(0);
   
-  console.log('ExpenseForm rendered with payment methods:', paymentMethods.length);
-  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -76,31 +74,35 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   });
   
   const merchantName = form.watch('merchantName');
-  useEffect(() => {
-    if (merchantName && merchantName.trim().length >= 3) {
-      const fetchMerchant = async () => {
-        try {
-          const existingMerchant = await getMerchantByName(merchantName);
-          if (existingMerchant?.mcc) {
-            setSelectedMCC(existingMerchant.mcc);
-            form.setValue('mcc', existingMerchant.mcc);
-          }
-        } catch (error) {
-          console.error('Error fetching merchant:', error);
-        }
-      };
-      
-      fetchMerchant();
-    }
-  }, [merchantName, form]);
-  
   const currency = form.watch('currency') as Currency;
   const paymentMethodId = form.watch('paymentMethodId');
   const amount = Number(form.watch('amount')) || 0;
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   
-  console.log('Current payment method ID:', paymentMethodId);
+  // Memoize merchant fetch to prevent excessive rerenders
+  const fetchMerchant = useCallback(async (name: string) => {
+    if (name && name.trim().length >= 3) {
+      try {
+        const existingMerchant = await getMerchantByName(name);
+        if (existingMerchant?.mcc) {
+          setSelectedMCC(existingMerchant.mcc);
+          form.setValue('mcc', existingMerchant.mcc);
+        }
+      } catch (error) {
+        console.error('Error fetching merchant:', error);
+      }
+    }
+  }, [form]);
+
+  // Debounce merchant fetch to avoid excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMerchant(merchantName);
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timer);
+  }, [merchantName, fetchMerchant]);
   
   // Initialize selected payment method based on stored payment methods
   useEffect(() => {
@@ -108,44 +110,40 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       // Find default cash payment method for the selected currency
       const cashMethod = findCashPaymentMethodForCurrency(currency);
       if (cashMethod) {
-        console.log('Setting initial cash payment method:', cashMethod.name);
         form.setValue('paymentMethodId', cashMethod.id);
         form.trigger('paymentMethodId');
       } else {
         // Use the first payment method as fallback
-        console.log('Setting first payment method as default:', paymentMethods[0].name);
         form.setValue('paymentMethodId', paymentMethods[0].id);
         form.trigger('paymentMethodId');
       }
     }
   }, [paymentMethods, form, paymentMethodId, currency]);
 
-  // When currency changes, try to find a matching cash payment method
+  // Update payment method when currency changes
   useEffect(() => {
     if (currency && !paymentMethodId) {
       const cashMethod = findCashPaymentMethodForCurrency(currency);
       if (cashMethod) {
-        console.log('Auto-selecting cash method for currency:', currency);
         form.setValue('paymentMethodId', cashMethod.id);
         form.trigger('paymentMethodId');
       }
     }
   }, [currency, form, paymentMethodId]);
 
-  // Handle payment method selection changes
-  useEffect(() => {
+  // Handle payment method selection changes - memoized to prevent excessive rerenders
+  const updateSelectedPaymentMethod = useCallback(() => {
     if (paymentMethodId) {
       const method = paymentMethods.find(pm => pm.id === paymentMethodId);
       
       if (method) {
-        console.log('Payment method selected:', method.name);
         setSelectedPaymentMethod(method);
         
         // Check if we need to handle currency conversion
         if (currency !== method.currency) {
           setShouldOverridePayment(true);
           
-          // Set initial payment amount
+          // Set initial payment amount only if amount has changed
           if (amount > 0) {
             const conversionRates: Record<string, Record<string, number>> = {
               USD: { SGD: 1.35, EUR: 0.92, GBP: 0.78 },
@@ -168,28 +166,30 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           form.setValue('isContactless', true);
         }
       } else {
-        console.log('No payment method found for ID:', paymentMethodId);
         setSelectedPaymentMethod(undefined);
         setShouldOverridePayment(false);
       }
     } else {
-      console.log('No payment method ID provided');
       setSelectedPaymentMethod(undefined);
       setShouldOverridePayment(false);
     }
   }, [currency, paymentMethodId, form, paymentMethods, amount, isOnline]);
+
+  // Call the memoized update function when dependencies change
+  useEffect(() => {
+    updateSelectedPaymentMethod();
+  }, [updateSelectedPaymentMethod]);
   
-  // Calculate reward points when relevant data changes
+  // Calculate reward points with debounce to prevent excessive calculations
   useEffect(() => {
     if (!selectedPaymentMethod || amount <= 0) {
       setEstimatedPoints(0);
       return;
     }
     
-    const simulatePoints = async () => {
+    const timer = setTimeout(async () => {
       try {
         const mccCode = selectedMCC?.code;
-        console.log('Simulating points with MCC:', mccCode);
         
         const points = await simulateRewardPoints(
           amount,
@@ -201,21 +201,18 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           isContactless
         );
         
-        console.log('Estimated points:', points);
         setEstimatedPoints(points);
       } catch (error) {
         console.error('Error simulating points:', error);
         setEstimatedPoints(0);
       }
-    };
+    }, 300); // 300ms debounce
     
-    simulatePoints();
+    return () => clearTimeout(timer);
   }, [amount, currency, selectedPaymentMethod, selectedMCC, merchantName, isOnline, isContactless]);
   
   const handleFormSubmit = async (values: FormValues) => {
     try {
-      console.log('Form submitted with values:', values);
-      
       if (!values.merchantName || values.merchantName.trim() === '') {
         toast({
           title: 'Error',
@@ -257,6 +254,14 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
       const savedMerchant = await addOrUpdateMerchant(merchant);
       console.log('Merchant saved:', savedMerchant);
       
+      // Determine category
+      let category = 'Uncategorized';
+      if (selectedMCC?.code) {
+        category = getCategoryFromMCC(selectedMCC.code);
+      } else {
+        category = getCategoryFromMerchantName(values.merchantName) || 'Uncategorized';
+      }
+      
       const transaction: Omit<Transaction, 'id'> = {
         date: format(values.date, 'yyyy-MM-dd'),
         merchant: savedMerchant,
@@ -272,8 +277,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
           : (typeof estimatedPoints === 'number' ? estimatedPoints : 0),
         notes: values.notes,
         isContactless: !values.isOnline ? values.isContactless : false,
-        // Add category based on MCC code
-        category: getCategoryFromMCC(selectedMCC?.code),
+        // Set category based on MCC code or merchant name
+        category,
       };
       
       console.log('Submitting final transaction:', transaction);

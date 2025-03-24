@@ -15,6 +15,11 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
     return 'Food & Drinks';
   }
   
+  // Hawker centers and food courts (Singapore specific)
+  if (mccCode === '5814') {
+    return 'Food & Drinks';
+  }
+  
   // Travel and Transport
   if (['4121', '4112', '3000', '7011', '4225', '4119'].includes(mccCode) || 
       (mccCode.startsWith('4') && !['4814', '4899'].includes(mccCode))) {
@@ -97,4 +102,46 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   return 'Uncategorized';
+};
+
+// Helper function to identify food-related merchants by name for when MCC is unavailable
+export const getCategoryFromMerchantName = (merchantName: string): string | null => {
+  if (!merchantName) return null;
+  
+  const name = merchantName.toLowerCase();
+  
+  // Food courts, hawker centers, and common food establishments in Singapore
+  if (
+    name.includes('kopitiam') || 
+    name.includes('hawker') || 
+    name.includes('food court') || 
+    name.includes('restaurant') || 
+    name.includes('cafe') || 
+    name.includes('coffee') || 
+    name.includes('mcdonald') || 
+    name.includes('kfc') || 
+    name.includes('starbucks') || 
+    name.includes('subway') || 
+    name.includes('eatery') || 
+    name.includes('kitchen') || 
+    name.includes('canteen')
+  ) {
+    return 'Food & Drinks';
+  }
+  
+  // Grocery stores and supermarkets
+  if (
+    name.includes('ntuc') || 
+    name.includes('fairprice') || 
+    name.includes('cold storage') || 
+    name.includes('giant') || 
+    name.includes('sheng siong') || 
+    name.includes('prime') || 
+    name.includes('supermarket') || 
+    name.includes('grocery')
+  ) {
+    return 'Groceries';
+  }
+  
+  return null;
 };

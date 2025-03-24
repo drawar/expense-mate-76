@@ -15,6 +15,7 @@ import { formatCurrency } from '@/utils/currencyFormatter';
 import { formatDate } from '@/utils/dateUtils';
 import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from 'lucide-react';
 import { exportTransactionsToCSV } from '@/utils/storage/transactions';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -47,6 +48,27 @@ const TransactionTable = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+  
+  // Helper function to get the correct category for display
+  const getDisplayCategory = (transaction: Transaction): string => {
+    // Use transaction's stored category if available
+    if (transaction.category && transaction.category !== 'Uncategorized') {
+      return transaction.category;
+    }
+    
+    // Try to determine from MCC
+    if (transaction.merchant.mcc?.code) {
+      return getCategoryFromMCC(transaction.merchant.mcc.code);
+    }
+    
+    // Try to determine from merchant name
+    const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+    if (nameBasedCategory) {
+      return nameBasedCategory;
+    }
+    
+    return 'Uncategorized';
   };
   
   return (
@@ -94,7 +116,7 @@ const TransactionTable = ({
                       {transaction.isContactless && !transaction.merchant.isOnline && ' • Contactless'}
                     </div>
                   </TableCell>
-                  <TableCell>{transaction.merchant.mcc?.description || 'Uncategorized'}</TableCell>
+                  <TableCell>{getDisplayCategory(transaction)}</TableCell>
                   <TableCell>
                     <div>{formatCurrency(transaction.amount, transaction.currency)}</div>
                     {transaction.currency !== transaction.paymentCurrency && (
@@ -111,7 +133,13 @@ const TransactionTable = ({
                     {transaction.rewardPoints > 0 ? (
                       <div className="font-medium">{transaction.rewardPoints.toLocaleString()}</div>
                     ) : (
-                      <div className="text-muted-foreground">-</div>
+                      transaction.paymentMethod.type === 'credit_card' ? (
+                        <div className="text-amber-600 font-medium">
+                          {Math.round(transaction.amount * 0.4).toLocaleString()}*
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">-</div>
+                      )
                     )}
                   </TableCell>
                   <TableCell className="text-right">
