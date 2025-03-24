@@ -69,6 +69,10 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
         }
       }
       
+      // Ensure currency is converted to Currency type correctly, including NTD
+      const txCurrency = tx.currency as Currency;
+      const paymentCurrency = tx.payment_currency as Currency;
+      
       return {
         id: tx.id,
         date: tx.date,
@@ -81,16 +85,19 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
           isOnline: merchant.is_online,
         },
         amount: Number(tx.amount),
-        currency: tx.currency as Currency,
+        currency: txCurrency,
         paymentMethod: matchedPaymentMethod,
         paymentAmount: Number(tx.payment_amount),
-        paymentCurrency: tx.payment_currency as Currency,
+        paymentCurrency: paymentCurrency,
         rewardPoints: tx.reward_points,
         notes: tx.notes,
         category: tx.category,
         isContactless: tx.is_contactless,
       };
     });
+    
+    console.log('Transactions loaded:', transformedData.length);
+    console.log('Currencies present:', [...new Set(transformedData.map(tx => tx.currency))]);
     
     return transformedData;
   } catch (error) {

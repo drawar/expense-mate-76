@@ -34,6 +34,8 @@ const Index = () => {
       const loadedPaymentMethods = await getPaymentMethods();
       
       console.log(`Loaded ${loadedTransactions.length} transactions`);
+      console.log('Transaction currencies:', [...new Set(loadedTransactions.map(tx => tx.currency))]);
+      
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
       setLoading(false);
@@ -72,6 +74,8 @@ const Index = () => {
   const recentTransactions = transactions
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
+  
+  console.log('Recent transactions currencies:', recentTransactions.map(tx => tx.currency));
     
   return (
     <div className="min-h-screen bg-background">

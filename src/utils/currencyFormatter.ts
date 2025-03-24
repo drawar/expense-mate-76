@@ -19,11 +19,20 @@ const currencySymbols: Record<Currency, string> = {
 };
 
 export const formatCurrency = (amount: number, currency: Currency): string => {
+  // Added debug log to check currency formatting
+  console.log(`Formatting currency: ${amount} ${currency}`);
+  
+  // Handle edge cases where currency might be undefined or invalid
+  if (!currency || !Object.keys(currencySymbols).includes(currency)) {
+    console.warn(`Invalid currency provided: ${currency}, using USD as fallback`);
+    currency = 'USD' as Currency;
+  }
+  
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-    minimumFractionDigits: ['JPY', 'VND', 'IDR'].includes(currency) ? 0 : 2,
-    maximumFractionDigits: ['JPY', 'VND', 'IDR'].includes(currency) ? 0 : 2,
+    minimumFractionDigits: ['JPY', 'VND', 'IDR', 'NTD'].includes(currency) ? 0 : 2,
+    maximumFractionDigits: ['JPY', 'VND', 'IDR', 'NTD'].includes(currency) ? 0 : 2,
   });
   
   return formatter.format(amount);

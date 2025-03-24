@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
-import { Transaction } from '@/types';
+import { Transaction, Currency } from '@/types';
 import { SortOption } from '@/components/transaction/TransactionSortAndView';
 import { FilterOptions } from '@/components/transaction/TransactionFilters';
 
@@ -68,6 +68,10 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
   // Apply filters and sort
   const filteredTransactions = useMemo(() => {
     if (isLoading) return [];
+
+    // Debug log to check currencies
+    console.log('Available currencies in transactions:', 
+      [...new Set(transactions.map(tx => tx.currency))]);
 
     // Filter by search query
     let filtered = transactions;
