@@ -129,6 +129,7 @@ export type Database = {
           currency: string
           icon: string | null
           id: string
+          image_url: string | null
           is_monthly_statement: boolean | null
           issuer: string | null
           last_four_digits: string | null
@@ -145,6 +146,7 @@ export type Database = {
           currency: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           is_monthly_statement?: boolean | null
           issuer?: string | null
           last_four_digits?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           currency?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           is_monthly_statement?: boolean | null
           issuer?: string | null
           last_four_digits?: string | null

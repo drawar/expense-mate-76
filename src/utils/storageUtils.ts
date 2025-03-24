@@ -12,7 +12,8 @@ export {
 export { 
   getPaymentMethods, 
   savePaymentMethods, 
-  initializePaymentMethods 
+  initializePaymentMethods,
+  uploadCardImage
 } from './storage/paymentMethods';
 export { 
   getMerchants, 

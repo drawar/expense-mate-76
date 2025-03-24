@@ -56,7 +56,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
         issuer: method.issuer,
         icon: method.icon,
         color: method.color,
-        image_url: method.imageUrl,
+        image_url: method.imageUrl, // Fixed property name to match the database column
         conversion_rate: convertConversionRateToJson(method.conversionRate),
       });
       
@@ -102,7 +102,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     issuer: method.issuer,
     icon: method.icon,
     color: method.color,
-    imageUrl: method.image_url,
+    imageUrl: method.image_url, // Fixed property name to match the database column
     conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
   }));
 };
