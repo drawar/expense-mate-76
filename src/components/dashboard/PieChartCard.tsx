@@ -35,59 +35,64 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
       </CardHeader>
       <CardContent className="h-64">
         {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                innerRadius={40}
-                paddingAngle={2}
-                dataKey="value"
-                labelLine={false}
-                label={renderCustomizedLabel}
-              >
+          <div className="flex flex-col md:flex-row h-full">
+            {/* Chart on the left */}
+            <div className="w-full md:w-1/2 h-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    innerRadius={40}
+                    paddingAngle={2}
+                    dataKey="value"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => formatCurrency(value, 'USD')}
+                    labelFormatter={(name) => name}
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      padding: '8px 12px',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Labels on the right in a 2-column grid */}
+            <div className="w-full md:w-1/2 md:pl-4 mt-4 md:mt-0 flex items-center">
+              <div className="grid grid-cols-2 gap-2 w-full max-h-56 overflow-y-auto pr-2">
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <div key={`legend-${index}`} className="flex items-center text-xs">
+                    <div 
+                      className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="truncate max-w-[100px]" title={entry.name}>
+                      {entry.name}
+                    </span>
+                    <span className="ml-1 font-medium whitespace-nowrap">
+                      {(entry.value / data.reduce((sum, item) => sum + item.value, 0) * 100).toFixed(0)}%
+                    </span>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value: number) => formatCurrency(value, 'USD')}
-                labelFormatter={(name) => name}
-                contentStyle={{
-                  borderRadius: '8px',
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  padding: '8px 12px',
-                  backgroundColor: 'white'
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">
             No data available
-          </div>
-        )}
-        
-        {/* Improved legend styling to prevent overflow */}
-        {data.length > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto px-2">
-            {data.map((entry, index) => (
-              <div key={`legend-${index}`} className="flex items-center text-xs">
-                <div 
-                  className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="truncate max-w-[120px]" title={entry.name}>
-                  {entry.name}
-                </span>
-                <span className="ml-1 font-medium whitespace-nowrap">
-                  {(entry.value / data.reduce((sum, item) => sum + item.value, 0) * 100).toFixed(0)}%
-                </span>
-              </div>
-            ))}
           </div>
         )}
       </CardContent>
