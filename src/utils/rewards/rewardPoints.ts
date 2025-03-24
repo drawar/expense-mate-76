@@ -1,11 +1,11 @@
 
 import { Transaction, PaymentMethod } from '@/types';
-import { calculateBasicPoints } from './rewards/baseCalculations';
-import { calculateUOBPlatinumPoints, simulateUOBPlatinumPoints } from './rewards/uobPlatinum';
-import { calculateUOBSignaturePoints, simulateUOBSignaturePoints } from './rewards/uobSignature';
-import { calculateCitibankRewardsPoints, simulateCitibankRewardsPoints } from './rewards/citibankRewards';
-import { getTransactions } from './storage/transactions';
-import { isDateInStatementPeriod } from './dateUtils';
+import { calculateBasicPoints } from './baseCalculations';
+import { calculateUOBPlatinumPoints, simulateUOBPlatinumPoints } from './uobPlatinum';
+import { calculateUOBSignaturePoints, simulateUOBSignaturePoints } from './uobSignature';
+import { calculateCitibankRewardsPoints, simulateCitibankRewardsPoints } from './citibankRewards';
+import { getTransactions } from '../storage/transactions';
+import { isDateInStatementPeriod } from '../dateUtils';
 
 // Calculate reward points for a single transaction
 export const calculateTransactionPoints = async (
@@ -62,6 +62,7 @@ export const simulateRewardPoints = async (
   basePoints?: number;
   bonusPoints?: number;
   remainingMonthlyBonusPoints?: number;
+  messageText?: string;
 }> => {
   if (paymentMethod.type === 'cash') {
     return { totalPoints: 0 };

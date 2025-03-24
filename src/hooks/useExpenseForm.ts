@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Transaction, Merchant, PaymentMethod, Currency, MerchantCategoryCode } from '@/types';
 import { getMerchantByName } from '@/utils/storageUtils';
-import { simulateRewardPoints } from '@/utils/rewardPoints';
+import { simulateRewardPoints } from '@/utils/rewards/rewardPoints';
 import { useToast } from '@/hooks/use-toast';
 import { findCashPaymentMethodForCurrency } from '@/utils/defaults/paymentMethods';
 import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';

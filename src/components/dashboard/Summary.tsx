@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Transaction, PaymentMethod } from '@/types';
-import { calculateTotalRewardPoints } from '@/utils/rewardPoints';
+import { calculateTotalRewardPoints } from '@/utils/rewards/rewardPoints';
 import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
 import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
