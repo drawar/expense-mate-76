@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency } from '@/types';
 import { CreditCardIcon } from 'lucide-react';
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Import our refactored components
+// Import our components
 import PaymentMethodSelect from './PaymentCardRender';
 import ContactlessToggle from './ContactlessToggle';
 import PointsDisplay from './PointsDisplay';
@@ -44,7 +43,7 @@ const PaymentDetailsForm = ({
   const mcc = form.watch('mcc')?.code;
   const isContactless = form.watch('isContactless');
   
-  // Use our new hook for card analytics
+  // Use our hook for card analytics
   const { nonSgdSpendTotal, hasSgdTransactions, usedBonusPoints } = useCardAnalytics(selectedPaymentMethod);
 
   return (

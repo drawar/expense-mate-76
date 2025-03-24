@@ -1,10 +1,13 @@
 
 import React from 'react';
-import { CoinsIcon } from 'lucide-react';
-import { PaymentPointsCard } from './PaymentPointsCard';
+import { UOBPlatinumCard } from './cards/UOBPlatinumCard';
+import { UOBSignatureCard } from './cards/UOBSignatureCard';
+import { CitibankRewardsCard } from './cards/CitibankRewardsCard';
+import { GenericPointsCard } from './cards/GenericPointsCard';
+import { PaymentMethod } from '@/types';
 
 interface PointsDisplayProps {
-  selectedPaymentMethod: any;
+  selectedPaymentMethod: PaymentMethod | undefined;
   amount: number;
   currency: string;
   mcc?: string;
@@ -38,13 +41,11 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     return null;
   }
 
-  // Use specialized card components for specific cards
   // UOB Preferred Visa Platinum
   if (selectedPaymentMethod?.issuer === 'UOB' && 
       selectedPaymentMethod?.name === 'Preferred Visa Platinum') {
     return (
-      <PaymentPointsCard 
-        type="uob-platinum"
+      <UOBPlatinumCard 
         amount={amount}
         mcc={mcc}
         isOnline={isOnline}
@@ -58,8 +59,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'UOB' && 
       selectedPaymentMethod?.name === 'Visa Signature') {
     return (
-      <PaymentPointsCard 
-        type="uob-signature"
+      <UOBSignatureCard 
         amount={amount}
         currency={currency}
         nonSgdSpendTotal={nonSgdSpendTotal}
@@ -72,8 +72,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'Citibank' && 
       selectedPaymentMethod?.name === 'Rewards Visa Signature') {
     return (
-      <PaymentPointsCard 
-        type="citibank-rewards"
+      <CitibankRewardsCard 
         amount={amount}
         mcc={mcc}
         isOnline={isOnline}
@@ -82,44 +81,8 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     );
   }
   
-  // Generic point display
-  if (typeof estimatedPoints === 'object' && estimatedPoints.totalPoints > 0) {
-    return (
-      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 flex items-center gap-2">
-        <CoinsIcon className="h-5 w-5 text-blue-500" />
-        <div>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-            Estimated Reward Points: {estimatedPoints.totalPoints}
-          </p>
-          {estimatedPoints.basePoints !== undefined && (
-            <p className="text-xs text-blue-500 dark:text-blue-300">
-              Base: {estimatedPoints.basePoints}, 
-              Bonus: {estimatedPoints.bonusPoints || 0}
-            </p>
-          )}
-          {estimatedPoints.messageText && (
-            <p className="text-xs text-blue-500 dark:text-blue-300">{estimatedPoints.messageText}</p>
-          )}
-        </div>
-      </div>
-    );
-  } else if (typeof estimatedPoints === 'number' && estimatedPoints > 0) {
-    return (
-      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 flex items-center gap-2">
-        <CoinsIcon className="h-5 w-5 text-blue-500" />
-        <div>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-            Estimated Reward Points: {estimatedPoints}
-          </p>
-          <p className="text-xs text-blue-500 dark:text-blue-300">
-            Based on your selected payment method
-          </p>
-        </div>
-      </div>
-    );
-  }
-  
-  return null;
+  // Generic point display for other cards
+  return <GenericPointsCard pointsInfo={estimatedPoints} />;
 };
 
 export default PointsDisplay;
