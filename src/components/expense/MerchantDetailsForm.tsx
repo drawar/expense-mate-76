@@ -34,9 +34,13 @@ interface Place {
   };
 }
 
-const MerchantDetailsForm = () => {
+interface MerchantDetailsFormProps {
+  onSelectMCC: (mcc: MerchantCategoryCode) => void;
+  selectedMCC?: MerchantCategoryCode;
+}
+
+const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormProps) => {
   const form = useFormContext();
-  const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | undefined>();
   const [isAddressLoading, setIsAddressLoading] = useState(false);
   const [places, setPlaces] = useState<Place[]>([]);
   const [showPlacesDialog, setShowPlacesDialog] = useState(false);
@@ -53,7 +57,7 @@ const MerchantDetailsForm = () => {
         try {
           const existingMerchant = await getMerchantByName(merchantName);
           if (existingMerchant?.mcc) {
-            setSelectedMCC(existingMerchant.mcc);
+            onSelectMCC(existingMerchant.mcc);
             form.setValue('mcc', existingMerchant.mcc);
             // Show toast to inform user about the suggested category
             toast({
@@ -68,7 +72,7 @@ const MerchantDetailsForm = () => {
     };
     
     fetchMerchantData();
-  }, [merchantName, form, toast]);
+  }, [merchantName, form, toast, onSelectMCC]);
 
   // Fetch address suggestions when merchant name changes and it's not an online purchase
   useEffect(() => {
@@ -107,11 +111,6 @@ const MerchantDetailsForm = () => {
     }
   }, [debouncedMerchantName, isOnline]);
 
-  const handleSelectMCC = (mcc: MerchantCategoryCode) => {
-    setSelectedMCC(mcc);
-    form.setValue('mcc', mcc);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -148,7 +147,7 @@ const MerchantDetailsForm = () => {
         
         <MerchantCategorySelect 
           selectedMCC={selectedMCC}
-          onSelectMCC={handleSelectMCC}
+          onSelectMCC={onSelectMCC}
         />
       </CardContent>
     </Card>
