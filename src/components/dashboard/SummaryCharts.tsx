@@ -1,5 +1,5 @@
 
-import { Transaction } from '@/types';
+import { Currency } from '@/types';
 import PieChartCard from './PieChartCard';
 
 interface SummaryChartsProps {
@@ -13,18 +13,20 @@ interface SummaryChartsProps {
     value: number;
     color: string;
   }>;
+  displayCurrency: Currency;
 }
 
 const SummaryCharts = ({
   paymentMethodChartData,
   categoryChartData,
+  displayCurrency,
 }: SummaryChartsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Payment Methods Chart */}
       <div className="w-full h-full">
         <PieChartCard
-          title="Expenses by Payment Method"
+          title={`Expenses by Payment Method (${displayCurrency})`}
           data={paymentMethodChartData}
         />
       </div>
@@ -32,7 +34,7 @@ const SummaryCharts = ({
       {/* Categories Chart */}
       <div className="w-full h-full">
         <PieChartCard
-          title="Expenses by Category"
+          title={`Expenses by Category (${displayCurrency})`}
           data={categoryChartData}
         />
       </div>

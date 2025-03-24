@@ -1,5 +1,5 @@
 
-import { Transaction, PaymentMethod } from '@/types';
+import { Transaction, PaymentMethod, Currency } from '@/types';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
@@ -13,6 +13,7 @@ interface SummaryCardGridProps {
   averageAmount: number;
   topPaymentMethod: { name: string; value: number } | undefined;
   totalRewardPoints: number;
+  displayCurrency: Currency;
 }
 
 const SummaryCardGrid = ({
@@ -22,6 +23,7 @@ const SummaryCardGrid = ({
   averageAmount,
   topPaymentMethod,
   totalRewardPoints,
+  displayCurrency,
 }: SummaryCardGridProps) => {
   // Find the payment method object that matches the top payment method
   const findPaymentMethodByName = (name: string): PaymentMethod | undefined => {
@@ -40,15 +42,15 @@ const SummaryCardGrid = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <SummaryCard
         title="Total Expenses"
-        value={formatCurrency(totalExpenses, 'USD')}
-        description={`${transactionCount} transactions`}
+        value={formatCurrency(totalExpenses, displayCurrency)}
+        description={`${transactionCount} transactions in ${displayCurrency}`}
         icon={<CalendarIcon className="w-3.5 h-3.5" />}
       />
             
       <SummaryCard
         title="Average Transaction"
-        value={formatCurrency(averageAmount, 'USD')}
-        description="Per transaction"
+        value={formatCurrency(averageAmount, displayCurrency)}
+        description={`Per transaction in ${displayCurrency}`}
         icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500" />}
       />
             
@@ -56,7 +58,7 @@ const SummaryCardGrid = ({
         title="Most Used Payment"
         value={topPaymentMethod?.name || 'None'}
         description={topPaymentMethod 
-          ? formatCurrency(topPaymentMethod.value, 'USD')
+          ? formatCurrency(topPaymentMethod.value, displayCurrency)
           : 'No data'}
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
