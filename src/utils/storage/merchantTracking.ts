@@ -24,7 +24,7 @@ export const getMerchantCategoryMappings = async (): Promise<MerchantCategoryMap
     return data.map(item => ({
       merchantName: item.merchant_name,
       occurrenceCount: item.occurrence_count,
-      mostCommonMCC: item.most_common_mcc
+      mostCommonMCC: item.most_common_mcc ? item.most_common_mcc as MerchantCategoryCode : undefined
     }));
   } catch (error) {
     console.error('Exception fetching merchant category mappings:', error);
@@ -49,7 +49,7 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
     return {
       merchantName: data.merchant_name,
       occurrenceCount: data.occurrence_count,
-      mostCommonMCC: data.most_common_mcc
+      mostCommonMCC: data.most_common_mcc ? data.most_common_mcc as MerchantCategoryCode : undefined
     };
   } catch (error) {
     console.error('Exception fetching merchant mapping by name:', error);
