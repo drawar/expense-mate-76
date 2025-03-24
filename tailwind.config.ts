@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -65,6 +66,17 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			backdropFilter: {
+				'none': 'none',
+				'blur': 'blur(20px)'
+			},
+			boxShadow: {
+				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+				'elevation': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02)',
+				'dark-glow': '0 0 15px rgba(157, 78, 221, 0.4)',
+				'card': '0 2px 10px rgba(0, 0, 0, 0.15)',
+				'card-hover': '0 10px 30px rgba(0, 0, 0, 0.25)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -154,17 +166,6 @@ export default {
 				'pulse-slow': 'pulse 3s ease-in-out infinite',
 				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
 				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out'
-			},
-			backdropFilter: {
-				'none': 'none',
-				'blur': 'blur(20px)'
-			},
-			boxShadow: {
-				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
-				'elevation': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02)',
-				'dark-glow': '0 0 15px rgba(76, 29, 149, 0.5)',
-				'card': '0 2px 10px rgba(0, 0, 0, 0.08)',
-				'card-hover': '0 10px 30px rgba(0, 0, 0, 0.12)'
 			},
 			gradients: {
 				'blue-purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

@@ -42,14 +42,14 @@ const SummaryCardGrid = ({
         title="Total Expenses"
         value={formatCurrency(totalExpenses, 'USD')}
         description={`${transactionCount} transactions`}
-        icon={<CalendarIcon className="w-4 h-4 text-primary" />}
+        icon={<CalendarIcon className="w-3.5 h-3.5" />}
       />
             
       <SummaryCard
         title="Average Transaction"
         value={formatCurrency(averageAmount, 'USD')}
         description="Per transaction"
-        icon={<TrendingUpIcon className="w-4 h-4 text-green-500" />}
+        icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500" />}
       />
             
       <SummaryCard
@@ -58,10 +58,10 @@ const SummaryCardGrid = ({
         description={topPaymentMethod 
           ? formatCurrency(topPaymentMethod.value, 'USD')
           : 'No data'}
-        icon={<CreditCardIcon className="w-4 h-4 text-blue-500" />}
+        icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-          <div className="mt-1 h-12 flex items-center">
-            <div className="scale-[0.55] origin-left">
+          <div className="mt-2 h-12 flex items-center mb-2">
+            <div className="scale-[0.50] origin-left -ml-6">
               <PaymentCardDisplay 
                 paymentMethod={topPaymentMethodObject} 
                 customImage={topPaymentMethodObject.imageUrl}
@@ -79,7 +79,7 @@ const SummaryCardGrid = ({
         title="Total Reward Points"
         value={totalRewardPoints.toLocaleString()}
         description="Points earned"
-        icon={<CoinsIcon className="w-4 h-4 text-amber-500" />}
+        icon={<CoinsIcon className="w-3.5 h-3.5 text-amber-500" />}
       />
     </div>
   );

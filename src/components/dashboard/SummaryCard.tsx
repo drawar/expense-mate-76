@@ -16,20 +16,20 @@ const SummaryCard = ({ title, value, description, icon, className, style, custom
   return (
     <Card className={`summary-card overflow-hidden ${className || ''}`} style={style}>
       <CardHeader className="pb-2">
-        <CardDescription className="text-sm font-medium text-muted-foreground/80">{title}</CardDescription>
+        <CardDescription className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wider">{title}</CardDescription>
         {customContent ? (
-          <div className="overflow-visible">
+          <div className="overflow-visible mt-1">
             {customContent}
           </div>
         ) : (
-          <CardTitle className="text-2xl font-bold mt-1 truncate" title={value}>
+          <CardTitle className="text-2xl font-bold mt-2 truncate" title={value}>
             {value}
           </CardTitle>
         )}
       </CardHeader>
-      <CardContent>
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-          {icon}
+      <CardContent className="pt-0">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+          {icon && <span className="text-primary/80">{icon}</span>}
           <span className="truncate">{description}</span>
         </div>
       </CardContent>

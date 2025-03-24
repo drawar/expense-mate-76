@@ -39,25 +39,25 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 225 9% 15%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 6.9%;
+    --card: 225 14% 20%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 225 14% 20%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
+    --primary: 258 90% 66%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 223 14% 25%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 263 70% 50%;
+    --accent: 258 90% 66%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -65,7 +65,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 263 70% 50%;
   }
 }
 
@@ -174,17 +174,17 @@
 
 /* Modern Card Styles */
 .modern-card {
-  @apply bg-white dark:bg-gray-800 rounded-xl shadow-card transition-all duration-300 hover:shadow-card-hover;
+  @apply bg-white/5 dark:bg-gray-800/40 backdrop-blur-md rounded-xl shadow-card border border-white/10 dark:border-white/5 transition-all duration-300 hover:shadow-card-hover;
 }
 
 /* Dashboard summary cards */
 .summary-card {
-  @apply bg-gradient-to-br from-card to-white/90 dark:from-card dark:to-gray-800/90 shadow-card rounded-xl transition-all duration-300 hover:shadow-card-hover;
+  @apply bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-md shadow-card rounded-xl border border-white/10 dark:border-white/5 transition-all duration-300 hover:shadow-lg;
 }
 
 /* Chart container styles */
 .chart-container {
-  @apply bg-white dark:bg-gray-800 rounded-xl shadow-card p-4 transition-all duration-300;
+  @apply bg-white/10 dark:bg-gray-800/30 backdrop-blur-md rounded-xl shadow-card p-4 border border-white/10 dark:border-white/5 transition-all duration-300;
 }
 
 /* Button hover effects */
@@ -194,5 +194,14 @@
 
 /* Table row hover effect */
 .table-row-hover {
-  @apply transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/50;
+  @apply transition-colors duration-200 hover:bg-gray-50/10 dark:hover:bg-gray-700/20;
+}
+
+/* Neo-morphism glass effect */
+.glass-card {
+  @apply bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-card;
+}
+
+.glass-card-elevated {
+  @apply bg-white/15 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-elevation transition-all duration-200;
 }
