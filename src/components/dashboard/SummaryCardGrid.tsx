@@ -62,8 +62,8 @@ const SummaryCardGrid = ({
           : 'No data'}
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
         customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-          <div className="mt-2 h-12 flex items-center mb-2">
-            <div className="scale-[0.50] origin-left -ml-6">
+          <div className="flex items-start mt-1">
+            <div className="scale-[0.35] origin-top-left -ml-3 -mt-1">
               <PaymentCardDisplay 
                 paymentMethod={topPaymentMethodObject} 
                 customImage={topPaymentMethodObject.imageUrl}
