@@ -68,7 +68,7 @@ const TransactionCard = ({ transaction, onClick, className, style }: Transaction
         </div>
 
         {merchant.mcc && (
-          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-purple-50 dark:bg-purple-900/30 max-w-full">
+          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-purple-50 dark:bg-purple-900/30 max-w-full">
             <TagIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-purple-500" />
             <span className="truncate" title={merchant.mcc.description}>
               {merchant.mcc.description}
@@ -77,7 +77,7 @@ const TransactionCard = ({ transaction, onClick, className, style }: Transaction
         )}
 
         {rewardPoints > 0 && (
-          <div className="flex items-center text-xs rounded-full px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
+          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
             <span>+{rewardPoints} points</span>
           </div>
         )}

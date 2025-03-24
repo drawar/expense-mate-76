@@ -18,7 +18,7 @@ const SummaryCard = ({ title, value, description, icon, className, style, custom
       <CardHeader className="pb-2">
         <CardDescription className="text-sm font-medium">{title}</CardDescription>
         {customContent ? (
-          <div className="h-8 overflow-hidden">
+          <div className="overflow-visible">
             {customContent}
           </div>
         ) : (
