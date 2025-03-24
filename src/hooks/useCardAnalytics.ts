@@ -83,6 +83,7 @@ export const useCardAnalytics = (selectedPaymentMethod: PaymentMethod | undefine
       });
       
       setUsedBonusPoints(Math.min(totalMonthBonusPoints, 4000));
+      console.log(`Used bonus points for ${selectedPaymentMethod.name}: ${Math.min(totalMonthBonusPoints, 4000)}`);
     }
   }, [selectedPaymentMethod, transactions]);
 

@@ -37,7 +37,8 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   hasSgdTransactions = false,
   estimatedPoints
 }) => {
-  if (!selectedPaymentMethod || amount <= 0) {
+  // Only hide for cash payment methods or if no payment method is selected
+  if (!selectedPaymentMethod || amount <= 0 || selectedPaymentMethod.type === 'cash') {
     return null;
   }
 

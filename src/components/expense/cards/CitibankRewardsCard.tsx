@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CoinsIcon } from 'lucide-react';
 
@@ -34,6 +35,9 @@ export const CitibankRewardsCard: React.FC<CitibankRewardsCardProps> = ({
   const potentialBonusPoints = isEligibleTransaction ? Math.round(roundedAmount * 3.6) : 0;
   const actualBonusPoints = Math.min(potentialBonusPoints, 4000 - usedBonusPoints);
   
+  // Calculate remaining bonus points
+  const remainingBonusPoints = Math.max(0, 4000 - usedBonusPoints - (actualBonusPoints > 0 ? actualBonusPoints : 0));
+  
   return (
     <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 space-y-2">
       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -46,11 +50,10 @@ export const CitibankRewardsCard: React.FC<CitibankRewardsCardProps> = ({
       <p className="text-sm text-blue-500 dark:text-blue-300">
         Total Points: {basePoints + actualBonusPoints}
       </p>
-      {isEligibleTransaction && usedBonusPoints < 4000 && (
-        <p className="text-xs text-green-500">
-          Remaining bonus points available this month: {4000 - usedBonusPoints - (actualBonusPoints > 0 ? actualBonusPoints : 0)}
-        </p>
-      )}
+      {/* Always show remaining bonus points */}
+      <p className="text-xs text-green-500">
+        Remaining bonus points available this month: {remainingBonusPoints}
+      </p>
     </div>
   );
 };

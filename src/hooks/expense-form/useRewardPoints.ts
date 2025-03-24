@@ -69,6 +69,7 @@ export const useRewardPoints = (
     previousValues.current = current;
     
     try {
+      // Always calculate points for credit cards, regardless of contactless toggle
       const points = await simulateRewardPoints(
         amount,
         currency,

@@ -19,6 +19,7 @@ interface ContactlessToggleProps {
 const ContactlessToggle: React.FC<ContactlessToggleProps> = ({ isOnline, isCash }) => {
   const form = useFormContext();
 
+  // Only show for credit card payments that are not online
   if (isOnline || isCash) {
     return null;
   }
