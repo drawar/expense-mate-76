@@ -2,19 +2,19 @@
 import { ViewMode } from '@/components/transaction/TransactionSortAndView';
 import { PaymentMethod } from '@/types';
 import TransactionFilterControls from '@/components/transaction/TransactionFilterControls';
-import { FilterOption } from '@/hooks/transaction-list/types';
+import { FilterOption, FilterOptions, SortOption } from '@/hooks/transaction-list/types';
 
 interface TransactionFiltersContainerProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  filterOptions: FilterOption[];
-  activeFilters: Record<string, string[]>;
+  filterOptions: FilterOptions;
+  activeFilters: string[];
   paymentMethods: PaymentMethod[];
-  onFilterChange: (category: string, value: string) => void;
+  onFilterChange: (category: keyof FilterOptions, value: string) => void;
   onResetFilters: () => void;
-  sortOption: string;
+  sortOption: SortOption;
   viewMode: ViewMode;
-  onSortChange: (sort: string) => void;
+  onSortChange: (sort: SortOption) => void;
   onViewChange: (view: ViewMode) => void;
 }
 

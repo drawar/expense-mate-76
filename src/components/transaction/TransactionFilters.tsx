@@ -1,4 +1,3 @@
-
 import { FilterIcon, XIcon, CheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,14 +17,7 @@ import {
 } from '@/components/ui/popover';
 import { PaymentMethod, Currency } from '@/types';
 import { currencyOptions } from '@/utils/currencyFormatter';
-
-export type FilterOptions = {
-  merchantName: string;
-  paymentMethodId: string;
-  currency: string;
-  startDate: string;
-  endDate: string;
-};
+import { FilterOptions } from '@/hooks/transaction-list/types';
 
 interface TransactionFiltersProps {
   filterOptions: FilterOptions;

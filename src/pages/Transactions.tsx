@@ -8,6 +8,7 @@ import TransactionContent from '@/components/transaction/TransactionContent';
 import TransactionLayout from '@/components/transaction/layout/TransactionLayout';
 import TransactionFiltersContainer from '@/components/transaction/container/TransactionFiltersContainer';
 import TransactionDialogsContainer from '@/components/transaction/container/TransactionDialogsContainer';
+import { SortOption } from '@/hooks/transaction-list/types';
 
 const Transactions = () => {
   const {
@@ -43,6 +44,10 @@ const Transactions = () => {
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  const handleSortChange = (sort: string) => {
+    setSortOption(sort as SortOption);
+  };
+
   return (
     <TransactionLayout>
       <TransactionHeader />
@@ -57,7 +62,7 @@ const Transactions = () => {
         onResetFilters={resetFilters}
         sortOption={sortOption}
         viewMode={viewMode}
-        onSortChange={setSortOption}
+        onSortChange={handleSortChange}
         onViewChange={setViewMode}
       />
       
