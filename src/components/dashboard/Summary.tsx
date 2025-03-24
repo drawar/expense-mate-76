@@ -13,7 +13,7 @@ interface SummaryProps {
   paymentMethods: PaymentMethod[];
 }
 
-// Color palette for charts
+// Color palette for charts - defining outside component prevents recreation
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF', '#4BC0C0', '#FF6B6B', '#6B8E23'];
 
 const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
@@ -37,7 +37,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     });
   }, [transactions]);
   
-  // Filter transactions based on active tab - only recompute when processed transactions or tab changes
+  // Filter transactions based on active tab
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     
@@ -61,16 +61,18 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     });
   }, [activeTab, processedTransactions]);
   
-  // Calculate all summary data in a single memoized computation to avoid recalculations
+  // Calculate all summary data in a single pass
   const summaryData = useMemo(() => {
-    // Initialize summary data object
-    const expensesByPaymentMethod: Record<string, number> = {};
-    const expensesByCategory: Record<string, number> = {};
-    
-    // Single pass through filtered transactions to calculate all metrics
+    // Initialize counters and data structures
+    const expensesByPaymentMethod = {};
+    const expensesByCategory = {};
     let totalExpenses = 0;
+    let transactionCount = 0;
     
-    filteredTransactions.forEach(tx => {
+    // Single loop through filtered transactions to calculate all metrics
+    for (const tx of filteredTransactions) {
+      transactionCount++;
+      
       // Calculate total expenses
       const txAmount = tx.currency === 'USD' ? tx.amount : tx.paymentAmount;
       totalExpenses += txAmount;
@@ -80,27 +82,19 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
       expensesByPaymentMethod[methodName] = (expensesByPaymentMethod[methodName] || 0) + txAmount;
       
       // Expenses by category
-      let category = tx.category;
-      if (!category || category === 'Uncategorized') {
-        if (tx.merchant.mcc?.code) {
-          category = getCategoryFromMCC(tx.merchant.mcc.code);
-        } else {
-          category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
-        }
-      }
+      const category = tx.category || 'Uncategorized';
       expensesByCategory[category] = (expensesByCategory[category] || 0) + txAmount;
-    });
+    }
     
     // Derived calculations
-    const transactionCount = filteredTransactions.length;
     const averageAmount = transactionCount ? totalExpenses / transactionCount : 0;
     const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
     
-    // Prepare chart data
+    // Create chart data arrays (only once per data change)
     const paymentMethodChartData = Object.entries(expensesByPaymentMethod)
       .map(([name, value], index) => ({
         name,
-        value,
+        value: value as number,
         color: COLORS[index % COLORS.length]
       }))
       .sort((a, b) => b.value - a.value);
@@ -108,7 +102,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     const categoryChartData = Object.entries(expensesByCategory)
       .map(([name, value], index) => ({
         name,
-        value,
+        value: value as number,
         color: COLORS[index % COLORS.length]
       }))
       .sort((a, b) => b.value - a.value);

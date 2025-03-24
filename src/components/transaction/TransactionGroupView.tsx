@@ -1,4 +1,5 @@
 
+import { useMemo } from 'react';
 import { Transaction } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import TransactionCard from '@/components/expense/TransactionCard';
@@ -14,25 +15,29 @@ const TransactionGroupView = ({
   sortOption,
   onViewTransaction,
 }: TransactionGroupViewProps) => {
-  // Group transactions by date
-  const groupedTransactions = transactions.reduce<Record<string, Transaction[]>>(
-    (groups, transaction) => {
+  // Memoize grouped transactions to prevent unnecessary recalculations
+  const { groupedTransactions, sortedDates } = useMemo(() => {
+    // Group transactions by date
+    const groups: Record<string, Transaction[]> = {};
+    
+    // Single pass through transactions to create groups
+    for (const transaction of transactions) {
       const date = transaction.date;
       if (!groups[date]) {
         groups[date] = [];
       }
       groups[date].push(transaction);
-      return groups;
-    },
-    {}
-  );
+    }
 
-  // Sort the grouped transactions by date
-  const sortedDates = Object.keys(groupedTransactions).sort((dateA, dateB) => {
-    return sortOption.includes('desc')
-      ? new Date(dateB).getTime() - new Date(dateA).getTime()
-      : new Date(dateA).getTime() - new Date(dateB).getTime();
-  });
+    // Sort the grouped transactions by date
+    const dates = Object.keys(groups).sort((dateA, dateB) => {
+      return sortOption.includes('desc')
+        ? new Date(dateB).getTime() - new Date(dateA).getTime()
+        : new Date(dateA).getTime() - new Date(dateB).getTime();
+    });
+    
+    return { groupedTransactions: groups, sortedDates: dates };
+  }, [transactions, sortOption]);
 
   return (
     <div className="space-y-6">

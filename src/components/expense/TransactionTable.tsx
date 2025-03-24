@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -33,7 +33,8 @@ const TransactionTable = ({
   onView
 }: TransactionTableProps) => {
   
-  const handleExportCSV = () => {
+  // Memoize CSV export to prevent recalculation on every render
+  const handleExportCSV = useMemo(() => () => {
     const csvContent = exportTransactionsToCSV(transactions);
     
     // Create a blob and download link
@@ -48,28 +49,36 @@ const TransactionTable = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [transactions]);
   
-  // Helper function to get the correct category for display
-  const getDisplayCategory = (transaction: Transaction): string => {
-    // Use transaction's stored category if available
-    if (transaction.category && transaction.category !== 'Uncategorized') {
-      return transaction.category;
-    }
-    
-    // Try to determine from MCC
-    if (transaction.merchant.mcc?.code) {
-      return getCategoryFromMCC(transaction.merchant.mcc.code);
-    }
-    
-    // Try to determine from merchant name
-    const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
-    if (nameBasedCategory) {
-      return nameBasedCategory;
-    }
-    
-    return 'Uncategorized';
-  };
+  // Precompute all categories for display - only recalculate when transactions change
+  const transactionCategories = useMemo(() => {
+    return transactions.reduce((acc, transaction) => {
+      const txId = transaction.id;
+      
+      // Use transaction's stored category if available
+      if (transaction.category && transaction.category !== 'Uncategorized') {
+        acc[txId] = transaction.category;
+        return acc;
+      }
+      
+      // Try to determine from MCC
+      if (transaction.merchant.mcc?.code) {
+        acc[txId] = getCategoryFromMCC(transaction.merchant.mcc.code);
+        return acc;
+      }
+      
+      // Try to determine from merchant name
+      const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+      if (nameBasedCategory) {
+        acc[txId] = nameBasedCategory;
+        return acc;
+      }
+      
+      acc[txId] = 'Uncategorized';
+      return acc;
+    }, {} as Record<string, string>);
+  }, [transactions]);
   
   return (
     <div className="w-full">
@@ -116,7 +125,7 @@ const TransactionTable = ({
                       {transaction.isContactless && !transaction.merchant.isOnline && ' • Contactless'}
                     </div>
                   </TableCell>
-                  <TableCell>{getDisplayCategory(transaction)}</TableCell>
+                  <TableCell>{transactionCategories[transaction.id]}</TableCell>
                   <TableCell>
                     <div>{formatCurrency(transaction.amount, transaction.currency)}</div>
                     {transaction.currency !== transaction.paymentCurrency && (

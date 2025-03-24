@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, ArrowUpRightIcon } from 'lucide-react';
@@ -15,20 +15,29 @@ const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(0);
   const { toast } = useToast();
+  
+  // Use ref to prevent unnecessary reloads
+  const initialized = useRef(false);
   
   // Define loadData outside useEffect for reuse
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
-      await initializeStorage();
+      if (!initialized.current) {
+        setLoading(true);
+        initialized.current = true;
+        await initializeStorage();
+      }
       
+      // Get fresh data
       const loadedTransactions = await getTransactions();
       const loadedPaymentMethods = await getPaymentMethods();
       
       console.log(`Loaded ${loadedTransactions.length} transactions`);
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
+      setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -36,10 +45,14 @@ const Index = () => {
         description: 'There was a problem loading your expense data',
         variant: 'destructive'
       });
-    } finally {
       setLoading(false);
     }
   }, [toast]);
+  
+  // Signal for data refresh
+  const refreshData = useCallback(() => {
+    setLastUpdated(Date.now());
+  }, []);
   
   useEffect(() => {
     loadData();
@@ -51,30 +64,26 @@ const Index = () => {
         event: '*',
         schema: 'public',
         table: 'transactions'
-      }, async () => {
-        try {
-          // Reload transactions when changes occur
-          const updatedTransactions = await getTransactions();
-          console.log(`Received update: now have ${updatedTransactions.length} transactions`);
-          setTransactions(updatedTransactions);
-        } catch (error) {
-          console.error('Error updating transactions:', error);
-        }
-      })
+      }, refreshData)
       .subscribe();
     
-    // Set interval for periodic refresh (helpful for local storage updates)
-    const refreshInterval = setInterval(() => {
-      loadData();
-    }, 5000);
+    // Set interval for periodic refresh at a reasonable interval (5 seconds)
+    const refreshInterval = setInterval(refreshData, 5000);
     
     return () => {
       supabase.removeChannel(channel);
       clearInterval(refreshInterval);
     };
-  }, [loadData, toast]);
+  }, [loadData, refreshData]);
   
-  // Get recent transactions (last 7 days)
+  // Load data when refresh signal changes
+  useEffect(() => {
+    if (lastUpdated > 0) {
+      loadData();
+    }
+  }, [lastUpdated, loadData]);
+  
+  // Get recent transactions (last 7 days) - memoize this calculation
   const recentTransactions = transactions
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);

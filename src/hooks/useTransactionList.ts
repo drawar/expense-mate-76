@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ export const useTransactionList = () => {
   });
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   // Function to load transactions
   const loadTransactions = useCallback(async () => {
@@ -57,6 +58,11 @@ export const useTransactionList = () => {
     }
   }, [toast]);
   
+  // Reload only if something changed
+  const refreshTransactions = useCallback(() => {
+    setLastRefresh(Date.now());
+  }, []);
+  
   useEffect(() => {
     loadTransactions();
     
@@ -67,80 +73,108 @@ export const useTransactionList = () => {
         event: '*',
         schema: 'public',
         table: 'transactions'
-      }, async () => {
-        loadTransactions();
-      })
+      }, refreshTransactions)
       .subscribe();
     
     // For all storage types, set up a polling mechanism for changes
-    const checkInterval = setInterval(() => {
-      loadTransactions();
-    }, 3000); // Check every 3 seconds
+    const checkInterval = setInterval(refreshTransactions, 3000); // Check every 3 seconds
     
     return () => {
       supabase.removeChannel(channel);
       clearInterval(checkInterval);
     };
-  }, [loadTransactions]);
+  }, [loadTransactions, refreshTransactions]);
+  
+  // Reload data when refresh signal is received
+  useEffect(() => {
+    loadTransactions();
+  }, [lastRefresh, loadTransactions]);
   
   // Apply filters and sort (memoized with dependencies)
   useEffect(() => {
-    let filtered = [...transactions];
-    
-    if (searchQuery) {
-      filtered = filtered.filter(tx => 
-        tx.merchant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.notes?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    // Skip filtering if no transactions or still loading
+    if (transactions.length === 0 || isLoading) {
+      setFilteredTransactions([]);
+      return;
     }
     
-    if (filterOptions.merchantName) {
-      filtered = filtered.filter(tx => 
-        tx.merchant.name.toLowerCase().includes(filterOptions.merchantName.toLowerCase())
-      );
+    const lowerSearchQuery = searchQuery.toLowerCase();
+    const lowerMerchantName = filterOptions.merchantName.toLowerCase();
+    const startDate = filterOptions.startDate ? new Date(filterOptions.startDate) : null;
+    const endDate = filterOptions.endDate ? new Date(filterOptions.endDate) : null;
+    
+    // Performance optimization: Only create a new array if filters/sort are applied
+    let filtered = transactions;
+    let shouldFilter = false;
+    
+    // Check if any filters are actually active
+    if (searchQuery || filterOptions.merchantName || filterOptions.paymentMethodId || 
+        filterOptions.currency || startDate || endDate) {
+      shouldFilter = true;
     }
     
-    if (filterOptions.paymentMethodId) {
-      filtered = filtered.filter(tx => 
-        tx.paymentMethod.id === filterOptions.paymentMethodId
-      );
+    if (shouldFilter) {
+      filtered = transactions.filter(tx => {
+        // Search query
+        if (searchQuery && 
+            !(tx.merchant.name.toLowerCase().includes(lowerSearchQuery) || 
+              tx.notes?.toLowerCase().includes(lowerSearchQuery))) {
+          return false;
+        }
+        
+        // Merchant name
+        if (filterOptions.merchantName && 
+            !tx.merchant.name.toLowerCase().includes(lowerMerchantName)) {
+          return false;
+        }
+        
+        // Payment method
+        if (filterOptions.paymentMethodId && 
+            tx.paymentMethod.id !== filterOptions.paymentMethodId) {
+          return false;
+        }
+        
+        // Currency
+        if (filterOptions.currency && 
+            tx.currency !== filterOptions.currency) {
+          return false;
+        }
+        
+        // Date range
+        const txDate = new Date(tx.date);
+        if (startDate && txDate < startDate) {
+          return false;
+        }
+        
+        if (endDate && txDate > endDate) {
+          return false;
+        }
+        
+        return true;
+      });
     }
     
-    if (filterOptions.currency) {
-      filtered = filtered.filter(tx => 
-        tx.currency === filterOptions.currency
-      );
-    }
-    
-    if (filterOptions.startDate) {
-      filtered = filtered.filter(tx => 
-        new Date(tx.date) >= new Date(filterOptions.startDate)
-      );
-    }
-    
-    if (filterOptions.endDate) {
-      filtered = filtered.filter(tx => 
-        new Date(tx.date) <= new Date(filterOptions.endDate)
-      );
-    }
+    // Only sort if needed
+    const sorted = [...filtered]; // Create a new array for sorting
     
     switch (sortOption) {
       case 'date-desc':
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         break;
       case 'date-asc':
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         break;
       case 'amount-desc':
-        filtered.sort((a, b) => b.amount - a.amount);
+        sorted.sort((a, b) => b.amount - a.amount);
         break;
       case 'amount-asc':
-        filtered.sort((a, b) => a.amount - b.amount);
+        sorted.sort((a, b) => a.amount - b.amount);
         break;
     }
     
-    setFilteredTransactions(filtered);
+    setFilteredTransactions(sorted);
     
+    // Compute active filters
     const newActiveFilters: string[] = [];
     if (filterOptions.merchantName) newActiveFilters.push('Merchant');
     if (filterOptions.paymentMethodId) newActiveFilters.push('Payment Method');
@@ -148,16 +182,16 @@ export const useTransactionList = () => {
     if (filterOptions.startDate || filterOptions.endDate) newActiveFilters.push('Date Range');
     
     setActiveFilters(newActiveFilters);
-  }, [transactions, searchQuery, filterOptions, sortOption]);
+  }, [transactions, searchQuery, filterOptions, sortOption, isLoading]);
 
-  const handleFilterChange = (key: keyof FilterOptions, value: string) => {
+  const handleFilterChange = useCallback((key: keyof FilterOptions, value: string) => {
     setFilterOptions(prev => ({
       ...prev,
       [key]: value,
     }));
-  };
+  }, []);
   
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilterOptions({
       merchantName: '',
       paymentMethodId: '',
@@ -165,7 +199,7 @@ export const useTransactionList = () => {
       startDate: '',
       endDate: '',
     });
-  };
+  }, []);
 
   return {
     transactions,
