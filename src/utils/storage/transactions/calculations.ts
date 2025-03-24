@@ -24,7 +24,9 @@ export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBre
   if (transaction.paymentMethod.issuer === 'UOB' && 
       transaction.paymentMethod.name === 'Preferred Visa Platinum') {
     if (transaction.isContactless) {
-      bonusPoints = Math.round(basePoints * 3.6);
+      // For UOB Preferred Visa Platinum with contactless payment,
+      // the bonus multiplier should be 4x (base points earn 0.4x per $1, contactless earns 4x = 1.6x)
+      bonusPoints = Math.round(basePoints * 4); // 4x base points as bonus
     }
   } else if (transaction.paymentMethod.issuer === 'Citibank' && 
              transaction.paymentMethod.name === 'Rewards Visa Signature') {
@@ -33,7 +35,7 @@ export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBre
                                 (transaction.merchant.mcc?.code && eligibleMCCs.includes(transaction.merchant.mcc.code));
     
     if (isEligibleTransaction) {
-      bonusPoints = Math.round(basePoints * 3.6);
+      bonusPoints = Math.round(basePoints * 4); // 4x base points as bonus
     }
   }
   

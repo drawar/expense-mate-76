@@ -81,6 +81,8 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         description: errorMessage,
         variant: 'destructive',
       });
+      
+      // Don't navigate when there's an error, let user fix and try again
     } finally {
       setIsLoading(false);
     }
