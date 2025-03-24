@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { formatDate } from '@/utils/dateUtils';
-import { calculateTransactionPoints } from '@/utils/rewardPoints';
+import { calculateTransactionPoints } from '@/utils/rewards/rewardPoints';
 import {
   Dialog,
   DialogContent,
