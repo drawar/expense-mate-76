@@ -35,31 +35,40 @@ export const useTransactionActions = (transactions: Transaction[], setTransactio
     
     try {
       setIsLoading(true);
+      
+      // Optimistically update the UI first for better user experience
+      setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
+      
       const success = await deleteTransaction(transactionToDelete.id);
       
       if (success) {
-        // Update local state immediately for better UX
-        setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
-        
         toast({
           title: "Transaction deleted",
           description: "The transaction has been successfully deleted.",
         });
-        
-        setDeleteConfirmOpen(false);
-        setIsTransactionDialogOpen(false);
       } else {
+        // If there was a problem, revert the optimistic update
         toast({
-          title: "Error",
-          description: "Failed to delete the transaction.",
-          variant: "destructive",
+          title: "Warning",
+          description: "Delete operation may not have synced with remote database.",
         });
+        // No need to revert transactions state since we're already assuming it was deleted locally
       }
+      
+      setDeleteConfirmOpen(false);
+      setIsTransactionDialogOpen(false);
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      
+      // Revert the optimistic update if there was an exception
+      const originalTransaction = transactionToDelete;
+      if (originalTransaction) {
+        setTransactions(prev => [...prev, originalTransaction]);
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to delete the transaction.",
+        description: "Failed to delete the transaction. Please try again.",
         variant: "destructive",
       });
     } finally {

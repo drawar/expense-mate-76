@@ -6,6 +6,10 @@ import { deleteTransaction } from './transactions/delete';
 import { getTransactions } from './transactions/get';
 import { exportTransactionsToCSV } from './transactions/export';
 import { saveTransactions } from './transactions/save';
+import { 
+  getTransactionsFromLocalStorage, 
+  saveTransactionsToLocalStorage 
+} from './transactions/local-storage';
 
 // Export all transaction-related functions
 export {
@@ -14,5 +18,7 @@ export {
   addTransaction,
   editTransaction,
   deleteTransaction,
-  exportTransactionsToCSV
+  exportTransactionsToCSV,
+  getTransactionsFromLocalStorage,
+  saveTransactionsToLocalStorage
 };

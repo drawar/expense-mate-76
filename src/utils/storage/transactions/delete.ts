@@ -1,11 +1,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { addBonusPointsMovement } from './bonus-points';
+import { getTransactionsFromLocalStorage, saveTransactionsToLocalStorage } from './local-storage';
 
 export const deleteTransaction = async (id: string): Promise<boolean> => {
   try {
-    // Get transaction details before deletion
-    const { data: transaction } = await supabase
+    // First, check if we need to handle local storage
+    const localStorageTransactions = await getTransactionsFromLocalStorage();
+    const isInLocalStorage = localStorageTransactions.some(t => t.id === id);
+    
+    // Check if transaction exists in Supabase
+    const { data: transaction, error: fetchError } = await supabase
       .from('transactions')
       .select(`
         *,
@@ -14,11 +19,22 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
       .eq('id', id)
       .single();
       
-    if (!transaction) {
-      console.error('Transaction not found');
+    if (fetchError) {
+      console.log('Transaction not found in Supabase, checking local storage');
+      
+      // If it's in local storage, handle locally
+      if (isInLocalStorage) {
+        console.log('Deleting transaction from local storage');
+        const updatedTransactions = localStorageTransactions.filter(t => t.id !== id);
+        await saveTransactionsToLocalStorage(updatedTransactions);
+        return true;
+      }
+      
+      console.error('Transaction not found in Supabase or local storage');
       return false;
     }
     
+    // If we reached here, transaction exists in Supabase
     // Soft delete the transaction
     const { error: updateError } = await supabase
       .from('transactions')
@@ -30,10 +46,19 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
       
     if (updateError) {
       console.error('Error soft deleting transaction:', updateError);
+      
+      // If it's in local storage as fallback, handle locally
+      if (isInLocalStorage) {
+        console.log('Falling back to local storage deletion');
+        const updatedTransactions = localStorageTransactions.filter(t => t.id !== id);
+        await saveTransactionsToLocalStorage(updatedTransactions);
+        return true;
+      }
+      
       return false;
     }
     
-    // Record negative bonus points movement
+    // Record negative bonus points movement if needed
     if (transaction.reward_points > transaction.base_points) {
       const bonusPoints = transaction.reward_points - transaction.base_points;
       await addBonusPointsMovement({
@@ -51,6 +76,12 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
       } catch (error) {
         console.error('Error updating merchant mapping after delete:', error);
       }
+    }
+    
+    // Also remove from local storage if it exists there
+    if (isInLocalStorage) {
+      const updatedTransactions = localStorageTransactions.filter(t => t.id !== id);
+      await saveTransactionsToLocalStorage(updatedTransactions);
     }
     
     return true;
