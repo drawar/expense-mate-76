@@ -29,15 +29,15 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
   };
 
   return (
-    <Card className="chart-container h-full">
-      <CardHeader className="pb-0 pt-0">
+    <Card className="chart-container h-full flex flex-col">
+      <CardHeader className="pb-0 pt-4">
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="flex-grow py-4">
         {data.length > 0 ? (
           <div className="flex flex-col md:flex-row h-full">
-            {/* Chart on the left */}
-            <div className="w-full md:w-1/2 h-full flex items-center justify-center">
+            {/* Chart on the left - now with auto-height */}
+            <div className="w-full md:w-1/2 min-h-[240px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -70,9 +70,9 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
               </ResponsiveContainer>
             </div>
             
-            {/* Labels on the right in a single column */}
+            {/* Labels on the right in a single column - now with auto-height */}
             <div className="w-full md:w-1/2 md:pl-4 mt-4 md:mt-0 flex items-center">
-              <div className="grid grid-cols-1 gap-2 w-full max-h-56 overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 gap-2 w-full max-h-[240px] overflow-y-auto pr-2">
                 {data.map((entry, index) => (
                   <div key={`legend-${index}`} className="flex items-center text-xs">
                     <div 

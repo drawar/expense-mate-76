@@ -22,7 +22,7 @@ const SummaryCharts = ({
   displayCurrency,
 }: SummaryChartsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[320px]">
       {/* Payment Methods Chart */}
       <div className="w-full h-full">
         <PieChartCard
