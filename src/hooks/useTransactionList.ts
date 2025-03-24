@@ -31,7 +31,6 @@ export const useTransactionList = () => {
   });
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   // Function to load transactions
   const loadTransactions = useCallback(async () => {
@@ -58,15 +57,7 @@ export const useTransactionList = () => {
     }
   }, [toast]);
   
-  // Modified to prevent state updates that trigger re-renders
-  const refreshTransactions = useCallback(() => {
-    // Only trigger a refresh if we're not currently loading
-    if (!isLoading) {
-      setLastRefresh(Date.now());
-    }
-  }, [isLoading]);
-  
-  // Set up Supabase listener and polling only once on mount
+  // Set up Supabase listener only once on mount
   useEffect(() => {
     // Initial load
     loadTransactions();
@@ -78,24 +69,16 @@ export const useTransactionList = () => {
         event: '*',
         schema: 'public',
         table: 'transactions'
-      }, refreshTransactions)
+      }, () => {
+        // When any transaction changes, reload the transactions
+        loadTransactions();
+      })
       .subscribe() : null;
-    
-    // For all storage types, set up a polling mechanism, but with a longer interval
-    const checkInterval = setInterval(refreshTransactions, 10000); // Check every 10 seconds instead of 3
     
     return () => {
       if (channel) supabase.removeChannel(channel);
-      clearInterval(checkInterval);
     };
   }, []); // Empty dependency array to ensure this only runs once
-  
-  // Reload data when refresh signal is received, but avoid the dependency on loadTransactions
-  useEffect(() => {
-    if (lastRefresh > 0) {
-      loadTransactions();
-    }
-  }, [lastRefresh]);
   
   // Apply filters and sort (memoized with dependencies)
   useEffect(() => {

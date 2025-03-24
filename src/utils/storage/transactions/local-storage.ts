@@ -7,6 +7,10 @@ export const saveTransactionsToLocalStorage = (transactions: Transaction[]): voi
   try {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
     console.log('Transactions saved to local storage:', transactions.length);
+    
+    // Invalidate cache when saving transactions
+    cachedTransactions = transactions;
+    lastCacheTime = Date.now();
   } catch (error) {
     console.error('Error saving transactions to local storage:', error);
     throw new Error('Failed to save transaction to local storage');

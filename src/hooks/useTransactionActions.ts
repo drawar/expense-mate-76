@@ -38,6 +38,7 @@ export const useTransactionActions = (transactions: Transaction[], setTransactio
       const success = await deleteTransaction(transactionToDelete.id);
       
       if (success) {
+        // Update local state immediately for better UX
         setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
         
         toast({
@@ -74,6 +75,7 @@ export const useTransactionActions = (transactions: Transaction[], setTransactio
       const result = await editTransaction(selectedTransaction.id, updatedTransaction);
       
       if (result) {
+        // Update local state immediately for better UX
         setTransactions(prev => 
           prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
         );
