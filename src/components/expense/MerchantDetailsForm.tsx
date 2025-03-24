@@ -61,7 +61,7 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
           // Mark that we've checked suggestions for this merchant name
           setSuggestionsChecked(true);
           
-          // Check if we have a suggestion for this merchant name
+          // Check if we have a suggestion for this merchant name that isn't deleted
           const hasSuggestions = await hasMerchantCategorySuggestions(debouncedMerchantName);
           
           if (hasSuggestions) {

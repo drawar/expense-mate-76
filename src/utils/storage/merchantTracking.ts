@@ -7,6 +7,7 @@ interface MerchantCategoryMapping {
   merchantName: string;
   occurrenceCount: number;
   mostCommonMCC?: MerchantCategoryCode;
+  isDeleted?: boolean;
 }
 
 // Get current merchant category mapping
@@ -14,7 +15,8 @@ export const getMerchantCategoryMappings = async (): Promise<MerchantCategoryMap
   try {
     const { data, error } = await supabase
       .from('merchant_category_mappings')
-      .select('*');
+      .select('*')
+      .eq('is_deleted', false);
       
     if (error) {
       console.error('Error fetching merchant category mappings:', error);
@@ -24,7 +26,8 @@ export const getMerchantCategoryMappings = async (): Promise<MerchantCategoryMap
     return data.map(item => ({
       merchantName: item.merchant_name,
       occurrenceCount: item.occurrence_count,
-      mostCommonMCC: item.most_common_mcc ? item.most_common_mcc as MerchantCategoryCode : undefined
+      mostCommonMCC: item.most_common_mcc ? item.most_common_mcc as MerchantCategoryCode : undefined,
+      isDeleted: item.is_deleted
     }));
   } catch (error) {
     console.error('Exception fetching merchant category mappings:', error);
@@ -49,7 +52,8 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
     return {
       merchantName: data.merchant_name,
       occurrenceCount: data.occurrence_count,
-      mostCommonMCC: data.most_common_mcc ? data.most_common_mcc as MerchantCategoryCode : undefined
+      mostCommonMCC: data.most_common_mcc ? data.most_common_mcc as MerchantCategoryCode : undefined,
+      isDeleted: data.is_deleted
     };
   } catch (error) {
     console.error('Exception fetching merchant mapping by name:', error);
@@ -67,14 +71,17 @@ export const incrementMerchantOccurrence = async (
     const mapping = await getMerchantCategoryMappingByName(merchantName);
     
     if (mapping) {
+      const updateData: any = {
+        occurrence_count: mapping.occurrenceCount + 1,
+        most_common_mcc: mcc,
+        updated_at: new Date().toISOString(),
+        is_deleted: false // Ensure the entry is marked as not deleted
+      };
+      
       // Update existing mapping
       const { error } = await supabase
         .from('merchant_category_mappings')
-        .update({
-          occurrence_count: mapping.occurrenceCount + 1,
-          most_common_mcc: mcc, // This is simplified - in real app you'd have logic to determine most common
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('merchant_name', merchantName);
         
       if (error) {
@@ -87,7 +94,8 @@ export const incrementMerchantOccurrence = async (
         .insert({
           merchant_name: merchantName,
           occurrence_count: 1,
-          most_common_mcc: mcc
+          most_common_mcc: mcc,
+          is_deleted: false // New entries are not deleted
         });
         
       if (error) {
@@ -110,14 +118,18 @@ export const decrementMerchantOccurrence = async (merchantName: string): Promise
     }
     
     if (mapping.occurrenceCount <= 1) {
-      // If count will become zero, delete the mapping
+      // If count will become zero, mark the mapping as deleted
       const { error } = await supabase
         .from('merchant_category_mappings')
-        .delete()
+        .update({
+          occurrence_count: 0,
+          is_deleted: true,
+          updated_at: new Date().toISOString()
+        })
         .eq('merchant_name', merchantName);
         
       if (error) {
-        console.error('Error deleting merchant mapping:', error);
+        console.error('Error marking merchant mapping as deleted:', error);
       }
     } else {
       // Decrement the count
@@ -142,7 +154,7 @@ export const decrementMerchantOccurrence = async (merchantName: string): Promise
 export const hasMerchantCategorySuggestions = async (merchantName: string): Promise<boolean> => {
   try {
     const mapping = await getMerchantCategoryMappingByName(merchantName);
-    return !!mapping && mapping.occurrenceCount > 0 && !!mapping.mostCommonMCC;
+    return !!mapping && mapping.occurrenceCount > 0 && !!mapping.mostCommonMCC && !mapping.isDeleted;
   } catch (error) {
     console.error('Error checking merchant suggestions:', error);
     return false;
@@ -154,7 +166,7 @@ export const getSuggestedMerchantCategory = async (merchantName: string): Promis
   try {
     const mapping = await getMerchantCategoryMappingByName(merchantName);
     
-    if (mapping && mapping.occurrenceCount > 0 && mapping.mostCommonMCC) {
+    if (mapping && mapping.occurrenceCount > 0 && mapping.mostCommonMCC && !mapping.isDeleted) {
       return mapping.mostCommonMCC;
     }
     

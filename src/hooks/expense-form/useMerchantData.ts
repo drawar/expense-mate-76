@@ -29,7 +29,7 @@ export const useMerchantData = (
         if (!suggestionChecked) {
           setSuggestionChecked(true);
           
-          // Check if this merchant name has suggestions enabled
+          // Check if this merchant name has suggestions enabled and is not deleted
           const hasSuggestions = await hasMerchantCategorySuggestions(name);
           if (hasSuggestions) {
             const suggestedMCC = await getSuggestedMerchantCategory(name);
