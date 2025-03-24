@@ -3,6 +3,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
 import SummaryCard from './SummaryCard';
+import PaymentCardRender from '../expense/PaymentCardRender';
 
 interface SummaryCardGridProps {
   filteredTransactions: Transaction[];
@@ -21,6 +22,19 @@ const SummaryCardGrid = ({
   topPaymentMethod,
   totalRewardPoints,
 }: SummaryCardGridProps) => {
+  // Find the payment method object that matches the top payment method
+  const findPaymentMethodByName = (name: string): PaymentMethod | undefined => {
+    if (!filteredTransactions.length) return undefined;
+    
+    return filteredTransactions.find(tx => 
+      tx.paymentMethod.name === name
+    )?.paymentMethod;
+  };
+
+  const topPaymentMethodObject = topPaymentMethod 
+    ? findPaymentMethodByName(topPaymentMethod.name) 
+    : undefined;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <SummaryCard
@@ -44,6 +58,11 @@ const SummaryCardGrid = ({
           ? formatCurrency(topPaymentMethod.value, 'USD')
           : 'No data'}
         icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500 mr-1" />}
+        customContent={topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
+          <div className="mt-2 scale-[0.65] origin-top-left">
+            <PaymentCardRender paymentMethod={topPaymentMethodObject} />
+          </div>
+        ) : undefined}
       />
             
       <SummaryCard
