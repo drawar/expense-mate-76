@@ -48,8 +48,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -71,7 +71,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border selection:bg-primary/20 selection:text-foreground;
   }
 
   body {
@@ -87,6 +87,14 @@
 
   .glass-card-elevated {
     @apply bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-white/30 dark:border-white/20 shadow-elevation;
+  }
+
+  .neo-blur {
+    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent;
   }
 
   .container-padding {
@@ -136,4 +144,22 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.25);
+}
+
+/* Card Hover Effects */
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Interactive Links */
+.interactive-link {
+  @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
+}
+
+.animate-enter {
+  @apply animate-[fade-in_0.3s_ease-out,scale-in_0.2s_ease-out];
+}
+
+.animate-exit {
+  @apply animate-[fade-out_0.3s_ease-out,scale-out_0.2s_ease-out];
 }

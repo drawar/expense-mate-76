@@ -112,6 +112,20 @@ export default {
 						transform: 'translateX(100%)'
 					}
 				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
+				'scale-out': {
+					from: { transform: 'scale(1)', opacity: '1' },
+					to: { transform: 'scale(0.95)', opacity: '0' }
+				},
 				pulse: {
 					'0%, 100%': {
 						opacity: '1'
@@ -128,7 +142,11 @@ export default {
 				'fade-out': 'fade-out 0.2s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'slide-out': 'slide-out 0.2s ease-out',
-				'pulse-slow': 'pulse 3s ease-in-out infinite'
+				'scale-in': 'scale-in 0.2s ease-out',
+				'scale-out': 'scale-out 0.2s ease-out',
+				'pulse-slow': 'pulse 3s ease-in-out infinite',
+				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
+				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out'
 			},
 			backdropFilter: {
 				'none': 'none',
@@ -136,7 +154,8 @@ export default {
 			},
 			boxShadow: {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
-				'elevation': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02)'
+				'elevation': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02)',
+				'dark-glow': '0 0 15px rgba(76, 29, 149, 0.5)'
 			}
 		}
 	},

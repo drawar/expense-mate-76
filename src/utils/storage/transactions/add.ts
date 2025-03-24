@@ -1,187 +1,119 @@
 
-import { Transaction, Currency } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
+import { Transaction } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { getCategoryFromMCC, getCategoryFromMerchantName } from '../../categoryMapping';
-import { getMerchantByName, addOrUpdateMerchant } from '../merchants';
 import { saveTransactionToLocalStorage } from './local-storage';
+import { getNextTransactionId } from './get';
 import { calculatePoints } from './calculations';
 import { addBonusPointsMovement } from './bonus-points';
+import { addOrUpdateMerchant } from '../merchants';
+import { incrementMerchantOccurrence } from '../merchantTracking';
+import { trackMerchantVisit } from '../merchantTracking';
 
-export const addTransaction = async (transaction: Omit<Transaction, 'id'>, forceLocalStorage = false): Promise<Transaction> => {
-  console.log('Adding transaction, force local storage:', forceLocalStorage);
-  console.log('Transaction data received:', JSON.stringify(transaction, null, 2));
-  
-  if (!transaction.merchant || !transaction.merchant.name) {
-    console.error('Validation Error: Merchant information is missing');
-    throw new Error('Merchant information is missing');
-  }
-  
-  if (!transaction.paymentMethod || !transaction.paymentMethod.id) {
-    console.error('Validation Error: Payment method information is missing');
-    throw new Error('Payment method information is missing');
-  }
-  
-  let category = transaction.category;
-  if (!category || category === 'Uncategorized') {
-    if (transaction.merchant.mcc?.code) {
-      category = getCategoryFromMCC(transaction.merchant.mcc.code);
-    } else if (transaction.merchant.name) {
-      category = getCategoryFromMerchantName(transaction.merchant.name) || 'Uncategorized';
-    }
-  }
-  
-  // Calculate points breakdown
-  const pointsBreakdown = calculatePoints(transaction);
-  console.log('Points breakdown calculated:', pointsBreakdown);
-  
-  if (forceLocalStorage) {
-    console.log('Directly using local storage for transaction');
-    try {
-      const existingMerchant = await getMerchantByName(transaction.merchant.name);
-      console.log('Existing merchant found:', existingMerchant || 'None');
-      const merchant = existingMerchant || transaction.merchant;
-      
-      const transactionWithUpdates = {
-        ...transaction,
-        category,
-        rewardPoints: pointsBreakdown.totalPoints,
-        merchant,
-        basePoints: pointsBreakdown.basePoints,
-        isDeleted: false
-      };
-      
-      console.log('Saving transaction to local storage with data:', JSON.stringify(transactionWithUpdates, null, 2));
-      const savedTransaction = await saveTransactionToLocalStorage(transactionWithUpdates, merchant);
-      console.log('Transaction saved to local storage with ID:', savedTransaction.id);
-      
-      // Record bonus points movement
-      if (pointsBreakdown.bonusPoints > 0) {
-        console.log('Recording bonus points movement for local storage transaction:', pointsBreakdown.bonusPoints);
-        await addBonusPointsMovement({
-          transactionId: savedTransaction.id,
-          paymentMethodId: savedTransaction.paymentMethod.id,
-          bonusPoints: pointsBreakdown.bonusPoints
-        });
-      }
-      
-      return savedTransaction;
-    } catch (error) {
-      console.error('Error saving to local storage:', error);
-      throw new Error('Failed to save transaction to local storage');
-    }
-  }
-  
+export const addTransaction = async (
+  transaction: Omit<Transaction, 'id'>, 
+  forceLocalStorage: boolean = false
+): Promise<Transaction | null> => {
   try {
-    // Try Supabase first
-    console.log('Attempting to save merchant to Supabase...');
-    const savedMerchant = await addOrUpdateMerchant(transaction.merchant);
-    console.log('Merchant saved to Supabase:', savedMerchant);
+    // Validate transaction data
+    if (!transaction.merchant || !transaction.paymentMethod) {
+      console.error('Invalid transaction data: missing merchant or payment method');
+      return null;
+    }
     
-    const transactionData = {
-      date: transaction.date,
-      merchant_id: savedMerchant.id,
-      amount: transaction.amount,
-      currency: transaction.currency,
-      payment_method_id: transaction.paymentMethod.id,
-      payment_amount: transaction.paymentAmount,
-      payment_currency: transaction.paymentCurrency,
-      reward_points: pointsBreakdown.totalPoints,
-      base_points: pointsBreakdown.basePoints,
-      notes: transaction.notes,
-      category: category,
-      is_contactless: transaction.isContactless,
-      is_deleted: false
+    // Calculate reward points
+    const pointsBreakdown = calculatePoints(transaction);
+    console.log('Points breakdown calculated:', JSON.stringify(pointsBreakdown, null, 2));
+    
+    // Prepare complete transaction data with points
+    const completeTransaction: Transaction = {
+      id: uuidv4(),
+      ...transaction,
+      timestamp: transaction.timestamp || new Date().toISOString(),
+      rewardPoints: pointsBreakdown.totalPoints
     };
     
-    console.log('Sending transaction data to Supabase:', JSON.stringify(transactionData, null, 2));
-    console.log('Transaction data types:', {
-      date: typeof transaction.date,
-      merchant_id: typeof savedMerchant.id,
-      amount: typeof transaction.amount,
-      currency: typeof transaction.currency,
-      payment_method_id: typeof transaction.paymentMethod.id,
-      payment_amount: typeof transaction.paymentAmount,
-      payment_currency: typeof transaction.paymentCurrency,
-      reward_points: typeof pointsBreakdown.totalPoints,
-      base_points: typeof pointsBreakdown.basePoints
-    });
+    console.log('Using local storage flag:', forceLocalStorage);
     
-    // Try inserting with maybeSingle instead of single to avoid errors
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(transactionData)
-      .select();
-      
-    if (error) {
-      console.error('Error adding transaction to Supabase:', error);
-      console.error('Error details:', error.message, error.details, error.hint);
-      
-      // If there's a Supabase error and we're not already using local storage,
-      // fall back to local storage
-      if (!forceLocalStorage) {
-        console.log('Supabase error detected, falling back to local storage...');
-        return addTransaction(transaction, true);
-      }
-      
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
-      console.error('No data returned from Supabase insert');
-      
-      if (!forceLocalStorage) {
-        console.log('No data returned, falling back to local storage...');
-        return addTransaction(transaction, true);
-      }
-      
-      throw new Error('No data returned from Supabase insert');
-    }
-    
-    console.log('Transaction saved successfully to Supabase:', data[0]);
-    
-    // Record bonus points movement
-    if (pointsBreakdown.bonusPoints > 0) {
-      console.log('Recording bonus points movement:', pointsBreakdown.bonusPoints);
-      
-      try {
-        const bonusPointsResult = await addBonusPointsMovement({
-          transactionId: data[0].id,
-          paymentMethodId: data[0].payment_method_id,
-          bonusPoints: pointsBreakdown.bonusPoints
-        });
-        
-        console.log('Bonus points movement recorded:', bonusPointsResult);
-      } catch (bonusError) {
-        console.error('Error recording bonus points movement:', bonusError);
-        // Continue even if bonus points recording fails
-      }
-    }
-    
-    return {
-      id: data[0].id,
-      date: data[0].date,
-      merchant: savedMerchant,
-      amount: Number(data[0].amount),
-      currency: data[0].currency as Currency,
-      paymentMethod: transaction.paymentMethod,
-      paymentAmount: Number(data[0].payment_amount),
-      paymentCurrency: data[0].payment_currency as Currency,
-      rewardPoints: data[0].reward_points,
-      basePoints: data[0].base_points,
-      notes: data[0].notes,
-      category: data[0].category,
-      isContactless: data[0].is_contactless,
-    };
-  } catch (error) {
-    console.error('Exception in addTransaction:', error);
-    
-    // If there's an error and we're not already using local storage,
-    // fall back to local storage as a last resort
     if (!forceLocalStorage) {
-      console.log('Exception detected, falling back to local storage as last resort...');
-      return addTransaction(transaction, true);
+      try {
+        // First save or update the merchant
+        if (transaction.merchant) {
+          await addOrUpdateMerchant(transaction.merchant);
+        }
+        
+        // Then save the transaction to Supabase
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert({
+            id: completeTransaction.id,
+            amount: completeTransaction.amount,
+            currency: completeTransaction.currency,
+            description: completeTransaction.description || '',
+            category: completeTransaction.category || '',
+            timestamp: completeTransaction.timestamp,
+            merchant_id: completeTransaction.merchant?.id,
+            payment_method_id: completeTransaction.paymentMethod?.id,
+            is_contactless: completeTransaction.isContactless || false,
+            foreign_amount: completeTransaction.foreignAmount,
+            foreign_currency: completeTransaction.foreignCurrency,
+            reward_points: completeTransaction.rewardPoints,
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error saving transaction to Supabase:', error);
+          throw error;
+        }
+        
+        console.log('Transaction saved to Supabase with ID:', data.id);
+        
+        // Record bonus points movement if any
+        if (pointsBreakdown.bonusPoints > 0) {
+          await addBonusPointsMovement({
+            transactionId: completeTransaction.id,
+            paymentMethodId: completeTransaction.paymentMethod.id,
+            bonusPoints: pointsBreakdown.bonusPoints,
+            timestamp: completeTransaction.timestamp
+          });
+        }
+        
+        // Update merchant category mapping for improved suggestions
+        if (transaction.merchant && transaction.merchant.mcc) {
+          await incrementMerchantOccurrence(transaction.merchant.name, transaction.merchant.mcc);
+          console.log('Updated merchant category mapping for', transaction.merchant.name);
+        }
+        
+        // Track merchant visit for analytics
+        if (transaction.merchant) {
+          await trackMerchantVisit(transaction.merchant.name);
+        }
+        
+        return completeTransaction;
+      } catch (err) {
+        console.error('Failed to save to Supabase, falling back to localStorage:', err);
+        // Fall back to localStorage if Supabase fails
+      }
     }
     
-    throw error;
+    // Save to localStorage as fallback or if forced
+    const localStorageId = await getNextTransactionId();
+    const localTransaction: Transaction = {
+      ...completeTransaction,
+      id: localStorageId.toString()
+    };
+    
+    const saved = await saveTransactionToLocalStorage(localTransaction);
+    if (!saved) {
+      console.error('Failed to save transaction to localStorage');
+      return null;
+    }
+    
+    console.log('Transaction saved to local storage with data:', JSON.stringify(localTransaction, null, 2));
+    return localTransaction;
+  } catch (error) {
+    console.error('Error in addTransaction:', error);
+    return null;
   }
 };
