@@ -17,7 +17,8 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
         *,
         merchant:merchant_id(*),
         payment_method:payment_method_id(*)
-      `);
+      `)
+      .eq('is_deleted', false); // Filter out deleted transactions
       
     if (error) {
       console.error('Error fetching transactions from Supabase:', error);
