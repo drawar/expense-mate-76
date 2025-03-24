@@ -9,25 +9,34 @@ import TransactionCard from '@/components/expense/TransactionCard';
 import Summary from '@/components/dashboard/Summary';
 import Navbar from '@/components/layout/Navbar';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Initialize storage with defaults if needed and load data
     const loadData = async () => {
       try {
+        setLoading(true);
         await initializeStorage();
         
         const loadedTransactions = await getTransactions();
         const loadedPaymentMethods = await getPaymentMethods();
         
+        console.log(`Loaded ${loadedTransactions.length} transactions`);
         setTransactions(loadedTransactions);
         setPaymentMethods(loadedPaymentMethods);
       } catch (error) {
         console.error('Error loading data:', error);
+        toast({
+          title: 'Error loading data',
+          description: 'There was a problem loading your expense data',
+          variant: 'destructive'
+        });
       } finally {
         setLoading(false);
       }
@@ -43,16 +52,21 @@ const Index = () => {
         schema: 'public',
         table: 'transactions'
       }, async () => {
-        // Reload transactions when changes occur
-        const updatedTransactions = await getTransactions();
-        setTransactions(updatedTransactions);
+        try {
+          // Reload transactions when changes occur
+          const updatedTransactions = await getTransactions();
+          console.log(`Received update: now have ${updatedTransactions.length} transactions`);
+          setTransactions(updatedTransactions);
+        } catch (error) {
+          console.error('Error updating transactions:', error);
+        }
       })
       .subscribe();
     
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [toast]);
   
   // Get recent transactions (last 7 days)
   const recentTransactions = transactions

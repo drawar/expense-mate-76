@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -32,31 +32,33 @@ export const useTransactionList = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Function to load transactions
+  const loadTransactions = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log('Loading transactions with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
+      
+      // Force using local storage if it's the default
+      const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
+      const loadedPaymentMethods = await getPaymentMethods();
+      
+      console.log('Loaded transactions:', loadedTransactions.length);
+      setTransactions(loadedTransactions);
+      setPaymentMethods(loadedPaymentMethods);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load transaction data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+  
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        console.log('Loading transactions with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
-        // Force using local storage if it's the default
-        const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
-        const loadedPaymentMethods = await getPaymentMethods();
-        
-        console.log('Loaded transactions:', loadedTransactions.length);
-        setTransactions(loadedTransactions);
-        setPaymentMethods(loadedPaymentMethods);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load transaction data',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
+    loadTransactions();
     
     // Only set up the Supabase channel if we're not defaulting to local storage
     if (!USE_LOCAL_STORAGE_DEFAULT) {
@@ -67,26 +69,24 @@ export const useTransactionList = () => {
           schema: 'public',
           table: 'transactions'
         }, async () => {
-          const updatedTransactions = await getTransactions();
-          setTransactions(updatedTransactions);
+          loadTransactions();
         })
         .subscribe();
       
       return () => {
         supabase.removeChannel(channel);
       };
-    } else {
-      // For local storage, we need to check for changes periodically
-      const checkInterval = setInterval(async () => {
-        const updatedTransactions = await getTransactions(true);
-        setTransactions(updatedTransactions);
-      }, 5000); // Check every 5 seconds
-      
-      return () => {
-        clearInterval(checkInterval);
-      };
     }
-  }, [toast]);
+    
+    // For local storage, set up a polling mechanism
+    const checkInterval = setInterval(() => {
+      loadTransactions();
+    }, 3000); // Check every 3 seconds
+    
+    return () => {
+      clearInterval(checkInterval);
+    };
+  }, [loadTransactions]);
   
   useEffect(() => {
     let filtered = [...transactions];
@@ -184,6 +184,7 @@ export const useTransactionList = () => {
     handleFilterChange,
     activeFilters,
     resetFilters,
-    isLoading
+    isLoading,
+    refreshTransactions: loadTransactions
   };
 };
