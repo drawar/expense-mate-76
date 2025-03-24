@@ -3,12 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Transaction } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { saveTransactionToLocalStorage } from './local-storage';
-import { getNextTransactionId } from './get';
+import { getTransactions } from './get';
 import { calculatePoints } from './calculations';
 import { addBonusPointsMovement } from './bonus-points';
 import { addOrUpdateMerchant } from '../merchants';
 import { incrementMerchantOccurrence } from '../merchantTracking';
-import { trackMerchantVisit } from '../merchantTracking';
 
 export const addTransaction = async (
   transaction: Omit<Transaction, 'id'>, 
@@ -29,7 +28,6 @@ export const addTransaction = async (
     const completeTransaction: Transaction = {
       id: uuidv4(),
       ...transaction,
-      timestamp: transaction.timestamp || new Date().toISOString(),
       rewardPoints: pointsBreakdown.totalPoints
     };
     
@@ -49,15 +47,16 @@ export const addTransaction = async (
             id: completeTransaction.id,
             amount: completeTransaction.amount,
             currency: completeTransaction.currency,
-            description: completeTransaction.description || '',
             category: completeTransaction.category || '',
-            timestamp: completeTransaction.timestamp,
+            date: completeTransaction.date,
             merchant_id: completeTransaction.merchant?.id,
             payment_method_id: completeTransaction.paymentMethod?.id,
             is_contactless: completeTransaction.isContactless || false,
-            foreign_amount: completeTransaction.foreignAmount,
-            foreign_currency: completeTransaction.foreignCurrency,
+            payment_amount: completeTransaction.paymentAmount,
+            payment_currency: completeTransaction.paymentCurrency,
+            notes: completeTransaction.notes || '',
             reward_points: completeTransaction.rewardPoints,
+            base_points: pointsBreakdown.basePoints
           })
           .select()
           .single();
@@ -74,8 +73,7 @@ export const addTransaction = async (
           await addBonusPointsMovement({
             transactionId: completeTransaction.id,
             paymentMethodId: completeTransaction.paymentMethod.id,
-            bonusPoints: pointsBreakdown.bonusPoints,
-            timestamp: completeTransaction.timestamp
+            bonusPoints: pointsBreakdown.bonusPoints
           });
         }
         
@@ -83,11 +81,6 @@ export const addTransaction = async (
         if (transaction.merchant && transaction.merchant.mcc) {
           await incrementMerchantOccurrence(transaction.merchant.name, transaction.merchant.mcc);
           console.log('Updated merchant category mapping for', transaction.merchant.name);
-        }
-        
-        // Track merchant visit for analytics
-        if (transaction.merchant) {
-          await trackMerchantVisit(transaction.merchant.name);
         }
         
         return completeTransaction;
@@ -98,10 +91,12 @@ export const addTransaction = async (
     }
     
     // Save to localStorage as fallback or if forced
-    const localStorageId = await getNextTransactionId();
+    const transactions = await getTransactions(true); // Force local storage
+    const localId = (transactions.length + 1).toString();
+    
     const localTransaction: Transaction = {
       ...completeTransaction,
-      id: localStorageId.toString()
+      id: localId
     };
     
     const saved = await saveTransactionToLocalStorage(localTransaction);
