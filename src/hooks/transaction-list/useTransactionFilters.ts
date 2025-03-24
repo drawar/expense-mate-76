@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Transaction } from '@/types';
 import { FilterOptions, SortOption } from './types';
 
@@ -17,7 +17,7 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   // Apply filters and compute derived state
-  const applyFilters = useMemo(() => {
+  useEffect(() => {
     // Skip filtering if no transactions or still loading
     if (transactions.length === 0 || isLoading) {
       setFilteredTransactions([]);
@@ -109,11 +109,6 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
     
     setActiveFilters(newActiveFilters);
   }, [transactions, searchQuery, filterOptions, sortOption, isLoading]);
-
-  // Auto-apply filters when dependencies change
-  useMemo(() => {
-    applyFilters;
-  }, [applyFilters]);
 
   const handleFilterChange = useCallback((key: keyof FilterOptions, value: string) => {
     setFilterOptions(prev => ({

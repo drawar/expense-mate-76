@@ -57,7 +57,7 @@ export const useTransactionData = () => {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, []); // Empty dependency array to ensure this only runs once
+  }, [loadTransactions]); // Add loadTransactions to the dependency array
 
   return {
     transactions,

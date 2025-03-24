@@ -1,4 +1,3 @@
-
 import { Transaction } from '@/types';
 
 const TRANSACTIONS_KEY = 'expenseTracker_transactions';
@@ -29,11 +28,14 @@ export const getTransactionsFromLocalStorage = (): Transaction[] => {
     // Use cached transactions if available and not expired
     if (cachedTransactions && (now - lastCacheTime) < CACHE_TTL) {
       console.log('Using cached transactions from memory:', cachedTransactions.length);
-      return cachedTransactions;
+      return [...cachedTransactions]; // Return a copy of the cached transactions
     }
     
     const stored = localStorage.getItem(TRANSACTIONS_KEY);
-    if (!stored) return [];
+    if (!stored) {
+      console.log('No transactions found in local storage');
+      return [];
+    }
     
     const transactions = JSON.parse(stored);
     console.log('Successfully loaded transactions from local storage:', transactions.length);
@@ -42,7 +44,7 @@ export const getTransactionsFromLocalStorage = (): Transaction[] => {
     cachedTransactions = transactions;
     lastCacheTime = now;
     
-    return transactions;
+    return [...transactions]; // Return a copy to avoid mutation issues
   } catch (error) {
     console.error('Error loading transactions from local storage:', error);
     return [];

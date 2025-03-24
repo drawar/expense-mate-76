@@ -8,14 +8,13 @@ import { getTransactions, getPaymentMethods, initializeStorage } from '@/utils/s
 import TransactionCard from '@/components/expense/TransactionCard';
 import Summary from '@/components/dashboard/Summary';
 import Navbar from '@/components/layout/Navbar';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(0);
   const { toast } = useToast();
   
   // Use ref to prevent unnecessary reloads
@@ -31,7 +30,7 @@ const Index = () => {
       }
       
       // Get fresh data
-      const loadedTransactions = await getTransactions();
+      const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
       const loadedPaymentMethods = await getPaymentMethods();
       
       console.log(`Loaded ${loadedTransactions.length} transactions`);
@@ -49,11 +48,6 @@ const Index = () => {
     }
   }, [toast]);
   
-  // Signal for data refresh
-  const refreshData = useCallback(() => {
-    setLastUpdated(Date.now());
-  }, []);
-  
   useEffect(() => {
     loadData();
     
@@ -64,24 +58,15 @@ const Index = () => {
         event: '*',
         schema: 'public',
         table: 'transactions'
-      }, refreshData)
+      }, () => {
+        loadData();
+      })
       .subscribe();
-    
-    // Set interval for periodic refresh at a reasonable interval (5 seconds)
-    const refreshInterval = setInterval(refreshData, 5000);
     
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(refreshInterval);
     };
-  }, [loadData, refreshData]);
-  
-  // Load data when refresh signal changes
-  useEffect(() => {
-    if (lastUpdated > 0) {
-      loadData();
-    }
-  }, [lastUpdated, loadData]);
+  }, [loadData]);
   
   // Get recent transactions (last 7 days) - memoize this calculation
   const recentTransactions = transactions
