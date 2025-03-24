@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Transaction, PaymentMethod } from '@/types';
@@ -19,10 +19,9 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF', '#4BC0C0'
 const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
   
-  // Process transactions only once to avoid infinite loop
+  // Process transactions to ensure categories are set - only recompute when transactions change
   const processedTransactions = useMemo(() => {
     return transactions.map(tx => {
-      // Make sure category is set
       if (!tx.category || tx.category === 'Uncategorized') {
         let category = 'Uncategorized';
         
@@ -34,12 +33,11 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         
         return {...tx, category};
       }
-      
       return tx;
     });
   }, [transactions]);
   
-  // Filter transactions based on active tab
+  // Filter transactions based on active tab - only recompute when processed transactions or tab changes
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     
@@ -63,70 +61,63 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     });
   }, [activeTab, processedTransactions]);
   
-  // Calculate summary data
+  // Calculate all summary data in a single memoized computation to avoid recalculations
   const summaryData = useMemo(() => {
-    const totalExpenses = filteredTransactions.reduce(
-      (sum, tx) => sum + (tx.currency === 'USD' ? tx.amount : tx.paymentAmount), 
-      0
-    );
+    // Initialize summary data object
+    const expensesByPaymentMethod: Record<string, number> = {};
+    const expensesByCategory: Record<string, number> = {};
     
+    // Single pass through filtered transactions to calculate all metrics
+    let totalExpenses = 0;
+    
+    filteredTransactions.forEach(tx => {
+      // Calculate total expenses
+      const txAmount = tx.currency === 'USD' ? tx.amount : tx.paymentAmount;
+      totalExpenses += txAmount;
+      
+      // Expenses by payment method
+      const methodName = tx.paymentMethod.name;
+      expensesByPaymentMethod[methodName] = (expensesByPaymentMethod[methodName] || 0) + txAmount;
+      
+      // Expenses by category
+      let category = tx.category;
+      if (!category || category === 'Uncategorized') {
+        if (tx.merchant.mcc?.code) {
+          category = getCategoryFromMCC(tx.merchant.mcc.code);
+        } else {
+          category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
+        }
+      }
+      expensesByCategory[category] = (expensesByCategory[category] || 0) + txAmount;
+    });
+    
+    // Derived calculations
+    const transactionCount = filteredTransactions.length;
+    const averageAmount = transactionCount ? totalExpenses / transactionCount : 0;
     const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
     
-    const transactionCount = filteredTransactions.length;
-    
-    const averageAmount = transactionCount ? totalExpenses / transactionCount : 0;
-    
-    const expensesByPaymentMethod = filteredTransactions.reduce<Record<string, number>>(
-      (acc, tx) => {
-        const methodName = tx.paymentMethod.name;
-        if (!acc[methodName]) {
-          acc[methodName] = 0;
-        }
-        acc[methodName] += tx.currency === 'USD' ? tx.amount : tx.paymentAmount;
-        return acc;
-      }, {}
-    );
-    
-    const expensesByCategory = filteredTransactions.reduce<Record<string, number>>(
-      (acc, tx) => {
-        // Get category name, preferring the stored category but falling back to MCC or merchant name
-        let category = tx.category;
-        if (!category || category === 'Uncategorized') {
-          if (tx.merchant.mcc?.code) {
-            category = getCategoryFromMCC(tx.merchant.mcc.code);
-          } else {
-            category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
-          }
-        }
-        
-        if (!acc[category]) {
-          acc[category] = 0;
-        }
-        acc[category] += tx.currency === 'USD' ? tx.amount : tx.paymentAmount;
-        return acc;
-      }, {}
-    );
-    
+    // Prepare chart data
     const paymentMethodChartData = Object.entries(expensesByPaymentMethod)
-      .map(([name, amount], index) => ({
+      .map(([name, value], index) => ({
         name,
-        value: amount,
+        value,
         color: COLORS[index % COLORS.length]
       }))
       .sort((a, b) => b.value - a.value);
     
     const categoryChartData = Object.entries(expensesByCategory)
-      .map(([name, amount], index) => ({
+      .map(([name, value], index) => ({
         name,
-        value: amount,
+        value,
         color: COLORS[index % COLORS.length]
       }))
       .sort((a, b) => b.value - a.value);
     
+    // Top payment method
     const topPaymentMethod = paymentMethodChartData.length > 0 
       ? { name: paymentMethodChartData[0].name, value: paymentMethodChartData[0].value } 
       : undefined;
-      
+    
     return {
       totalExpenses,
       totalRewardPoints,
@@ -151,55 +142,12 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
           </TabsList>
         </div>
         
-        <TabsContent value="thisMonth" className="mt-4 space-y-6">
-          <SummaryCardGrid
-            filteredTransactions={filteredTransactions}
-            totalExpenses={summaryData.totalExpenses}
-            transactionCount={summaryData.transactionCount}
-            averageAmount={summaryData.averageAmount}
-            topPaymentMethod={summaryData.topPaymentMethod}
-            totalRewardPoints={summaryData.totalRewardPoints}
-          />
-          
-          <SummaryCharts
-            paymentMethodChartData={summaryData.paymentMethodChartData}
-            categoryChartData={summaryData.categoryChartData}
-          />
-        </TabsContent>
-        
-        <TabsContent value="lastMonth" className="mt-4 space-y-6">
-          <SummaryCardGrid
-            filteredTransactions={filteredTransactions}
-            totalExpenses={summaryData.totalExpenses}
-            transactionCount={summaryData.transactionCount}
-            averageAmount={summaryData.averageAmount}
-            topPaymentMethod={summaryData.topPaymentMethod}
-            totalRewardPoints={summaryData.totalRewardPoints}
-          />
-          
-          <SummaryCharts
-            paymentMethodChartData={summaryData.paymentMethodChartData}
-            categoryChartData={summaryData.categoryChartData}
-          />
-        </TabsContent>
-        
-        <TabsContent value="lastThreeMonths" className="mt-4 space-y-6">
-          <SummaryCardGrid
-            filteredTransactions={filteredTransactions}
-            totalExpenses={summaryData.totalExpenses}
-            transactionCount={summaryData.transactionCount}
-            averageAmount={summaryData.averageAmount}
-            topPaymentMethod={summaryData.topPaymentMethod}
-            totalRewardPoints={summaryData.totalRewardPoints}
-          />
-          
-          <SummaryCharts
-            paymentMethodChartData={summaryData.paymentMethodChartData}
-            categoryChartData={summaryData.categoryChartData}
-          />
-        </TabsContent>
-        
-        <TabsContent value="thisYear" className="mt-4 space-y-6">
+        {/* Single TabsContent implementation shared by all tabs */}
+        <TabsContent 
+          value={activeTab} 
+          className="mt-4 space-y-6"
+          forceMount={false}
+        >
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
             totalExpenses={summaryData.totalExpenses}

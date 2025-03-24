@@ -61,33 +61,29 @@ export const useTransactionList = () => {
     loadTransactions();
     
     // Only set up the Supabase channel if we're not defaulting to local storage
-    if (!USE_LOCAL_STORAGE_DEFAULT) {
-      const channel = supabase
-        .channel('public:transactions')
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'transactions'
-        }, async () => {
-          loadTransactions();
-        })
-        .subscribe();
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    const channel = supabase
+      .channel('public:transactions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'transactions'
+      }, async () => {
+        loadTransactions();
+      })
+      .subscribe();
     
-    // For local storage, set up a polling mechanism
+    // For all storage types, set up a polling mechanism for changes
     const checkInterval = setInterval(() => {
       loadTransactions();
     }, 3000); // Check every 3 seconds
     
     return () => {
+      supabase.removeChannel(channel);
       clearInterval(checkInterval);
     };
   }, [loadTransactions]);
   
+  // Apply filters and sort (memoized with dependencies)
   useEffect(() => {
     let filtered = [...transactions];
     

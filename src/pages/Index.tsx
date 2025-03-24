@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, ArrowUpRightIcon } from 'lucide-react';
@@ -17,31 +17,31 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
+  // Define loadData outside useEffect for reuse
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      await initializeStorage();
+      
+      const loadedTransactions = await getTransactions();
+      const loadedPaymentMethods = await getPaymentMethods();
+      
+      console.log(`Loaded ${loadedTransactions.length} transactions`);
+      setTransactions(loadedTransactions);
+      setPaymentMethods(loadedPaymentMethods);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: 'Error loading data',
+        description: 'There was a problem loading your expense data',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+  
   useEffect(() => {
-    // Initialize storage with defaults if needed and load data
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        await initializeStorage();
-        
-        const loadedTransactions = await getTransactions();
-        const loadedPaymentMethods = await getPaymentMethods();
-        
-        console.log(`Loaded ${loadedTransactions.length} transactions`);
-        setTransactions(loadedTransactions);
-        setPaymentMethods(loadedPaymentMethods);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast({
-          title: 'Error loading data',
-          description: 'There was a problem loading your expense data',
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadData();
     
     // Set up real-time subscription for transactions
@@ -63,10 +63,16 @@ const Index = () => {
       })
       .subscribe();
     
+    // Set interval for periodic refresh (helpful for local storage updates)
+    const refreshInterval = setInterval(() => {
+      loadData();
+    }, 5000);
+    
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(refreshInterval);
     };
-  }, [toast]);
+  }, [loadData, toast]);
   
   // Get recent transactions (last 7 days)
   const recentTransactions = transactions
