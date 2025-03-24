@@ -13,7 +13,8 @@ interface UseExpenseFormProps {
   defaultValues?: Partial<FormValues>;
 }
 
-export { FormValues } from './expense-form/formSchema';
+// Change regular export to type export
+export type { FormValues } from './expense-form/formSchema';
 
 export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseFormProps) => {
   const { toast } = useToast();
