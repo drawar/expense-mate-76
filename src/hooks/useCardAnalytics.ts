@@ -19,7 +19,6 @@ export const useCardAnalytics = (selectedPaymentMethod: PaymentMethod | undefine
     const loadTransactions = async () => {
       try {
         const allTransactions = await getTransactions();
-        console.log('Loaded transactions:', allTransactions.length);
         setTransactions(allTransactions);
       } catch (error) {
         console.error('Error loading transactions:', error);
@@ -57,7 +56,8 @@ export const useCardAnalytics = (selectedPaymentMethod: PaymentMethod | undefine
     
     // Calculate bonus points used for UOB Preferred Platinum and Citibank Rewards
     if (((selectedPaymentMethod?.issuer === 'UOB' && selectedPaymentMethod?.name === 'Preferred Visa Platinum') ||
-        (selectedPaymentMethod?.issuer === 'Citibank' && selectedPaymentMethod?.name === 'Rewards Visa Signature')) &&
+        (selectedPaymentMethod?.issuer === 'Citibank' && selectedPaymentMethod?.name === 'Rewards Visa Signature') ||
+        (selectedPaymentMethod?.issuer === 'American Express')) && 
         transactions.length > 0) {
       
       const currentDate = new Date();
@@ -72,8 +72,20 @@ export const useCardAnalytics = (selectedPaymentMethod: PaymentMethod | undefine
       
       currentMonthTransactions.forEach(tx => {
         if (tx.rewardPoints > 0) {
-          const multiplier = selectedPaymentMethod.issuer === 'UOB' ? 5 : 1;
-          const baseMultiplier = selectedPaymentMethod.issuer === 'UOB' ? 0.4 : 0.4;
+          // Different multipliers based on card type
+          let multiplier = 1;
+          let baseMultiplier = 0.4;
+          
+          if (selectedPaymentMethod.issuer === 'UOB') {
+            multiplier = 5;
+            baseMultiplier = 0.4;
+          } else if (selectedPaymentMethod.issuer === 'Citibank') {
+            multiplier = 1;
+            baseMultiplier = 0.4;
+          } else if (selectedPaymentMethod.issuer === 'American Express') {
+            multiplier = 1;
+            baseMultiplier = 1.25; // $1.60 = 2 points => 2/1.6 = 1.25 points per dollar
+          }
           
           const txAmount = Math.floor(tx.amount / multiplier) * multiplier;
           const basePoints = Math.round(txAmount * baseMultiplier);
@@ -82,8 +94,15 @@ export const useCardAnalytics = (selectedPaymentMethod: PaymentMethod | undefine
         }
       });
       
-      setUsedBonusPoints(Math.min(totalMonthBonusPoints, 4000));
-      console.log(`Used bonus points for ${selectedPaymentMethod.name}: ${Math.min(totalMonthBonusPoints, 4000)}`);
+      // Apply cap (if applicable)
+      let cap = 4000; // Default cap for UOB and Citibank
+      
+      // American Express cards have no cap
+      if (selectedPaymentMethod.issuer === 'American Express') {
+        cap = Number.MAX_SAFE_INTEGER;
+      }
+      
+      setUsedBonusPoints(Math.min(totalMonthBonusPoints, cap));
     }
   }, [selectedPaymentMethod, transactions]);
 

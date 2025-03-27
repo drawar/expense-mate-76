@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { UOBPlatinumCard } from './cards/UOBPlatinumCard';
-import { UOBSignatureCard } from './cards/UOBSignatureCard';
-import { CitibankRewardsCard } from './cards/CitibankRewardsCard';
+import { UOBPlatinumCardWrapper } from './cards/UOBPlatinumCardRefactored';
+import { UOBSignatureCardWrapper } from './cards/UOBSignatureCardRefactored';
+import { CitibankRewardsCardWrapper } from './cards/CitibankRewardsCardRefactored';
+import { AmexPlatinumCreditCard, AmexPlatinumSGCard } from './cards/AmexPlatinumSGD';
 import { GenericPointsCard } from './cards/GenericPointsCard';
 import { PaymentMethod } from '@/types';
 
@@ -46,7 +47,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'UOB' && 
       selectedPaymentMethod?.name === 'Preferred Visa Platinum') {
     return (
-      <UOBPlatinumCard 
+      <UOBPlatinumCardWrapper 
         amount={amount}
         mcc={mcc}
         isOnline={isOnline}
@@ -60,7 +61,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'UOB' && 
       selectedPaymentMethod?.name === 'Visa Signature') {
     return (
-      <UOBSignatureCard 
+      <UOBSignatureCardWrapper 
         amount={amount}
         currency={currency}
         nonSgdSpendTotal={nonSgdSpendTotal}
@@ -73,11 +74,35 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'Citibank' && 
       selectedPaymentMethod?.name === 'Rewards Visa Signature') {
     return (
-      <CitibankRewardsCard 
+      <CitibankRewardsCardWrapper 
         amount={amount}
         mcc={mcc}
         isOnline={isOnline}
         usedBonusPoints={usedBonusPoints}
+      />
+    );
+  }
+  
+  // American Express Platinum Credit Card
+  if (selectedPaymentMethod?.issuer === 'American Express' && 
+      selectedPaymentMethod?.name === 'Platinum Credit') {
+    return (
+      <AmexPlatinumCreditCard 
+        amount={amount}
+        usedBonusPoints={usedBonusPoints || 0}
+        pointsCurrency="MR (Credit Card)"
+      />
+    );
+  }
+  
+  // American Express Platinum Singapore
+  if (selectedPaymentMethod?.issuer === 'American Express' && 
+      selectedPaymentMethod?.name === 'Platinum Singapore') {
+    return (
+      <AmexPlatinumSGCard 
+        amount={amount}
+        usedBonusPoints={usedBonusPoints || 0}
+        pointsCurrency="MR (Charge Card)"
       />
     );
   }
