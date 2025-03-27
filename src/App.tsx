@@ -33,8 +33,8 @@ function App() {
           />
           <main 
             className={`transition-all duration-300 ${
-              isMobile && !sidebarVisible
-                ? 'ml-0' // No margin on mobile when sidebar is hidden
+              isMobile 
+                ? 'ml-0 pt-16' // No left margin but add top padding for horizontal navbar on mobile
                 : (sidebarExpanded ? 'ml-48' : 'ml-20')
             }`}
             onClick={() => {
@@ -44,7 +44,7 @@ function App() {
             }}
           >
             <div 
-              className={`mx-auto p-6 pt-8 ${isMobile && !sidebarVisible ? 'px-5 max-w-full' : 'container px-6'}`}
+              className={`mx-auto p-6 ${isMobile ? 'px-5 max-w-full pt-4' : 'container px-6 pt-8'}`}
               onClick={() => {
                 if (isMobile && sidebarVisible) {
                   setSidebarVisible(false);
