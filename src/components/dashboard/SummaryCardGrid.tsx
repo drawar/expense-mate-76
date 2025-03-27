@@ -1,95 +1,21 @@
 
-import { Transaction, PaymentMethod, Currency } from '@/types';
-import { formatCurrency } from '@/utils/currencyFormatter';
-import { CreditCardIcon, TrendingUpIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
+import React from 'react';
+import SpendingByCategoryCard from './PieChartCard';
 import SummaryCard from './SummaryCard';
-import PaymentCardDisplay from '../expense/PaymentCardDisplay';
+import PointsSummaryCard from './PointsSummaryCard';
 
-interface SummaryCardGridProps {
-  filteredTransactions: Transaction[];
-  totalExpenses: number;
-  transactionCount: number;
-  averageAmount: number;
-  topPaymentMethod: { name: string; value: number } | undefined;
-  totalRewardPoints: number;
-  displayCurrency: Currency;
-}
-
-const SummaryCardGrid = ({
-  filteredTransactions,
-  totalExpenses,
-  transactionCount,
-  averageAmount,
-  topPaymentMethod,
-  totalRewardPoints,
-  displayCurrency,
-}: SummaryCardGridProps) => {
-  // Find the payment method object that matches the top payment method
-  const findPaymentMethodByName = (name: string): PaymentMethod | undefined => {
-    if (!filteredTransactions.length) return undefined;
-    
-    return filteredTransactions.find(tx => 
-      tx.paymentMethod.name === name
-    )?.paymentMethod;
-  };
-
-  const topPaymentMethodObject = topPaymentMethod 
-    ? findPaymentMethodByName(topPaymentMethod.name) 
-    : undefined;
-
+const SummaryCardGrid: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Total Expenses Card */}
-      <SummaryCard
-        title="Total Expenses"
-        value={formatCurrency(totalExpenses, displayCurrency)}
-        description={`${transactionCount} transactions in ${displayCurrency}`}
-        icon={<CalendarIcon className="w-3.5 h-3.5" />}
-      />
-            
-      {/* Average Transaction Card */}
-      <SummaryCard
-        title="Average Transaction"
-        customContent={
-          <div className="text-3xl font-bold truncate">
-            {formatCurrency(averageAmount, displayCurrency)}
-          </div>
-        }
-        description={`Per transaction in ${displayCurrency}`}
-        icon={<TrendingUpIcon className="w-3.5 h-3.5 text-green-500" />}
-      />
-            
-      {/* Most Used Payment Card */}
-      <SummaryCard
-        title="Most Used Payment"
-        description={topPaymentMethod 
-          ? formatCurrency(topPaymentMethod.value, displayCurrency)
-          : 'No data'}
-        icon={<CreditCardIcon className="w-3.5 h-3.5 text-blue-500" />}
-        customContent={
-          topPaymentMethodObject && topPaymentMethodObject.type === 'credit_card' ? (
-            <div className="mt-1">
-              <PaymentCardDisplay 
-                paymentMethod={topPaymentMethodObject} 
-                customImage={topPaymentMethodObject.imageUrl}
-                size="small"
-              />
-            </div>
-          ) : (
-            <div className="text-3xl font-bold truncate">
-              {topPaymentMethod?.name || 'None'}
-            </div>
-          )
-        }
-      />
-            
-      {/* Total Reward Points Card */}
-      <SummaryCard
-        title="Total Reward Points"
-        value={totalRewardPoints.toLocaleString()}
-        description="Points earned"
-        icon={<CoinsIcon className="w-3.5 h-3.5 text-amber-500" />}
-      />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="col-span-1">
+        <SummaryCard />
+      </div>
+      <div className="col-span-1">
+        <SpendingByCategoryCard />
+      </div>
+      <div className="col-span-1 lg:col-span-2">
+        <PointsSummaryCard />
+      </div>
     </div>
   );
 };

@@ -1,12 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PaymentMethod } from '@/types';
-import { ToggleLeftIcon, ToggleRightIcon, EditIcon, ImageIcon } from 'lucide-react';
+import { ToggleLeftIcon, ToggleRightIcon, EditIcon, ImageIcon, ShieldIcon } from 'lucide-react';
 import { CreditCardIcon, BanknoteIcon, CalendarIcon, CoinsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import PaymentCardDisplay from '../expense/PaymentCardDisplay';
+import RewardRulesAdmin from './RewardRulesAdmin';
 
 interface PaymentMethodCardProps {
   method: PaymentMethod;
@@ -21,6 +28,8 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   onEdit,
   onImageUpload
 }) => {
+  const [isRulesDialogOpen, setIsRulesDialogOpen] = useState(false);
+  
   const icon = method.type === 'credit_card' ? 
     <CreditCardIcon className="h-5 w-5" style={{ color: method.color }} /> : 
     <BanknoteIcon className="h-5 w-5" style={{ color: method.color }} />;
@@ -129,6 +138,33 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
           </>
         )}
       </CardContent>
+      
+      {method.type === 'credit_card' && (
+        <CardFooter>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setIsRulesDialogOpen(true)}
+          >
+            <ShieldIcon className="h-4 w-4 mr-2" />
+            Manage Reward Rules
+          </Button>
+          
+          {/* Rules Dialog */}
+          <Dialog open={isRulesDialogOpen} onOpenChange={setIsRulesDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  Manage Reward Rules for {method.issuer} {method.name}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <RewardRulesAdmin paymentMethod={method} />
+            </DialogContent>
+          </Dialog>
+        </CardFooter>
+      )}
     </Card>
   );
 };

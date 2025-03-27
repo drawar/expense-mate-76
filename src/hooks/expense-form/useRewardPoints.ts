@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { PaymentMethod, MerchantCategoryCode, Currency } from '@/types';
 import { simulateRewardPoints } from '@/utils/rewards/rewardPoints';
+import { CardRegistry } from '@/components/expense/cards/CardRegistry';
 
 export const useRewardPoints = (
   selectedPaymentMethod: PaymentMethod | undefined,
@@ -18,6 +19,7 @@ export const useRewardPoints = (
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
     messageText?: string;
+    pointsCurrency?: string;
   }>(0);
   
   // Use refs to track previous values and avoid unnecessary calculations
@@ -70,7 +72,7 @@ export const useRewardPoints = (
     
     try {
       // Calculate points for all cards
-      const points = await simulateRewardPoints(
+      let points = await simulateRewardPoints(
         amount,
         currency,
         selectedPaymentMethod,
@@ -79,6 +81,21 @@ export const useRewardPoints = (
         isOnline,
         isContactless
       );
+      
+      // Add points currency if possible
+      if (typeof points !== 'number') {
+        const cardInfo = CardRegistry.findCard(
+          selectedPaymentMethod.issuer || '', 
+          selectedPaymentMethod.name
+        );
+        
+        if (cardInfo) {
+          points = {
+            ...points,
+            pointsCurrency: cardInfo.pointsCurrency
+          };
+        }
+      }
       
       setEstimatedPoints(points);
     } catch (error) {

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
 
 interface GenericPointsCardProps {
@@ -9,45 +10,67 @@ interface GenericPointsCardProps {
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
     messageText?: string;
+    pointsCurrency?: string;
   };
 }
 
 export const GenericPointsCard: React.FC<GenericPointsCardProps> = ({ pointsInfo }) => {
-  if (typeof pointsInfo === 'object' && pointsInfo.totalPoints > 0) {
+  if (typeof pointsInfo === 'number') {
+    if (pointsInfo <= 0) return null;
+    
     return (
-      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 flex items-center gap-2">
-        <CoinsIcon className="h-5 w-5 text-blue-500" />
-        <div>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-            Estimated Reward Points: {pointsInfo.totalPoints}
-          </p>
-          {pointsInfo.basePoints !== undefined && (
-            <p className="text-xs text-blue-500 dark:text-blue-300">
-              Base: {pointsInfo.basePoints}, 
-              Bonus: {pointsInfo.bonusPoints || 0}
-            </p>
-          )}
-          {pointsInfo.messageText && (
-            <p className="text-xs text-blue-500 dark:text-blue-300">{pointsInfo.messageText}</p>
-          )}
-        </div>
-      </div>
-    );
-  } else if (typeof pointsInfo === 'number' && pointsInfo > 0) {
-    return (
-      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 flex items-center gap-2">
-        <CoinsIcon className="h-5 w-5 text-blue-500" />
-        <div>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-            Estimated Reward Points: {pointsInfo}
-          </p>
-          <p className="text-xs text-blue-500 dark:text-blue-300">
-            Based on your selected payment method
-          </p>
-        </div>
-      </div>
+      <Card className="mt-2">
+        <CardContent className="pt-4">
+          <div className="text-sm">
+            <div className="flex items-center text-amber-600 dark:text-amber-400 mb-1">
+              <CoinsIcon className="h-4 w-4 mr-1.5" />
+              <span className="font-medium">Estimated Rewards</span>
+            </div>
+            <div className="text-lg font-bold flex items-baseline">
+              {pointsInfo.toLocaleString()} <span className="text-xs ml-1 text-gray-500">Points</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
   
-  return null;
+  const { 
+    totalPoints, 
+    basePoints, 
+    bonusPoints, 
+    messageText,
+    pointsCurrency = 'Points'
+  } = pointsInfo;
+  
+  if (totalPoints <= 0) return null;
+  
+  return (
+    <Card className="mt-2">
+      <CardContent className="pt-4">
+        <div className="text-sm">
+          <div className="flex items-center text-amber-600 dark:text-amber-400 mb-1">
+            <CoinsIcon className="h-4 w-4 mr-1.5" />
+            <span className="font-medium">Estimated Rewards</span>
+          </div>
+          
+          <div className="text-lg font-bold flex items-baseline">
+            {totalPoints.toLocaleString()} <span className="text-xs ml-1 text-gray-500">{pointsCurrency}</span>
+          </div>
+          
+          {basePoints !== undefined && bonusPoints !== undefined && (
+            <div className="text-xs text-gray-500 mt-1">
+              Base: {basePoints.toLocaleString()} + Bonus: {bonusPoints.toLocaleString()}
+            </div>
+          )}
+          
+          {messageText && (
+            <div className="text-xs text-gray-500 mt-1">
+              {messageText}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 };

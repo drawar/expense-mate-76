@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { BaseRewardCard, BaseRewardCardProps, MonthlyCap } from './BaseRewardCard';
 
 /**
- * Extended props interface for AmexPlatinumSGDCard
+ * Extended props interface for AmexPlatinumSGCard
  */
-export interface AmexPlatinumSGDCardProps extends BaseRewardCardProps {
+export interface AmexPlatinumSGCardProps extends BaseRewardCardProps {
   usedBonusPoints: number;
 }
 
 /**
- * American Express Platinum Credit Card & Platinum Card Singapore Implementation
+ * American Express Platinum Card (Singapore) Implementation
  * 
  * Card features:
  * - SGD denominated
@@ -18,15 +19,9 @@ export interface AmexPlatinumSGDCardProps extends BaseRewardCardProps {
  * - No monthly cap
  * - No bonus categories
  */
-export class AmexPlatinumSGDCard extends BaseRewardCard<AmexPlatinumSGDCardProps> {
-  // Define if this is a credit card or charge card version
-  private readonly isChargeCard: boolean;
-
-  constructor(props: AmexPlatinumSGDCardProps) {
+export class AmexPlatinumSGCard extends BaseRewardCard<AmexPlatinumSGCardProps> {
+  constructor(props: AmexPlatinumSGCardProps) {
     super(props);
-    // Determine which card type this instance represents 
-    // (set in the parent component when creating the card)
-    this.isChargeCard = props.pointsCurrency === 'MR (Charge Card)';
   }
 
   /**
@@ -80,11 +75,6 @@ export class AmexPlatinumSGDCard extends BaseRewardCard<AmexPlatinumSGDCardProps
     // No bonus points for this card
     const bonusPoints = 0;
     
-    // Determine type of MR points based on card type
-    const pointsCurrency = this.isChargeCard 
-      ? 'MR (Charge Card)' 
-      : 'MR (Credit Card)';
-    
     // For Amex, points are rounded to the nearest whole point
     const totalPoints = basePoints;
     
@@ -93,21 +83,14 @@ export class AmexPlatinumSGDCard extends BaseRewardCard<AmexPlatinumSGDCardProps
       bonusPoints,
       totalPoints,
       bonusPointMessage: ` ($${(amount / basePoints * 2 / 2).toFixed(2)} per point)`,
-      pointsCurrency
+      pointsCurrency: 'MR (Charge Card)'
     };
   }
 }
 
 /**
- * American Express Platinum Credit Card
+ * Component wrapper for the AmexPlatinumSGCard
  */
-export const AmexPlatinumCreditCard: React.FC<AmexPlatinumSGDCardProps> = (props) => {
-  return <AmexPlatinumSGDCard {...props} />;
-};
-
-/**
- * American Express Platinum Card (Singapore)
- */
-export const AmexPlatinumSGCard: React.FC<AmexPlatinumSGDCardProps> = (props) => {
-  return <AmexPlatinumSGDCard {...props} />;
+export const AmexPlatinumSGWrapper: React.FC<AmexPlatinumSGCardProps> = (props) => {
+  return <AmexPlatinumSGCard {...props} />;
 };

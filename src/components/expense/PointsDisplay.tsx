@@ -3,7 +3,8 @@ import React from 'react';
 import { UOBPlatinumCardWrapper } from './cards/UOBPlatinumCardRefactored';
 import { UOBSignatureCardWrapper } from './cards/UOBSignatureCardRefactored';
 import { CitibankRewardsCardWrapper } from './cards/CitibankRewardsCardRefactored';
-import { AmexPlatinumCreditCard, AmexPlatinumSGCard } from './cards/AmexPlatinumSGD';
+import { AmexPlatinumCreditWrapper } from './cards/AmexPlatinumCredit';
+import { AmexPlatinumSGWrapper } from './cards/AmexPlatinumSingapore';
 import { GenericPointsCard } from './cards/GenericPointsCard';
 import { PaymentMethod } from '@/types';
 
@@ -87,7 +88,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'American Express' && 
       selectedPaymentMethod?.name === 'Platinum Credit') {
     return (
-      <AmexPlatinumCreditCard 
+      <AmexPlatinumCreditWrapper 
         amount={amount}
         usedBonusPoints={usedBonusPoints || 0}
         pointsCurrency="MR (Credit Card)"
@@ -99,7 +100,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   if (selectedPaymentMethod?.issuer === 'American Express' && 
       selectedPaymentMethod?.name === 'Platinum Singapore') {
     return (
-      <AmexPlatinumSGCard 
+      <AmexPlatinumSGWrapper 
         amount={amount}
         usedBonusPoints={usedBonusPoints || 0}
         pointsCurrency="MR (Charge Card)"
