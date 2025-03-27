@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Transaction, Currency } from '@/types';
 import { SortOption } from '@/components/transaction/TransactionSortAndView';
 import { FilterOptions } from '@/components/transaction/TransactionFilters';
+import { getStatementPeriod } from '@/utils/dateUtils';
 
 const initialFilterOptions: FilterOptions = {
   merchantName: '',
@@ -16,6 +17,8 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(initialFilterOptions);
+  const [useStatementMonth, setUseStatementMonth] = useState(false);
+  const [statementCycleDay, setStatementCycleDay] = useState(15); // Default to 15th
 
   // Reset filters when transactions load
   useEffect(() => {
@@ -31,6 +34,7 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
   const resetFilters = () => {
     setFilterOptions(initialFilterOptions);
     setSearchQuery('');
+    setUseStatementMonth(false);
   };
 
   // Get active filters for displaying in UI
@@ -62,8 +66,25 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
       filters.push(`To: ${filterOptions.endDate}`);
     }
 
+    if (useStatementMonth) {
+      filters.push(`Statement Cycle: Day ${statementCycleDay}`);
+    }
+
     return filters;
-  }, [filterOptions, searchQuery, transactions]);
+  }, [filterOptions, searchQuery, transactions, useStatementMonth, statementCycleDay]);
+
+  // Calculate statement period dates
+  const statementPeriod = useMemo(() => {
+    if (!useStatementMonth) return null;
+    
+    // Create a pseudo payment method with statement settings
+    const pseudoMethod = {
+      statementStartDay: statementCycleDay,
+      isMonthlyStatement: true
+    };
+    
+    return getStatementPeriod(pseudoMethod as any);
+  }, [useStatementMonth, statementCycleDay]);
 
   // Apply filters and sort
   const filteredTransactions = useMemo(() => {
@@ -122,6 +143,17 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
       });
     }
     
+    // Apply statement cycle filter
+    if (useStatementMonth && statementPeriod) {
+      filtered = filtered.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate >= statementPeriod.start && txDate <= statementPeriod.end;
+      });
+      
+      console.log(`Statement period: ${statementPeriod.start.toISOString()} to ${statementPeriod.end.toISOString()}`);
+      console.log(`Filtered to ${filtered.length} transactions in statement period`);
+    }
+    
     // Apply sorting
     return [...filtered].sort((a, b) => {
       if (sortOption === 'date-desc') {
@@ -134,7 +166,7 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
         return a.amount - b.amount;
       }
     });
-  }, [isLoading, transactions, searchQuery, filterOptions, sortOption]);
+  }, [isLoading, transactions, searchQuery, filterOptions, sortOption, useStatementMonth, statementPeriod]);
 
   return {
     filteredTransactions,
@@ -145,6 +177,10 @@ export const useTransactionFilters = (transactions: Transaction[], isLoading: bo
     filterOptions,
     handleFilterChange,
     activeFilters,
-    resetFilters
+    resetFilters,
+    useStatementMonth,
+    setUseStatementMonth,
+    statementCycleDay,
+    setStatementCycleDay
   };
 };

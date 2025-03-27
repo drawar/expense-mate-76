@@ -7,6 +7,7 @@ import { calculateTotalRewardPoints } from '@/utils/rewards/rewardPoints';
 import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
+import StatementCycleFilter from './StatementCycleFilter';
 import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface SummaryProps {
@@ -52,6 +53,8 @@ const convertCurrency = (amount: number, fromCurrency: Currency, toCurrency: Cur
 const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('USD');
+  const [useStatementMonth, setUseStatementMonth] = useState(false);
+  const [statementCycleDay, setStatementCycleDay] = useState(15); // Default to 15th
   
   // Process transactions to ensure categories are set - only recompute when transactions change
   const processedTransactions = useMemo(() => {
@@ -71,10 +74,45 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     });
   }, [transactions]);
   
-  // Filter transactions based on active tab
+  // Filter transactions based on active tab and statement cycle if enabled
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     
+    // If statement cycle is enabled, apply statement cycle filter regardless of tab
+    if (useStatementMonth) {
+      // Calculate statement period
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      // Start date: statementCycleDay of previous month
+      let startMonth = currentMonth - 1;
+      let startYear = currentYear;
+      if (startMonth < 0) {
+        startMonth = 11; // December
+        startYear -= 1;
+      }
+      
+      const startDate = new Date(startYear, startMonth, statementCycleDay);
+      
+      // End date: day before statementCycleDay of current month
+      const endDate = new Date(currentYear, currentMonth, statementCycleDay - 1);
+      // If statementCycleDay is 1, set to end of previous month
+      if (statementCycleDay === 1) {
+        endDate.setDate(0); // Last day of previous month
+      }
+      
+      // Ensure end date is not in the future
+      const validEndDate = endDate > now ? now : endDate;
+      
+      console.log(`Statement period: ${startDate.toDateString()} to ${validEndDate.toDateString()}`);
+      
+      return processedTransactions.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate >= startDate && txDate <= validEndDate;
+      });
+    }
+    
+    // Regular tab-based filtering
     return processedTransactions.filter(tx => {
       const txDate = new Date(tx.date);
       
@@ -93,7 +131,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
           return true;
       }
     });
-  }, [activeTab, processedTransactions]);
+  }, [activeTab, processedTransactions, useStatementMonth, statementCycleDay]);
   
   // Calculate all summary data in a single pass, with currency conversion
   const summaryData = useMemo(() => {
@@ -184,6 +222,15 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
               <TabsTrigger value="thisYear">This Year</TabsTrigger>
             </TabsList>
           </div>
+        </div>
+        
+        <div className="mt-4 mb-6">
+          <StatementCycleFilter
+            useStatementMonth={useStatementMonth}
+            setUseStatementMonth={setUseStatementMonth}
+            statementCycleDay={statementCycleDay}
+            setStatementCycleDay={setStatementCycleDay}
+          />
         </div>
         
         {/* Single TabsContent implementation shared by all tabs */}
