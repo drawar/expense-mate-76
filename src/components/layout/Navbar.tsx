@@ -2,43 +2,74 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { HomeIcon, CoinsIcon, CreditCardIcon, PlusCircleIcon, FileTextIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
-
-// Simple mobile detection hook
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return { isMobile };
-};
+import { 
+  HomeIcon, 
+  CoinsIcon, 
+  CreditCardIcon, 
+  PlusCircleIcon, 
+  FileTextIcon,
+  Menu
+} from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const location = useLocation();
-  const { isMobile } = useIsMobile();
+  const isMobile = useIsMobile();
 
   const isActive = (path: string) => location.pathname === path;
 
-  const renderNavLink = (path: string, label: string, icon: React.ReactNode) => {
-    const variant = isActive(path) ? 'default' : 'ghost';
-    
-    return (
-      <Link to={path}>
-        <Button variant={variant} className="flex gap-2 items-center">
-          {icon}
-          {!isMobile && <span>{label}</span>}
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: <HomeIcon size={20} /> },
+    { path: '/transactions', label: 'Transactions', icon: <FileTextIcon size={20} /> },
+    { path: '/reward-points', label: 'Reward Points', icon: <CoinsIcon size={20} /> },
+    { path: '/payment-methods', label: 'Payment Methods', icon: <CreditCardIcon size={20} /> },
+  ];
+
+  const renderMobileMenu = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu size={24} />
+          <span className="sr-only">Menu</span>
         </Button>
-      </Link>
-    );
-  };
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56 bg-background border-border">
+        {navItems.map((item) => (
+          <DropdownMenuItem key={item.path} asChild>
+            <Link 
+              to={item.path} 
+              className={`flex items-center gap-2 w-full ${isActive(item.path) ? 'font-medium' : ''}`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const renderDesktopNav = () => (
+    <div className="hidden md:flex gap-1">
+      {navItems.map((item) => (
+        <Link key={item.path} to={item.path}>
+          <Button 
+            variant={isActive(item.path) ? "default" : "ghost"} 
+            className="flex gap-2 items-center"
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Button>
+        </Link>
+      ))}
+    </div>
+  );
 
   return (
     <nav className="p-4 border-b bg-background sticky top-0 z-10">
@@ -47,12 +78,8 @@ const Navbar = () => {
           <Link to="/" className="text-xl font-bold mr-4">
             Expense Tracker
           </Link>
-          <div className="flex gap-1">
-            {renderNavLink('/', 'Dashboard', <HomeIcon size={20} />)}
-            {renderNavLink('/transactions', 'Transactions', <FileTextIcon size={20} />)}
-            {renderNavLink('/reward-points', 'Reward Points', <CoinsIcon size={20} />)}
-            {renderNavLink('/payment-methods', 'Payment Methods', <CreditCardIcon size={20} />)}
-          </div>
+          {renderMobileMenu()}
+          {renderDesktopNav()}
         </div>
         
         <div className="flex items-center gap-2">
