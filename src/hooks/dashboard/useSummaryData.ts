@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Transaction, Currency, PaymentMethod } from '@/types';
 import { calculateTotalRewardPoints } from '@/utils/rewards/rewardPoints';
 import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
@@ -26,8 +26,16 @@ export const useSummaryData = (
   statementCycleDay: number
 ) => {
   // Process transactions to ensure categories are set
+  // Optimize: Cache processed transactions with category info
   const processedTransactions = useMemo(() => {
+    // No need to process if there are no transactions
+    if (transactions.length === 0) return [];
+    
     return transactions.map(tx => {
+      // Skip processing if category is already set
+      if (tx.category && tx.category !== 'Uncategorized') {
+        return tx;
+      }
       if (!tx.category || tx.category === 'Uncategorized') {
         let category = 'Uncategorized';
         
@@ -44,15 +52,28 @@ export const useSummaryData = (
   }, [transactions]);
   
   // Filter transactions based on active tab and statement cycle if enabled
-  const filteredTransactions = useMemo(() => {
+  // Optimize: Calculate and cache date ranges to avoid recalculating for each transaction
+  const dateRanges = useMemo(() => {
     const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
-    // If statement cycle is enabled, apply statement cycle filter regardless of tab
+    // Calculate all possible date ranges upfront
+    const thisMonthStart = new Date(currentYear, currentMonth, 1);
+    const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0); 
+    
+    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+    const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+    
+    const threeMonthsAgo = new Date(currentYear, currentMonth - 3, now.getDate());
+    
+    const thisYearStart = new Date(currentYear, 0, 1);
+    const thisYearEnd = new Date(currentYear, 11, 31);
+    
+    // Statement date range if enabled
+    let statementStart, statementEnd;
+    
     if (useStatementMonth) {
-      // Calculate statement period
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      
       // Start date: statementCycleDay of previous month
       let startMonth = currentMonth - 1;
       let startYear = currentYear;
@@ -61,23 +82,40 @@ export const useSummaryData = (
         startYear -= 1;
       }
       
-      const startDate = new Date(startYear, startMonth, statementCycleDay);
+      statementStart = new Date(startYear, startMonth, statementCycleDay);
       
       // End date: day before statementCycleDay of current month
-      const endDate = new Date(currentYear, currentMonth, statementCycleDay - 1);
+      statementEnd = new Date(currentYear, currentMonth, statementCycleDay - 1);
       // If statementCycleDay is 1, set to end of previous month
       if (statementCycleDay === 1) {
-        endDate.setDate(0); // Last day of previous month
+        statementEnd.setDate(0); // Last day of previous month
       }
       
       // Ensure end date is not in the future
-      const validEndDate = endDate > now ? now : endDate;
-      
-      console.log(`Statement period: ${startDate.toDateString()} to ${validEndDate.toDateString()}`);
-      
+      if (statementEnd > now) {
+        statementEnd = now;
+      }
+    }
+    
+    return {
+      thisMonth: { start: thisMonthStart, end: thisMonthEnd },
+      lastMonth: { start: lastMonthStart, end: lastMonthEnd },
+      threeMonthsAgo,
+      thisYear: { start: thisYearStart, end: thisYearEnd },
+      statement: useStatementMonth ? { start: statementStart, end: statementEnd } : null
+    };
+  }, [useStatementMonth, statementCycleDay]);
+
+  // Filter transactions based on active tab or statement cycle
+  const filteredTransactions = useMemo(() => {
+    // No need to filter if there are no transactions
+    if (processedTransactions.length === 0) return [];
+    
+    // If statement cycle is enabled, apply statement cycle filter regardless of tab
+    if (useStatementMonth && dateRanges.statement) {
       return processedTransactions.filter(tx => {
         const txDate = new Date(tx.date);
-        return txDate >= startDate && txDate <= validEndDate;
+        return txDate >= dateRanges.statement.start && txDate <= dateRanges.statement.end;
       });
     }
     
@@ -87,15 +125,13 @@ export const useSummaryData = (
       
       switch (activeTab) {
         case 'thisMonth': 
-          return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+          return txDate >= dateRanges.thisMonth.start && txDate <= dateRanges.thisMonth.end;
         case 'lastMonth':
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
-          return txDate.getMonth() === lastMonth.getMonth() && txDate.getFullYear() === lastMonth.getFullYear();
+          return txDate >= dateRanges.lastMonth.start && txDate <= dateRanges.lastMonth.end;
         case 'lastThreeMonths':
-          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3);
-          return txDate >= threeMonthsAgo;
+          return txDate >= dateRanges.threeMonthsAgo;
         case 'thisYear':
-          return txDate.getFullYear() === now.getFullYear();
+          return txDate >= dateRanges.thisYear.start && txDate <= dateRanges.thisYear.end;
         default:
           return true;
       }
@@ -103,7 +139,20 @@ export const useSummaryData = (
   }, [activeTab, processedTransactions, useStatementMonth, statementCycleDay]);
   
   // Calculate all summary data in a single pass, with currency conversion
+  // Optimize: Refactor to avoid unnecessary calculations
   const summaryData: SummaryData = useMemo(() => {
+    // Skip calculations if no transactions to process
+    if (filteredTransactions.length === 0) {
+      return {
+        totalExpenses: 0,
+        totalRewardPoints: 0,
+        transactionCount: 0,
+        averageAmount: 0,
+        paymentMethodChartData: [],
+        categoryChartData: [],
+        topPaymentMethod: undefined
+      };
+    }
     // Initialize counters and data structures
     const expensesByPaymentMethod = {};
     const expensesByCategory = {};

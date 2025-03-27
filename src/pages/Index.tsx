@@ -1,5 +1,5 @@
-
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
@@ -8,17 +8,24 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Transaction, PaymentMethod } from '@/types';
-import { getTransactions, getPaymentMethods, initializeStorage } from '@/utils/storageUtils';
+import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import TransactionCard from '@/components/expense/TransactionCard';
 import Summary from '@/components/dashboard/Summary';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+
+// Type for Supabase real-time payload
+interface RealtimePayload {
+  new?: { date?: string; [key: string]: any };
+  old?: { date?: string; [key: string]: any };
+}
 
 const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   // Use ref to prevent unnecessary reloads
   const initialized = useRef(false);
@@ -29,16 +36,23 @@ const Index = () => {
       if (!initialized.current) {
         setLoading(true);
         initialized.current = true;
-        // Always initialize storage to ensure all default methods are available
-        await initializeStorage();
       }
       
-      // Get fresh data
-      const loadedTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
+      // Get only recent transactions for homepage (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      // Get payment methods - these are typically few in number
       const loadedPaymentMethods = await getPaymentMethods();
       
-      console.log(`Loaded ${loadedTransactions.length} transactions`);
-      console.log('Transaction currencies:', [...new Set(loadedTransactions.map(tx => tx.currency))]);
+      // Get transactions and filter to recent ones client-side
+      const allTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
+      
+      // Filter to only recent transactions (last 30 days) to improve performance
+      const loadedTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate >= thirtyDaysAgo;
+      }).slice(0, 50); // Limit to 50 most recent transactions for homepage performance
       
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
@@ -55,17 +69,29 @@ const Index = () => {
   }, [toast]);
   
   useEffect(() => {
+    // Load data on component mount
     loadData();
     
-    // Set up real-time subscription for transactions
+    // Set up real-time subscription for transactions, but only reload recent data
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'transactions'
-      }, () => {
-        loadData();
+      }, (payload: RealtimePayload) => {
+        // Check if this is a recent transaction before triggering reload
+        const payloadDate = payload.new?.date || payload.old?.date;
+        if (payloadDate) {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const txDate = new Date(payloadDate);
+          
+          // Only reload if this is a recent transaction
+          if (txDate >= thirtyDaysAgo) {
+            loadData();
+          }
+        }
       })
       .subscribe();
     
@@ -74,13 +100,12 @@ const Index = () => {
     };
   }, [loadData]);
   
-  // Get recent transactions (last 7 days) - memoize this calculation
-  const recentTransactions = transactions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
-  
-  
-  console.log('Recent transactions currencies:', recentTransactions.map(tx => tx.currency));
+  // Get most recent 5 transactions for display - memoize this calculation
+  const recentTransactions = useMemo(() => {
+    return transactions
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [transactions]);
     
   return (
     <div className="min-h-screen">  
@@ -99,9 +124,9 @@ const Index = () => {
               <div className="flex items-center gap-3 mt-4 sm:mt-0">
                 <ThemeToggle />
                 <Link to="/add-expense">
-                  <Button className="gap-2 btn-hover-effect bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
+                  <Button className={`btn-hover-effect bg-gradient-to-r from-[#6366f1] to-[#a855f7] ${!isMobile ? 'gap-2' : 'w-10 h-10 p-0'}`}>
                     <PlusCircleIcon className="h-4 w-4" />
-                    Add Expense
+                    {!isMobile && <span>Add Expense</span>}
                   </Button>
                 </Link>
               </div>
@@ -134,9 +159,9 @@ const Index = () => {
                     <div className="glass-card p-8 text-center">
                       <p className="text-muted-foreground mb-4">No transactions recorded yet.</p>
                       <Link to="/add-expense">
-                        <Button className="btn-hover-effect bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
-                          <PlusCircleIcon className="mr-2 h-4 w-4" />
-                          Record Your First Expense
+                        <Button className={`btn-hover-effect bg-gradient-to-r from-[#6366f1] to-[#a855f7] ${!isMobile ? 'gap-2' : 'w-10 h-10 p-0'}`}>
+                          <PlusCircleIcon className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+                          {!isMobile && <span>Record Your First Expense</span>}
                         </Button>
                       </Link>
                     </div>
