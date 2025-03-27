@@ -8,40 +8,24 @@ import { supabase } from '@/integrations/supabase/client';
 export interface RuleConfiguration {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   cardType: string;
   enabled: boolean;
-  
-  // Base calculation settings
   rounding: 'floor' | 'ceiling' | 'nearest5' | 'nearest' | 'pointRounding';
   basePointRate: number;
   bonusPointRate: number;
   monthlyCap: number;
-  
-  // Eligibility settings
-  isOnlineOnly: boolean;
-  isContactlessOnly: boolean;
-  
-  // MCC settings
-  includedMCCs: string[];
-  excludedMCCs: string[];
-  
-  // Additional conditions
+  isOnlineOnly?: boolean;
+  isContactlessOnly?: boolean;
+  includedMCCs?: string[];
+  excludedMCCs?: string[];
   minSpend?: number;
   maxSpend?: number;
   currencyRestrictions?: string[];
-  
-  // New properties for advanced configurations
-  categoriesByMCC?: Record<string, string[]>;   // Maps categories to MCCs
-  maxCategoriesSelectable?: number;             // Number of categories that can be selected
-  tieredRates?: TieredRateConfig[];             // For multi-tiered reward rates
-  includedMerchantNames?: string[];             // For merchant name-based rules
-  monthlySpendCap?: number;                     // Cap on spend eligible for highest tier
-  monthlyCalculationType?: 'transaction' | 'aggregate'; // How monthly bonuses are calculated
-  pointRoundingType?: 'up' | 'down' | 'nearest'; // Point rounding rule
-  
-  // Custom rule parameters - for card-specific rules
-  customParams?: Record<string, any>;
+  categoriesByMCC?: Record<string, string[]>;
+  maxCategoriesSelectable?: number;
+  tieredRates?: TieredRateConfig[];
+  pointsCurrency?: string;
 }
 
 /**
@@ -55,46 +39,36 @@ export class CardRuleService {
    */
   async loadRules(): Promise<RuleConfiguration[]> {
     try {
-      // Attempt to load from Supabase
       const { data, error } = await supabase
         .from('card_rules')
         .select('*');
         
       if (error) {
-        console.error('Error loading rules from database:', error);
+        console.error('Error loading rules:', error);
         return this.loadSampleRules();
       }
       
-      if (!data || data.length === 0) {
-        console.log('No rules found in database, using sample rules');
-        return this.loadSampleRules();
-      }
+      const rules = data.map(rule => ({
+        id: rule.id,
+        name: rule.name,
+        description: rule.description || '',
+        cardType: rule.card_type,
+        enabled: rule.enabled,
+        rounding: rule.rounding,
+        basePointRate: rule.base_point_rate,
+        bonusPointRate: rule.bonus_point_rate,
+        monthlyCap: rule.monthly_cap,
+        isOnlineOnly: rule.is_online_only,
+        isContactlessOnly: rule.is_contactless_only,
+        includedMCCs: rule.included_mccs || [],
+        excludedMCCs: rule.excluded_mccs || [],
+        minSpend: rule.min_spend,
+        maxSpend: rule.max_spend,
+        currencyRestrictions: rule.currency_restrictions,
+        pointsCurrency: rule.custom_params?.pointsCurrency
+      }));
       
-      // Transform database data to RuleConfiguration objects
-      const rules = data.map(dbRule => ({
-        id: dbRule.id,
-        name: dbRule.name,
-        description: dbRule.description,
-        cardType: dbRule.card_type,
-        enabled: dbRule.enabled,
-        rounding: dbRule.rounding as any,
-        basePointRate: dbRule.base_point_rate,
-        bonusPointRate: dbRule.bonus_point_rate,
-        monthlyCap: dbRule.monthly_cap,
-        isOnlineOnly: dbRule.is_online_only,
-        isContactlessOnly: dbRule.is_contactless_only,
-        includedMCCs: dbRule.included_mccs || [],
-        excludedMCCs: dbRule.excluded_mccs || [],
-        minSpend: dbRule.min_spend,
-        maxSpend: dbRule.max_spend,
-        currencyRestrictions: dbRule.currency_restrictions,
-        customParams: dbRule.custom_params
-      })) as RuleConfiguration[];
-      
-      // Store rules in memory
-      rules.forEach(rule => {
-        this.rules.set(rule.id, rule);
-      });
+      rules.forEach(rule => this.rules.set(rule.id, rule));
       
       return rules;
     } catch (error) {
@@ -173,7 +147,6 @@ export class CardRuleService {
       }
     ];
     
-    // Store rules in memory
     sampleRules.forEach(rule => {
       this.rules.set(rule.id, rule);
     });
@@ -186,7 +159,6 @@ export class CardRuleService {
    */
   async saveRule(rule: RuleConfiguration): Promise<boolean> {
     try {
-      // Format rule for database
       const dbRule = {
         id: rule.id,
         name: rule.name,
@@ -207,25 +179,21 @@ export class CardRuleService {
         custom_params: rule.customParams
       };
       
-      // Save to Supabase
       const { error } = await supabase
         .from('card_rules')
         .upsert(dbRule);
         
       if (error) {
         console.error('Error saving rule to database:', error);
-        // Store in local cache even if database save fails
         this.rules.set(rule.id, rule);
         return false;
       }
       
-      // Update local cache
       this.rules.set(rule.id, rule);
       console.log(`Rule ${rule.id} saved successfully`);
       return true;
     } catch (error) {
       console.error('Error in saveRule:', error);
-      // Still update local cache
       this.rules.set(rule.id, rule);
       return false;
     }
@@ -238,19 +206,15 @@ export class CardRuleService {
   validateRule(rule: RuleConfiguration): string[] {
     const errors: string[] = [];
     
-    // Check required fields
     if (!rule.id) errors.push('Rule ID is required');
     if (!rule.name) errors.push('Rule name is required');
     if (!rule.cardType) errors.push('Card type is required');
     
-    // Validate point rates
     if (rule.basePointRate < 0) errors.push('Base point rate cannot be negative');
     if (rule.bonusPointRate < 0) errors.push('Bonus point rate cannot be negative');
     
-    // Validate cap
     if (rule.monthlyCap < 0) errors.push('Monthly cap cannot be negative');
     
-    // Check for conflicts in excluded and included MCCs
     const conflictingMCCs = rule.includedMCCs.filter(mcc => 
       rule.excludedMCCs.includes(mcc)
     );
@@ -259,7 +223,6 @@ export class CardRuleService {
       errors.push(`MCCs cannot be both included and excluded: ${conflictingMCCs.join(', ')}`);
     }
     
-    // Validate spend thresholds
     if (rule.minSpend !== undefined && rule.maxSpend !== undefined) {
       if (rule.minSpend > rule.maxSpend) {
         errors.push('Minimum spend cannot be greater than maximum spend');
@@ -274,7 +237,6 @@ export class CardRuleService {
    */
   async deleteRule(ruleId: string): Promise<boolean> {
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('card_rules')
         .delete()
@@ -285,7 +247,6 @@ export class CardRuleService {
         return false;
       }
       
-      // Remove from local cache
       const success = this.rules.delete(ruleId);
       return success;
     } catch (error) {
@@ -316,27 +277,22 @@ export class CardRuleService {
   convertToRewardRule(config: RuleConfiguration): RewardRule[] {
     const rules: RewardRule[] = [];
     
-    // Add online transaction rule if enabled
     if (config.isOnlineOnly) {
       rules.push(RewardRuleFactory.createOnlineTransactionRule());
     }
     
-    // Add contactless transaction rule if enabled
     if (config.isContactlessOnly) {
       rules.push(RewardRuleFactory.createContactlessTransactionRule());
     }
     
-    // Add MCC inclusion rule if MCCs are defined
     if (config.includedMCCs.length > 0) {
       rules.push(RewardRuleFactory.createMCCInclusionRule(config.includedMCCs));
     }
     
-    // Add MCC exclusion rule if MCCs are defined
     if (config.excludedMCCs.length > 0) {
       rules.push(RewardRuleFactory.createMCCExclusionRule(config.excludedMCCs));
     }
     
-    // Create a complete rule combining all conditions
     if (rules.length > 1) {
       return [RewardRuleFactory.createAnyRule(rules)];
     }
@@ -345,5 +301,4 @@ export class CardRuleService {
   }
 }
 
-// Export a singleton instance
 export const cardRuleService = new CardRuleService();

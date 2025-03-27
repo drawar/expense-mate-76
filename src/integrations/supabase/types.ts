@@ -48,6 +48,72 @@ export type Database = {
           },
         ]
       }
+      card_rules: {
+        Row: {
+          base_point_rate: number
+          bonus_point_rate: number
+          card_type: string
+          created_at: string | null
+          currency_restrictions: string[] | null
+          custom_params: Json | null
+          description: string | null
+          enabled: boolean
+          excluded_mccs: string[] | null
+          id: string
+          included_mccs: string[] | null
+          is_contactless_only: boolean
+          is_online_only: boolean
+          max_spend: number | null
+          min_spend: number | null
+          monthly_cap: number
+          name: string
+          rounding: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_point_rate?: number
+          bonus_point_rate?: number
+          card_type: string
+          created_at?: string | null
+          currency_restrictions?: string[] | null
+          custom_params?: Json | null
+          description?: string | null
+          enabled?: boolean
+          excluded_mccs?: string[] | null
+          id?: string
+          included_mccs?: string[] | null
+          is_contactless_only?: boolean
+          is_online_only?: boolean
+          max_spend?: number | null
+          min_spend?: number | null
+          monthly_cap?: number
+          name: string
+          rounding: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_point_rate?: number
+          bonus_point_rate?: number
+          card_type?: string
+          created_at?: string | null
+          currency_restrictions?: string[] | null
+          custom_params?: Json | null
+          description?: string | null
+          enabled?: boolean
+          excluded_mccs?: string[] | null
+          id?: string
+          included_mccs?: string[] | null
+          is_contactless_only?: boolean
+          is_online_only?: boolean
+          max_spend?: number | null
+          min_spend?: number | null
+          monthly_cap?: number
+          name?: string
+          rounding?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       merchant_category_mappings: {
         Row: {
           created_at: string | null
