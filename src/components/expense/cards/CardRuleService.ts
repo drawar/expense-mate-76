@@ -1,3 +1,4 @@
+
 import { RewardRule, RewardRuleFactory, TieredRateConfig } from './BaseRewardCard';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -66,8 +67,11 @@ export class CardRuleService {
         minSpend: rule.min_spend,
         maxSpend: rule.max_spend,
         currencyRestrictions: rule.currency_restrictions,
-        pointsCurrency: rule.custom_params?.pointsCurrency,
-        customParams: rule.custom_params || {}
+        // Safely extract pointsCurrency from custom_params
+        pointsCurrency: rule.custom_params && typeof rule.custom_params === 'object' 
+          ? (rule.custom_params as Record<string, any>).pointsCurrency 
+          : undefined,
+        customParams: rule.custom_params as Record<string, any> || {}
       } as RuleConfiguration));
       
       rules.forEach(rule => this.rules.set(rule.id, rule));
@@ -282,7 +286,7 @@ export class CardRuleService {
         max_spend: rule.maxSpend,
         currency_restrictions: rule.currencyRestrictions,
         custom_params: {
-          ...rule.customParams,
+          ...(rule.customParams || {}),
           pointsCurrency: rule.pointsCurrency
         }
       };
