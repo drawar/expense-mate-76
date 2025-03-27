@@ -15,7 +15,11 @@ interface PointsAggregate {
 const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ transactions }) => {
   const pointsByCurrency = useMemo(() => {
     return transactions.reduce<PointsAggregate>((acc, transaction) => {
-      const pointsCurrency = transaction.paymentMethod.rewardRules[0]?.pointsCurrency || 'Points';
+      // Get points currency from payment method or fall back to generic "Points"
+      const pointsCurrency = 
+        transaction.paymentMethod.rewardRules?.[0]?.pointsCurrency || 
+        transaction.paymentMethod.name + ' Points';
+      
       acc[pointsCurrency] = (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);
       return acc;
     }, {});
@@ -30,12 +34,18 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ tra
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {Object.entries(pointsByCurrency).map(([currency, points]) => (
-          <div key={currency} className="flex justify-between items-center mb-2">
-            <span>{currency}</span>
-            <span className="font-bold">{points.toLocaleString()}</span>
+        {Object.keys(pointsByCurrency).length > 0 ? (
+          Object.entries(pointsByCurrency).map(([currency, points]) => (
+            <div key={currency} className="flex justify-between items-center mb-2 p-2 border-b">
+              <span>{currency}</span>
+              <span className="font-bold">{points.toLocaleString()}</span>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-6 text-gray-500">
+            No reward points in this period
           </div>
-        ))}
+        )}
       </CardContent>
     </Card>
   );

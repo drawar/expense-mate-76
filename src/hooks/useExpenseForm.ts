@@ -7,6 +7,7 @@ import { FormValues, formSchema } from './expense-form/formSchema';
 import { useMerchantData } from './expense-form/useMerchantData';
 import { usePaymentMethodLogic } from './expense-form/usePaymentMethodLogic';
 import { useRewardPoints } from './expense-form/useRewardPoints';
+import { useState } from 'react';
 
 interface UseExpenseFormProps {
   paymentMethods: PaymentMethod[];
@@ -18,6 +19,13 @@ export type { FormValues } from './expense-form/formSchema';
 
 export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseFormProps) => {
   const { toast } = useToast();
+  const [estimatedPoints, setEstimatedPoints] = useState<number | {
+    totalPoints: number;
+    basePoints?: number;
+    bonusPoints?: number;
+    remainingMonthlyBonusPoints?: number;
+    pointsCurrency?: string;
+  }>(0);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,15 +59,35 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     isOnline
   );
   
-  const { estimatedPoints } = useRewardPoints(
-    selectedPaymentMethod,
-    amount,
-    currency,
-    selectedMCC,
-    merchantName,
-    isOnline,
-    isContactless
-  );
+  const { simulatePoints } = useRewardPoints();
+  
+  // Calculate estimated points when relevant fields change
+  const calculateEstimatedPoints = async () => {
+    if (selectedPaymentMethod && amount > 0) {
+      try {
+        const points = await simulatePoints(
+          amount,
+          currency,
+          selectedPaymentMethod,
+          selectedMCC?.code,
+          merchantName,
+          isOnline,
+          isContactless
+        );
+        setEstimatedPoints(points);
+      } catch (error) {
+        console.error('Error calculating reward points:', error);
+        setEstimatedPoints(0);
+      }
+    } else {
+      setEstimatedPoints(0);
+    }
+  };
+  
+  // Call the calculation function when dependencies change
+  React.useEffect(() => {
+    calculateEstimatedPoints();
+  }, [selectedPaymentMethod, amount, currency, selectedMCC, merchantName, isOnline, isContactless]);
 
   return {
     form,

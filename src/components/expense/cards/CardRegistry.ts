@@ -4,6 +4,10 @@ import { UOBSignatureCardWrapper } from './UOBSignatureCardRefactored';
 import { CitibankRewardsCardWrapper } from './CitibankRewardsCardRefactored';
 import { AmexPlatinumCreditWrapper } from './AmexPlatinumCredit';
 import { AmexPlatinumSGWrapper } from './AmexPlatinumSingapore';
+import { AmexPlatinumCanadaCardWrapper } from './AmexPlatinumCanada';
+import { AmexCobaltCardWrapper } from './AmexCobaltCard';
+import { TDAeroplanVisaInfiniteCardWrapper } from './TDAeroplanVisaInfinite';
+import { UOBLadysSolitaireCardWrapper } from './UOBLadysSolitaireCard';
 import { PaymentMethod } from '@/types';
 
 // Interface for card metadata
@@ -57,6 +61,38 @@ const cardsRegistry: CardMetadata[] = [
     pointsCurrency: 'MR (Charge Card)',
     component: AmexPlatinumSGWrapper,
     description: 'Earn 2 Membership Rewards points for every $1.60 spent.'
+  },
+  {
+    id: 'amex-platinum-canada',
+    issuer: 'American Express',
+    name: 'Platinum Canada',
+    pointsCurrency: 'MR',
+    component: AmexPlatinumCanadaCardWrapper,
+    description: 'Earn up to 3X MR points on travel and dining purchases.'
+  },
+  {
+    id: 'amex-cobalt',
+    issuer: 'American Express',
+    name: 'Cobalt',
+    pointsCurrency: 'MR',
+    component: AmexCobaltCardWrapper,
+    description: 'Earn 5X MR points on eats & drinks, 3X on streaming, 2X on travel, and 1X on all else.'
+  },
+  {
+    id: 'td-aeroplan-visa-infinite',
+    issuer: 'TD',
+    name: 'Aeroplan Visa Infinite',
+    pointsCurrency: 'Aeroplan',
+    component: TDAeroplanVisaInfiniteCardWrapper,
+    description: 'Earn 1.5X Aeroplan points on gas, grocery and Air Canada purchases.'
+  },
+  {
+    id: 'uob-ladys-solitaire',
+    issuer: 'UOB',
+    name: 'Lady\'s Solitaire',
+    pointsCurrency: 'UNI$',
+    component: UOBLadysSolitaireCardWrapper,
+    description: 'Earn 10X UNI$ on your two preferred categories, up to 7,200 bonus points per month.'
   }
 ];
 

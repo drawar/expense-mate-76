@@ -29,9 +29,13 @@ export const useRewardPoints = () => {
       rule.cardType === paymentMethod.name && rule.enabled
     );
 
+    // Get points currency from either card rules or payment method
+    const pointsCurrency = matchingRule?.pointsCurrency || 
+      (paymentMethod.issuer ? `${paymentMethod.issuer} Points` : 'Points');
+
     return {
       ...result,
-      pointsCurrency: matchingRule?.pointsCurrency || 'Points'
+      pointsCurrency
     };
   };
 

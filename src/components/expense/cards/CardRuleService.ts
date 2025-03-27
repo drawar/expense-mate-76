@@ -26,6 +26,7 @@ export interface RuleConfiguration {
   maxCategoriesSelectable?: number;
   tieredRates?: TieredRateConfig[];
   pointsCurrency?: string;
+  customParams?: Record<string, any>;
 }
 
 /**
@@ -54,9 +55,9 @@ export class CardRuleService {
         description: rule.description || '',
         cardType: rule.card_type,
         enabled: rule.enabled,
-        rounding: rule.rounding,
+        rounding: rule.rounding as 'floor' | 'ceiling' | 'nearest5' | 'nearest' | 'pointRounding',
         basePointRate: rule.base_point_rate,
-        bonusPointRate: rule.bonus_point_rate,
+        bonusPointRate: rule.bonusPointRate,
         monthlyCap: rule.monthly_cap,
         isOnlineOnly: rule.is_online_only,
         isContactlessOnly: rule.is_contactless_only,
@@ -65,8 +66,9 @@ export class CardRuleService {
         minSpend: rule.min_spend,
         maxSpend: rule.max_spend,
         currencyRestrictions: rule.currency_restrictions,
-        pointsCurrency: rule.custom_params?.pointsCurrency
-      }));
+        pointsCurrency: rule.custom_params?.pointsCurrency,
+        customParams: rule.custom_params || {}
+      } as RuleConfiguration));
       
       rules.forEach(rule => this.rules.set(rule.id, rule));
       
@@ -100,7 +102,8 @@ export class CardRuleService {
           ...Array.from({ length: 1000 }, (_, i) => `${3000 + i}`),
           // Other exclusions
           '4511', '7512', '7011', '4111', '4112', '4789', '4411', '4722', '4723', '5962', '7012'
-        ]
+        ],
+        pointsCurrency: 'ThankYou Points'
       },
       {
         id: 'uob-platinum-default',
@@ -123,7 +126,8 @@ export class CardRuleService {
           '5333', '5411', '5441', '5462', '5499', '8012', '9751', '7278',
           '7832', '7841', '7922', '7991', '7996', '7998', '7999'
         ],
-        excludedMCCs: []
+        excludedMCCs: [],
+        pointsCurrency: 'UNI$'
       },
       {
         id: 'uob-signature-default',
@@ -140,9 +144,110 @@ export class CardRuleService {
         includedMCCs: [],
         excludedMCCs: [],
         currencyRestrictions: ['!SGD'], // All currencies except SGD
+        pointsCurrency: 'UNI$',
         customParams: {
           minForeignSpend: 1000,
           sgdTransactionsAllowed: false
+        }
+      },
+      {
+        id: 'amex-platinum-sg-default',
+        name: 'Amex Platinum Singapore Default Rule',
+        description: 'Default rule for Amex Platinum Singapore card',
+        cardType: 'AmexPlatinumSingapore',
+        enabled: true,
+        rounding: 'nearest',
+        basePointRate: 1.25,
+        bonusPointRate: 0,
+        monthlyCap: 0,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: [],
+        excludedMCCs: [],
+        pointsCurrency: 'MR (Charge Card)'
+      },
+      {
+        id: 'amex-platinum-credit-default',
+        name: 'Amex Platinum Credit Default Rule',
+        description: 'Default rule for Amex Platinum Credit card',
+        cardType: 'AmexPlatinumCredit',
+        enabled: true,
+        rounding: 'nearest',
+        basePointRate: 1.25,
+        bonusPointRate: 0,
+        monthlyCap: 0,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: [],
+        excludedMCCs: [],
+        pointsCurrency: 'MR (Credit Card)'
+      },
+      {
+        id: 'amex-platinum-canada-default',
+        name: 'Amex Platinum Canada Default Rule',
+        description: 'Default rule for Amex Platinum Canada card',
+        cardType: 'AmexPlatinumCanada',
+        enabled: true,
+        rounding: 'nearest',
+        basePointRate: 1,
+        bonusPointRate: 0,
+        monthlyCap: 0,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: [],
+        excludedMCCs: [],
+        pointsCurrency: 'MR'
+      },
+      {
+        id: 'amex-cobalt-default',
+        name: 'Amex Cobalt Default Rule',
+        description: 'Default rule for Amex Cobalt card',
+        cardType: 'AmexCobalt',
+        enabled: true,
+        rounding: 'nearest',
+        basePointRate: 1,
+        bonusPointRate: 0,
+        monthlyCap: 0,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: [],
+        excludedMCCs: [],
+        pointsCurrency: 'MR'
+      },
+      {
+        id: 'td-aeroplan-visa-infinite-default',
+        name: 'TD Aeroplan Visa Infinite Default Rule',
+        description: 'Default rule for TD Aeroplan Visa Infinite card',
+        cardType: 'TDAeroplanVisaInfinite',
+        enabled: true,
+        rounding: 'nearest',
+        basePointRate: 1,
+        bonusPointRate: 0.5,
+        monthlyCap: 0,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: ['5541', '5542', '5411', '5422', '5441', '5451', '5462'],
+        excludedMCCs: [],
+        pointsCurrency: 'Aeroplan'
+      },
+      {
+        id: 'uob-ladys-solitaire-default',
+        name: 'UOB Lady\'s Solitaire Default Rule',
+        description: 'Default rule for UOB Lady\'s Solitaire card',
+        cardType: 'UOBLadysSolitaire',
+        enabled: true,
+        rounding: 'nearest5',
+        basePointRate: 0.4,
+        bonusPointRate: 3.6,
+        monthlyCap: 7200,
+        isOnlineOnly: false,
+        isContactlessOnly: false,
+        includedMCCs: [],
+        excludedMCCs: [],
+        pointsCurrency: 'UNI$',
+        customParams: {
+          categorySelection: true,
+          maxCategories: 2
         }
       }
     ];
@@ -176,7 +281,10 @@ export class CardRuleService {
         min_spend: rule.minSpend,
         max_spend: rule.maxSpend,
         currency_restrictions: rule.currencyRestrictions,
-        custom_params: rule.customParams
+        custom_params: {
+          ...rule.customParams,
+          pointsCurrency: rule.pointsCurrency
+        }
       };
       
       const { error } = await supabase

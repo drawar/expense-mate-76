@@ -1,92 +1,54 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, CreditCard, Receipt, Menu, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
-import { useTheme } from '@/components/theme/theme-provider';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { HomeIcon, CoinsIcon, CreditCardIcon, PlusCircleIcon, FileTextIcon } from 'lucide-react';
+import { useMobile } from '@/hooks/use-mobile';
 
 const Navbar = () => {
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { theme } = useTheme();
-  const isMobile = useIsMobile();
-
-  const links = [
-    { to: '/', icon: <Home size={20} />, label: 'Dashboard' },
-    { to: '/add-expense', icon: <Plus size={20} />, label: 'Add Expense' },
-    { to: '/payment-methods', icon: <CreditCard size={20} />, label: 'Payment Methods' },
-    { to: '/transactions', icon: <Receipt size={20} />, label: 'Transactions' },
-  ];
-
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const { isMobile } = useMobile();
 
   const isActive = (path: string) => location.pathname === path;
 
-  return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border transition-all duration-300 shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 py-3 md:py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <span className="text-lg md:text-xl font-bold text-gradient">CreditPoints</span>
-        </Link>
+  const renderNavLink = (path: string, label: string, icon: React.ReactNode) => {
+    const variant = isActive(path) ? 'default' : 'ghost';
+    
+    return (
+      <Link to={path}>
+        <Button variant={variant} className="flex gap-2 items-center">
+          {icon}
+          {!isMobile && <span>{label}</span>}
+        </Button>
+      </Link>
+    );
+  };
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-1">
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`flex items-center px-3 py-2 rounded-full transition-colors ${
-                isActive(link.to)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-            >
-              {link.icon}
-              <span className="ml-2">{link.label}</span>
-            </Link>
-          ))}
-          <div className="ml-2">
-            <ThemeToggle />
+  return (
+    <nav className="p-4 border-b bg-background sticky top-0 z-10">
+      <div className="container mx-auto flex justify-between items-center">
+        <div className="flex-1 flex items-center gap-2">
+          <Link to="/" className="text-xl font-bold mr-4">
+            Expense Tracker
+          </Link>
+          <div className="flex gap-1">
+            {renderNavLink('/', 'Dashboard', <HomeIcon size={20} />)}
+            {renderNavLink('/transactions', 'Transactions', <FileTextIcon size={20} />)}
+            {renderNavLink('/reward-points', 'Reward Points', <CoinsIcon size={20} />)}
+            {renderNavLink('/payment-methods', 'Payment Methods', <CreditCardIcon size={20} />)}
           </div>
         </div>
-
-        {/* Mobile Navigation with Dropdown */}
-        <div className="flex items-center space-x-2 md:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 p-0 rounded-full">
-                <Menu size={20} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] bg-background border-border">
-              {links.map((link) => (
-                <DropdownMenuItem key={link.to} asChild>
-                  <Link 
-                    to={link.to} 
-                    className={`w-full flex items-center ${
-                      isActive(link.to) ? 'bg-accent/50' : ''
-                    }`}
-                  >
-                    {link.icon}
-                    <span className="ml-2">{link.label}</span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        
+        <div className="flex items-center gap-2">
+          <Link to="/add-expense">
+            <Button className="flex gap-2 items-center">
+              <PlusCircleIcon size={20} />
+              {!isMobile && <span>Add Expense</span>}
+            </Button>
+          </Link>
           <ThemeToggle />
         </div>
       </div>
-
-      {/* Remove old Mobile Menu */}
     </nav>
   );
 };

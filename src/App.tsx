@@ -1,52 +1,35 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme/theme-provider";
-import { useEffect } from "react";
-import Index from "./pages/Index";
-import AddExpense from "./pages/AddExpense";
-import PaymentMethods from "./pages/PaymentMethods";
-import Transactions from "./pages/Transactions";
-import NotFound from "./pages/NotFound";
-import { initializeStorage } from "./utils/storageUtils";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@/components/theme/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
+import Navbar from '@/components/layout/Navbar';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+import Index from '@/pages/Index';
+import Transactions from '@/pages/Transactions';
+import AddExpense from '@/pages/AddExpense';
+import PaymentMethods from '@/pages/PaymentMethods';
+import RewardPoints from '@/pages/RewardPoints';
+import NotFound from '@/pages/NotFound';
 
-const App = () => {
-  // Initialize default data
-  useEffect(() => {
-    initializeStorage();
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="ui-theme">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/add-expense" element={<AddExpense />} />
-              <Route path="/payment-methods" element={<PaymentMethods />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Router>
+        <Navbar />
+        <main className="min-h-screen bg-background">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/add-expense" element={<AddExpense />} />
+            <Route path="/payment-methods" element={<PaymentMethods />} />
+            <Route path="/reward-points" element={<RewardPoints />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </Router>
+      <Toaster />
+    </ThemeProvider>
   );
-};
+}
 
 export default App;

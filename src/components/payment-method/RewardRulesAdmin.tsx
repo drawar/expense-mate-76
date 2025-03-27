@@ -25,6 +25,24 @@ interface RewardRulesAdminProps {
   paymentMethod: PaymentMethod;
 }
 
+// Map RuleConfiguration to EditableRuleConfig
+interface EditableRuleConfig {
+  name: string;
+  description: string;
+  enabled: boolean;
+  basePointRate: number;
+  bonusPointRate: number;
+  monthlyCap: number;
+  isOnlineOnly: boolean;
+  isContactlessOnly: boolean;
+  includedMCCs: string[];
+  excludedMCCs: string[];
+  minSpend?: number; 
+  maxSpend?: number;
+  currencyRestrictions?: string[];
+  pointsCurrency?: string;
+}
+
 const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) => {
   const [rules, setRules] = useState<RuleConfiguration[]>([]);
   const [editingRule, setEditingRule] = useState<RuleConfiguration | null>(null);
@@ -76,7 +94,8 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
       isOnlineOnly: false,
       isContactlessOnly: false,
       includedMCCs: [],
-      excludedMCCs: []
+      excludedMCCs: [],
+      pointsCurrency: cardInfo?.pointsCurrency || 'Points'
     };
     
     setEditingRule(newRule);
@@ -115,9 +134,29 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
     }
   };
   
-  const handleSaveRule = async (ruleConfig: RuleConfiguration) => {
+  const handleSaveRule = async (editableConfig: EditableRuleConfig) => {
+    if (!editingRule) return;
+    
+    const updatedRule: RuleConfiguration = {
+      ...editingRule,
+      name: editableConfig.name,
+      description: editableConfig.description,
+      enabled: editableConfig.enabled,
+      basePointRate: editableConfig.basePointRate,
+      bonusPointRate: editableConfig.bonusPointRate,
+      monthlyCap: editableConfig.monthlyCap,
+      isOnlineOnly: editableConfig.isOnlineOnly,
+      isContactlessOnly: editableConfig.isContactlessOnly,
+      includedMCCs: editableConfig.includedMCCs,
+      excludedMCCs: editableConfig.excludedMCCs,
+      minSpend: editableConfig.minSpend,
+      maxSpend: editableConfig.maxSpend,
+      currencyRestrictions: editableConfig.currencyRestrictions,
+      pointsCurrency: editableConfig.pointsCurrency || cardInfo?.pointsCurrency || 'Points',
+    };
+    
     // First validate the rule
-    const validationErrors = cardRuleService.validateRule(ruleConfig);
+    const validationErrors = cardRuleService.validateRule(updatedRule);
     
     if (validationErrors.length > 0) {
       toast({
@@ -129,11 +168,11 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
     }
     
     try {
-      const success = await cardRuleService.saveRule(ruleConfig);
+      const success = await cardRuleService.saveRule(updatedRule);
       
       if (success) {
         // Update local state
-        const updatedRules = [...rules.filter(r => r.id !== ruleConfig.id), ruleConfig];
+        const updatedRules = [...rules.filter(r => r.id !== updatedRule.id), updatedRule];
         setRules(updatedRules);
         
         toast({
@@ -152,7 +191,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         });
         
         // Still update local state
-        const updatedRules = [...rules.filter(r => r.id !== ruleConfig.id), ruleConfig];
+        const updatedRules = [...rules.filter(r => r.id !== updatedRule.id), updatedRule];
         setRules(updatedRules);
         
         // Close modal
@@ -167,6 +206,26 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         variant: 'destructive',
       });
     }
+  };
+  
+  // Convert RuleConfiguration to EditableRuleConfig for the editor
+  const convertToEditableConfig = (rule: RuleConfiguration): EditableRuleConfig => {
+    return {
+      name: rule.name,
+      description: rule.description || '',
+      enabled: rule.enabled,
+      basePointRate: rule.basePointRate,
+      bonusPointRate: rule.bonusPointRate,
+      monthlyCap: rule.monthlyCap,
+      isOnlineOnly: rule.isOnlineOnly || false,
+      isContactlessOnly: rule.isContactlessOnly || false,
+      includedMCCs: rule.includedMCCs || [],
+      excludedMCCs: rule.excludedMCCs || [],
+      minSpend: rule.minSpend,
+      maxSpend: rule.maxSpend,
+      currencyRestrictions: rule.currencyRestrictions,
+      pointsCurrency: rule.pointsCurrency
+    };
   };
   
   if (isLoading) {
@@ -222,7 +281,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
                       Contactless Only
                     </span>
                   )}
-                  {rule.includedMCCs.length > 0 && (
+                  {rule.includedMCCs?.length > 0 && (
                     <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full mt-1 inline-block">
                       {rule.includedMCCs.length} MCCs
                     </span>
@@ -260,7 +319,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
             
             {editingRule && (
               <RewardRuleEditor
-                initialConfig={editingRule}
+                initialConfig={convertToEditableConfig(editingRule)}
                 onSave={handleSaveRule}
                 onCancel={() => {
                   setIsModalOpen(false);
