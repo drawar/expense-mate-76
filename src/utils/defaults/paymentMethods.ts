@@ -210,6 +210,91 @@ export const defaultPaymentMethods: PaymentMethod[] = [
       MYR: 0.31
     }
   },
+  // Adding the missing card entries
+  {
+    id: 'e5f7a9c2-1b3d-4e8f-a6c9-7d8e2f1b3a4c',
+    name: 'Cobalt',
+    type: 'credit_card',
+    currency: 'CAD',
+    issuer: 'American Express',
+    lastFourDigits: '1234',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#6b21a8',
+    rewardRules: [], // Special handling in rewards logic
+  },
+  {
+    id: 'f6e8d7c5-a4b3-2c1d-e9f8-7d6e5f4a3b2c',
+    name: 'Platinum Canada',
+    type: 'credit_card',
+    currency: 'CAD',
+    issuer: 'American Express',
+    lastFourDigits: '2345',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#7c3aed',
+    rewardRules: [], // Special handling in rewards logic
+  },
+  {
+    id: 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6',
+    name: 'Platinum Credit',
+    type: 'credit_card',
+    currency: 'USD',
+    issuer: 'American Express',
+    lastFourDigits: '3456',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#8b5cf6',
+    rewardRules: [], // Special handling in rewards logic
+  },
+  {
+    id: 'c5d6e7f8-a9b0-c1d2-e3f4-a5b6c7d8e9f0',
+    name: 'Platinum Singapore',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'American Express',
+    lastFourDigits: '4567',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#a78bfa',
+    rewardRules: [], // Special handling in rewards logic
+  },
+  {
+    id: 'd7e8f9a0-b1c2-d3e4-f5a6-b7c8d9e0f1a2',
+    name: 'Aeroplan Visa Infinite',
+    type: 'credit_card',
+    currency: 'CAD',
+    issuer: 'TD',
+    lastFourDigits: '5678',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#c4b5fd',
+    rewardRules: [], // Special handling in rewards logic
+  },
+  {
+    id: 'b3c4d5e6-f7a8-b9c0-d1e2-f3a4b5c6d7e8',
+    name: 'Lady\'s Solitaire',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'UOB',
+    lastFourDigits: '6789',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#ddd6fe',
+    rewardRules: [], // Special handling in rewards logic
+  },
 ];
 
 // Helper function to find cash payment method for a specific currency

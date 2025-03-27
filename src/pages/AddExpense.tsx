@@ -3,7 +3,6 @@ import { useSupabaseConnectionCheck } from '@/hooks/useSupabaseConnectionCheck';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
 import ExpenseForm from '@/components/expense/ExpenseForm';
-import Navbar from '@/components/layout/Navbar';
 import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,15 +17,15 @@ const AddExpense = () => {
   const [activeTab, setActiveTab] = useState("expense");
   
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container max-w-3xl mx-auto pt-24 pb-20 px-4 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Add Expense</h1>
-          <p className="text-muted-foreground mt-1">
-            Record a new expense transaction
-          </p>
+    <div className="min-h-screen">
+      <div className="container max-w-7xl mx-auto pb-16">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gradient">Add Expense</h1>
+            <p className="text-muted-foreground mt-1.5 text-sm">
+              Record a new expense transaction
+            </p>
+          </div>
         </div>
         
         <StorageModeAlert useLocalStorage={useLocalStorage} />
@@ -40,7 +39,7 @@ const AddExpense = () => {
             onSubmit={handleSubmit}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 };

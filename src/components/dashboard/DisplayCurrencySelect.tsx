@@ -12,13 +12,14 @@ interface DisplayCurrencySelectProps {
 const DisplayCurrencySelect = ({ value, onChange }: DisplayCurrencySelectProps) => {
   return (
     <div className="flex items-center space-x-2">
-      <span className="text-sm font-medium">Display Currency:</span>
+      <span className="text-xs font-medium">Currency:</span>
       <Select 
         value={value} 
         onValueChange={(value: string) => onChange(value as Currency)}
+        defaultValue="SGD"
       >
-        <SelectTrigger className="w-[140px] h-8">
-          <SelectValue placeholder="Select currency" />
+        <SelectTrigger className="w-[80px] h-7 text-xs">
+          <SelectValue placeholder="SGD" />
         </SelectTrigger>
         <SelectContent>
           {currencyOptions.map((option) => (

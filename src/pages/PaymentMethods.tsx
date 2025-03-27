@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { PaymentMethod } from '@/types';
 import { getPaymentMethods, savePaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -203,14 +202,12 @@ const PaymentMethods = () => {
   const cashMethods = paymentMethods.filter(method => method.type === 'cash');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container max-w-6xl mx-auto pt-24 pb-20 px-4 sm:px-6">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen">
+      <div className="container max-w-7xl mx-auto pb-16">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gradient">Payment Methods</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1.5 text-sm">
               Manage your payment cards and cash payment methods
             </p>
           </div>
@@ -299,7 +296,7 @@ const PaymentMethods = () => {
           onImageUpload={handleImageUpload}
           isUploading={isUploading}
         />
-      </main>
+      </div>
     </div>
   );
 };

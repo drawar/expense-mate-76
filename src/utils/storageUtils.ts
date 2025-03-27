@@ -36,9 +36,6 @@ export const initializeStorage = async (): Promise<void> => {
   // Import needed functions directly to avoid circular dependencies
   const { getPaymentMethods, initializePaymentMethods } = await import('./storage/paymentMethods');
   
-  // Set up default payment methods if none exist
-  const paymentMethods = await getPaymentMethods();
-  if (paymentMethods.length === 0) {
-    await initializePaymentMethods();
-  }
+  // Force reinitialize payment methods to include any new default methods
+  await initializePaymentMethods();
 };

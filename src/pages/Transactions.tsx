@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { ViewMode } from '@/components/transaction/TransactionSortAndView';
-import Navbar from '@/components/layout/Navbar';
 import TransactionDialog from '@/components/expense/TransactionDialog';
 import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
 import { useTransactionList } from '@/hooks/useTransactionList';
@@ -45,10 +44,8 @@ const Transactions = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container max-w-6xl mx-auto pt-24 pb-20 px-4 sm:px-6">
+    <div className="min-h-screen">
+      <div className="container max-w-7xl mx-auto pb-16">
         <TransactionHeader />
         
         <TransactionFilterControls
@@ -78,7 +75,7 @@ const Transactions = () => {
           onEditTransaction={handleEditTransaction}
           onDeleteTransaction={handleDeleteTransaction}
         />
-      </main>
+      </div>
       
       {selectedTransaction && (
         <TransactionDialog

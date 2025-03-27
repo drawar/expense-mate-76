@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Transaction, PaymentMethod, Currency } from '@/types';
@@ -7,6 +6,7 @@ import SummaryCharts from './SummaryCharts';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
 import StatementCycleFilter from './StatementCycleFilter';
 import { useSummaryData } from '@/hooks/dashboard/useSummaryData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SummaryProps {
   transactions: Transaction[];
@@ -15,7 +15,7 @@ interface SummaryProps {
 
 const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
-  const [displayCurrency, setDisplayCurrency] = useState<Currency>('USD');
+  const [displayCurrency, setDisplayCurrency] = useState<Currency>('SGD');
   const [useStatementMonth, setUseStatementMonth] = useState(false);
   const [statementCycleDay, setStatementCycleDay] = useState(15); // Default to 15th
   
@@ -31,29 +31,34 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
   return (
     <div className="space-y-6 w-full">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight">Expense Summary</h2>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <DisplayCurrencySelect 
               value={displayCurrency} 
               onChange={setDisplayCurrency} 
             />
-            <TabsList>
-              <TabsTrigger value="thisMonth">This Month</TabsTrigger>
-              <TabsTrigger value="lastMonth">Last Month</TabsTrigger>
-              <TabsTrigger value="lastThreeMonths">Last 3 Months</TabsTrigger>
-              <TabsTrigger value="thisYear">This Year</TabsTrigger>
-            </TabsList>
+            <Select
+              value={activeTab}
+              onValueChange={setActiveTab}
+            >
+              <SelectTrigger className="w-[120px] h-7 text-xs">
+                <SelectValue placeholder="This Month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="thisMonth">This Month</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+                <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
+                <SelectItem value="thisYear">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <StatementCycleFilter
+              useStatementMonth={useStatementMonth}
+              setUseStatementMonth={setUseStatementMonth}
+              statementCycleDay={statementCycleDay}
+              setStatementCycleDay={setStatementCycleDay}
+            />
           </div>
-        </div>
-        
-        <div className="mt-4 mb-6">
-          <StatementCycleFilter
-            useStatementMonth={useStatementMonth}
-            setUseStatementMonth={setUseStatementMonth}
-            statementCycleDay={statementCycleDay}
-            setStatementCycleDay={setStatementCycleDay}
-          />
         </div>
         
         {/* Single TabsContent implementation shared by all tabs */}

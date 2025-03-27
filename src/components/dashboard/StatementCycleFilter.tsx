@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -28,27 +27,27 @@ const StatementCycleFilter = ({
     setStatementCycleDay(validDay);
   };
   
+  // Using a key to force re-render when toggle is clicked to prevent hanging
+  const toggleId = `statement-cycle-toggle-${useStatementMonth ? 'on' : 'off'}`;
+  
   return (
-    <div className="flex flex-col space-y-2 bg-card p-3 rounded-lg border">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Label htmlFor="statement-cycle-toggle" className="text-sm font-medium">
-            Statement Month
-          </Label>
-        </div>
+    <div className="flex items-center h-7 rounded-md">
+      <div className="flex items-center space-x-2">
+        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <span className="text-xs font-medium">Statement Month:</span>
         <Switch
-          id="statement-cycle-toggle"
+          id={toggleId}
           checked={useStatementMonth}
           onCheckedChange={setUseStatementMonth}
+          className="scale-75"
         />
       </div>
       
       {useStatementMonth && (
-        <div className="pt-2">
-          <Label htmlFor="statement-cycle-day" className="text-xs text-muted-foreground mb-1 block">
-            Statement Cycle Day
-          </Label>
+        <div className="ml-2 flex items-center">
+          <span className="text-xs text-muted-foreground mr-1">
+            Day:
+          </span>
           <Input
             id="statement-cycle-day"
             type="number"
@@ -56,11 +55,8 @@ const StatementCycleFilter = ({
             max={31}
             value={statementCycleDay}
             onChange={handleDayChange}
-            className="h-8 text-sm"
+            className="h-7 w-14 text-xs px-2"
           />
-          <p className="text-xs text-muted-foreground mt-2">
-            Show transactions from day {statementCycleDay} of previous month to day {statementCycleDay === 31 ? 30 : statementCycleDay - 1} of current month.
-          </p>
         </div>
       )}
     </div>
