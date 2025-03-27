@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
@@ -14,6 +14,8 @@ import NotFound from '@/pages/NotFound';
 
 function App() {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const isMobile = useIsMobile();
   
   const toggleSidebar = () => {
     setSidebarExpanded(!sidebarExpanded);
@@ -22,14 +24,33 @@ function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
-        <div className="flex min-h-screen">
-          <Sidebar expanded={sidebarExpanded} onToggle={toggleSidebar} />
+        <div className="relative min-h-screen bg-background">
+          <Sidebar 
+            expanded={sidebarExpanded} 
+            onToggle={toggleSidebar} 
+            sidebarVisible={sidebarVisible}
+            setSidebarVisible={setSidebarVisible}
+          />
           <main 
-            className={`flex-1 transition-all duration-300 bg-background ${
-              sidebarExpanded ? 'ml-48' : 'ml-20'
+            className={`transition-all duration-300 ${
+              isMobile && !sidebarVisible
+                ? 'ml-0' // No margin on mobile when sidebar is hidden
+                : (sidebarExpanded ? 'ml-48' : 'ml-20')
             }`}
+            onClick={() => {
+              if (isMobile && sidebarVisible) {
+                setSidebarVisible(false);
+              }
+            }}
           >
-            <div className="container mx-auto p-6 pt-8">
+            <div 
+              className={`mx-auto p-6 pt-8 ${isMobile && !sidebarVisible ? 'px-5 max-w-full' : 'container px-6'}`}
+              onClick={() => {
+                if (isMobile && sidebarVisible) {
+                  setSidebarVisible(false);
+                }
+              }}
+            >
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/transactions" element={<Transactions />} />

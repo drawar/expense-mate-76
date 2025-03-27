@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Calendar } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface StatementCycleFilterProps {
   useStatementMonth: boolean;
@@ -29,21 +28,21 @@ const StatementCycleFilter = ({
     setStatementCycleDay(validDay);
   };
   
-  // Using a key to force re-render when toggle is clicked to prevent hanging
-  const toggleId = `statement-cycle-toggle-${useStatementMonth ? 'on' : 'off'}`;
-  
   return (
     <div className={`flex items-center h-7 rounded-md ${className}`}>
-      <div className="flex items-center space-x-2">
-        <Calendar className="h-5 w-5 text-muted-foreground" />
-        <span className="text-sm font-medium">Statement Month:</span>
-        <Switch
-          id={toggleId}
-          checked={useStatementMonth}
-          onCheckedChange={setUseStatementMonth}
-          className="scale-90 data-[state=checked]:bg-[#6366f1] data-[state=unchecked]:bg-slate-700 data-[state=unchecked]:text-white"
-        />
-      </div>
+      <Calendar className="h-5 w-5 text-muted-foreground mr-2" />
+      <Select
+        value={useStatementMonth ? "statement" : "calendar"}
+        onValueChange={(value) => setUseStatementMonth(value === "statement")}
+      >
+        <SelectTrigger className="w-[160px] h-7 text-sm bg-transparent border-none">
+          <SelectValue placeholder="Calendar Month" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="statement">Statement Month</SelectItem>
+          <SelectItem value="calendar">Calendar Month</SelectItem>
+        </SelectContent>
+      </Select>
       
       {useStatementMonth && (
         <div className="ml-2 flex items-center">

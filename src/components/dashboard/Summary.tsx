@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Transaction, PaymentMethod, Currency } from '@/types';
+import { Filter } from 'lucide-react';
 import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
@@ -34,7 +35,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight">Expense Summary</h2>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 items-start sm:items-center">
             {/* Currency Selector */}
             <DisplayCurrencySelect 
               value={displayCurrency} 
@@ -44,6 +45,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
             
             {/* Time Frame Selector */}
             <div className="component-hover-box timeframe-selector">
+              <Filter className="h-5 w-5 text-muted-foreground mr-2" />
               <Select
                 value={activeTab}
                 onValueChange={setActiveTab}

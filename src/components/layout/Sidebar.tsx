@@ -14,21 +14,36 @@ import { cn } from '@/lib/utils';
 interface SidebarProps {
   expanded: boolean;
   onToggle: () => void;
+  sidebarVisible?: boolean;
+  setSidebarVisible?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Sidebar = ({ expanded, onToggle }: SidebarProps) => {
+const Sidebar = ({ 
+  expanded, 
+  onToggle, 
+  sidebarVisible: externalVisible, 
+  setSidebarVisible: setExternalVisible 
+}: SidebarProps) => {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  // Internal state that can be overridden by props
+  const [internalVisible, setInternalVisible] = useState(false);
+  
+  // Use either external or internal state
+  const sidebarVisible = externalVisible !== undefined ? externalVisible : internalVisible;
+  const setSidebarVisible = setExternalVisible || setInternalVisible;
   
   // Auto collapse sidebar on mobile devices when page loads
   useEffect(() => {
     if (isMobile && expanded) {
       onToggle();
     }
-    // Hide sidebar on mobile by default
-    setSidebarVisible(!isMobile);
-  }, [isMobile, expanded, onToggle]);
+    
+    // Only set internal state if external state is not provided
+    if (externalVisible === undefined) {
+      setInternalVisible(!isMobile);
+    }
+  }, [isMobile, expanded, onToggle, externalVisible]);
   
   // Handle logo click on mobile
   const handleLogoClick = () => {
@@ -55,7 +70,7 @@ const Sidebar = ({ expanded, onToggle }: SidebarProps) => {
       {isMobile && sidebarVisible && (
         <div 
           className="fixed inset-0 bg-black/50 z-10"
-          onClick={onToggle}
+          onClick={() => setSidebarVisible(false)}
           aria-hidden="true"
         />
       )}

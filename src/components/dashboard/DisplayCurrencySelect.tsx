@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currencyOptions } from '@/utils/currencyFormatter';
 import { Currency } from '@/types';
+import { DollarSign } from 'lucide-react';
 
 interface DisplayCurrencySelectProps {
   value: Currency;
@@ -13,8 +13,8 @@ interface DisplayCurrencySelectProps {
 const DisplayCurrencySelect = ({ value, onChange, className = '' }: DisplayCurrencySelectProps) => {
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <span className="text-sm font-medium">Currency:</span>
-      <Select 
+      <DollarSign className="h-5 w-5 text-muted-foreground" />
+      <Select
         value={value} 
         onValueChange={(value: string) => onChange(value as Currency)}
         defaultValue="SGD"
