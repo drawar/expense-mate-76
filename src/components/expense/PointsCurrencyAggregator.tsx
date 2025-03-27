@@ -17,7 +17,7 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ tra
     return transactions.reduce<PointsAggregate>((acc, transaction) => {
       // Get points currency from payment method or fall back to generic "Points"
       const pointsCurrency = 
-        transaction.paymentMethod.rewardRules?.[0]?.pointsCurrency || 
+        transaction.paymentMethod.rewardRules?.[0]?.condition as string || 
         transaction.paymentMethod.name + ' Points';
       
       acc[pointsCurrency] = (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);

@@ -7,7 +7,7 @@ import { FormValues, formSchema } from './expense-form/formSchema';
 import { useMerchantData } from './expense-form/useMerchantData';
 import { usePaymentMethodLogic } from './expense-form/usePaymentMethodLogic';
 import { useRewardPoints } from './expense-form/useRewardPoints';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface UseExpenseFormProps {
   paymentMethods: PaymentMethod[];
@@ -85,7 +85,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   };
   
   // Call the calculation function when dependencies change
-  React.useEffect(() => {
+  useEffect(() => {
     calculateEstimatedPoints();
   }, [selectedPaymentMethod, amount, currency, selectedMCC, merchantName, isOnline, isContactless]);
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTransactionList } from '@/hooks/useTransactionList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
@@ -11,10 +11,12 @@ const RewardPoints = () => {
   const { 
     transactions, 
     filteredTransactions,
-    setStatementPeriod, 
-    statementPeriod 
   } = useTransactionList();
 
+  // Local state for statement cycle filtering
+  const [useStatementMonth, setUseStatementMonth] = useState(false);
+  const [statementCycleDay, setStatementCycleDay] = useState(1);
+  
   return (
     <div className="container p-4 mx-auto">
       <h1 className="text-2xl font-bold mb-6 flex items-center">
@@ -23,8 +25,10 @@ const RewardPoints = () => {
       
       <div className="mb-6">
         <StatementCycleFilter 
-          statementPeriod={statementPeriod} 
-          setStatementPeriod={setStatementPeriod}
+          useStatementMonth={useStatementMonth}
+          setUseStatementMonth={setUseStatementMonth}
+          statementCycleDay={statementCycleDay}
+          setStatementCycleDay={setStatementCycleDay}
         />
       </div>
       
@@ -57,7 +61,10 @@ const RewardPoints = () => {
 const PointsByPaymentMethod = ({ transactions }: { transactions: Transaction[] }) => {
   const pointsByMethod = transactions.reduce<Record<string, { points: number, currency: string }>>((acc, transaction) => {
     const methodName = transaction.paymentMethod.name;
-    const pointsCurrency = transaction.paymentMethod.rewardRules?.[0]?.pointsCurrency || 'Points';
+    // Get a default currency name based on the payment method
+    const pointsCurrency = transaction.paymentMethod.issuer 
+      ? `${transaction.paymentMethod.issuer} Points` 
+      : 'Points';
     
     if (!acc[methodName]) {
       acc[methodName] = { points: 0, currency: pointsCurrency };

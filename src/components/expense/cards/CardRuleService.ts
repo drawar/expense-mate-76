@@ -57,7 +57,7 @@ export class CardRuleService {
         enabled: rule.enabled,
         rounding: rule.rounding as 'floor' | 'ceiling' | 'nearest5' | 'nearest' | 'pointRounding',
         basePointRate: rule.base_point_rate,
-        bonusPointRate: rule.bonusPointRate,
+        bonusPointRate: rule.bonus_point_rate,
         monthlyCap: rule.monthly_cap,
         isOnlineOnly: rule.is_online_only,
         isContactlessOnly: rule.is_contactless_only,

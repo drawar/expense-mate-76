@@ -3,11 +3,27 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { HomeIcon, CoinsIcon, CreditCardIcon, PlusCircleIcon, FileTextIcon } from 'lucide-react';
-import { useMobile } from '@/hooks/use-mobile';
+import { useState, useEffect } from 'react';
+
+// Simple mobile detection hook
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return { isMobile };
+};
 
 const Navbar = () => {
   const location = useLocation();
-  const { isMobile } = useMobile();
+  const { isMobile } = useIsMobile();
 
   const isActive = (path: string) => location.pathname === path;
 

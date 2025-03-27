@@ -32,11 +32,15 @@ const SummaryCardGrid: React.FC<SummaryCardGridProps> = ({
       <div className="col-span-1">
         <div className="space-y-6">
           <SummaryCard 
-            totalAmount={totalExpenses}
-            transactionCount={transactionCount}
-            averageAmount={averageAmount}
-            topPaymentMethod={topPaymentMethod}
-            displayCurrency={displayCurrency}
+            title="Total Expenses"
+            value={`${displayCurrency} ${totalExpenses.toLocaleString()}`}
+            description={`From ${transactionCount} transactions`}
+          />
+          
+          <SummaryCard 
+            title="Average Transaction"
+            value={`${displayCurrency} ${averageAmount.toLocaleString()}`}
+            description={topPaymentMethod.name ? `Most used: ${topPaymentMethod.name}` : 'No payment methods used yet'}
           />
           
           <div className="flex justify-end">
