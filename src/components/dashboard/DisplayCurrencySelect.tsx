@@ -7,18 +7,19 @@ import { Currency } from '@/types';
 interface DisplayCurrencySelectProps {
   value: Currency;
   onChange: (currency: Currency) => void;
+  className?: string;
 }
 
-const DisplayCurrencySelect = ({ value, onChange }: DisplayCurrencySelectProps) => {
+const DisplayCurrencySelect = ({ value, onChange, className = '' }: DisplayCurrencySelectProps) => {
   return (
-    <div className="flex items-center space-x-2">
-      <span className="text-xs font-medium">Currency:</span>
+    <div className={`flex items-center space-x-2 ${className}`}>
+      <span className="text-sm font-medium">Currency:</span>
       <Select 
         value={value} 
         onValueChange={(value: string) => onChange(value as Currency)}
         defaultValue="SGD"
       >
-        <SelectTrigger className="w-[80px] h-7 text-xs">
+        <SelectTrigger className="w-[80px] h-7 text-sm bg-transparent border-none">
           <SelectValue placeholder="SGD" />
         </SelectTrigger>
         <SelectContent>

@@ -1,0 +1,113 @@
+/* Dashboard component hover effects to match Add Expense button exactly */
+.component-hover-box {
+  position: relative;
+  border-radius: 0.75rem; /* Slightly more rounded as requested */
+  transition: all 300ms ease;
+  height: 40px; /* h-10 from button */
+  min-width: 120px; /* ensure minimum width consistent with button */
+  padding: 0 1rem; /* px-4 from button, only horizontal padding */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; /* gap-2 from button */
+  background: transparent;
+}
+
+/* Apply the exact same gradient as the Add Expense button */
+.component-hover-box:hover {
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3), 0 4px 6px -4px rgba(168, 85, 247, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Match icon styling from Add Expense button */
+.component-hover-box svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Make text white on hover */
+.component-hover-box:hover,
+.component-hover-box:hover span,
+.component-hover-box:hover label,
+.component-hover-box:hover div {
+  color: white !important;
+}
+
+/* Make SVG icons white on hover */
+.component-hover-box:hover svg {
+  color: white !important;
+  stroke: white !important;
+}
+
+/* Currency Selector specific styling */
+.currency-selector.component-hover-box {
+  margin-right: 0.5rem;
+  padding: 0 0.75rem; /* Adjust padding to match button */
+  border-radius: 0.75rem; /* Consistent rounding across all components */
+}
+
+/* Time Frame Selector specific styling */
+.timeframe-selector.component-hover-box {
+  margin-right: 0.5rem;
+  padding: 0 0.75rem; /* Adjust padding to match button */
+  border-radius: 0.75rem; /* Consistent rounding across all components */
+}
+
+/* Statement Month Toggle specific styling */
+.statement-toggle.component-hover-box {
+  padding: 0 0.75rem; /* Adjust padding to match button */
+  border-radius: 0.75rem; /* Consistent rounding across all components */
+  min-width: 180px; /* Ensure adequate width */
+  width: auto; /* Allow content to determine final width */
+  justify-content: flex-start; /* Align content to the left */
+  height: 40px; /* Force same height as other components */
+  min-height: 40px; /* Ensure minimum height matches button */
+  box-sizing: border-box; /* Include padding in height calculation */
+}
+
+/* Ensure all inner elements of Statement Month are properly sized */
+.statement-toggle.component-hover-box > div {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Remove backgrounds from all inner elements */
+.component-hover-box:hover * {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+/* Display switches and inputs with proper contrast */
+.component-hover-box:hover [role="switch"] {
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+/* Special handling for switch checked state */
+.component-hover-box:hover [data-state="checked"] {
+  background-color: white !important; /* White background for contrast */
+}
+
+.component-hover-box:hover [data-state="unchecked"] {
+  background-color: rgba(255, 255, 255, 0.4) !important; /* Semi-transparent white for unchecked */
+}
+
+/* Ensure switch thumb remains visible */
+.component-hover-box:hover [data-state] span {
+  background-color: #6366f1 !important; /* Use primary color for switch thumb */
+}
+
+/* Ensure select arrows remain visible */
+.component-hover-box:hover [data-radix-select-trigger] {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Fix for input fields */
+.component-hover-box:hover input {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+}

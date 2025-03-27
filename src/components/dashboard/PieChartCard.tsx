@@ -29,7 +29,7 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
   };
 
   return (
-    <Card className="chart-container h-full flex flex-col">
+    <Card className="chart-container h-full flex flex-col bg-[#191D2B] text-white border-0 hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-0 pt-4">
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>

@@ -9,13 +9,15 @@ interface StatementCycleFilterProps {
   setUseStatementMonth: (value: boolean) => void;
   statementCycleDay: number;
   setStatementCycleDay: (value: number) => void;
+  className?: string;
 }
 
 const StatementCycleFilter = ({
   useStatementMonth,
   setUseStatementMonth,
   statementCycleDay,
-  setStatementCycleDay
+  setStatementCycleDay,
+  className = ''
 }: StatementCycleFilterProps) => {
   
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,21 +33,21 @@ const StatementCycleFilter = ({
   const toggleId = `statement-cycle-toggle-${useStatementMonth ? 'on' : 'off'}`;
   
   return (
-    <div className="flex items-center h-7 rounded-md">
+    <div className={`flex items-center h-7 rounded-md ${className}`}>
       <div className="flex items-center space-x-2">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="text-xs font-medium">Statement Month:</span>
+        <Calendar className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm font-medium">Statement Month:</span>
         <Switch
           id={toggleId}
           checked={useStatementMonth}
           onCheckedChange={setUseStatementMonth}
-          className="scale-75"
+          className="scale-90 data-[state=checked]:bg-[#6366f1] data-[state=unchecked]:bg-slate-700 data-[state=unchecked]:text-white"
         />
       </div>
       
       {useStatementMonth && (
         <div className="ml-2 flex items-center">
-          <span className="text-xs text-muted-foreground mr-1">
+          <span className="text-sm text-muted-foreground mr-1">
             Day:
           </span>
           <Input

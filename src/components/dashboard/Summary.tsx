@@ -7,6 +7,7 @@ import DisplayCurrencySelect from './DisplayCurrencySelect';
 import StatementCycleFilter from './StatementCycleFilter';
 import { useSummaryData } from '@/hooks/dashboard/useSummaryData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import "./dashboard.css";
 
 interface SummaryProps {
   transactions: Transaction[];
@@ -34,29 +35,38 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight">Expense Summary</h2>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            {/* Currency Selector */}
             <DisplayCurrencySelect 
               value={displayCurrency} 
-              onChange={setDisplayCurrency} 
+              onChange={setDisplayCurrency}
+              className="component-hover-box currency-selector"
             />
-            <Select
-              value={activeTab}
-              onValueChange={setActiveTab}
-            >
-              <SelectTrigger className="w-[120px] h-7 text-xs">
-                <SelectValue placeholder="This Month" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="thisMonth">This Month</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
-                <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
-                <SelectItem value="thisYear">This Year</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            {/* Time Frame Selector */}
+            <div className="component-hover-box timeframe-selector">
+              <Select
+                value={activeTab}
+                onValueChange={setActiveTab}
+              >
+                <SelectTrigger className="w-[120px] h-7 text-sm bg-transparent border-none">
+                  <SelectValue placeholder="This Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="thisMonth">This Month</SelectItem>
+                  <SelectItem value="lastMonth">Last Month</SelectItem>
+                  <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
+                  <SelectItem value="thisYear">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Statement Month toggle */}
             <StatementCycleFilter
               useStatementMonth={useStatementMonth}
               setUseStatementMonth={setUseStatementMonth}
               statementCycleDay={statementCycleDay}
               setStatementCycleDay={setStatementCycleDay}
+              className="component-hover-box statement-toggle"
             />
           </div>
         </div>
