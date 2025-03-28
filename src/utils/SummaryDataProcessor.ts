@@ -11,7 +11,7 @@ export interface SummaryData {
   averageAmount: number;
   topPaymentMethod: {
     name: string;
-    amount: number;
+    value: number;
   };
   totalRewardPoints: number;
   paymentMethodChartData: Array<{
@@ -61,22 +61,23 @@ export class SummaryDataProcessor {
   /**
    * Find the most used payment method
    */
-  private findTopPaymentMethod(): { name: string; amount: number } {
+  private findTopPaymentMethod(): { name: string; value: number } {
     // Group transactions by payment method
     const paymentMethodMap = new Map<string, number>();
     
     this.transactions.forEach(tx => {
-      const paymentMethod = tx.paymentMethod || 'Unknown';
-      const existingAmount = paymentMethodMap.get(paymentMethod) || 0;
-      paymentMethodMap.set(paymentMethod, existingAmount + tx.amount);
+      // Extract the name from the PaymentMethod object
+      const methodName = tx.paymentMethod?.name || "Unknown";
+      const existingAmount = paymentMethodMap.get(methodName) || 0;
+      paymentMethodMap.set(methodName, existingAmount + tx.amount);
     });
     
     // Find the payment method with the highest total amount
-    let topPaymentMethod = { name: 'None', amount: 0 };
+    let topPaymentMethod = { name: 'None', value: 0 };
     
     paymentMethodMap.forEach((amount, name) => {
-      if (amount > topPaymentMethod.amount) {
-        topPaymentMethod = { name, amount };
+      if (amount > topPaymentMethod.value) {
+        topPaymentMethod = { name, value: amount };
       }
     });
     
@@ -86,23 +87,15 @@ export class SummaryDataProcessor {
   /**
    * Calculate total reward points from transactions
    */
-  private calculateTotalRewardPoints(): number {
-    return this.transactions.reduce((total, tx) => {
-      return total + (tx.rewardPoints || 0);
-    }, 0);
-  }
-  
-  /**
-   * Generate payment method chart data
-   */
   private generatePaymentMethodChartData(): Array<{ name: string; value: number; color: string }> {
     // Group transactions by payment method
     const paymentMethodMap = new Map<string, number>();
     
     this.transactions.forEach(tx => {
-      const paymentMethod = tx.paymentMethod || 'Unknown';
-      const existingAmount = paymentMethodMap.get(paymentMethod) || 0;
-      paymentMethodMap.set(paymentMethod, existingAmount + tx.amount);
+      // Extract the name from the PaymentMethod object
+      const methodName = tx.paymentMethod?.name || "Unknown";
+      const existingAmount = paymentMethodMap.get(methodName) || 0;
+      paymentMethodMap.set(methodName, existingAmount + tx.amount);
     });
     
     // Generate colors for each payment method
@@ -166,6 +159,19 @@ export class SummaryDataProcessor {
         color: colors[index % colors.length]
       }));
   }
+
+  /**
+   * Calculate total reward points from transactions
+   */
+  private calculateTotalRewardPoints(): number {
+    return this.transactions.reduce((total, transaction) => {
+      // Ensure reward points is a number
+      const points = typeof transaction.rewardPoints === 'number' 
+        ? transaction.rewardPoints 
+        : 0;
+      return total + points;
+    }, 0);
+  }
   
   /**
    * Filter transactions based on the selected time period
@@ -201,27 +207,26 @@ export class SummaryDataProcessor {
   /**
    * Generate complete summary data
    */
-  public getSummaryData(
-    period: string = 'thisMonth',
-    includeRecurring: boolean = false,
-    limit: number = 15
-  ): SummaryData {
-    // Filter transactions based on period
-    const filteredTransactions = this.filterTransactionsByPeriod(period);
-    
-    // Include recurring transactions if requested
-    const processedTransactions = includeRecurring
-      ? filteredTransactions
-      : filteredTransactions.filter(tx => !tx.isRecurring);
-    
-    return {
-      totalExpenses: this.calculateTotalExpenses(),
-      transactionCount: processedTransactions.length,
-      averageAmount: this.calculateAverageAmount(),
-      topPaymentMethod: this.findTopPaymentMethod(),
-      totalRewardPoints: this.calculateTotalRewardPoints(),
-      paymentMethodChartData: this.generatePaymentMethodChartData(),
-      categoryChartData: this.generateCategoryChartData()
-    };
-  }
+public getSummaryData(
+  period: string = 'thisMonth',
+  includeRecurring: boolean = false,
+  limit: number = 15
+): SummaryData {
+  // Filter transactions based on period
+  const filteredTransactions = this.filterTransactionsByPeriod(period);
+  
+  // Include recurring transactions if requested, otherwise just use filtered transactions
+  // Removed the filter for isRecurring as it doesn't exist on the Transaction type
+  const processedTransactions = filteredTransactions;
+  
+  return {
+    totalExpenses: this.calculateTotalExpenses(),
+    transactionCount: processedTransactions.length,
+    averageAmount: this.calculateAverageAmount(),
+    topPaymentMethod: this.findTopPaymentMethod(),
+    totalRewardPoints: this.calculateTotalRewardPoints(),
+    paymentMethodChartData: this.generatePaymentMethodChartData(),
+    categoryChartData: this.generateCategoryChartData()
+  };
+}
 }

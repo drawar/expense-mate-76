@@ -1,8 +1,10 @@
 // src/components/dashboard/abstractions/AbstractPieChart.tsx
-import React, { Component } from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/currencyFormatter';
+import AbstractChart, { AbstractChartProps } from '@/components/dashboard/abstractions/AbstractChart';
+import { createCurrencyFormatter, createLabelFormatter } from '@/components/dashboard/tooltips/ChartTooltip';
 
 /**
  * Common data structure for pie chart data
@@ -16,14 +18,11 @@ export interface PieChartDataItem {
 /**
  * Base props interface for pie charts
  */
-export interface AbstractPieChartProps {
+export interface AbstractPieChartProps extends AbstractChartProps {
   data: PieChartDataItem[];
-  title?: string;
-  currency?: string;
   innerRadius?: number;
   outerRadius?: number;
   paddingAngle?: number;
-  className?: string;
   // Flag to determine if this chart is being used standalone or inside another component
   standalone?: boolean;
 }
@@ -32,7 +31,7 @@ export interface AbstractPieChartProps {
  * Abstract base class for pie charts
  * Provides common functionality for different types of pie charts
  */
-abstract class AbstractPieChart<P extends AbstractPieChartProps> extends Component<P> {
+abstract class AbstractPieChart<P extends AbstractPieChartProps> extends AbstractChart<P> {
   /**
    * Process the data to add percentage calculations
    * Pre-calculating percentages improves performance
@@ -54,24 +53,20 @@ abstract class AbstractPieChart<P extends AbstractPieChartProps> extends Compone
    */
   protected getTooltipFormatter() {
     const { currency = 'USD' } = this.props;
-    return (value: number, name: string, props?: any) => [
-      formatCurrency(value, currency),
-      name
-    ];
+    return createCurrencyFormatter(currency);
   }
   
   /**
    * Custom label formatter for tooltips
-   * Can be overridden by subclasses
    */
   protected getLabelFormatter() {
-    return (name: string) => name;
+    return createLabelFormatter();
   }
   
   /**
-   * Render empty state when no data is available
+   * Override empty state for pie charts
    */
-  protected renderEmptyState() {
+  protected renderEmptyState(): React.ReactNode {
     const { title = 'Chart', standalone = true } = this.props;
     
     if (standalone) {
@@ -119,6 +114,36 @@ abstract class AbstractPieChart<P extends AbstractPieChartProps> extends Compone
           ))}
         </div>
       </div>
+    );
+  }
+  
+  /**
+   * Implementation of abstract method from AbstractChart
+   */
+  protected renderChart(): React.ReactNode {
+    const { title = 'Chart', className = '', standalone = true } = this.props;
+    const processedData = this.processData();
+    
+    if (processedData.length === 0) {
+      return this.renderEmptyState();
+    }
+    
+    // If this chart is being used inside another component (like a card),
+    // only render the chart content
+    if (!standalone) {
+      return this.renderPieChartContent();
+    }
+    
+    // Otherwise, render the complete card with the chart inside
+    return (
+      <Card className={`chart-container h-full flex flex-col rounded-xl border border-border/50 bg-card hover:shadow-md transition-all ${className}`}>
+        <CardHeader className="pb-0 pt-4">
+          <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow py-4">
+          {this.renderPieChartContent()}
+        </CardContent>
+      </Card>
     );
   }
   
@@ -183,36 +208,6 @@ abstract class AbstractPieChart<P extends AbstractPieChartProps> extends Compone
         {/* Labels with pre-calculated percentages */}
         {this.renderLabels(processedData)}
       </div>
-    );
-  }
-  
-  /**
-   * Render full pie chart card with header and content
-   */
-  render() {
-    const { title = 'Chart', className = '', standalone = true } = this.props;
-    const processedData = this.processData();
-    
-    if (processedData.length === 0) {
-      return this.renderEmptyState();
-    }
-    
-    // If this chart is being used inside another component (like a card),
-    // only render the chart content
-    if (!standalone) {
-      return this.renderPieChartContent();
-    }
-    
-    // Otherwise, render the complete card with the chart inside
-    return (
-      <Card className={`chart-container h-full flex flex-col rounded-xl border border-border/50 bg-card hover:shadow-md transition-all ${className}`}>
-        <CardHeader className="pb-0 pt-4">
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-grow py-4">
-          {this.renderPieChartContent()}
-        </CardContent>
-      </Card>
     );
   }
 }

@@ -1,21 +1,21 @@
 // src/components/dashboard/abstractions/AbstractBarChart.tsx
-import React, { Component } from 'react';
+import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Transaction } from '@/types';
+import AbstractChart, { AbstractChartProps } from '@/components/dashboard/abstractions/AbstractChart';
+import { ChartTooltip, ChartTooltipProps } from '@/components/dashboard/tooltips/ChartTooltip';
 
 /**
  * Base props interface for bar chart components
  */
-export interface BarChartProps {
+export interface BarChartProps extends AbstractChartProps {
   transactions: Transaction[];
   period?: 'week' | 'month' | 'quarter' | 'year';
-  currency?: string;
   colorScheme?: {
     barColor: string;
     hoverColor: string;
   };
-  className?: string;
 }
 
 /**
@@ -23,12 +23,9 @@ export interface BarChartProps {
  * Provides consistent styling and data processing while allowing
  * subclasses to define their specific data transformations
  */
-abstract class AbstractBarChart<P extends BarChartProps> extends Component<P> {
+abstract class AbstractBarChart<P extends BarChartProps> extends AbstractChart<P> {
   /**
    * Group transactions by a time period (day, week, month, year)
-   * @param transactions List of transactions to group
-   * @param groupBy Time period to group by
-   * @returns Map with period keys and associated transactions
    */
   protected groupTransactionsByPeriod(
     transactions: Transaction[],
@@ -72,9 +69,6 @@ abstract class AbstractBarChart<P extends BarChartProps> extends Component<P> {
   
   /**
    * Calculate percentage change between two values
-   * @param current Current value
-   * @param previous Previous value
-   * @returns Percentage change (positive or negative)
    */
   protected calculatePercentageChange(current: number, previous: number): number {
     if (previous === 0) return current > 0 ? 100 : 0;
@@ -83,8 +77,6 @@ abstract class AbstractBarChart<P extends BarChartProps> extends Component<P> {
   
   /**
    * Format a trend value for display with appropriate styling
-   * @param value Trend value (percentage)
-   * @returns Formatted text and CSS color class
    */
   protected formatTrendValue(value: number): { text: string; color: string } {
     const formatted = Math.abs(value).toFixed(1);
@@ -109,37 +101,15 @@ abstract class AbstractBarChart<P extends BarChartProps> extends Component<P> {
   };
   
   /**
-   * Render the custom tooltip for the chart
-   * Can be overridden by subclasses
-   */
-  protected renderCustomTooltip({ active, payload, label }: any): React.ReactNode {
-    const { currency = 'USD' } = this.props;
-    
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border border-border p-2 rounded-md shadow-md">
-          <p className="font-medium">{label}</p>
-          <p className="text-primary">{formatCurrency(payload[0].value, currency)}</p>
-        </div>
-      );
-    }
-    return null;
-  }
-  
-  /**
    * Render the bar chart with the processed data
    */
-  render() {
+  protected renderChart(): React.ReactNode {
     const { currency = 'USD', colorScheme = { barColor: '#8884d8', hoverColor: '#7171d6' } } = this.props;
     const { chartData } = this.processChartData();
     
     // Check if we have enough data
     if (chartData.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-48 text-muted-foreground">
-          <p>No data available for this period</p>
-        </div>
-      );
+      return this.renderEmptyState();
     }
     
     return (
@@ -160,10 +130,10 @@ abstract class AbstractBarChart<P extends BarChartProps> extends Component<P> {
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => formatCurrency(value, currency, 0)}
+              tickFormatter={(value) => formatCurrency(value, currency)}
             />
             <Tooltip 
-              content={(props) => this.renderCustomTooltip(props)}
+              content={(props) => this.renderCustomTooltip(props as ChartTooltipProps)}
             />
             <Bar 
               dataKey="amount" 

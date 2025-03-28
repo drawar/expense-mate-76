@@ -40,6 +40,7 @@ class PaymentMethodPieChart extends AbstractPieChart<PaymentMethodPieChartProps>
    */
   protected override getTooltipFormatter() {
     const { currency = 'SGD' } = this.props;
+    
     return (value: number, name: string, props?: any) => {
       const formattedValue = super.getTooltipFormatter()(value, name)[0];
       
@@ -47,7 +48,10 @@ class PaymentMethodPieChart extends AbstractPieChart<PaymentMethodPieChartProps>
       if (props?.payload) {
         const entry = props.payload;
         const { rewardsRate } = entry;
-        return [`${formattedValue} (${rewardsRate}% rewards)`, name];
+        
+        if (rewardsRate !== undefined) {
+          return [`${formattedValue} (${rewardsRate}% rewards)`, name];
+        }
       }
       
       return [formattedValue, name];

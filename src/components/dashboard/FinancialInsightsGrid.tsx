@@ -1,6 +1,6 @@
 // src/components/dashboard/FinancialInsightsGrid.tsx
 import React, { Component } from 'react';
-import { Transaction, PaymentMethod } from '@/types';
+import { Transaction, PaymentMethod, Currency } from '@/types';
 import { SummaryData } from '@/utils/SummaryDataProcessor';
 import { createPaymentMethodCard } from '@/components/dashboard/cards/PaymentMethodCard';
 import { createCategoryCard } from '@/components/dashboard/cards/CategoryCard';
@@ -19,9 +19,10 @@ interface FinancialInsightsGridProps {
     value: number;
     color: string;
   }>;
-  currency?: string;
+  currency?: Currency;
 }
 
+const DEFAULT_CURRENCY: Currency = 'SGD'; 
 /**
  * Component that displays the grid of financial insights cards
  * Implements the Composite pattern by composing multiple child components
@@ -33,7 +34,7 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
       paymentMethods, 
       summaryData, 
       categoryChartData,
-      currency = 'SGD'
+      currency
     } = this.props;
     
     const commonClasses = "rounded-xl border border-border/50 bg-card hover:shadow-md transition-all";
@@ -43,14 +44,14 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
         {/* Payment Methods Chart */}
         {createPaymentMethodCard(
           summaryData.paymentMethodChartData,
-          currency,
+          DEFAULT_CURRENCY,
           commonClasses
         )}
         
         {/* Expense Categories Chart */}
         {createCategoryCard(
           summaryData.categoryChartData,
-          currency,
+          DEFAULT_CURRENCY,
           commonClasses
         )}
         
@@ -60,7 +61,7 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
           'month',
           true,
           true,
-          currency,
+          DEFAULT_CURRENCY,
           commonClasses
         )}
         
@@ -68,7 +69,7 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
         {createCardOptimizationCard(
           transactions,
           paymentMethods,
-          currency,
+          DEFAULT_CURRENCY,
           commonClasses
         )}
         
@@ -76,7 +77,7 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
         {createSavingsPotentialCard(
           transactions,
           20,
-          currency,
+          DEFAULT_CURRENCY,
           commonClasses
         )}
         

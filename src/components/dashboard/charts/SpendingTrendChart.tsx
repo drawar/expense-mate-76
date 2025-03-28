@@ -1,9 +1,10 @@
-// src/components/dashboard/SpendingTrendChart.tsx
+// src/components/dashboard/charts/SpendingTrendChart.tsx
 import React from 'react';
-import { Tooltip as TooltipComponent } from 'recharts';
 import AbstractBarChart, { BarChartProps } from '@/components/dashboard/abstractions/AbstractBarChart';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
+import { ChartTooltipProps } from '@/components/dashboard/tooltips/ChartTooltip';
+import { Transaction } from '@/types';
 
 interface SpendingTrendChartProps extends BarChartProps {
   showInsights?: boolean;
@@ -156,9 +157,10 @@ class SpendingTrendChart extends AbstractBarChart<SpendingTrendChartProps> {
   }
   
   /**
-   * Override the default tooltip to include insights
+   * Override the base tooltip to include category insights
    */
-  protected renderCustomTooltip({ active, payload, label }: any): React.ReactNode {
+  protected renderCustomTooltip(props: ChartTooltipProps): React.ReactNode {
+    const { active, payload, label } = props;
     const { currency = 'USD', showInsights = true } = this.props;
     
     if (active && payload && payload.length) {
@@ -195,11 +197,11 @@ class SpendingTrendChart extends AbstractBarChart<SpendingTrendChartProps> {
    */
   render() {
     const { showInsights = true } = this.props;
-    const parent = super.render();
+    const chartContent = super.render();
     
     return (
       <div className="space-y-2">
-        {parent}
+        {chartContent}
         {showInsights && this.generateInsights()}
       </div>
     );

@@ -83,7 +83,7 @@ class CategoryPieChart extends AbstractPieChart<CategoryPieChartProps> {
     const { currency = 'SGD', showTrends } = this.props;
     
     return (value: number, name: string, props: any) => {
-      const formattedValue = super.getTooltipFormatter()(value);
+      const formattedValue = super.getTooltipFormatter()(value, name)[0];
       
       // If showing trends and there's trend information, add it to the tooltip
       const entry = props.payload;

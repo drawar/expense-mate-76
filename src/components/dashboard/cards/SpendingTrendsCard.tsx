@@ -13,15 +13,17 @@ import AbstractFinancialInsightCard, {
 } from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
 import SpendingTrendChart from '@/components/dashboard/charts/SpendingTrendChart';
 import { formatCurrency } from '@/utils/currencyFormatter';
-import { Transaction } from '@/types';
+import { Transaction, Currency } from '@/types';
 
 interface SpendingTrendsCardProps extends FinancialInsightCardProps {
   transactions: Transaction[];
   period?: 'week' | 'month' | 'quarter' | 'year';
   showAverage?: boolean;
   showInsights?: boolean;
-  currency?: string;
+  currency?: Currency;
 }
+
+const DEFAULT_CURRENCY: Currency = 'SGD'; 
 
 /**
  * Specialized card for displaying spending trends over time
@@ -184,7 +186,7 @@ class SpendingTrendsCard extends AbstractFinancialInsightCard<SpendingTrendsCard
    * Implement the abstract method to provide card-specific content
    */
   protected renderCardContent(): React.ReactNode {
-    const { transactions, currency = 'USD', showAverage = true, showInsights = true } = this.props;
+    const { transactions, currency = DEFAULT_CURRENCY, showAverage = true, showInsights = true } = this.props;
     const { selectedPeriod } = this.state;
     const { trend, average, hasSufficientData } = this.processTrendData();
     
@@ -252,7 +254,7 @@ export const createSpendingTrendsCard = (
   period: 'week' | 'month' | 'quarter' | 'year' = 'month',
   showAverage: boolean = true,
   showInsights: boolean = true,
-  currency: string = 'USD',
+  currency: Currency = DEFAULT_CURRENCY,
   className: string = ''
 ) => {
   return (
