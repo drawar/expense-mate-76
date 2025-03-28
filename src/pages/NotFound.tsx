@@ -2,8 +2,8 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-// import Navbar from "@/components/layout/Navbar";
 import { HomeIcon } from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
 
 const NotFound = () => {
   const location = useLocation();

@@ -1,115 +1,147 @@
-// src/utils/CardOptimizationAnalyzer.ts
-import { Transaction, PaymentMethod } from '@/types';
-import { TransactionAnalyzer } from '@/utils/TransactionAnalyzer';
+import { Transaction, PaymentMethod, Currency } from '@/types';
+import { convertCurrency } from './currencyConversion';
 
-export interface CardSuggestion {
-  category: string;
-  currentMethod: string;
-  suggestedMethod: string;
+interface OptimizedPaymentMethodResult {
+  paymentMethod: PaymentMethod;
+  potentialPoints: number;
   potentialSavings: number;
-  transactionCount: number;
+  actualPoints: number;
+  actualSavings: number;
+  difference: number;
 }
 
+/**
+ * Analyzes transactions to determine if better payment methods could have been used
+ */
 export class CardOptimizationAnalyzer {
+  private transactions: Transaction[];
+  private paymentMethods: PaymentMethod[];
+  
+  constructor(transactions: Transaction[], paymentMethods: PaymentMethod[]) {
+    this.transactions = transactions;
+    this.paymentMethods = paymentMethods;
+  }
+  
   /**
-   * Analyze transactions and payment methods to find optimization opportunities
-   * @param transactions List of transactions
-   * @param paymentMethods Available payment methods
-   * @returns Array of card optimization suggestions
+   * Calculate the cash value of reward points based on payment method
    */
-  static analyzeCardOptimizations(
-    transactions: Transaction[], 
-    paymentMethods: PaymentMethod[]
-  ): CardSuggestion[] {
-    // Group transactions by category
-    const categoryGroups = TransactionAnalyzer.groupTransactionsBy(transactions, 'category');
+  private calculateRewardValue(points: number, paymentMethod: PaymentMethod): number {
+    // Default value is 0.01 USD per point (1%)
+    const defaultValue = 0.01;
     
-    // Create a map of category rewards by payment method
-    const paymentMethodRewards = new Map<string, Map<string, number>>();
+    // In a real implementation, this would check the payment method's reward program
+    // and return the appropriate value per point
     
-    paymentMethods.forEach(method => {
-      const rewardsMap = new Map<string, number>();
-      
-      // Extract category rewards from payment method data
-      if (method.categoryRewards) {
-        Object.entries(method.categoryRewards).forEach(([category, rate]) => {
-          rewardsMap.set(category, rate);
-        });
-      }
-      
-      paymentMethodRewards.set(method.id, rewardsMap);
+    // Check if the payment method has categoryRewards defined in rewardRules
+    const rewardRules = paymentMethod.rewardRules || [];
+    // Use a default value if categoryRewards is not available
+    const basePointValue = rewardRules.length > 0 ? 0.01 : defaultValue; 
+    
+    return points * basePointValue;
+  }
+  
+  /**
+   * Analyzes a single transaction to find the best payment method
+   */
+  private analyzeTransaction(transaction: Transaction): OptimizedPaymentMethodResult[] {
+    const { amount, currency, paymentMethod } = transaction;
+    
+    // Filter payment methods to only include active ones
+    const activePaymentMethods = this.paymentMethods.filter(pm => pm.active);
+    
+    // Sort payment methods by potential points in descending order
+    const sortedPaymentMethods = [...activePaymentMethods].sort((a, b) => {
+      const potentialPointsA = this.calculatePotentialPoints(transaction, a);
+      const potentialPointsB = this.calculatePotentialPoints(transaction, b);
+      return potentialPointsB - potentialPointsA;
     });
     
-    // Find optimization opportunities
-    const suggestions: CardSuggestion[] = [];
+    return sortedPaymentMethods.map(pm => {
+      const potentialPoints = this.calculatePotentialPoints(transaction, pm);
+      const actualPoints = transaction.rewardPoints;
+      
+      const potentialSavings = this.calculateRewardValue(potentialPoints, pm);
+      const actualSavings = this.calculateRewardValue(actualPoints, paymentMethod);
+      
+      const difference = potentialSavings - actualSavings;
+      
+      return {
+        paymentMethod: pm,
+        potentialPoints,
+        potentialSavings,
+        actualPoints,
+        actualSavings,
+        difference
+      };
+    });
+  }
+  
+  /**
+   * Calculate potential reward points for a transaction with a given payment method
+   */
+  private calculatePotentialPoints(transaction: Transaction, paymentMethod: PaymentMethod): number {
+    let points = 0;
+    const { amount, currency, merchant } = transaction;
     
-    categoryGroups.forEach((categoryTransactions, category) => {
-      // Skip if no transactions
-      if (categoryTransactions.length === 0) return;
+    // Check each reward rule for the payment method
+    paymentMethod.rewardRules.forEach(rule => {
+      let multiplier = 0;
       
-      // Get the current most used payment method
-      const currentMethodSpending = new Map<string, number>();
-      
-      categoryTransactions.forEach(transaction => {
-        const method = transaction.paymentMethod?.id || 'Unknown';
-        currentMethodSpending.set(
-          method, 
-          (currentMethodSpending.get(method) || 0) + transaction.amount
-        );
-      });
-      
-      // Find the most used method
-      let currentMethod = '';
-      let maxUsage = 0;
-      
-      currentMethodSpending.forEach((amount, method) => {
-        if (amount > maxUsage) {
-          maxUsage = amount;
-          currentMethod = method;
-        }
-      });
-      
-      // Find payment method with best rewards for this category
-      let bestMethod = '';
-      let bestRewardRate = 0;
-      
-      paymentMethodRewards.forEach((rewardsMap, methodId) => {
-        const rate = rewardsMap.get(category) || 0;
-        if (rate > bestRewardRate) {
-          bestRewardRate = rate;
-          bestMethod = methodId;
-        }
-      });
-      
-      // If there's a better method, add suggestion
-      if (bestMethod && bestMethod !== currentMethod && bestRewardRate > 0) {
-        // Get current method reward rate
-        const currentMethodRewards = paymentMethodRewards.get(currentMethod) || new Map();
-        const currentRewardRate = currentMethodRewards.get(category) || 0;
-        
-        // Calculate potential savings
-        const totalSpent = TransactionAnalyzer.calculateTotalSpending(categoryTransactions);
-        const currentRewards = totalSpent * (currentRewardRate / 100);
-        const potentialRewards = totalSpent * (bestRewardRate / 100);
-        const potentialSavings = potentialRewards - currentRewards;
-        
-        if (potentialSavings > 0) {
-          // Find payment method names
-          const currentMethodName = paymentMethods.find(m => m.id === currentMethod)?.name || currentMethod;
-          const suggestedMethodName = paymentMethods.find(m => m.id === bestMethod)?.name || bestMethod;
+      switch (rule.type) {
+        case 'mcc':
+          if (merchant.mcc && rule.condition === merchant.mcc.code) {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
           
-          suggestions.push({
-            category,
-            currentMethod: currentMethodName,
-            suggestedMethod: suggestedMethodName,
-            potentialSavings,
-            transactionCount: categoryTransactions.length
-          });
-        }
+        case 'merchant':
+          if (merchant.name === rule.condition) {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
+          
+        case 'currency':
+          if (currency === rule.condition) {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
+          
+        case 'spend_threshold':
+          if (amount >= Number(rule.condition)) {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
+          
+        case 'online':
+          if (merchant.isOnline && rule.condition === 'true') {
+            multiplier = rule.pointsMultiplier;
+          } else if (!merchant.isOnline && rule.condition === 'false') {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
+          
+        case 'contactless':
+          if (transaction.isContactless && rule.condition === 'true') {
+            multiplier = rule.pointsMultiplier;
+          } else if (!transaction.isContactless && rule.condition === 'false') {
+            multiplier = rule.pointsMultiplier;
+          }
+          break;
+      }
+      
+      // Apply the multiplier
+      if (multiplier > 0) {
+        points += amount * multiplier;
       }
     });
     
-    // Sort suggestions by potential savings
-    return suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings).slice(0, 3);
+    return points;
+  }
+  
+  /**
+   * Run the card optimization analysis
+   */
+  runAnalysis(): OptimizedPaymentMethodResult[][] {
+    return this.transactions.map(transaction => this.analyzeTransaction(transaction));
   }
 }

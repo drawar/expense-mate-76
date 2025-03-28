@@ -1,13 +1,15 @@
+
 // src/components/dashboard/abstractions/AbstractFinancialInsightCard.tsx
 import React, { Component } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LucideIcon } from 'lucide-react';
 
 /**
  * Base props interface for all financial insight cards
  */
 export interface FinancialInsightCardProps {
   title: string;
-  icon?: React.ElementType; // Lucide icon component
+  icon?: LucideIcon; // Use LucideIcon type from lucide-react
   className?: string;
 }
 

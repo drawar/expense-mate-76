@@ -1,4 +1,3 @@
-
 // src/containers/DashboardContainer.tsx
 import React, { Component } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
