@@ -1,4 +1,3 @@
-
 import { CSSProperties, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,6 +10,7 @@ interface SummaryCardProps {
   style?: CSSProperties;
   customContent?: ReactNode;
   cardColor?: string;
+  valueColor?: string;
 }
 
 const SummaryCard = ({ 
@@ -21,16 +21,18 @@ const SummaryCard = ({
   className, 
   style, 
   customContent,
-  cardColor = "bg-[#111827]" // Dark blue background by default
+  cardColor = "bg-card",
+  valueColor = "text-foreground"
 }: SummaryCardProps) => {
   return (
     <Card 
-      className={`summary-card overflow-hidden ${cardColor} border-0 text-white ${className || ''}`} 
+      className={`summary-card overflow-hidden ${cardColor} animate-fadeIn ${className || ''}`} 
       style={style}
     >
       <CardHeader className="pb-2">
-        {/* Title component - consistent across all cards */}
-        <CardDescription className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+        {/* Title component with icon */}
+        <CardDescription className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+          {icon && <span className="mr-1.5">{icon}</span>}
           {title}
         </CardDescription>
         
@@ -39,7 +41,7 @@ const SummaryCard = ({
           {customContent ? (
             customContent
           ) : (
-            <CardTitle className="text-3xl font-bold truncate text-white" title={value}>
+            <CardTitle className={`text-2xl font-bold truncate ${valueColor}`} title={value}>
               {value}
             </CardTitle>
           )}
@@ -49,9 +51,8 @@ const SummaryCard = ({
       {/* Footnote component - consistent across all cards */}
       <CardContent className="pt-0">
         {description && (
-          <div className="text-xs flex items-center gap-1.5">
-            {icon && <span>{icon}</span>}
-            <span className="truncate">{description}</span>
+          <div className="text-xs text-muted-foreground flex items-center gap-1">
+            {description}
           </div>
         )}
       </CardContent>
