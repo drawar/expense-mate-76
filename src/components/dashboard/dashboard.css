@@ -40,74 +40,166 @@
   stroke: white !important;
 }
 
-/* Currency Selector specific styling */
-.currency-selector.component-hover-box {
-  margin-right: 0.5rem;
-  padding: 0 0.75rem; /* Adjust padding to match button */
-  border-radius: 0.75rem; /* Consistent rounding across all components */
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Time Frame Selector specific styling */
-.timeframe-selector.component-hover-box {
-  margin-right: 0.5rem;
-  padding: 0 0.75rem; /* Adjust padding to match button */
-  border-radius: 0.75rem; /* Consistent rounding across all components */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* Statement Month Toggle specific styling */
-.statement-toggle.component-hover-box {
-  padding: 0 0.75rem; /* Adjust padding to match button */
-  border-radius: 0.75rem; /* Consistent rounding across all components */
-  min-width: 180px; /* Ensure adequate width */
-  width: auto; /* Allow content to determine final width */
-  justify-content: flex-start; /* Align content to the left */
-  height: 40px; /* Force same height as other components */
-  min-height: 40px; /* Ensure minimum height matches button */
-  box-sizing: border-box; /* Include padding in height calculation */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Ensure all inner elements of Statement Month are properly sized */
-.statement-toggle.component-hover-box > div {
-  height: 100%;
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Micro-interactions for cards */
+.glass-card {
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.glass-card-elevated {
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.glass-card-elevated:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Enhanced text gradients */
+.text-gradient {
+  background-image: linear-gradient(to right, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.025em;
+}
+
+/* Variable font weight utility */
+.font-variable {
+  font-variation-settings: "wght" var(--font-weight, 400);
+}
+
+.font-variable-semi {
+  --font-weight: 600;
+}
+
+.font-variable-bold {
+  --font-weight: 700;
+}
+
+.font-variable-black {
+  --font-weight: 900;
+}
+
+/* Sparkline styles */
+.sparkline {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  height: 20px;
+  gap: 1px;
 }
 
-/* Remove backgrounds from all inner elements */
-.component-hover-box:hover * {
-  background-color: transparent !important;
-  border-color: transparent !important;
+.sparkline-bar {
+  width: 3px;
+  background-color: currentColor;
+  border-radius: 1px;
+  opacity: 0.5;
+  transition: height 0.3s ease, opacity 0.3s ease;
 }
 
-/* Display switches and inputs with proper contrast */
-.component-hover-box:hover [role="switch"] {
-  background-color: white !important;
-  opacity: 1 !important;
+.sparkline-bar:last-child {
+  opacity: 1;
+  background-color: var(--primary);
 }
 
-/* Special handling for switch checked state */
-.component-hover-box:hover [data-state="checked"] {
-  background-color: white !important; /* White background for contrast */
+.sparkline:hover .sparkline-bar {
+  opacity: 0.8;
 }
 
-.component-hover-box:hover [data-state="unchecked"] {
-  background-color: rgba(255, 255, 255, 0.4) !important; /* Semi-transparent white for unchecked */
+/* Interactive links */
+.interactive-link {
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Ensure switch thumb remains visible */
-.component-hover-box:hover [data-state] span {
-  background-color: #6366f1 !important; /* Use primary color for switch thumb */
+.interactive-link:after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background: currentColor;
+  transition: width 0.3s ease;
 }
 
-/* Ensure select arrows remain visible */
-.component-hover-box:hover [data-radix-select-trigger] {
-  background: transparent !important;
-  border: none !important;
+.interactive-link:hover:after {
+  width: 100%;
 }
 
-/* Fix for input fields */
-.component-hover-box:hover input {
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
+/* Enhanced button hover effect */
+.btn-hover-effect {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-hover-effect:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.btn-hover-effect:hover:after {
+  transform: translateX(0);
+}
+
+.btn-hover-effect:active {
+  transform: scale(0.98);
+}
+
+/* Subtle texture background */
+.texture-bg {
+  background-color: var(--background);
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }

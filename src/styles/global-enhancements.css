@@ -1,0 +1,252 @@
+/* Global enhancements for the expense tracker app */
+
+/* Typography improvements with variable font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+:root {
+  /* Define a more refined color palette */
+  --primary-lighter: #a5b4fc;
+  --primary-light: #818cf8;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-darker: #4338ca;
+  
+  --accent-lighter: #e9d5ff;
+  --accent-light: #d8b4fe;
+  --accent: #a855f7;
+  --accent-dark: #9333ea;
+  --accent-darker: #7e22ce;
+  
+  --success-light: #86efac;
+  --success: #22c55e;
+  --success-dark: #16a34a;
+  
+  --warning-light: #fdba74;
+  --warning: #f97316;
+  --warning-dark: #ea580c;
+  
+  --danger-light: #fca5a5;
+  --danger: #ef4444;
+  --danger-dark: #dc2626;
+  
+  /* Typography scale with better differentiation */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Letter spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+}
+
+/* Base typography */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Apply variable font weights */
+h1, h2, h3, h4, h5, h6 {
+  font-variation-settings: 'wght' 700;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.font-light {
+  font-variation-settings: 'wght' 300;
+}
+
+.font-normal {
+  font-variation-settings: 'wght' 400;
+}
+
+.font-medium {
+  font-variation-settings: 'wght' 500;
+}
+
+.font-semibold {
+  font-variation-settings: 'wght' 600;
+}
+
+.font-bold {
+  font-variation-settings: 'wght' 700;
+}
+
+.font-black {
+  font-variation-settings: 'wght' 900;
+}
+
+/* Enhanced gradients */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+}
+
+.bg-gradient-accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+}
+
+.bg-gradient-primary-accent {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+/* Enhanced animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-enter {
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Better card and container styling */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chart-container {
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Micro-interaction utilities */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.01);
+}
+
+/* Custom scrollbars for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Dark mode optimization */
+.dark .glass-card {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Chart and visualization enhancements */
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value {
+  font-size: var(--font-size-sm) !important;
+}
+
+.recharts-legend-item-text {
+  font-size: var(--font-size-xs) !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+}
+
+/* Better focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
