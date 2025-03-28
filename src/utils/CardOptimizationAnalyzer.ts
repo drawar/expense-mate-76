@@ -156,22 +156,18 @@ export class CardOptimizationAnalyzer {
   }
   
   /**
-   * Add the static method that's being referenced in CardOptimizationCard
+   * Generate card optimization suggestions based on transaction analysis
    */
-  static analyzeCardOptimizations(
-    transactions: Transaction[], 
-    paymentMethods: PaymentMethod[]
-  ): CardSuggestion[] {
-    if (!transactions.length || !paymentMethods.length) {
+  analyzeCardOptimizations(): CardSuggestion[] {
+    if (!this.transactions.length || !this.paymentMethods.length) {
       return [];
     }
     
-    const analyzer = new CardOptimizationAnalyzer(transactions, paymentMethods);
-    const analysisResults = analyzer.runAnalysis();
+    const analysisResults = this.runAnalysis();
     
     // Group transactions by category
     const categories = new Map<string, Transaction[]>();
-    transactions.forEach(tx => {
+    this.transactions.forEach(tx => {
       const category = tx.category || 'Uncategorized';
       if (!categories.has(category)) {
         categories.set(category, []);
@@ -193,7 +189,7 @@ export class CardOptimizationAnalyzer {
       
       // Analyze first transaction as a representative for the category
       const sampleTx = categoryTransactions[0];
-      const results = analyzer.analyzeTransaction(sampleTx);
+      const results = this.analyzeTransaction(sampleTx);
       
       // Find payment method with highest potential savings
       for (const result of results) {
@@ -218,5 +214,20 @@ export class CardOptimizationAnalyzer {
     
     // Sort suggestions by potential savings (highest first)
     return suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings);
+  }
+  
+  /**
+   * Static method to analyze card optimizations from external components
+   */
+  static analyzeCardOptimizations(
+    transactions: Transaction[], 
+    paymentMethods: PaymentMethod[]
+  ): CardSuggestion[] {
+    if (!transactions.length || !paymentMethods.length) {
+      return [];
+    }
+    
+    const analyzer = new CardOptimizationAnalyzer(transactions, paymentMethods);
+    return analyzer.analyzeCardOptimizations();
   }
 }

@@ -1,5 +1,4 @@
 
-// src/components/dashboard/cards/CardOptimizationCard.tsx
 import React from 'react';
 import { CreditCardIcon, RefreshCwIcon } from 'lucide-react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
@@ -37,9 +36,9 @@ class CardOptimizationCard extends AbstractFinancialInsightCard<CardOptimization
    * Implement the abstract method to provide card-specific content
    */
   protected renderCardContent(): React.ReactNode {
-    const { transactions, paymentMethods, currency = 'SGD' as Currency } = this.props;
+    const { transactions, paymentMethods, currency = 'SGD' } = this.props;
     
-    // Analyze card optimizations using the new utility
+    // Analyze card optimizations using the CardOptimizationAnalyzer
     const suggestions = CardOptimizationAnalyzer.analyzeCardOptimizations(
       transactions, 
       paymentMethods
