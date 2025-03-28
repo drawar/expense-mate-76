@@ -1,7 +1,8 @@
+
 // src/components/dashboard/cards/SavingsPotentialCard.tsx
 import React from 'react';
 import { PiggyBankIcon, TrendingDownIcon, BarChart3Icon } from 'lucide-react';
-import { Transaction } from '@/types';
+import { Transaction, Currency } from '@/types';
 import AbstractFinancialInsightCard, { 
   FinancialInsightCardProps 
 } from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
@@ -11,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 interface SavingsPotentialCardProps extends FinancialInsightCardProps {
   transactions: Transaction[];
   savingsGoalPercentage?: number;
-  currency?: string;
+  currency?: Currency;
 }
 
 /**
@@ -134,7 +135,7 @@ class SavingsPotentialCard extends AbstractFinancialInsightCard<SavingsPotential
    * Implement the abstract method to provide card-specific content
    */
   protected renderCardContent(): React.ReactNode {
-    const { currency = 'SGD' } = this.props;
+    const { currency = 'SGD' as Currency } = this.props;
     const analysis = this.analyzeSavingsPotential();
     
     if (this.props.transactions.length === 0) {
@@ -219,7 +220,7 @@ export const createSavingsPotentialCard = (
       icon={PiggyBankIcon}
       transactions={transactions}
       savingsGoalPercentage={savingsGoalPercentage}
-      currency={currency}
+      currency={currency as Currency}
       className={className}
     />
   );

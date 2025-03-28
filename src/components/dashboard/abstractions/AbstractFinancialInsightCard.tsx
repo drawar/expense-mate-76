@@ -25,7 +25,7 @@ abstract class AbstractFinancialInsightCard<P extends FinancialInsightCardProps>
   protected abstract renderCardContent(): React.ReactNode;
   
   /**
-   * Optional method subclasses can override to provide additional header content
+   * Optional method subclasses can override to provide additional header actions
    */
   protected renderHeaderActions(): React.ReactNode {
     return null;
