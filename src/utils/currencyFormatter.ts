@@ -10,7 +10,7 @@ const currencySymbols: Record<Currency, string> = {
   CAD: 'C$',
   CNY: '¥',
   INR: '₹',
-  NTD: 'NT$',
+  TWD: 'NT$',
   SGD: 'S$',
   VND: '₫',
   IDR: 'Rp',
@@ -31,8 +31,8 @@ export const formatCurrency = (amount: number, currency: Currency): string => {
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-    minimumFractionDigits: ['JPY', 'VND', 'IDR', 'NTD'].includes(currency) ? 0 : 2,
-    maximumFractionDigits: ['JPY', 'VND', 'IDR', 'NTD'].includes(currency) ? 0 : 2,
+    minimumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
+    maximumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
   });
   
   return formatter.format(amount);
@@ -51,7 +51,7 @@ export const currencyOptions: { value: Currency; label: string }[] = [
   { value: 'CAD', label: 'CAD - Canadian Dollar (C$)' },
   { value: 'CNY', label: 'CNY - Chinese Yuan (¥)' },
   { value: 'INR', label: 'INR - Indian Rupee (₹)' },
-  { value: 'NTD', label: 'NTD - New Taiwan Dollar (NT$)' },
+  { value: 'TWD', label: 'TWD - New Taiwan Dollar (NT$)' },
   { value: 'SGD', label: 'SGD - Singapore Dollar (S$)' },
   { value: 'VND', label: 'VND - Vietnamese Dong (₫)' },
   { value: 'IDR', label: 'IDR - Indonesian Rupiah (Rp)' },

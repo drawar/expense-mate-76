@@ -1,167 +1,245 @@
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCardIcon, CoinsIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react';
+// src/components/dashboard/cards/CardOptimizationCard.tsx
+import React from 'react';
+import { CreditCardIcon, RefreshCwIcon } from 'lucide-react';
 import { Transaction, PaymentMethod } from '@/types';
-import { calculateOptimalCard } from '@/utils/cardOptimization';
+import AbstractFinancialInsightCard, { 
+  FinancialInsightCardProps 
+} from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
 import { formatCurrency } from '@/utils/currencyFormatter';
+import { Button } from '@/components/ui/button';
 
-interface CardOptimizationCardProps {
+interface CardOptimizationCardProps extends FinancialInsightCardProps {
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
+  currency?: string;
 }
 
-// Helper function to find the best card for the most common category
-const findBestCardForCategory = (transactions: Transaction[], paymentMethods: PaymentMethod[]) => {
-  // Extract the most common category
-  const categoryCounts = transactions.reduce((acc, tx) => {
-    const category = tx.category;
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
-  // Find the category with the highest count
-  const entries = Object.entries(categoryCounts);
-  if (entries.length === 0) return null;
-  
-  entries.sort((a, b) => b[1] - a[1]);
-  const [topCategory] = entries[0];
-  
-  // Basic simulation of reward points for each card for this category
-  // In a real implementation, this would use your reward rules logic
-  const cardScores = paymentMethods
-    .filter(method => method.type === 'credit_card')
-    .map(card => {
-      // Use the number of reward rules as a proxy for card value
-      // In a real implementation, you'd calculate expected points based on rules
-      const ruleCount = card.rewardRules?.length || 0;
-      return {
-        card,
-        score: ruleCount
-      };
-    })
-    .sort((a, b) => b.score - a.score);
-  
-  if (cardScores.length === 0) return null;
-  
-  return {
-    category: topCategory,
-    card: cardScores[0].card
-  };
-};
+/**
+ * Interface defining optimal card suggestions
+ */
+interface CardSuggestion {
+  category: string;
+  currentMethod: string;
+  suggestedMethod: string;
+  potentialSavings: number;
+  transactionCount: number;
+}
 
-const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({ transactions, paymentMethods }) => {
-  // Calculate optimization metrics
-  const optimizationMetrics = useMemo(() => {
-    if (!transactions.length) return null;
+/**
+ * Card component that analyzes transactions and suggests optimal payment methods
+ * Extends AbstractFinancialInsightCard for consistent card behavior
+ */
+class CardOptimizationCard extends AbstractFinancialInsightCard<CardOptimizationCardProps> {
+  /**
+   * Analyze transactions and payment methods to find optimization opportunities
+   */
+  private analyzeCardOptimizations(): CardSuggestion[] {
+    const { transactions, paymentMethods } = this.props;
     
-    // Calculate potential points if optimal cards were used
-    let potentialPoints = 0;
-    let actualPoints = 0;
-    let missedPoints = 0;
-    let suboptimalTransactions = 0;
+    // Group transactions by category
+    const categoryGroups = new Map<string, Transaction[]>();
     
-    transactions.forEach(tx => {
-      const optimalCard = calculateOptimalCard(tx, paymentMethods);
-      actualPoints += tx.rewardPoints || 0;
+    transactions.forEach(transaction => {
+      const category = transaction.category || 'Uncategorized';
+      if (!categoryGroups.has(category)) {
+        categoryGroups.set(category, []);
+      }
+      categoryGroups.get(category)!.push(transaction);
+    });
+    
+    // Find the most used payment method for each category
+    const categoryPaymentMethods = new Map<string, Map<string, number>>();
+    
+    categoryGroups.forEach((transactions, category) => {
+      const methodCounts = new Map<string, number>();
       
-      if (optimalCard && (optimalCard.id !== tx.paymentMethod.id)) {
-        // Simplified calculation - in real implementation use your reward rules logic
-        // Here we're assuming optimized is ~30% better as a placeholder
-        const estimatedOptimalPoints = (tx.rewardPoints || 0) * 1.3;
-        potentialPoints += estimatedOptimalPoints;
-        missedPoints += estimatedOptimalPoints - (tx.rewardPoints || 0);
-        suboptimalTransactions++;
-      } else {
-        potentialPoints += tx.rewardPoints || 0;
+      transactions.forEach(transaction => {
+        const method = transaction.paymentMethod || 'Unknown';
+        methodCounts.set(method, (methodCounts.get(method) || 0) + transaction.amount);
+      });
+      
+      categoryPaymentMethods.set(category, methodCounts);
+    });
+    
+    // Create a map of category rewards by payment method
+    const paymentMethodRewards = new Map<string, Map<string, number>>();
+    
+    paymentMethods.forEach(method => {
+      const rewardsMap = new Map<string, number>();
+      
+      // Extract category rewards from payment method data
+      if (method.categoryRewards) {
+        Object.entries(method.categoryRewards).forEach(([category, rate]) => {
+          rewardsMap.set(category, rate);
+        });
+      }
+      
+      paymentMethodRewards.set(method.id, rewardsMap);
+    });
+    
+    // Find optimization opportunities
+    const suggestions: CardSuggestion[] = [];
+    
+    categoryGroups.forEach((transactions, category) => {
+      // Skip if no transactions
+      if (transactions.length === 0) return;
+      
+      // Get the current most used payment method
+      const methodsUsed = categoryPaymentMethods.get(category) || new Map();
+      if (methodsUsed.size === 0) return;
+      
+      // Find the most used method
+      let currentMethod = '';
+      let maxUsage = 0;
+      
+      methodsUsed.forEach((amount, method) => {
+        if (amount > maxUsage) {
+          maxUsage = amount;
+          currentMethod = method;
+        }
+      });
+      
+      // Find payment method with best rewards for this category
+      let bestMethod = '';
+      let bestRewardRate = 0;
+      
+      paymentMethodRewards.forEach((rewardsMap, methodId) => {
+        const rate = rewardsMap.get(category) || 0;
+        if (rate > bestRewardRate) {
+          bestRewardRate = rate;
+          bestMethod = methodId;
+        }
+      });
+      
+      // If there's a better method, add suggestion
+      if (bestMethod && bestMethod !== currentMethod && bestRewardRate > 0) {
+        // Get current method reward rate
+        const currentMethodRewards = paymentMethodRewards.get(currentMethod) || new Map();
+        const currentRewardRate = currentMethodRewards.get(category) || 0;
+        
+        // Calculate potential savings
+        const totalSpent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+        const currentRewards = totalSpent * (currentRewardRate / 100);
+        const potentialRewards = totalSpent * (bestRewardRate / 100);
+        const potentialSavings = potentialRewards - currentRewards;
+        
+        if (potentialSavings > 0) {
+          // Find payment method names
+          const currentMethodName = paymentMethods.find(m => m.id === currentMethod)?.name || currentMethod;
+          const suggestedMethodName = paymentMethods.find(m => m.id === bestMethod)?.name || bestMethod;
+          
+          suggestions.push({
+            category,
+            currentMethod: currentMethodName,
+            suggestedMethod: suggestedMethodName,
+            potentialSavings,
+            transactionCount: transactions.length
+          });
+        }
       }
     });
     
-    // Calculate optimization score (0-100)
-    const optimizationScore = potentialPoints > 0 
-      ? Math.round((actualPoints / potentialPoints) * 100) 
-      : 100;
-    
-    return {
-      optimizationScore,
-      missedPoints: Math.round(missedPoints),
-      suboptimalTransactions,
-      bestRecommendation: findBestCardForCategory(transactions, paymentMethods)
-    };
-  }, [transactions, paymentMethods]);
+    // Sort suggestions by potential savings
+    return suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings).slice(0, 3);
+  }
   
-  return (
-    <Card className="rounded-xl border border-border/50 bg-card hover:shadow-md transition-all">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center gap-2">
-          <CreditCardIcon className="h-5 w-5 text-primary" />
-          Card Optimization
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {optimizationMetrics ? (
-          <div className="space-y-4">
-            {/* Optimization Score */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Rewards Optimization Score</span>
-              <div className="flex items-center">
-                <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      optimizationMetrics.optimizationScore > 80 
-                        ? 'bg-green-500' 
-                        : optimizationMetrics.optimizationScore > 60 
-                          ? 'bg-yellow-500' 
-                          : 'bg-red-500'
-                    }`}
-                    style={{ width: `${optimizationMetrics.optimizationScore}%` }}
-                  ></div>
+  /**
+   * Render header actions for the card
+   */
+  protected renderHeaderActions(): React.ReactNode {
+    return (
+      <Button variant="ghost" size="sm" className="h-8 px-2">
+        <RefreshCwIcon className="h-4 w-4 mr-1" />
+        <span className="text-xs">Refresh</span>
+      </Button>
+    );
+  }
+  
+  /**
+   * Implement the abstract method to provide card-specific content
+   */
+  protected renderCardContent(): React.ReactNode {
+    const { currency = 'SGD' } = this.props;
+    const suggestions = this.analyzeCardOptimizations();
+    
+    if (suggestions.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-60 text-center">
+          <CreditCardIcon className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">No card optimization suggestions available.</p>
+          <p className="text-xs text-muted-foreground mt-1">You're already using optimal payment methods!</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Potential annual savings with optimal cards:
+          </p>
+          <p className="font-medium text-green-500">
+            +{formatCurrency(
+              suggestions.reduce((sum, suggestion) => sum + suggestion.potentialSavings, 0) * 12,
+              currency
+            )}
+          </p>
+        </div>
+        
+        <div className="space-y-3">
+          {suggestions.map((suggestion, index) => (
+            <div key={index} className="p-3 rounded-lg border border-border bg-muted/30">
+              <div className="flex justify-between items-start mb-1">
+                <span className="font-medium text-sm">{suggestion.category}</span>
+                <span className="text-green-500 text-xs">
+                  +{formatCurrency(suggestion.potentialSavings, currency)}/mo
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                {suggestion.transactionCount} transactions
+              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Current</p>
+                  <p className="text-xs font-medium truncate">{suggestion.currentMethod}</p>
                 </div>
-                <span className="ml-2 font-medium">{optimizationMetrics.optimizationScore}%</span>
+                <div className="mx-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Suggested</p>
+                  <p className="text-xs font-medium text-primary truncate">{suggestion.suggestedMethod}</p>
+                </div>
               </div>
             </div>
-            
-            {/* Missed Points */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Missed Reward Points</span>
-              <span className="font-medium flex items-center">
-                <CoinsIcon className="h-4 w-4 mr-1 text-amber-500" />
-                {optimizationMetrics.missedPoints.toLocaleString()}
-              </span>
-            </div>
-            
-            {/* Suboptimal Transactions */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Suboptimal Card Choices</span>
-              <span className="font-medium">{optimizationMetrics.suboptimalTransactions} transactions</span>
-            </div>
-            
-            {/* Next Purchase Recommendation */}
-            <div className="mt-6 p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <h4 className="text-sm font-semibold mb-2">Best Card for Next Purchase</h4>
-              {optimizationMetrics.bestRecommendation ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-6 rounded flex items-center justify-center bg-primary/20 text-primary">
-                    <CreditCardIcon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{optimizationMetrics.bestRecommendation.card.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Best for {optimizationMetrics.bestRecommendation.category} purchases
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Add more transactions to get recommendations</p>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-32 text-muted-foreground">
-            <p>Not enough data for optimization insights</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+}
+
+/**
+ * Factory function to create a CardOptimizationCard with default props
+ */
+export const createCardOptimizationCard = (
+  transactions: Transaction[],
+  paymentMethods: PaymentMethod[],
+  currency: string = 'SGD',
+  className: string = ''
+) => {
+  return (
+    <CardOptimizationCard
+      title="Card Optimization"
+      icon={CreditCardIcon}
+      transactions={transactions}
+      paymentMethods={paymentMethods}
+      currency={currency}
+      className={className}
+    />
   );
 };
 
