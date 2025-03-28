@@ -34,7 +34,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
     <div className="space-y-6 w-full">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight">Expense Summary</h2>
+          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">Expense Summary</h2>
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 items-start sm:items-center">
             {/* Currency Selector */}
             <DisplayCurrencySelect 
@@ -76,7 +76,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         {/* Single TabsContent implementation shared by all tabs */}
         <TabsContent 
           value={activeTab} 
-          className="mt-4 space-y-6"
+          className="mt-4 space-y-6 animate-fadeIn"
         >
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
