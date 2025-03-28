@@ -1,4 +1,5 @@
 
+
 import { useMemo, useCallback } from 'react';
 import { Transaction, Currency, PaymentMethod } from '@/types';
 import { calculateTotalRewardPoints } from '@/utils/rewards/rewardPoints';
@@ -136,7 +137,7 @@ export const useSummaryData = (
           return true;
       }
     });
-  }, [activeTab, processedTransactions, useStatementMonth, statementCycleDay]);
+  }, [activeTab, processedTransactions, useStatementMonth, dateRanges]);
   
   // Calculate all summary data in a single pass, with currency conversion
   // Optimize: Refactor to avoid unnecessary calculations
@@ -166,24 +167,32 @@ export const useSummaryData = (
       // Get the original amount in transaction currency
       const originalAmount = tx.amount;
       
-      // Convert to display currency
-      const convertedAmount = convertCurrency(
-        originalAmount, 
-        tx.currency as Currency, 
-        displayCurrency, 
-        tx.paymentMethod
-      );
-      
-      // Calculate total expenses in display currency
-      totalExpenses += convertedAmount;
-      
-      // Expenses by payment method (in display currency)
-      const methodName = tx.paymentMethod.name;
-      expensesByPaymentMethod[methodName] = (expensesByPaymentMethod[methodName] || 0) + convertedAmount;
-      
-      // Expenses by category (in display currency)
-      const category = tx.category || 'Uncategorized';
-      expensesByCategory[category] = (expensesByCategory[category] || 0) + convertedAmount;
+      try {
+        // Validate the currency is supported before conversion
+        const txCurrency = tx.currency as Currency;
+        
+        // Convert to display currency - added try/catch to handle potential errors
+        const convertedAmount = convertCurrency(
+          originalAmount, 
+          txCurrency, 
+          displayCurrency, 
+          tx.paymentMethod
+        );
+        
+        // Calculate total expenses in display currency
+        totalExpenses += convertedAmount;
+        
+        // Expenses by payment method (in display currency)
+        const methodName = tx.paymentMethod.name;
+        expensesByPaymentMethod[methodName] = (expensesByPaymentMethod[methodName] || 0) + convertedAmount;
+        
+        // Expenses by category (in display currency)
+        const category = tx.category || 'Uncategorized';
+        expensesByCategory[category] = (expensesByCategory[category] || 0) + convertedAmount;
+      } catch (error) {
+        console.error('Error processing transaction:', tx.id, error);
+        // Continue processing other transactions
+      }
     }
     
     // Derived calculations
@@ -225,3 +234,4 @@ export const useSummaryData = (
   
   return { filteredTransactions, summaryData };
 };
+

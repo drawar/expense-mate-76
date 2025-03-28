@@ -1,3 +1,4 @@
+
 import { Currency, PaymentMethod } from '@/types';
 
 // Default exchange rates - in a real app, these would come from an API
@@ -22,12 +23,23 @@ export const DEFAULT_EXCHANGE_RATES: Record<Currency, Record<Currency, number>> 
 export const convertCurrency = (amount: number, fromCurrency: Currency, toCurrency: Currency, paymentMethod?: PaymentMethod): number => {
   if (fromCurrency === toCurrency) return amount;
   
-  // Try to use custom conversion rates from payment method if available
+  // Check if payment method exists before trying to access its properties
   if (paymentMethod?.conversionRate && 
       paymentMethod.conversionRate[toCurrency] !== undefined) {
     return amount * paymentMethod.conversionRate[toCurrency];
   }
   
-  // Otherwise use default rates
+  // Add validation for currency codes to prevent accessing undefined rates
+  if (!DEFAULT_EXCHANGE_RATES[fromCurrency]) {
+    console.error(`Invalid source currency: ${fromCurrency}`);
+    return amount; // Return original amount if conversion not possible
+  }
+  
+  if (!DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency]) {
+    console.error(`Invalid target currency or exchange rate not available: ${fromCurrency} to ${toCurrency}`);
+    return amount; // Return original amount if conversion not possible
+  }
+  
+  // Now we can safely access the exchange rate
   return amount * DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency];
 };
