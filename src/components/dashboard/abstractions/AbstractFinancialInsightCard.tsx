@@ -1,4 +1,3 @@
-
 import React, { Component } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
@@ -30,9 +29,6 @@ abstract class AbstractFinancialInsightCard<P extends FinancialInsightCardProps>
     return null;
   }
   
-  /**
-   * Renders the card with consistent styling and structure
-   */
   render() {
     const { title, icon: Icon, className = '' } = this.props;
     
