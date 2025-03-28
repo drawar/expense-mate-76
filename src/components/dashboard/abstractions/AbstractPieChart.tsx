@@ -54,7 +54,10 @@ abstract class AbstractPieChart<P extends AbstractPieChartProps> extends Compone
    */
   protected getTooltipFormatter() {
     const { currency = 'USD' } = this.props;
-    return (value: number) => formatCurrency(value, currency);
+    return (value: number, name: string, props?: any) => [
+      formatCurrency(value, currency),
+      name
+    ];
   }
   
   /**

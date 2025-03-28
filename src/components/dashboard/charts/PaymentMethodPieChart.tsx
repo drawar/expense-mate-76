@@ -38,16 +38,16 @@ class PaymentMethodPieChart extends AbstractPieChart<PaymentMethodPieChartProps>
   /**
    * Override getTooltipFormatter to add payment method specific information
    */
-  protected getTooltipFormatter() {
+  protected override getTooltipFormatter() {
     const { currency = 'SGD' } = this.props;
-    
-    return (value: number, name: string, props: any) => {
-      const formattedValue = super.getTooltipFormatter()(value);
+    return (value: number, name: string, props?: any) => {
+      const formattedValue = super.getTooltipFormatter()(value, name)[0];
       
       // If there's reward rate information, add it to the tooltip
-      const entry = props.payload;
-      if (entry && entry.rewardsRate) {
-        return [`${formattedValue} (${entry.rewardsRate}% rewards)`, name];
+      if (props?.payload) {
+        const entry = props.payload;
+        const { rewardsRate } = entry;
+        return [`${formattedValue} (${rewardsRate}% rewards)`, name];
       }
       
       return [formattedValue, name];

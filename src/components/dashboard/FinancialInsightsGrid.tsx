@@ -59,6 +59,7 @@ class FinancialInsightsGrid extends Component<FinancialInsightsGridProps> {
           transactions,
           'month',
           true,
+          true,
           currency,
           commonClasses
         )}

@@ -79,7 +79,7 @@ class CategoryPieChart extends AbstractPieChart<CategoryPieChartProps> {
   /**
    * Override getTooltipFormatter to add category specific information
    */
-  protected getTooltipFormatter() {
+  protected override getTooltipFormatter() {
     const { currency = 'SGD', showTrends } = this.props;
     
     return (value: number, name: string, props: any) => {

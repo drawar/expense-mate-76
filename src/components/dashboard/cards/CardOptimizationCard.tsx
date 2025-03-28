@@ -7,6 +7,7 @@ import AbstractFinancialInsightCard, {
 } from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Button } from '@/components/ui/button';
+import { CardOptimizationAnalyzer, CardSuggestion } from '@/utils/CardOptimizationAnalyzer';
 
 interface CardOptimizationCardProps extends FinancialInsightCardProps {
   transactions: Transaction[];
@@ -15,134 +16,10 @@ interface CardOptimizationCardProps extends FinancialInsightCardProps {
 }
 
 /**
- * Interface defining optimal card suggestions
- */
-interface CardSuggestion {
-  category: string;
-  currentMethod: string;
-  suggestedMethod: string;
-  potentialSavings: number;
-  transactionCount: number;
-}
-
-/**
  * Card component that analyzes transactions and suggests optimal payment methods
  * Extends AbstractFinancialInsightCard for consistent card behavior
  */
 class CardOptimizationCard extends AbstractFinancialInsightCard<CardOptimizationCardProps> {
-  /**
-   * Analyze transactions and payment methods to find optimization opportunities
-   */
-  private analyzeCardOptimizations(): CardSuggestion[] {
-    const { transactions, paymentMethods } = this.props;
-    
-    // Group transactions by category
-    const categoryGroups = new Map<string, Transaction[]>();
-    
-    transactions.forEach(transaction => {
-      const category = transaction.category || 'Uncategorized';
-      if (!categoryGroups.has(category)) {
-        categoryGroups.set(category, []);
-      }
-      categoryGroups.get(category)!.push(transaction);
-    });
-    
-    // Find the most used payment method for each category
-    const categoryPaymentMethods = new Map<string, Map<string, number>>();
-    
-    categoryGroups.forEach((transactions, category) => {
-      const methodCounts = new Map<string, number>();
-      
-      transactions.forEach(transaction => {
-        const method = transaction.paymentMethod || 'Unknown';
-        methodCounts.set(method, (methodCounts.get(method) || 0) + transaction.amount);
-      });
-      
-      categoryPaymentMethods.set(category, methodCounts);
-    });
-    
-    // Create a map of category rewards by payment method
-    const paymentMethodRewards = new Map<string, Map<string, number>>();
-    
-    paymentMethods.forEach(method => {
-      const rewardsMap = new Map<string, number>();
-      
-      // Extract category rewards from payment method data
-      if (method.categoryRewards) {
-        Object.entries(method.categoryRewards).forEach(([category, rate]) => {
-          rewardsMap.set(category, rate);
-        });
-      }
-      
-      paymentMethodRewards.set(method.id, rewardsMap);
-    });
-    
-    // Find optimization opportunities
-    const suggestions: CardSuggestion[] = [];
-    
-    categoryGroups.forEach((transactions, category) => {
-      // Skip if no transactions
-      if (transactions.length === 0) return;
-      
-      // Get the current most used payment method
-      const methodsUsed = categoryPaymentMethods.get(category) || new Map();
-      if (methodsUsed.size === 0) return;
-      
-      // Find the most used method
-      let currentMethod = '';
-      let maxUsage = 0;
-      
-      methodsUsed.forEach((amount, method) => {
-        if (amount > maxUsage) {
-          maxUsage = amount;
-          currentMethod = method;
-        }
-      });
-      
-      // Find payment method with best rewards for this category
-      let bestMethod = '';
-      let bestRewardRate = 0;
-      
-      paymentMethodRewards.forEach((rewardsMap, methodId) => {
-        const rate = rewardsMap.get(category) || 0;
-        if (rate > bestRewardRate) {
-          bestRewardRate = rate;
-          bestMethod = methodId;
-        }
-      });
-      
-      // If there's a better method, add suggestion
-      if (bestMethod && bestMethod !== currentMethod && bestRewardRate > 0) {
-        // Get current method reward rate
-        const currentMethodRewards = paymentMethodRewards.get(currentMethod) || new Map();
-        const currentRewardRate = currentMethodRewards.get(category) || 0;
-        
-        // Calculate potential savings
-        const totalSpent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-        const currentRewards = totalSpent * (currentRewardRate / 100);
-        const potentialRewards = totalSpent * (bestRewardRate / 100);
-        const potentialSavings = potentialRewards - currentRewards;
-        
-        if (potentialSavings > 0) {
-          // Find payment method names
-          const currentMethodName = paymentMethods.find(m => m.id === currentMethod)?.name || currentMethod;
-          const suggestedMethodName = paymentMethods.find(m => m.id === bestMethod)?.name || bestMethod;
-          
-          suggestions.push({
-            category,
-            currentMethod: currentMethodName,
-            suggestedMethod: suggestedMethodName,
-            potentialSavings,
-            transactionCount: transactions.length
-          });
-        }
-      }
-    });
-    
-    // Sort suggestions by potential savings
-    return suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings).slice(0, 3);
-  }
-  
   /**
    * Render header actions for the card
    */
@@ -159,8 +36,13 @@ class CardOptimizationCard extends AbstractFinancialInsightCard<CardOptimization
    * Implement the abstract method to provide card-specific content
    */
   protected renderCardContent(): React.ReactNode {
-    const { currency = 'SGD' } = this.props;
-    const suggestions = this.analyzeCardOptimizations();
+    const { transactions, paymentMethods, currency = 'SGD' } = this.props;
+    
+    // Analyze card optimizations using the new utility
+    const suggestions = CardOptimizationAnalyzer.analyzeCardOptimizations(
+      transactions, 
+      paymentMethods
+    );
     
     if (suggestions.length === 0) {
       return (
