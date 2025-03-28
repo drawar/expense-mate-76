@@ -1,5 +1,4 @@
 
-// src/components/dashboard/abstractions/AbstractFinancialInsightCard.tsx
 import React, { Component } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
