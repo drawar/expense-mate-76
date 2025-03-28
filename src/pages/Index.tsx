@@ -1,3 +1,4 @@
+
 // src/pages/Index.tsx
 import DashboardContainer from '@/containers/DashboardContainer';
 

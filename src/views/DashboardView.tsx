@@ -1,12 +1,16 @@
+
 // src/views/DashboardView.tsx
 import React, { Component } from 'react';
-import { Transaction, PaymentMethod } from '@/types';
+import { Transaction, PaymentMethod, Currency } from '@/types';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSummary from '@/components/dashboard/DashboardSummary';
 import FinancialInsightsGrid from '@/components/dashboard/FinancialInsightsGrid';
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList';
 import LoadingDashboard from '@/components/dashboard/LoadingDashboard';
 import { SummaryDataProcessor } from '@/utils/SummaryDataProcessor';
+import DisplayCurrencySelect from '@/components/dashboard/DisplayCurrencySelect';
+import StatementCycleFilter from '@/components/dashboard/StatementCycleFilter';
+import Summary from '@/components/dashboard/Summary';
 
 interface DashboardViewProps {
   transactions: Transaction[];
@@ -15,11 +19,57 @@ interface DashboardViewProps {
   currency?: string;
 }
 
+interface DashboardViewState {
+  displayCurrency: Currency;
+  useStatementMonth: boolean;
+  statementCycleDay: number;
+  activeTab: string;
+}
+
 /**
  * View component responsible for layout and rendering of the Dashboard page.
  * Implements presentation logic and delegates to child components.
  */
-class DashboardView extends Component<DashboardViewProps> {
+class DashboardView extends Component<DashboardViewProps, DashboardViewState> {
+  constructor(props: DashboardViewProps) {
+    super(props);
+    
+    this.state = {
+      displayCurrency: (props.currency as Currency) || 'SGD',
+      useStatementMonth: false,
+      statementCycleDay: 15, // Default statement cycle day
+      activeTab: 'thisMonth'
+    };
+  }
+  
+  /**
+   * Handle currency change
+   */
+  handleCurrencyChange = (currency: Currency) => {
+    this.setState({ displayCurrency: currency });
+  }
+  
+  /**
+   * Handle statement month toggle
+   */
+  handleStatementMonthToggle = (useStatementMonth: boolean) => {
+    this.setState({ useStatementMonth });
+  }
+  
+  /**
+   * Handle statement cycle day change
+   */
+  handleStatementCycleDayChange = (statementCycleDay: number) => {
+    this.setState({ statementCycleDay });
+  }
+
+  /**
+   * Handle active tab change
+   */
+  handleActiveTabChange = (activeTab: string) => {
+    this.setState({ activeTab });
+  }
+  
   /**
    * Process transaction data to get recent transactions
    */
@@ -78,15 +128,12 @@ class DashboardView extends Component<DashboardViewProps> {
    * Render the dashboard UI
    */
   render() {
-    const { transactions, paymentMethods, loading, currency = 'SGD' } = this.props;
+    const { transactions, paymentMethods, loading } = this.props;
+    const { displayCurrency, useStatementMonth, statementCycleDay, activeTab } = this.state;
     
     if (loading) {
       return <LoadingDashboard />;
     }
-    
-    // Create a data processor to handle summary calculations
-    const dataProcessor = new SummaryDataProcessor(transactions, currency);
-    const summaryData = dataProcessor.getSummaryData('thisMonth', false, 15);
     
     // Get recent transactions and category data
     const recentTransactions = this.getRecentTransactions();
@@ -97,17 +144,17 @@ class DashboardView extends Component<DashboardViewProps> {
         <div className="container max-w-7xl mx-auto pb-16">
           <DashboardHeader />
           
-          <DashboardSummary 
-            transactions={transactions} 
-            summaryData={summaryData} 
+          <Summary 
+            transactions={transactions}
+            paymentMethods={paymentMethods}
           />
           
           <FinancialInsightsGrid 
             transactions={transactions} 
             paymentMethods={paymentMethods}
-            summaryData={summaryData}
+            summaryData={{} as any}
             categoryChartData={categoryChartData}
-            currency={currency}
+            currency={displayCurrency}
           />
           
           <RecentTransactionsList 

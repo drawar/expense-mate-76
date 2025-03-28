@@ -1,8 +1,9 @@
+
 // src/containers/DashboardContainer.tsx
 import React, { Component } from 'react';
-import { Transaction, PaymentMethod } from '@/types';
+import { Transaction, PaymentMethod, Currency } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import DashboardView from '@/views/DashboardView';
 
@@ -141,6 +142,7 @@ class DashboardContainerClass extends Component<DashboardContainerProps, Dashboa
         transactions={transactions}
         paymentMethods={paymentMethods}
         loading={loading}
+        currency="SGD"
       />
     );
   }
