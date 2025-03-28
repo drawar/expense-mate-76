@@ -5,7 +5,8 @@ import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import Sidebar from '@/components/layout/Sidebar';
 
-import '../styles/global-enhancements.css';
+// Remove App.css import to prevent conflicts with Tailwind
+import '@/styles/global-enhancements.css';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
 import AddExpense from '@/pages/AddExpense';

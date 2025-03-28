@@ -26,7 +26,7 @@ const SummaryCard = ({
 }: SummaryCardProps) => {
   return (
     <Card 
-      className={`summary-card overflow-hidden ${cardColor} animate-fadeIn ${className || ''}`} 
+      className={`summary-card overflow-hidden ${cardColor} ${className || ''}`}
       style={style}
     >
       <CardHeader className="pb-2">

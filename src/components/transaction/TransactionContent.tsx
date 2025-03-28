@@ -56,7 +56,7 @@ const TransactionContent = ({
   // For mobile view, use tabs
   if (isMobile) {
     return (
-      <div className="space-y-8 animate-enter">
+      <div className="space-y-8">
         <Tabs 
           defaultValue={viewMode} 
           value={viewMode}
@@ -68,7 +68,7 @@ const TransactionContent = ({
             <TabsTrigger value="table">Table View</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="grid" className="animate-enter">
+          <TabsContent value="grid">
             <TransactionGroupView
               transactions={filteredTransactions}
               sortOption={sortOption}
@@ -76,7 +76,7 @@ const TransactionContent = ({
             />
           </TabsContent>
           
-          <TabsContent value="table" className="animate-enter">
+          <TabsContent value="table">
             <TransactionTable
               transactions={filteredTransactions}
               paymentMethods={paymentMethods}
@@ -96,8 +96,8 @@ const TransactionContent = ({
   
   // For desktop view, use the selected mode directly
   return (
-    <div className="space-y-8 animate-enter">
-      <div className="animate-enter">
+    <div className="space-y-8">
+      <div>
         {viewMode === 'grid' ? (
           <TransactionGroupView
             transactions={filteredTransactions}

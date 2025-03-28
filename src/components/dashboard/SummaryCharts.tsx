@@ -53,7 +53,7 @@ const SummaryCharts = ({
   const preparedCategoryData = prepareChartData(categoryChartData);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[320px] animate-fadeIn">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[300px]">
       {/* Payment Methods Chart */}
       <Card className="rounded-xl border border-border/50 bg-card hover:shadow-md transition-all overflow-hidden">
         <CardHeader className="pb-2">

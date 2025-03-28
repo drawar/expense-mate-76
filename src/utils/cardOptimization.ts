@@ -28,14 +28,15 @@ export const calculateOptimalCard = (
         let ruleApplies = false;
         
         // Check if rule applies based on type
-        if (rule.type === 'mcc' && transaction.mcc === rule.condition) {
+        if (rule.type === 'mcc' && transaction.merchant.mcc?.code === rule.condition) {
           ruleApplies = true;
         } else if (rule.type === 'merchant' && Array.isArray(rule.condition)) {
           // Check if merchant name contains any of the keywords
           ruleApplies = rule.condition.some(keyword => 
-            transaction.merchant.toLowerCase().includes(keyword.toLowerCase())
+            transaction.merchant.name.toLowerCase().includes(keyword.toLowerCase())
           );
-        } else if (rule.type === 'category' && transaction.category === rule.condition) {
+        } else if (transaction.category && rule.condition === transaction.category) {
+          // Generic condition match against transaction category
           ruleApplies = true;
         }
         
@@ -155,9 +156,13 @@ export const getBestCardRecommendation = (
     amount: 100, // Arbitrary amount
     currency: 'USD',
     category: mostCommonCategory,
-    merchant: mostCommonCategory, // Using category as merchant for simplicity
-    mcc: '', // Unknown MCC
-    description: '',
+    merchant: {
+      id: 'dummy-merchant',
+      name: mostCommonCategory, // Using category as merchant name
+      isOnline: false
+    },
+    paymentAmount: 100,
+    paymentCurrency: 'USD',
     paymentMethod: activeCards[0], // Placeholder
     rewardPoints: 0
   };

@@ -7,16 +7,22 @@ import {
   ArrowUpRightIcon,
   TrendingUpIcon,
   TrendingDownIcon,
-  LineChartIcon
+  CreditCardIcon,
+  TagIcon
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Transaction, PaymentMethod } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import TransactionCard from '@/components/expense/TransactionCard';
-import Summary from '@/components/dashboard/Summary';
+import SummaryCardGrid from '@/components/dashboard/SummaryCardGrid';
 import SpendingTrends from '@/components/dashboard/SpendingTrends';
 import CardOptimizationCard from '@/components/dashboard/CardOptimizationCard';
 import SavingsPotentialCard from '@/components/dashboard/SavingsPotentialCard';
+import PieChartCard from '@/components/dashboard/PieChartCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/utils/currencyFormatter';
+import { useSummaryData } from '@/hooks/dashboard/useSummaryData';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -32,6 +38,15 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  // Get summary data for dashboard
+  const { summaryData } = useSummaryData(
+    transactions,
+    'SGD', // Default currency
+    'thisMonth',
+    false,
+    15
+  );
   
   // Use ref to prevent unnecessary reloads
   const initialized = useRef(false);
@@ -112,6 +127,45 @@ const Index = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
   }, [transactions]);
+  
+  // Generate category chart data for the PieChartCard
+  const categoryChartData = useMemo(() => {
+    if (!transactions.length) return [];
+    
+    // Create a map of category -> total amount
+    const categoryMap = new Map<string, number>();
+    
+    // Group transactions by category
+    transactions.forEach(tx => {
+      const category = tx.category || 'Uncategorized';
+      const existingAmount = categoryMap.get(category) || 0;
+      categoryMap.set(category, existingAmount + tx.amount);
+    });
+    
+    // Generate colors for each category
+    const colors = [
+      '#3B82F6', // blue
+      '#10B981', // green
+      '#F59E0B', // amber
+      '#8B5CF6', // violet
+      '#EC4899', // pink
+      '#6366F1', // indigo
+      '#EF4444', // red
+      '#14B8A6', // teal
+      '#F97316', // orange
+      '#8B5CF6'  // purple
+    ];
+    
+    // Convert to array with colors
+    return Array.from(categoryMap.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by amount in descending order
+      .slice(0, 10) // Take top 10 categories
+      .map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length]
+      }));
+  }, [transactions]);
 
   // Loading state with animation
   if (loading) {
@@ -122,7 +176,7 @@ const Index = () => {
             <div className="animate-pulse bg-muted h-10 w-48 rounded-md"></div>
             <div className="animate-pulse bg-muted h-10 w-32 rounded-md mt-4 sm:mt-0"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="animate-pulse bg-muted h-48 rounded-xl"></div>
             <div className="animate-pulse bg-muted h-48 rounded-xl"></div>
             <div className="animate-pulse bg-muted h-48 rounded-xl"></div>
@@ -159,35 +213,203 @@ const Index = () => {
         </div>
         
         {/* Main Content - Grid Layout */}
-        <div className="grid gap-6 mb-12">
-          {/* Summary Section - will contain charts, metrics */}
-          <div className="mb-6 animate-enter">
-            <Summary 
-              transactions={transactions} 
-              paymentMethods={paymentMethods}
-            />
-          </div>
-          
-          {/* Financial Insights Section - 2 column grid for larger screens */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <SpendingTrends transactions={transactions} />
-            <CardOptimizationCard transactions={transactions} paymentMethods={paymentMethods} />
-            <SavingsPotentialCard transactions={transactions} />
-            <div className="glass-card rounded-xl border border-border/50 bg-card p-6 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <LineChartIcon className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-medium tracking-tight">Category Analysis</h3>
-                </div>
+        <div className="grid gap-4">
+          {/* Summary Section - only SummaryCardGrid */}
+          <div className="mb-4">
+            <div className="space-y-4 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">Expense Summary</h2>
               </div>
-              <div className="flex items-center justify-center h-32 text-muted-foreground">
-                <p>Category spend analysis insights will appear here</p>
-              </div>
+              
+              <SummaryCardGrid
+                filteredTransactions={transactions}
+                totalExpenses={summaryData.totalExpenses}
+                transactionCount={summaryData.transactionCount}
+                averageAmount={summaryData.averageAmount}
+                topPaymentMethod={summaryData.topPaymentMethod}
+                totalRewardPoints={summaryData.totalRewardPoints}
+                displayCurrency="SGD"
+              />
             </div>
           </div>
           
+          {/* Financial Insights Section - 2x3 grid with all six cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+            {/* Row 1, Card 1: Payment Methods Chart */}
+            <Card className="rounded-xl border border-border/50 bg-card hover:shadow-md transition-all overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <CreditCardIcon className="h-5 w-5 text-primary" />
+                  Payment Methods
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summaryData.paymentMethodChartData.length > 0 ? (
+                  <div className="w-full h-60 mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={summaryData.paymentMethodChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {summaryData.paymentMethodChartData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color} 
+                              stroke="var(--background)"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          content={(tooltipProps) => {
+                            const { active, payload } = tooltipProps;
+                            if (active && payload && payload.length) {
+                              const value = Number(payload[0].value);
+                              // Calculate total of all payment method values
+                              const total = summaryData.paymentMethodChartData.reduce(
+                                (sum, item) => sum + Number(item.value), 0
+                              );
+                              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                              return (
+                                <div className="bg-background border border-border p-3 rounded-md shadow-lg">
+                                  <p className="font-medium text-sm mb-1">{payload[0].name}</p>
+                                  <p className="text-primary font-bold">
+                                    {formatCurrency(value, 'SGD')}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {percentage}% of total
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend 
+                          layout="vertical" 
+                          verticalAlign="middle" 
+                          align="right"
+                          formatter={(value) => (
+                            <span className="text-xs">{value}</span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-60 text-muted-foreground">
+                    <p>No payment method data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Row 1, Card 2: Expense Categories Chart */}
+            <Card className="rounded-xl border border-border/50 bg-card hover:shadow-md transition-all overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <TagIcon className="h-5 w-5 text-primary" />
+                  Expense Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summaryData.categoryChartData.length > 0 ? (
+                  <div className="w-full h-60 mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={summaryData.categoryChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {summaryData.categoryChartData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color}
+                              stroke="var(--background)"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          content={(tooltipProps) => {
+                            const { active, payload } = tooltipProps;
+                            if (active && payload && payload.length) {
+                              const value = Number(payload[0].value);
+                              // Calculate total of all category values
+                              const total = summaryData.categoryChartData.reduce(
+                                (sum, item) => sum + Number(item.value), 0
+                              );
+                              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                              return (
+                                <div className="bg-background border border-border p-3 rounded-md shadow-lg">
+                                  <p className="font-medium text-sm mb-1">{payload[0].name}</p>
+                                  <p className="text-primary font-bold">
+                                    {formatCurrency(value, 'SGD')}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {percentage}% of total
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend 
+                          layout="vertical" 
+                          verticalAlign="middle" 
+                          align="right"
+                          formatter={(value) => (
+                            <span className="text-xs">{value}</span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-60 text-muted-foreground">
+                    <p>No category data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Row 2, Card 1: Spending Trends */}
+            <SpendingTrends 
+              transactions={transactions} 
+            />
+            
+            {/* Row 2, Card 2: Card Optimization */}
+            <CardOptimizationCard 
+              transactions={transactions} 
+              paymentMethods={paymentMethods} 
+            />
+            
+            {/* Row 3, Card 1: Savings Potential */}
+            <SavingsPotentialCard 
+              transactions={transactions}
+            />
+            
+            {/* Row 3, Card 2: Category Analysis */}
+            <PieChartCard 
+              title="Category Analysis" 
+              data={categoryChartData}
+            />
+          </div>
+          
           {/* Recent Transactions Section */}
-          <div className="mt-8 animate-enter" style={{ animationDelay: '100ms' }}>
+          <div className="mt-4">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-medium tracking-tight">Recent Transactions</h2>
               <Link to="/transactions" className="interactive-link text-primary flex items-center text-sm font-medium">
@@ -208,11 +430,10 @@ const Index = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {recentTransactions.map((transaction, index) => (
-                  <TransactionCard
-                    key={transaction.id}
+                  <TransactionCard 
+                    key={transaction.id} 
                     transaction={transaction}
-                    className="glass-card-elevated animate-enter rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
-                    style={{ animationDelay: `${(index + 1) * 75}ms` }}
+                    className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
                     onClick={() => {
                       // You could navigate to a transaction detail page here
                     }}

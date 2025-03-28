@@ -34,7 +34,7 @@ const TransactionFilterControls = ({
   onViewChange
 }: TransactionFilterControlsProps) => {
   return (
-    <div className="sticky top-[72px] z-20 bg-background py-4 mb-6 border-b">
+    <div className="bg-background py-4 mb-6 border-b">
       <div className="flex flex-col md:flex-row gap-4">
         <TransactionSearchBar 
           searchQuery={searchQuery}

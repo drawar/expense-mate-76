@@ -35,7 +35,7 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
   // Return empty state early to avoid rendering unnecessary components
   if (processedData.length === 0) {
     return (
-      <Card className="chart-container h-full flex flex-col bg-[#191D2B] text-white border-0">
+      <Card className="chart-container h-full flex flex-col rounded-xl border border-border/50 bg-card hover:shadow-md transition-all">
         <CardHeader className="pb-0 pt-4">
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
         </CardHeader>
@@ -49,7 +49,7 @@ const PieChartCard = ({ title, data }: PieChartCardProps) => {
   }
 
   return (
-    <Card className="chart-container h-full flex flex-col bg-[#191D2B] text-white border-0 hover:shadow-lg transition-shadow duration-300">
+    <Card className="chart-container h-full flex flex-col rounded-xl border border-border/50 bg-card hover:shadow-md transition-all">
       <CardHeader className="pb-0 pt-4">
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>
