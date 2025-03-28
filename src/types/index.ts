@@ -12,8 +12,8 @@ export interface RewardRule {
   id: string;
   name: string;
   description: string;
-  type: 'mcc' | 'merchant' | 'currency' | 'spend_threshold';
-  condition: string | string[]; // MCC code, merchant name, currency, or threshold
+  type: 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless';
+  condition: string | string[]; // MCC code, merchant name, currency, threshold, or special conditions
   pointsMultiplier: number;
   minSpend?: number;
   maxSpend?: number;
