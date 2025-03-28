@@ -1,4 +1,3 @@
-
 import { PaymentMethod } from '@/types';
 
 // Default payment methods with proper UUID format
@@ -26,9 +25,9 @@ export const defaultPaymentMethods: PaymentMethod[] = [
   },
   {
     id: 'c81d6e04-79bd-44da-8293-d951c35a8503',
-    name: 'Cash (NTD)',
+    name: 'Cash (TWD)',
     type: 'cash',
-    currency: 'NTD',
+    currency: 'TWD',
     rewardRules: [],
     active: true,
     icon: 'banknote',
@@ -173,7 +172,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
       CAD: 0.99,
       CNY: 0.19,
       INR: 0.016,
-      NTD: 0.042,
+      TWD: 0.042,
       VND: 0.000054,
       IDR: 0.000086,
       THB: 0.038,
@@ -203,7 +202,7 @@ export const defaultPaymentMethods: PaymentMethod[] = [
       CAD: 0.99,
       CNY: 0.19,
       INR: 0.016,
-      NTD: 0.042,
+      TWD: 0.042,
       VND: 0.000054,
       IDR: 0.000086,
       THB: 0.038,

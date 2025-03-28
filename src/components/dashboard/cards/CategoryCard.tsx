@@ -1,3 +1,4 @@
+
 // src/components/dashboard/cards/CategoryCard.tsx
 import React, { Component } from 'react';
 import { TagIcon } from 'lucide-react';
@@ -6,10 +7,11 @@ import AbstractFinancialInsightCard, {
 } from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
 import CategoryPieChart from '@/components/dashboard/charts/CategoryPieChart';
 import { PieChartDataItem } from '@/components/dashboard/abstractions/AbstractPieChart';
+import { Currency } from '@/types';
 
 interface CategoryCardProps extends FinancialInsightCardProps {
   categoryData: PieChartDataItem[];
-  currency?: string;
+  currency?: Currency;
   showTrends?: boolean;
 }
 
@@ -28,7 +30,7 @@ class CategoryCard extends AbstractFinancialInsightCard<CategoryCardProps> {
     return (
       <CategoryPieChart 
         data={categoryData} 
-        currency={currency || 'SGD'}
+        currency={currency || 'SGD'} 
         showTrends={showTrends}
         standalone={false}
       />
@@ -50,7 +52,7 @@ export const createCategoryCard = (
       title="Expense Categories"
       icon={TagIcon}
       categoryData={categoryData}
-      currency={currency}
+      currency={currency as Currency}
       className={className}
       showTrends={showTrends}
     />

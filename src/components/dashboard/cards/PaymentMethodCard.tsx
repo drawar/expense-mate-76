@@ -1,3 +1,4 @@
+
 // src/components/dashboard/cards/PaymentMethodCard.tsx
 import React, { Component } from 'react';
 import { CreditCardIcon } from 'lucide-react';
@@ -6,10 +7,11 @@ import AbstractFinancialInsightCard, {
 } from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
 import PaymentMethodPieChart from '@/components/dashboard/charts/PaymentMethodPieChart';
 import { PieChartDataItem } from '@/components/dashboard/abstractions/AbstractPieChart';
+import { Currency } from '@/types';
 
 interface PaymentMethodCardProps extends FinancialInsightCardProps {
   paymentMethodData: PieChartDataItem[];
-  currency?: string;
+  currency?: Currency;
   highlightTopMethod?: boolean;
 }
 
@@ -49,7 +51,7 @@ export const createPaymentMethodCard = (
       title="Payment Methods"
       icon={CreditCardIcon}
       paymentMethodData={paymentMethodData}
-      currency={currency}
+      currency={currency as Currency}
       className={className}
     />
   );

@@ -1,5 +1,15 @@
+
 import { Transaction, PaymentMethod, Currency } from '@/types';
 import { convertCurrency } from './currencyConversion';
+
+// Define CardSuggestion interface that was missing
+export interface CardSuggestion {
+  category: string;
+  currentMethod: string;
+  suggestedMethod: string;
+  potentialSavings: number;
+  transactionCount: number;
+}
 
 interface OptimizedPaymentMethodResult {
   paymentMethod: PaymentMethod;
@@ -143,5 +153,70 @@ export class CardOptimizationAnalyzer {
    */
   runAnalysis(): OptimizedPaymentMethodResult[][] {
     return this.transactions.map(transaction => this.analyzeTransaction(transaction));
+  }
+  
+  /**
+   * Add the static method that's being referenced in CardOptimizationCard
+   */
+  static analyzeCardOptimizations(
+    transactions: Transaction[], 
+    paymentMethods: PaymentMethod[]
+  ): CardSuggestion[] {
+    if (!transactions.length || !paymentMethods.length) {
+      return [];
+    }
+    
+    const analyzer = new CardOptimizationAnalyzer(transactions, paymentMethods);
+    const analysisResults = analyzer.runAnalysis();
+    
+    // Group transactions by category
+    const categories = new Map<string, Transaction[]>();
+    transactions.forEach(tx => {
+      const category = tx.category || 'Uncategorized';
+      if (!categories.has(category)) {
+        categories.set(category, []);
+      }
+      categories.get(category)?.push(tx);
+    });
+    
+    // Create optimization suggestions
+    const suggestions: CardSuggestion[] = [];
+    
+    categories.forEach((categoryTransactions, category) => {
+      // Only create suggestions if we have multiple transactions in a category
+      if (categoryTransactions.length < 2) return;
+      
+      // Find the best payment method for this category
+      let bestMethod: PaymentMethod | null = null;
+      let highestSavings = 0;
+      let currentMethodName = '';
+      
+      // Analyze first transaction as a representative for the category
+      const sampleTx = categoryTransactions[0];
+      const results = analyzer.analyzeTransaction(sampleTx);
+      
+      // Find payment method with highest potential savings
+      for (const result of results) {
+        if (result.difference > highestSavings) {
+          highestSavings = result.difference;
+          bestMethod = result.paymentMethod;
+          currentMethodName = sampleTx.paymentMethod.name;
+        }
+      }
+      
+      // If we found a better method with meaningful savings, add to suggestions
+      if (bestMethod && highestSavings > 0.1) {
+        suggestions.push({
+          category,
+          currentMethod: currentMethodName,
+          suggestedMethod: bestMethod.name,
+          potentialSavings: highestSavings * categoryTransactions.length, // Extrapolate to all transactions
+          transactionCount: categoryTransactions.length
+        });
+      }
+    });
+    
+    // Sort suggestions by potential savings (highest first)
+    return suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings);
   }
 }
