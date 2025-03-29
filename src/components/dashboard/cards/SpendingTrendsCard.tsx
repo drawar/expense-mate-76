@@ -1,5 +1,5 @@
-// src/components/dashboard/SpendingTrendsCard.tsx
-import React from 'react';
+// src/components/dashboard/cards/SpendingTrendsCard.tsx
+import React, { useState, useMemo } from 'react';
 import { TrendingUpIcon, TrendingDownIcon, InfoIcon } from 'lucide-react';
 import { 
   Select,
@@ -8,41 +8,44 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import AbstractFinancialInsightCard, { 
-  FinancialInsightCardProps 
-} from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
-import SpendingTrendChart from '@/components/dashboard/charts/SpendingTrendChart';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Transaction, Currency } from '@/types';
+import { formatCurrency } from '@/utils/formatting';
+import SpendingTrendChart from '@/components/dashboard/charts/SpendingTrendChart';
 
-interface SpendingTrendsCardProps extends FinancialInsightCardProps {
+interface SpendingTrendsCardProps {
+  title: string;
   transactions: Transaction[];
   period?: 'week' | 'month' | 'quarter' | 'year';
   showAverage?: boolean;
   showInsights?: boolean;
   currency?: Currency;
+  className?: string;
 }
 
 const DEFAULT_CURRENCY: Currency = 'SGD'; 
 
 /**
- * Specialized card for displaying spending trends over time
- * Inherits from AbstractFinancialInsightCard for consistent styling
- * and contains a SpendingTrendChart for visualization
+ * Card component for displaying spending trends over time
  */
-class SpendingTrendsCard extends AbstractFinancialInsightCard<SpendingTrendsCardProps> {
-  state = {
-    selectedPeriod: this.props.period || 'month'
-  };
+const SpendingTrendsCard: React.FC<SpendingTrendsCardProps> = ({
+  title,
+  transactions,
+  period: initialPeriod = 'month',
+  showAverage = true,
+  showInsights = true,
+  currency = DEFAULT_CURRENCY,
+  className = ''
+}) => {
+  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
   
-  /**
-   * Process transactions to extract trend data for spending analysis
-   */
-  private processTrendData() {
-    const { transactions } = this.props;
-    const { selectedPeriod } = this.state;
+  // Process transactions to calculate trend data
+  const { trendData, trend, average } = useMemo(() => {
+    if (transactions.length === 0) {
+      return { trendData: [], trend: 0, average: 0 };
+    }
     
-    // Group transactions by selected period
+    // Determine the grouping period based on selected time frame
     const periodMapping = {
       week: 'day',
       month: 'week',
@@ -50,225 +53,156 @@ class SpendingTrendsCard extends AbstractFinancialInsightCard<SpendingTrendsCard
       year: 'month'
     };
     
-    // Grouping logic for the card summary, not the chart
-    const groupedTransactions = this.groupTransactionsByPeriod(
-      transactions, 
-      periodMapping[selectedPeriod as keyof typeof periodMapping] as 'day' | 'week' | 'month' | 'year'
-    );
+    // Group transactions by date
+    const dateMap = new Map<string, number>();
     
-    // Convert to array for analysis
-    const sortedKeys = Array.from(groupedTransactions.keys()).sort();
-    
-    const chartData = sortedKeys.map(key => {
-      const periodTransactions = groupedTransactions.get(key) || [];
-      const total = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      let key: string;
       
+      switch (periodMapping[selectedPeriod as keyof typeof periodMapping]) {
+        case 'day':
+          key = txDate.toISOString().split('T')[0]; // YYYY-MM-DD
+          break;
+        case 'week':
+          // Get the start of the week (Sunday)
+          const startOfWeek = new Date(txDate);
+          startOfWeek.setDate(txDate.getDate() - txDate.getDay());
+          key = startOfWeek.toISOString().split('T')[0];
+          break;
+        case 'month':
+          key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        default:
+          key = txDate.toISOString().split('T')[0];
+      }
+      
+      const existingAmount = dateMap.get(key) || 0;
+      dateMap.set(key, existingAmount + tx.amount);
+    });
+    
+    // Convert to array for analysis and sort by date
+    const sortedKeys = Array.from(dateMap.keys()).sort();
+    const data = sortedKeys.map(key => {
       return {
         period: key,
-        amount: total
+        amount: dateMap.get(key) || 0
       };
     });
     
     // Calculate trend
-    let trend = 0;
-    if (chartData.length >= 2) {
-      const currentAmount = chartData[chartData.length - 1].amount;
-      const previousAmount = chartData[chartData.length - 2].amount;
+    let calculatedTrend = 0;
+    if (data.length >= 2) {
+      const currentAmount = data[data.length - 1].amount;
+      const previousAmount = data[data.length - 2].amount;
       
       if (previousAmount === 0) {
-        trend = 100; // If previous period was 0, show 100% increase
+        calculatedTrend = 100; // If previous period was 0, show 100% increase
       } else {
-        trend = ((currentAmount - previousAmount) / previousAmount) * 100;
+        calculatedTrend = ((currentAmount - previousAmount) / previousAmount) * 100;
       }
     }
     
     // Calculate average
-    const average = chartData.length > 0
-      ? chartData.reduce((sum, item) => sum + item.amount, 0) / chartData.length
+    const calculatedAverage = data.length > 0
+      ? data.reduce((sum, item) => sum + item.amount, 0) / data.length
       : 0;
     
-    return {
-      trend,
-      average,
-      hasSufficientData: chartData.length >= 2
+    return { 
+      trendData: data, 
+      trend: calculatedTrend, 
+      average: calculatedAverage 
     };
-  }
+  }, [transactions, selectedPeriod]);
   
-  /**
-   * Group transactions by a time period
-   */
-  private groupTransactionsByPeriod(
-    transactions: Transaction[],
-    groupBy: 'day' | 'week' | 'month' | 'year'
-  ): Map<string, Transaction[]> {
-    const grouped = new Map<string, Transaction[]>();
-    
-    transactions.forEach(transaction => {
-      const date = new Date(transaction.date);
-      let key: string;
-      
-      switch (groupBy) {
-        case 'day':
-          key = date.toISOString().split('T')[0]; // YYYY-MM-DD
-          break;
-        case 'week':
-          // Get the start of the week (Sunday)
-          const startOfWeek = new Date(date);
-          startOfWeek.setDate(date.getDate() - date.getDay());
-          key = startOfWeek.toISOString().split('T')[0];
-          break;
-        case 'month':
-          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          break;
-        case 'year':
-          key = `${date.getFullYear()}`;
-          break;
-        default:
-          key = date.toISOString().split('T')[0];
-      }
-      
-      if (!grouped.has(key)) {
-        grouped.set(key, []);
-      }
-      
-      grouped.get(key)?.push(transaction);
-    });
-    
-    return grouped;
-  }
-  
-  /**
-   * Format trend value for display
-   */
-  private formatTrendValue(value: number): { text: string; color: string } {
-    const formatted = Math.abs(value).toFixed(1);
-    // For expenses, negative change is good
-    const isPositive = value >= 0;
-    
-    return {
-      text: `${formatted}%`,
-      color: isPositive 
-        ? 'text-red-600 dark:text-red-400' 
-        : 'text-green-600 dark:text-green-400'
-    };
-  }
-  
-  /**
-   * Handle period selection change
-   */
-  private handlePeriodChange = (value: string) => {
-    this.setState({ selectedPeriod: value as 'week' | 'month' | 'quarter' | 'year' });
+  // Handle period change
+  const handlePeriodChange = (value: string) => {
+    setSelectedPeriod(value as 'week' | 'month' | 'quarter' | 'year');
   };
   
-  /**
-   * Override to provide period selector in header
-   */
-  protected renderHeaderActions(): React.ReactNode {
-    return (
-      <Select 
-        value={this.state.selectedPeriod} 
-        onValueChange={this.handlePeriodChange}
-      >
-        <SelectTrigger className="w-32 h-8">
-          <SelectValue placeholder="Select period" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="week">Weekly</SelectItem>
-          <SelectItem value="month">Monthly</SelectItem>
-          <SelectItem value="quarter">Quarterly</SelectItem>
-          <SelectItem value="year">Yearly</SelectItem>
-        </SelectContent>
-      </Select>
-    );
-  }
-  
-  /**
-   * Implement the abstract method to provide card-specific content
-   */
-  protected renderCardContent(): React.ReactNode {
-    const { transactions, currency = DEFAULT_CURRENCY, showAverage = true, showInsights = true } = this.props;
-    const { selectedPeriod } = this.state;
-    const { trend, average, hasSufficientData } = this.processTrendData();
-    
-    // Format trend display
-    const { text: trendText, color: trendColor } = this.formatTrendValue(trend);
-    const TrendIcon = trend >= 0 ? TrendingUpIcon : TrendingDownIcon;
-    
-    // Check if we have enough data
-    if (!hasSufficientData) {
-      return (
-        <div className="space-y-4">
-          <div className="flex items-center justify-center h-48 text-muted-foreground">
-            <div className="text-center">
-              <InfoIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Not enough data to display spending trends</p>
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting the time period or add more transactions</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Trend</p>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendIcon className={`h-4 w-4 ${trendColor}`} />
-              <span className={`font-medium ${trendColor}`}>{trendText}</span>
-            </div>
-          </div>
-          
-          {showAverage && (
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Average</p>
-              <p className="font-medium mt-1">
-                {formatCurrency(average, currency)}
-              </p>
-            </div>
-          )}
-        </div>
-        
-        {/* Embed the SpendingTrendChart component */}
-        <SpendingTrendChart 
-          transactions={transactions}
-          period={selectedPeriod}
-          currency={currency}
-          showInsights={showInsights}
-          colorScheme={{
-            barColor: "#8884d8",
-            hoverColor: "#7676d6"
-          }}
-        />
-      </div>
-    );
-  }
-}
-
-/**
- * Factory function to create a SpendingTrendsCard with default props
- */
-export const createSpendingTrendsCard = (
-  transactions: Transaction[],
-  period: 'week' | 'month' | 'quarter' | 'year' = 'month',
-  showAverage: boolean = true,
-  showInsights: boolean = true,
-  currency: Currency = DEFAULT_CURRENCY,
-  className: string = ''
-) => {
   return (
-    <SpendingTrendsCard
-      title="Spending Trends"
-      icon={TrendingUpIcon}
-      transactions={transactions}
-      period={period}
-      showAverage={showAverage}
-      showInsights={showInsights}
-      currency={currency}
-      className={className}
-    />
+    <Card className={`rounded-xl border border-border/50 bg-card hover:shadow-md transition-all overflow-hidden ${className}`}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <TrendingUpIcon className="h-5 w-5 text-primary" />
+            {title}
+          </CardTitle>
+          
+          <Select 
+            value={selectedPeriod} 
+            onValueChange={handlePeriodChange}
+          >
+            <SelectTrigger className="w-32 h-8">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Weekly</SelectItem>
+              <SelectItem value="month">Monthly</SelectItem>
+              <SelectItem value="quarter">Quarterly</SelectItem>
+              <SelectItem value="year">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {trendData.length < 2 ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center h-48 text-muted-foreground">
+              <div className="text-center">
+                <InfoIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Not enough data to display spending trends</p>
+                <p className="text-sm text-muted-foreground mt-1">Try adjusting the time period or add more transactions</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Trend</p>
+                <div className="flex items-center gap-1 mt-1">
+                  {trend >= 0 ? (
+                    <TrendingUpIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  ) : (
+                    <TrendingDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  )}
+                  <span className={trend >= 0 
+                    ? "font-medium text-red-600 dark:text-red-400"
+                    : "font-medium text-green-600 dark:text-green-400"
+                  }>
+                    {Math.abs(trend).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              
+              {showAverage && (
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Average</p>
+                  <p className="font-medium mt-1">
+                    {formatCurrency(average, currency)}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* Embed the optimized SpendingTrendChart component */}
+            <SpendingTrendChart 
+              transactions={transactions}
+              period={selectedPeriod}
+              currency={currency}
+              showInsights={showInsights}
+              colorScheme={{
+                barColor: "#8884d8",
+                hoverColor: "#7676d6"
+              }}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
-export default SpendingTrendsCard;
+export default React.memo(SpendingTrendsCard);
