@@ -6,28 +6,34 @@ import SummaryCardGrid from './SummaryCardGrid';
 import SummaryCharts from './SummaryCharts';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
 import StatementCycleFilter from './StatementCycleFilter';
-import { useSummaryData } from '@/hooks/dashboard/useSummaryData';
+import { useSummaryCalculator } from '@/hooks/dashboard/useSummaryCalculator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import "./dashboard.css";
 
 interface SummaryProps {
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
+  previousPeriodTransactions?: Transaction[];
 }
 
-const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
+const Summary = ({ 
+  transactions, 
+  paymentMethods,
+  previousPeriodTransactions = [] 
+}: SummaryProps) => {
   const [activeTab, setActiveTab] = useState('thisMonth');
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('SGD');
   const [useStatementMonth, setUseStatementMonth] = useState(false);
   const [statementCycleDay, setStatementCycleDay] = useState(15); // Default to 15th
   
-  // Use our custom hook to get filtered transactions and summary data
-  const { filteredTransactions, summaryData } = useSummaryData(
-    transactions, 
-    displayCurrency, 
-    activeTab, 
-    useStatementMonth, 
-    statementCycleDay
+  // Use our new hook for calculations
+  const { summaryData, filteredTransactions } = useSummaryCalculator(
+    transactions,
+    displayCurrency,
+    activeTab,
+    useStatementMonth,
+    statementCycleDay,
+    previousPeriodTransactions
   );
   
   return (
@@ -80,11 +86,7 @@ const Summary = ({ transactions, paymentMethods }: SummaryProps) => {
         >
           <SummaryCardGrid
             filteredTransactions={filteredTransactions}
-            totalExpenses={summaryData.totalExpenses}
-            transactionCount={summaryData.transactionCount}
-            averageAmount={summaryData.averageAmount}
-            topPaymentMethod={summaryData.topPaymentMethod}
-            totalRewardPoints={summaryData.totalRewardPoints}
+            summaryData={summaryData}
             displayCurrency={displayCurrency}
           />
           

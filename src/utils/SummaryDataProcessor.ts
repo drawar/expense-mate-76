@@ -1,29 +1,62 @@
 // src/utils/SummaryDataProcessor.ts
-import { Transaction } from '@/types';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { Transaction, PaymentMethod, Currency } from '@/types';
+import { convertCurrency } from './currencyConversion';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from './categoryMapping';
+
+// Color palette for charts
+export const CHART_COLORS = [
+  '#3B82F6', // blue
+  '#10B981', // green
+  '#F59E0B', // amber
+  '#8B5CF6', // violet
+  '#EC4899', // pink
+  '#6366F1', // indigo
+  '#EF4444', // red
+  '#14B8A6', // teal
+  '#F97316', // orange
+];
+
+/**
+ * Type defining the structure of chart data
+ */
+export interface ChartDataItem {
+  name: string;
+  value: number;
+  color: string;
+}
 
 /**
  * Type defining the structure of summary data
  */
 export interface SummaryData {
+  // Basic metrics
   totalExpenses: number;
   transactionCount: number;
   averageAmount: number;
+  
+  // Payment method metrics
   topPaymentMethod: {
     name: string;
     value: number;
-  };
+  } | undefined;
+  
+  // Reward points metrics
   totalRewardPoints: number;
-  paymentMethodChartData: Array<{
-    name: string;
-    value: number;
-    color: string;
-  }>;
-  categoryChartData: Array<{
-    name: string;
-    value: number;
-    color: string;
-  }>;
+  
+  // Chart data
+  paymentMethodChartData: ChartDataItem[];
+  categoryChartData: ChartDataItem[];
+  
+  // Trend metrics
+  percentageChange: number;
+}
+
+/**
+ * Type for date range filters
+ */
+export interface DateRange {
+  start: Date;
+  end: Date;
 }
 
 /**
@@ -33,139 +66,152 @@ export interface SummaryData {
  */
 export class SummaryDataProcessor {
   private transactions: Transaction[];
-  private currency: string;
+  private previousPeriodTransactions: Transaction[] = [];
+  private displayCurrency: Currency;
   
   /**
    * Initialize the processor with transactions and currency
    */
-  constructor(transactions: Transaction[], currency: string = 'SGD') {
-    this.transactions = transactions;
-    this.currency = currency;
+  constructor(
+    transactions: Transaction[], 
+    displayCurrency: Currency = 'SGD',
+    previousPeriodTransactions: Transaction[] = []
+  ) {
+    this.transactions = this.processTransactionCategories(transactions);
+    this.previousPeriodTransactions = this.processTransactionCategories(previousPeriodTransactions);
+    this.displayCurrency = displayCurrency;
   }
   
   /**
-   * Calculate the total expenses from transactions
+   * Process transactions to ensure all have categories
    */
-  private calculateTotalExpenses(): number {
-    return this.transactions.reduce((total, tx) => total + tx.amount, 0);
-  }
-  
-  /**
-   * Calculate the average transaction amount
-   */
-  private calculateAverageAmount(): number {
-    if (this.transactions.length === 0) return 0;
-    return this.calculateTotalExpenses() / this.transactions.length;
-  }
-  
-  /**
-   * Find the most used payment method
-   */
-  private findTopPaymentMethod(): { name: string; value: number } {
-    // Group transactions by payment method
-    const paymentMethodMap = new Map<string, number>();
-    
-    this.transactions.forEach(tx => {
-      // Extract the name from the PaymentMethod object
-      const methodName = tx.paymentMethod?.name || "Unknown";
-      const existingAmount = paymentMethodMap.get(methodName) || 0;
-      paymentMethodMap.set(methodName, existingAmount + tx.amount);
-    });
-    
-    // Find the payment method with the highest total amount
-    let topPaymentMethod = { name: 'None', value: 0 };
-    
-    paymentMethodMap.forEach((amount, name) => {
-      if (amount > topPaymentMethod.value) {
-        topPaymentMethod = { name, value: amount };
+  private processTransactionCategories(transactions: Transaction[]): Transaction[] {
+    return transactions.map(tx => {
+      // Skip processing if category is already set and not Uncategorized
+      if (tx.category && tx.category !== 'Uncategorized') {
+        return tx;
       }
+      
+      // Determine category from MCC code or merchant name
+      let category = 'Uncategorized';
+      if (tx.merchant?.mcc?.code) {
+        category = getCategoryFromMCC(tx.merchant.mcc.code);
+      } else if (tx.merchant?.name) {
+        category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
+      }
+      
+      return {...tx, category};
     });
-    
-    return topPaymentMethod;
+  }
+
+  /**
+   * Filter transactions based on date range
+   */
+  public filterTransactionsByDateRange(dateRange: DateRange): Transaction[] {
+    return this.transactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return txDate >= dateRange.start && txDate <= dateRange.end;
+    });
   }
   
   /**
-   * Calculate total reward points from transactions
+   * Generate date ranges based on current date
    */
-  private generatePaymentMethodChartData(): Array<{ name: string; value: number; color: string }> {
-    // Group transactions by payment method
-    const paymentMethodMap = new Map<string, number>();
+  public static generateDateRanges(useStatementMonth: boolean = false, statementCycleDay: number = 1): Record<string, DateRange | Date | null> {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
-    this.transactions.forEach(tx => {
-      // Extract the name from the PaymentMethod object
-      const methodName = tx.paymentMethod?.name || "Unknown";
-      const existingAmount = paymentMethodMap.get(methodName) || 0;
-      paymentMethodMap.set(methodName, existingAmount + tx.amount);
-    });
+    // Calculate all possible date ranges upfront
+    const thisMonthStart = new Date(currentYear, currentMonth, 1);
+    const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
     
-    // Generate colors for each payment method
-    const colors = [
-      '#3B82F6', // blue
-      '#10B981', // green
-      '#F59E0B', // amber
-      '#8B5CF6', // violet
-      '#EC4899', // pink
-      '#6366F1', // indigo
-      '#EF4444', // red
-    ];
+    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+    const lastMonthEnd = new Date(currentYear, currentMonth, 0);
     
-    // Convert to array with colors
-    return Array.from(paymentMethodMap.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by amount in descending order
-      .map(([name, value], index) => ({
-        name,
-        value,
-        color: colors[index % colors.length]
-      }));
+    const threeMonthsAgo = new Date(currentYear, currentMonth - 3, now.getDate());
+    
+    const thisYearStart = new Date(currentYear, 0, 1);
+    const thisYearEnd = new Date(currentYear, 11, 31);
+    
+    // Statement date range if enabled
+    let statementStart, statementEnd;
+    
+    if (useStatementMonth) {
+      // Start date: statementCycleDay of previous month
+      let startMonth = currentMonth - 1;
+      let startYear = currentYear;
+      if (startMonth < 0) {
+        startMonth = 11; // December
+        startYear -= 1;
+      }
+      
+      statementStart = new Date(startYear, startMonth, statementCycleDay);
+      
+      // End date: day before statementCycleDay of current month
+      statementEnd = new Date(currentYear, currentMonth, statementCycleDay - 1);
+      // If statementCycleDay is 1, set to end of previous month
+      if (statementCycleDay === 1) {
+        statementEnd.setDate(0); // Last day of previous month
+      }
+      
+      // Ensure end date is not in the future
+      if (statementEnd > now) {
+        statementEnd = now;
+      }
+    }
+    
+    return {
+      thisMonth: { start: thisMonthStart, end: thisMonthEnd },
+      lastMonth: { start: lastMonthStart, end: lastMonthEnd },
+      threeMonthsAgo,
+      thisYear: { start: thisYearStart, end: thisYearEnd },
+      statement: useStatementMonth ? { start: statementStart, end: statementEnd } : null
+    };
   }
   
   /**
-   * Generate category chart data
+   * Calculate total expenses from a list of transactions with currency conversion
    */
-  private generateCategoryChartData(): Array<{ name: string; value: number; color: string }> {
-    if (!this.transactions.length) return [];
-    
-    // Create a map of category -> total amount
-    const categoryMap = new Map<string, number>();
-    
-    // Group transactions by category
-    this.transactions.forEach(tx => {
-      const category = tx.category || 'Uncategorized';
-      const existingAmount = categoryMap.get(category) || 0;
-      categoryMap.set(category, existingAmount + tx.amount);
-    });
-    
-    // Generate colors for each category
-    const colors = [
-      '#3B82F6', // blue
-      '#10B981', // green
-      '#F59E0B', // amber
-      '#8B5CF6', // violet
-      '#EC4899', // pink
-      '#6366F1', // indigo
-      '#EF4444', // red
-      '#14B8A6', // teal
-      '#F97316', // orange
-      '#8B5CF6'  // purple
-    ];
-    
-    // Convert to array with colors
-    return Array.from(categoryMap.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by amount in descending order
-      .slice(0, 10) // Take top 10 categories
-      .map(([name, value], index) => ({
-        name,
-        value,
-        color: colors[index % colors.length]
-      }));
+  public calculateTotalExpenses(transactions: Transaction[]): number {
+    return transactions.reduce((total, tx) => {
+      try {
+        const txCurrency = tx.currency as Currency;
+        const convertedAmount = convertCurrency(
+          tx.amount,
+          txCurrency,
+          this.displayCurrency,
+          tx.paymentMethod
+        );
+        return total + convertedAmount;
+      } catch (error) {
+        console.error('Error converting currency for transaction:', tx.id, error);
+        return total;
+      }
+    }, 0);
+  }
+  
+  /**
+   * Calculate average transaction amount
+   */
+  public calculateAverageAmount(transactions: Transaction[]): number {
+    if (transactions.length === 0) return 0;
+    return this.calculateTotalExpenses(transactions) / transactions.length;
+  }
+
+  /**
+   * Calculate percentage change between current and previous period
+   */
+  public calculatePercentageChange(currentValue: number, previousValue: number): number {
+    if (previousValue === 0) return currentValue > 0 ? 100 : 0;
+    return ((currentValue - previousValue) / previousValue) * 100;
   }
 
   /**
    * Calculate total reward points from transactions
    */
-  private calculateTotalRewardPoints(): number {
-    return this.transactions.reduce((total, transaction) => {
-      // Ensure reward points is a number
+  public calculateTotalRewardPoints(transactions: Transaction[]): number {
+    return transactions.reduce((total, transaction) => {
       const points = typeof transaction.rewardPoints === 'number' 
         ? transaction.rewardPoints 
         : 0;
@@ -174,59 +220,139 @@ export class SummaryDataProcessor {
   }
   
   /**
-   * Filter transactions based on the selected time period
+   * Generate payment method chart data
    */
-  private filterTransactionsByPeriod(period: string): Transaction[] {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  public generatePaymentMethodChartData(transactions: Transaction[]): ChartDataItem[] {
+    // No need to process if there are no transactions
+    if (transactions.length === 0) return [];
     
-    switch (period) {
-      case 'thisMonth':
-        return this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= startOfMonth;
-        });
-      case 'lastMonth':
-        return this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= startOfLastMonth && txDate < startOfMonth;
-        });
-      case 'last30Days':
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= thirtyDaysAgo;
-        });
-      default:
-        return this.transactions;
-    }
+    // Group expenses by payment method
+    const expensesByPaymentMethod = new Map<string, number>();
+    
+    // Process all transactions
+    transactions.forEach(tx => {
+      try {
+        const methodName = tx.paymentMethod?.name || 'Unknown';
+        const txCurrency = tx.currency as Currency;
+        
+        // Convert amount to display currency
+        const convertedAmount = convertCurrency(
+          tx.amount,
+          txCurrency,
+          this.displayCurrency,
+          tx.paymentMethod
+        );
+        
+        // Add to the payment method total
+        const currentTotal = expensesByPaymentMethod.get(methodName) || 0;
+        expensesByPaymentMethod.set(methodName, currentTotal + convertedAmount);
+      } catch (error) {
+        console.error('Error processing payment method data:', error);
+      }
+    });
+    
+    // Convert to chart data array with colors
+    return Array.from(expensesByPaymentMethod.entries())
+      .map(([name, value], index) => ({
+        name,
+        value,
+        color: CHART_COLORS[index % CHART_COLORS.length]
+      }))
+      .sort((a, b) => b.value - a.value);
   }
   
   /**
-   * Generate complete summary data
+   * Find the top payment method by total spending
    */
-public getSummaryData(
-  period: string = 'thisMonth',
-  includeRecurring: boolean = false,
-  limit: number = 15
-): SummaryData {
-  // Filter transactions based on period
-  const filteredTransactions = this.filterTransactionsByPeriod(period);
+  public findTopPaymentMethod(transactions: Transaction[]): { name: string; value: number } | undefined {
+    const chartData = this.generatePaymentMethodChartData(transactions);
+    return chartData.length > 0 
+      ? { name: chartData[0].name, value: chartData[0].value } 
+      : undefined;
+  }
+
+  /**
+   * Generate category chart data
+   */
+  public generateCategoryChartData(transactions: Transaction[]): ChartDataItem[] {
+    // No need to process if there are no transactions
+    if (transactions.length === 0) return [];
+    
+    // Group expenses by category
+    const expensesByCategory = new Map<string, number>();
+    
+    // Process all transactions
+    transactions.forEach(tx => {
+      try {
+        const category = tx.category || 'Uncategorized';
+        const txCurrency = tx.currency as Currency;
+        
+        // Convert amount to display currency
+        const convertedAmount = convertCurrency(
+          tx.amount,
+          txCurrency,
+          this.displayCurrency,
+          tx.paymentMethod
+        );
+        
+        // Add to the category total
+        const currentTotal = expensesByCategory.get(category) || 0;
+        expensesByCategory.set(category, currentTotal + convertedAmount);
+      } catch (error) {
+        console.error('Error processing category data:', error);
+      }
+    });
+    
+    // Convert to chart data array with colors
+    return Array.from(expensesByCategory.entries())
+      .map(([name, value], index) => ({
+        name,
+        value,
+        color: CHART_COLORS[index % CHART_COLORS.length]
+      }))
+      .sort((a, b) => b.value - a.value);
+  }
   
-  // Include recurring transactions if requested, otherwise just use filtered transactions
-  // Removed the filter for isRecurring as it doesn't exist on the Transaction type
-  const processedTransactions = filteredTransactions;
-  
-  return {
-    totalExpenses: this.calculateTotalExpenses(),
-    transactionCount: processedTransactions.length,
-    averageAmount: this.calculateAverageAmount(),
-    topPaymentMethod: this.findTopPaymentMethod(),
-    totalRewardPoints: this.calculateTotalRewardPoints(),
-    paymentMethodChartData: this.generatePaymentMethodChartData(),
-    categoryChartData: this.generateCategoryChartData()
-  };
-}
+  /**
+   * Generate complete summary data for a period
+   */
+  public getSummaryData(transactions: Transaction[] = this.transactions): SummaryData {
+    // Skip calculations if no transactions to process
+    if (transactions.length === 0) {
+      return {
+        totalExpenses: 0,
+        totalRewardPoints: 0,
+        transactionCount: 0,
+        averageAmount: 0,
+        paymentMethodChartData: [],
+        categoryChartData: [],
+        topPaymentMethod: undefined,
+        percentageChange: 0
+      };
+    }
+    
+    // Calculate metrics
+    const totalExpenses = this.calculateTotalExpenses(transactions);
+    const transactionCount = transactions.length;
+    const averageAmount = this.calculateAverageAmount(transactions);
+    const totalRewardPoints = this.calculateTotalRewardPoints(transactions);
+    const paymentMethodChartData = this.generatePaymentMethodChartData(transactions);
+    const categoryChartData = this.generateCategoryChartData(transactions);
+    const topPaymentMethod = this.findTopPaymentMethod(transactions);
+    
+    // Calculate percentage change compared to previous period
+    const previousTotalExpenses = this.calculateTotalExpenses(this.previousPeriodTransactions);
+    const percentageChange = this.calculatePercentageChange(totalExpenses, previousTotalExpenses);
+    
+    return {
+      totalExpenses,
+      transactionCount,
+      averageAmount,
+      topPaymentMethod,
+      totalRewardPoints,
+      paymentMethodChartData,
+      categoryChartData,
+      percentageChange
+    };
+  }
 }
