@@ -1,76 +1,60 @@
-// src/components/dashboard/cards/PaymentMethodSummaryCard.tsx
-import React from 'react';
+
+// src/components/dashboard/cards/PaymentMethodCard.tsx
+import React, { Component } from 'react';
 import { CreditCardIcon } from 'lucide-react';
-import AbstractSummaryCard, { 
-  SummaryCardProps 
-} from '@/components/dashboard/abstractions/AbstractSummaryCard';
+import AbstractFinancialInsightCard, { 
+  FinancialInsightCardProps 
+} from '@/components/dashboard/abstractions/AbstractFinancialInsightCard';
+import PaymentMethodPieChart from '@/components/dashboard/charts/PaymentMethodPieChart';
+import { PieChartDataItem } from '@/components/dashboard/abstractions/AbstractPieChart';
 import { Currency } from '@/types';
-import { formatCurrency } from '@/utils/formatting';
 
-interface PaymentMethodSummaryCardProps extends SummaryCardProps {
-  methodName: string;
-  methodValue: number;
-  displayCurrency: Currency;
+interface PaymentMethodCardProps extends FinancialInsightCardProps {
+  paymentMethodData: PieChartDataItem[];
+  currency?: Currency;
+  highlightTopMethod?: boolean;
 }
 
 /**
- * Summary card component that displays top payment method
+ * Card component that displays payment method distribution
+ * Extends AbstractFinancialInsightCard to inherit common card behaviors
+ * Contains PaymentMethodPieChart which inherits from AbstractPieChart
  */
-class PaymentMethodSummaryCard extends AbstractSummaryCard<PaymentMethodSummaryCardProps> {
+class PaymentMethodCard extends AbstractFinancialInsightCard<PaymentMethodCardProps> {
   /**
-   * Implement the abstract method to provide card value content
+   * Implement the abstract method to provide card-specific content
    */
-  protected renderCardValue(): React.ReactNode {
-    const { methodName, valueColor = "text-fuchsia-800 dark:text-fuchsia-300" } = this.props;
+  protected renderCardContent(): React.ReactNode {
+    const { paymentMethodData, currency, highlightTopMethod } = this.props;
     
     return (
-      <div className={`text-2xl font-bold truncate w-full ${valueColor}`}>
-        {methodName || "N/A"}
-      </div>
-    );
-  }
-  
-  /**
-   * Override getDescriptionContent to provide method value information
-   */
-  protected getDescriptionContent(): React.ReactNode {
-    const { methodName, methodValue, displayCurrency } = this.props;
-    
-    if (!methodName) {
-      return "No data";
-    }
-    
-    return (
-      <>
-        {formatCurrency(methodValue, displayCurrency)} spent
-      </>
+      <PaymentMethodPieChart 
+        data={paymentMethodData} 
+        currency={currency || 'SGD'}
+        highlightTopMethod={highlightTopMethod}
+        standalone={false}
+      />
     );
   }
 }
 
 /**
- * Factory function to create a PaymentMethodSummaryCard with default props
+ * Factory function to create a PaymentMethodCard with default props
  */
-export const createPaymentMethodSummaryCard = (
-  methodName: string,
-  methodValue: number,
-  displayCurrency: Currency
+export const createPaymentMethodCard = (
+  paymentMethodData: PieChartDataItem[],
+  currency: string = 'SGD',
+  className: string = ''
 ) => {
   return (
-    <PaymentMethodSummaryCard
-      title="Top Payment Method"
+    <PaymentMethodCard
+      title="Payment Methods"
       icon={CreditCardIcon}
-      methodName={methodName}
-      methodValue={methodValue}
-      displayCurrency={displayCurrency}
-      cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
-      valueColor="text-fuchsia-800 dark:text-fuchsia-300"
-      className="rounded-xl border border-border/30 hover:border-border/80 hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
-      style={{
-        animationDelay: `200ms`,
-      }}
+      paymentMethodData={paymentMethodData}
+      currency={currency as Currency}
+      className={className}
     />
   );
 };
 
-export default PaymentMethodSummaryCard;
+export default PaymentMethodCard;

@@ -5,20 +5,20 @@ import { Currency } from '@/types';
  * Currency symbols mapping
  */
 const currencySymbols: Record<Currency, string> = {
-  USD: ''
+  USD: '$'
 ,
   EUR: '€',
   GBP: '£',
   JPY: '¥',
-  AUD: 'A'
+  AUD: 'A$'
 ,
-  CAD: 'C'
+  CAD: 'C$'
 ,
   CNY: '¥',
   INR: '₹',
-  TWD: 'NT'
+  TWD: 'NT$'
 ,
-  SGD: 'S'
+  SGD: 'S$'
 ,
   VND: '₫',
   IDR: 'Rp',
@@ -57,14 +57,20 @@ export const formatCurrency = (amount: number, currency: Currency): string => {
     currency = 'USD' as Currency;
   }
   
+  // Get decimal places based on currency type
+  const decimalPlaces = noDecimalCurrencies.includes(currency) ? 0 : 2;
+  
+  // Format the number part with appropriate decimal places
   const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: noDecimalCurrencies.includes(currency) ? 0 : 2,
-    maximumFractionDigits: noDecimalCurrencies.includes(currency) ? 0 : 2,
+    minimumFractionDigits: decimalPlaces,
+    maximumFractionDigits: decimalPlaces,
   });
   
-  return formatter.format(amount);
+  // Get the correct currency symbol from our mapping
+  const symbol = currencySymbols[currency];
+  
+  // Return the formatted string with our custom symbol
+  return `${symbol}${formatter.format(amount)}`;
 };
 
 /**

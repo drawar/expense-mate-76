@@ -1,6 +1,6 @@
 // src/components/dashboard/cards/ExpenseSummaryCard.tsx
 import React from 'react';
-import { BarChartIcon, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import AbstractSummaryCard, { 
   SummaryCardProps 
 } from '@/components/dashboard/abstractions/AbstractSummaryCard';
@@ -20,13 +20,12 @@ class ExpenseSummaryCard extends AbstractSummaryCard<ExpenseSummaryCardProps> {
   /**
    * Implement the abstract method to provide card value content
    */
-  protected renderCardValue(): React.ReactNode {
-    const { totalExpenses, displayCurrency, valueColor = "text-violet-800 dark:text-violet-300" } = this.props;
-    
+  protected getCardValueContent(): React.ReactNode {
+    const { totalExpenses, displayCurrency } = this.props;
     return (
-      <div className={`text-2xl font-bold truncate w-full ${valueColor}`}>
+      <span className="overflow-hidden text-ellipsis">
         {formatCurrency(totalExpenses, displayCurrency)}
-      </div>
+      </span>
     );
   }
   
@@ -42,8 +41,8 @@ class ExpenseSummaryCard extends AbstractSummaryCard<ExpenseSummaryCardProps> {
     
     return (
       <>
-        <Icon className={`h-3.5 w-3.5 ${trendColor}`} />
-        <span className={trendColor}>
+        <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${trendColor}`} />
+        <span className={`${trendColor} overflow-hidden text-ellipsis`}>
           {formatPercentage(percentageChange, isPositive)} since last period
         </span>
       </>
@@ -61,17 +60,10 @@ export const createExpenseSummaryCard = (
 ) => {
   return (
     <ExpenseSummaryCard
-      title="Total Expenses"
-      icon={BarChartIcon}
+      cardType="expense"
       totalExpenses={totalExpenses}
       percentageChange={percentageChange}
       displayCurrency={displayCurrency}
-      cardColor="bg-gradient-to-br from-violet-500/10 to-purple-600/10"
-      valueColor="text-violet-800 dark:text-violet-300"
-      className="rounded-xl border border-border/30 hover:border-border/80 hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
-      style={{
-        animationDelay: `0ms`,
-      }}
     />
   );
 };
