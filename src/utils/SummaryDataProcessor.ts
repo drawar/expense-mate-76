@@ -16,6 +16,9 @@ export const CHART_COLORS = [
   '#F97316', // orange
 ];
 
+// Base currency for consistent ranking calculations
+export const BASE_CURRENCY: Currency = 'SGD';
+
 /**
  * Type defining the structure of chart data
  */
@@ -60,21 +63,21 @@ export interface DateRange {
 }
 
 /**
- * Type for tab options available in the UI
+ * Filter criteria for backward compatibility
  */
-export type TimeframeTab = 'thisMonth' | 'lastMonth' | 'lastThreeMonths' | 'thisYear';
+export interface FilterCriteria {
+  dateRange?: DateRange;
+  [key: string]: any;
+}
 
 /**
- * Class responsible for processing transaction data to generate summary data
- * for the dashboard. Implements OOP principles by encapsulating data processing
- * logic in a reusable class.
+ * Enhanced class responsible for processing transaction data to generate summary data
+ * with consistent results regardless of display currency
  */
 export class SummaryDataProcessor {
-  // Private fields for better encapsulation
-  private readonly transactions: Transaction[];
-  private readonly previousPeriodTransactions: Transaction[];
-  private readonly displayCurrency: Currency;
-  private filteredTransactions: Transaction[] = [];
+  private transactions: Transaction[];
+  private previousPeriodTransactions: Transaction[] = [];
+  private displayCurrency: Currency;
   
   /**
    * Initialize the processor with transactions and currency
@@ -84,7 +87,6 @@ export class SummaryDataProcessor {
     displayCurrency: Currency = 'SGD',
     previousPeriodTransactions: Transaction[] = []
   ) {
-    // Process categories for all transactions upfront for better performance
     this.transactions = this.processTransactionCategories(transactions);
     this.previousPeriodTransactions = this.processTransactionCategories(previousPeriodTransactions);
     this.displayCurrency = displayCurrency;
@@ -92,7 +94,6 @@ export class SummaryDataProcessor {
   
   /**
    * Process transactions to ensure all have categories
-   * @private
    */
   private processTransactionCategories(transactions: Transaction[]): Transaction[] {
     return transactions.map(tx => {
@@ -114,70 +115,41 @@ export class SummaryDataProcessor {
   }
 
   /**
-   * Filter transactions based on timeframe tab and statement settings
-   * @public
+   * Backward compatibility method for filtering transactions
+   * Supports previous API that used generic filter criteria
    */
-  public filterTransactions(
-    activeTab: TimeframeTab, 
-    useStatementMonth: boolean = false, 
-    statementCycleDay: number = 1
-  ): SummaryDataProcessor {
-    const dateRanges = SummaryDataProcessor.generateDateRanges(useStatementMonth, statementCycleDay);
-    
-    // If statement cycle is enabled, apply statement cycle filter regardless of tab
-    if (useStatementMonth && dateRanges.statement) {
-      this.filteredTransactions = this.transactions.filter(tx => {
-        const txDate = new Date(tx.date);
-        const range = dateRanges.statement as DateRange;
-        return txDate >= range.start && txDate <= range.end;
-      });
-      return this;
+  public filterTransactions(criteria?: FilterCriteria): Transaction[] {
+    // Log deprecation warning in development environment
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('SummaryDataProcessor.filterTransactions is deprecated, use filterTransactionsByDateRange instead');
     }
     
-    // Regular tab-based filtering
-    switch (activeTab) {
-      case 'thisMonth': {
-        const range = dateRanges.thisMonth as DateRange;
-        this.filteredTransactions = this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-        break;
-      }
-      case 'lastMonth': {
-        const range = dateRanges.lastMonth as DateRange;
-        this.filteredTransactions = this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-        break;
-      }
-      case 'lastThreeMonths': {
-        const threeMonthsAgo = dateRanges.threeMonthsAgo as Date;
-        this.filteredTransactions = this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= threeMonthsAgo;
-        });
-        break;
-      }
-      case 'thisYear': {
-        const range = dateRanges.thisYear as DateRange;
-        this.filteredTransactions = this.transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-        break;
-      }
-      default:
-        this.filteredTransactions = this.transactions;
+    // Return all transactions if no criteria
+    if (!criteria) {
+      return this.transactions;
     }
     
-    return this;
+    // Support date range filtering for backward compatibility
+    if (criteria.dateRange) {
+      return this.filterTransactionsByDateRange(criteria.dateRange);
+    }
+    
+    // Fall back to returning all transactions
+    return this.transactions;
+  }
+
+  /**
+   * Filter transactions based on date range
+   */
+  public filterTransactionsByDateRange(dateRange: DateRange): Transaction[] {
+    return this.transactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return txDate >= dateRange.start && txDate <= dateRange.end;
+    });
   }
   
   /**
    * Generate date ranges based on current date
-   * @static
    */
   public static generateDateRanges(useStatementMonth: boolean = false, statementCycleDay: number = 1): Record<string, DateRange | Date | null> {
     const now = new Date();
@@ -233,19 +205,9 @@ export class SummaryDataProcessor {
   }
   
   /**
-   * Get the filtered transactions
-   * @public
-   */
-  public getFilteredTransactions(): Transaction[] {
-    return this.filteredTransactions.length > 0 ? this.filteredTransactions : this.transactions;
-  }
-  
-  /**
    * Calculate total expenses from a list of transactions with currency conversion
-   * @public
    */
-  public calculateTotalExpenses(): number {
-    const transactions = this.getFilteredTransactions();
+  public calculateTotalExpenses(transactions: Transaction[]): number {
     return transactions.reduce((total, tx) => {
       try {
         const txCurrency = tx.currency as Currency;
@@ -265,46 +227,24 @@ export class SummaryDataProcessor {
   
   /**
    * Calculate average transaction amount
-   * @public
    */
-  public calculateAverageAmount(): number {
-    const transactions = this.getFilteredTransactions();
+  public calculateAverageAmount(transactions: Transaction[]): number {
     if (transactions.length === 0) return 0;
-    return this.calculateTotalExpenses() / transactions.length;
+    return this.calculateTotalExpenses(transactions) / transactions.length;
   }
 
   /**
    * Calculate percentage change between current and previous period
-   * @public
    */
-  public calculatePercentageChange(): number {
-    const currentValue = this.calculateTotalExpenses();
-    const previousValue = this.previousPeriodTransactions.reduce((total, tx) => {
-      try {
-        const txCurrency = tx.currency as Currency;
-        const convertedAmount = convertCurrency(
-          tx.amount,
-          txCurrency,
-          this.displayCurrency,
-          tx.paymentMethod
-        );
-        return total + convertedAmount;
-      } catch (error) {
-        console.error('Error converting currency for previous transaction:', tx.id, error);
-        return total;
-      }
-    }, 0);
-    
+  public calculatePercentageChange(currentValue: number, previousValue: number): number {
     if (previousValue === 0) return currentValue > 0 ? 100 : 0;
     return ((currentValue - previousValue) / previousValue) * 100;
   }
 
   /**
    * Calculate total reward points from transactions
-   * @public
    */
-  public calculateTotalRewardPoints(): number {
-    const transactions = this.getFilteredTransactions();
+  public calculateTotalRewardPoints(transactions: Transaction[]): number {
     return transactions.reduce((total, transaction) => {
       const points = typeof transaction.rewardPoints === 'number' 
         ? transaction.rewardPoints 
@@ -314,72 +254,79 @@ export class SummaryDataProcessor {
   }
   
   /**
-   * Generate payment method chart data
-   * @public
+   * Generate payment method chart data with consistent ranking
+   * Modified to ensure payment method ranking is consistent regardless of display currency
    */
-  public generatePaymentMethodChartData(): ChartDataItem[] {
-    const transactions = this.getFilteredTransactions();
-    
+  public generatePaymentMethodChartData(transactions: Transaction[]): ChartDataItem[] {
     // No need to process if there are no transactions
     if (transactions.length === 0) return [];
     
-    // Group expenses by payment method
+    // Group expenses by payment method using a consistent base currency (SGD)
     const expensesByPaymentMethod = new Map<string, number>();
     
-    // Process all transactions
+    // Process all transactions - First pass: calculate totals in base currency
     transactions.forEach(tx => {
       try {
         const methodName = tx.paymentMethod?.name || 'Unknown';
         const txCurrency = tx.currency as Currency;
         
-        // Convert amount to display currency
-        const convertedAmount = convertCurrency(
+        // First convert amount to base currency (SGD) for consistent ranking
+        const baseAmount = convertCurrency(
           tx.amount,
           txCurrency,
-          this.displayCurrency,
+          BASE_CURRENCY,
           tx.paymentMethod
         );
         
-        // Add to the payment method total
+        // Add to the payment method total in base currency
         const currentTotal = expensesByPaymentMethod.get(methodName) || 0;
-        expensesByPaymentMethod.set(methodName, currentTotal + convertedAmount);
+        expensesByPaymentMethod.set(methodName, currentTotal + baseAmount);
       } catch (error) {
         console.error('Error processing payment method data:', error);
       }
     });
     
-    // Convert to chart data array with colors
-    return Array.from(expensesByPaymentMethod.entries())
-      .map(([name, value], index) => ({
+    // Convert the map to an array of entries for sorting
+    const methodEntries = Array.from(expensesByPaymentMethod.entries())
+      .sort((a, b) => b[1] - a[1]); // Sort by amount in base currency (descending)
+    
+    // Now convert the base currency amounts to display currency for presentation
+    return methodEntries.map(([name, baseValue], index) => {
+      // Convert from base currency to display currency for display
+      const displayValue = BASE_CURRENCY === this.displayCurrency 
+        ? baseValue 
+        : convertCurrency(baseValue, BASE_CURRENCY, this.displayCurrency);
+        
+      return {
         name,
-        value,
+        value: displayValue,
         color: CHART_COLORS[index % CHART_COLORS.length]
-      }))
-      .sort((a, b) => b.value - a.value);
+      };
+    });
   }
   
   /**
    * Find the top payment method by total spending
-   * @public
+   * Ensures consistent ranking across different display currencies
    */
-  public findTopPaymentMethod(): { name: string; value: number } | undefined {
-    const chartData = this.generatePaymentMethodChartData();
+  public findTopPaymentMethod(transactions: Transaction[]): { name: string; value: number } | undefined {
+    // Generate chart data with consistent ranking
+    const chartData = this.generatePaymentMethodChartData(transactions);
+    
+    // Return the top payment method (first entry after sorting)
     return chartData.length > 0 
       ? { name: chartData[0].name, value: chartData[0].value } 
       : undefined;
   }
 
   /**
-   * Generate category chart data
-   * @public
+   * Generate category chart data with consistent ranking
    */
-  public generateCategoryChartData(): ChartDataItem[] {
-    const transactions = this.getFilteredTransactions();
-    
+  public generateCategoryChartData(transactions: Transaction[]): ChartDataItem[] {
     // No need to process if there are no transactions
     if (transactions.length === 0) return [];
     
-    // Group expenses by category
+    // Group expenses by category using base currency for consistency
     const expensesByCategory = new Map<string, number>();
     
     // Process all transactions
@@ -388,39 +335,46 @@ export class SummaryDataProcessor {
         const category = tx.category || 'Uncategorized';
         const txCurrency = tx.currency as Currency;
         
-        // Convert amount to display currency
-        const convertedAmount = convertCurrency(
+        // Convert amount to base currency for consistent ranking
+        const baseAmount = convertCurrency(
           tx.amount,
           txCurrency,
-          this.displayCurrency,
+          BASE_CURRENCY,
           tx.paymentMethod
         );
         
         // Add to the category total
         const currentTotal = expensesByCategory.get(category) || 0;
-        expensesByCategory.set(category, currentTotal + convertedAmount);
+        expensesByCategory.set(category, currentTotal + baseAmount);
       } catch (error) {
         console.error('Error processing category data:', error);
       }
     });
     
-    // Convert to chart data array with colors
-    return Array.from(expensesByCategory.entries())
-      .map(([name, value], index) => ({
+    // Sort by base currency amounts
+    const categoryEntries = Array.from(expensesByCategory.entries())
+      .sort((a, b) => b[1] - a[1]);
+    
+    // Convert to display currency for presentation
+    return categoryEntries.map(([name, baseValue], index) => {
+      // Convert from base currency to display currency
+      const displayValue = BASE_CURRENCY === this.displayCurrency 
+        ? baseValue 
+        : convertCurrency(baseValue, BASE_CURRENCY, this.displayCurrency);
+        
+      return {
         name,
-        value,
+        value: displayValue,
         color: CHART_COLORS[index % CHART_COLORS.length]
-      }))
-      .sort((a, b) => b.value - a.value);
+      };
+    });
   }
   
   /**
-   * Generate complete summary data
-   * @public
+   * Generate complete summary data for a period
+   * With consistent rankings across different display currencies
    */
-  public getSummaryData(): SummaryData {
-    const transactions = this.getFilteredTransactions();
-    
+  public getSummaryData(transactions: Transaction[] = this.transactions): SummaryData {
     // Skip calculations if no transactions to process
     if (transactions.length === 0) {
       return {
@@ -436,14 +390,17 @@ export class SummaryDataProcessor {
     }
     
     // Calculate metrics
-    const totalExpenses = this.calculateTotalExpenses();
+    const totalExpenses = this.calculateTotalExpenses(transactions);
     const transactionCount = transactions.length;
-    const averageAmount = this.calculateAverageAmount();
-    const totalRewardPoints = this.calculateTotalRewardPoints();
-    const paymentMethodChartData = this.generatePaymentMethodChartData();
-    const categoryChartData = this.generateCategoryChartData();
-    const topPaymentMethod = this.findTopPaymentMethod();
-    const percentageChange = this.calculatePercentageChange();
+    const averageAmount = this.calculateAverageAmount(transactions);
+    const totalRewardPoints = this.calculateTotalRewardPoints(transactions);
+    const paymentMethodChartData = this.generatePaymentMethodChartData(transactions);
+    const categoryChartData = this.generateCategoryChartData(transactions);
+    const topPaymentMethod = this.findTopPaymentMethod(transactions);
+    
+    // Calculate percentage change compared to previous period
+    const previousTotalExpenses = this.calculateTotalExpenses(this.previousPeriodTransactions);
+    const percentageChange = this.calculatePercentageChange(totalExpenses, previousTotalExpenses);
     
     return {
       totalExpenses,

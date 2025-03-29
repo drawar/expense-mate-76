@@ -10,7 +10,8 @@ import { Link } from 'react-router-dom';
 import { formatCurrency } from '@/utils/formatting';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
 import StatementCycleFilter from './StatementCycleFilter';
-import { useDashboard, TimeframeTab } from '@/hooks/useDashboard';
+import { TimeframeTab } from '@/utils/transactionProcessor';
+import { useDashboard } from '@/hooks/useDashboard';
 import "./dashboard.css";
 
 // Define the Card components directly here instead of importing from separate files
