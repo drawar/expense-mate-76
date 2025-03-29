@@ -7,6 +7,8 @@ import SpendingCategoryCard from '@/components/dashboard/cards/SpendingCategoryC
 import SpendingTrendCard from '@/components/dashboard/cards/SpendingTrendCard';
 import CardOptimizationCard from '@/components/dashboard/cards/CardOptimizationCard';
 import SavingsPotentialCard from '@/components/dashboard/cards/SavingsPotentialCard';
+import UnusualSpendingCard from '@/components/dashboard/cards/UnusualSpendingCard';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface InsightsGridProps {
   dashboardData: DashboardData;
@@ -17,6 +19,7 @@ interface InsightsGridProps {
 /**
  * Grid component that displays financial insights using domain-specific cards
  * Organizes visualization components in a responsive layout
+ * Now includes the UnusualSpendingCard component
  */
 const InsightsGrid: React.FC<InsightsGridProps> = ({
   dashboardData,
@@ -24,6 +27,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   displayCurrency,
 }) => {
   const { filteredTransactions, charts } = dashboardData;
+  const isMobile = useMediaQuery('(max-width: 768px)');
   
   // Define a common class for all cards
   const commonCardClass = 'rounded-xl border border-border/50 bg-card hover:shadow-md transition-all';
@@ -59,25 +63,35 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           initialPeriod="month"
         />
         
-        {/* Container for optimization cards */}
-        <div className="grid grid-cols-1 gap-4">
-          {/* Card Optimization Card */}
-          <CardOptimizationCard
-            title="Card Optimization"
-            transactions={filteredTransactions}
-            paymentMethods={paymentMethods}
-            currency={displayCurrency}
-            className={commonCardClass}
-          />
-          
-          {/* Savings Potential Card */}
-          <SavingsPotentialCard
-            title="Savings Potential"
-            transactions={filteredTransactions}
-            savingsGoalPercentage={20}
-            currency={displayCurrency}
-            className={commonCardClass}
-          />
+        {/* NEW: Unusual Spending Card */}
+        <UnusualSpendingCard
+          transactions={filteredTransactions}
+          currency={displayCurrency}
+          className={commonCardClass}
+          maxDisplayedAnomalies={isMobile ? 2 : 3}
+        />
+        
+        {/* Container for optimization cards - Now in a separate row */}
+        <div className={`grid grid-cols-1 gap-4 ${isMobile ? '' : 'col-span-2'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Card Optimization Card */}
+            <CardOptimizationCard
+              title="Card Optimization"
+              transactions={filteredTransactions}
+              paymentMethods={paymentMethods}
+              currency={displayCurrency}
+              className={commonCardClass}
+            />
+            
+            {/* Savings Potential Card */}
+            <SavingsPotentialCard
+              title="Savings Potential"
+              transactions={filteredTransactions}
+              savingsGoalPercentage={20}
+              currency={displayCurrency}
+              className={commonCardClass}
+            />
+          </div>
         </div>
       </div>
     </div>
