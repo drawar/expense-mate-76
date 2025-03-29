@@ -1,10 +1,11 @@
 // src/hooks/dashboard/useSummaryCalculator.ts
 import { useMemo } from 'react';
 import { Transaction, Currency } from '@/types';
-import { SummaryDataProcessor, DateRange, SummaryData } from '@/utils/SummaryDataProcessor';
+import { SummaryDataProcessor, SummaryData, TimeframeTab } from '@/utils/SummaryDataProcessor';
 
 /**
  * Hook for calculating summary data using the SummaryDataProcessor
+ * This hook centralizes all dashboard data processing logic
  */
 export const useSummaryCalculator = (
   transactions: Transaction[],
@@ -14,73 +15,43 @@ export const useSummaryCalculator = (
   statementCycleDay: number,
   previousPeriodTransactions: Transaction[] = []
 ) => {
-  // Generate date ranges based on current date and selected options
-  const dateRanges = useMemo(() => {
-    return SummaryDataProcessor.generateDateRanges(useStatementMonth, statementCycleDay);
-  }, [useStatementMonth, statementCycleDay]);
-
-  // Filter transactions based on active tab and statement cycle
-  const filteredTransactions = useMemo(() => {
-    // No need to filter if there are no transactions
-    if (!transactions.length) return [];
-    
-    // If statement cycle is enabled, apply statement cycle filter regardless of tab
-    if (useStatementMonth && dateRanges.statement) {
-      return transactions.filter(tx => {
-        const txDate = new Date(tx.date);
-        const range = dateRanges.statement as DateRange;
-        return txDate >= range.start && txDate <= range.end;
-      });
-    }
-    
-    // Regular tab-based filtering
-    switch (activeTab) {
-      case 'thisMonth': {
-        const range = dateRanges.thisMonth as DateRange;
-        return transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-      }
-      case 'lastMonth': {
-        const range = dateRanges.lastMonth as DateRange;
-        return transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-      }
-      case 'lastThreeMonths': {
-        const threeMonthsAgo = dateRanges.threeMonthsAgo as Date;
-        return transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= threeMonthsAgo;
-        });
-      }
-      case 'thisYear': {
-        const range = dateRanges.thisYear as DateRange;
-        return transactions.filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate >= range.start && txDate <= range.end;
-        });
-      }
-      default:
-        return transactions;
-    }
-  }, [transactions, activeTab, useStatementMonth, dateRanges]);
-
-  // Create the summary data processor instance
+  // Create a memoized instance of the processor
   const processor = useMemo(() => {
-    return new SummaryDataProcessor(filteredTransactions, displayCurrency, previousPeriodTransactions);
-  }, [filteredTransactions, displayCurrency, previousPeriodTransactions]);
+    return new SummaryDataProcessor(
+      transactions, 
+      displayCurrency,
+      previousPeriodTransactions
+    );
+  }, [transactions, displayCurrency, previousPeriodTransactions]);
+
+  // Filter transactions based on the active tab and statement cycle
+  const filteredProcessor = useMemo(() => {
+    return processor.filterTransactions(
+      activeTab as TimeframeTab,
+      useStatementMonth,
+      statementCycleDay
+    );
+  }, [processor, activeTab, useStatementMonth, statementCycleDay]);
+  
+  // Get filtered transactions
+  const filteredTransactions = useMemo(() => {
+    return filteredProcessor.getFilteredTransactions();
+  }, [filteredProcessor]);
 
   // Calculate summary data
   const summaryData = useMemo<SummaryData>(() => {
-    return processor.getSummaryData();
-  }, [processor]);
+    return filteredProcessor.getSummaryData();
+  }, [filteredProcessor]);
 
   return {
     summaryData,
     filteredTransactions,
-    processor
+    // Expose processor methods for specialized components
+    calculator: {
+      getPaymentMethodData: () => filteredProcessor.generatePaymentMethodChartData(),
+      getCategoryData: () => filteredProcessor.generateCategoryChartData(),
+      getTotalRewardPoints: () => filteredProcessor.calculateTotalRewardPoints(),
+      getTopPaymentMethod: () => filteredProcessor.findTopPaymentMethod(),
+    }
   };
 };
