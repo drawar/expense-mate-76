@@ -1,17 +1,13 @@
 // src/components/dashboard/SummarySection.tsx
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Currency } from '@/types';
 import { Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from '@/components/ui/button';
-import { ExternalLinkIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { formatCurrency } from '@/utils/formatting';
 import DisplayCurrencySelect from './DisplayCurrencySelect';
 import StatementCycleFilter from './StatementCycleFilter';
 import { TimeframeTab } from '@/utils/transactionProcessor';
-import SummaryCharts from './SummaryCharts';
 import { DashboardData } from '@/types/dashboardTypes';
 import SummaryCard from './SummaryCard';
 import { BarChartIcon, ReceiptIcon, CreditCardIcon, CoinsIcon } from 'lucide-react';
@@ -26,7 +22,6 @@ interface SummarySectionProps {
   setUseStatementMonth: (use: boolean) => void;
   statementCycleDay: number;
   setStatementCycleDay: (day: number) => void;
-  isMobile: boolean;
 }
 
 const SummarySection: React.FC<SummarySectionProps> = ({
@@ -39,17 +34,24 @@ const SummarySection: React.FC<SummarySectionProps> = ({
   setUseStatementMonth,
   statementCycleDay,
   setStatementCycleDay,
-  isMobile
 }) => {
-  const handleCurrencyChange = (currency: Currency) => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleCurrencyChange = useCallback((currency: Currency) => {
     setDisplayCurrency(currency);
-  };
+  }, [setDisplayCurrency]);
   
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value as TimeframeTab);
+  }, [setActiveTab]);
+  
+  // Destructure metrics for easier access
+  const { metrics, top, filteredTransactions } = dashboardData;
+
   return (
     <div className="space-y-4 w-full">
       <Tabs 
         defaultValue={activeTab} 
-        onValueChange={(value) => setActiveTab(value as TimeframeTab)}
+        onValueChange={handleTabChange}
         className="w-full"
       >
         {/* Dashboard header with filter controls */}
@@ -71,7 +73,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               <Filter className="h-5 w-5 text-muted-foreground mr-2" />
               <Select
                 value={activeTab}
-                onValueChange={(value) => setActiveTab(value as TimeframeTab)}
+                onValueChange={handleTabChange}
               >
                 <SelectTrigger className="w-[120px] h-7 text-sm bg-transparent border-none">
                   <SelectValue placeholder="This Month" />
@@ -107,8 +109,8 @@ const SummarySection: React.FC<SummarySectionProps> = ({
             <SummaryCard
               title="Total Expenses"
               icon={<BarChartIcon className="h-5 w-5 text-primary" />}
-              value={formatCurrency(dashboardData.metrics.totalExpenses, displayCurrency)}
-              trend={dashboardData.metrics.percentageChange}
+              value={formatCurrency(metrics.totalExpenses, displayCurrency)}
+              trend={metrics.percentageChange}
               cardColor="bg-gradient-to-br from-violet-500/10 to-purple-600/10"
               valueColor="text-violet-800 dark:text-violet-300"
             />
@@ -117,8 +119,8 @@ const SummarySection: React.FC<SummarySectionProps> = ({
             <SummaryCard
               title="Transactions"
               icon={<ReceiptIcon className="h-5 w-5 text-primary" />}
-              value={dashboardData.metrics.transactionCount.toString()}
-              description={`Avg ${formatCurrency(dashboardData.metrics.averageAmount, displayCurrency)} per transaction`}
+              value={metrics.transactionCount.toString()}
+              description={`Avg ${formatCurrency(metrics.averageAmount, displayCurrency)} per transaction`}
               cardColor="bg-gradient-to-br from-blue-500/10 to-indigo-600/10"
               valueColor="text-blue-800 dark:text-blue-300"
             />
@@ -127,9 +129,9 @@ const SummarySection: React.FC<SummarySectionProps> = ({
             <SummaryCard
               title="Top Payment Method"
               icon={<CreditCardIcon className="h-5 w-5 text-primary" />}
-              value={dashboardData.top.paymentMethod?.name || "N/A"}
-              description={dashboardData.top.paymentMethod 
-                ? `${formatCurrency(dashboardData.top.paymentMethod.value, displayCurrency)} spent` 
+              value={top.paymentMethod?.name || "N/A"}
+              description={top.paymentMethod 
+                ? `${formatCurrency(top.paymentMethod.value, displayCurrency)} spent` 
                 : "No data"}
               cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
               valueColor="text-fuchsia-800 dark:text-fuchsia-300"
@@ -139,28 +141,12 @@ const SummarySection: React.FC<SummarySectionProps> = ({
             <SummaryCard
               title="Reward Points"
               icon={<CoinsIcon className="h-5 w-5 text-primary" />}
-              value={dashboardData.metrics.totalRewardPoints.toLocaleString()}
-              description={`From ${dashboardData.filteredTransactions.filter(tx => (tx.rewardPoints || 0) > 0).length} transactions`}
+              value={metrics.totalRewardPoints.toLocaleString()}
+              description={`From ${filteredTransactions.filter(tx => (tx.rewardPoints || 0) > 0).length} transactions`}
               cardColor="bg-gradient-to-br from-amber-500/10 to-orange-600/10"
               valueColor="text-amber-800 dark:text-amber-300"
             />
           </div>
-          
-          {/* <div className="flex justify-end">
-            <Link to="/reward-points">
-              <Button variant="outline" size="sm" className="flex gap-2 items-center">
-                <span>View Reward Points Analytics</span>
-                <ExternalLinkIcon size={16} />
-              </Button>
-            </Link>
-          </div> */}
-          
-          {/* Charts */}
-          {/* <SummaryCharts
-            paymentMethodChartData={dashboardData.charts.paymentMethods}
-            categoryChartData={dashboardData.charts.categories}
-            displayCurrency={displayCurrency}
-          /> */}
         </TabsContent>
       </Tabs>
     </div>

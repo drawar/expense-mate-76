@@ -3,8 +3,8 @@ import React from 'react';
 import { PaymentMethod, Currency } from '@/types';
 import { DashboardData } from '@/types/dashboardTypes';
 import PaymentMethodCard from '@/components/dashboard/cards/PaymentMethodCard';
-import CategoryCard from '@/components/dashboard/cards/CategoryCard';
-import SpendingTrendsCard from '@/components/dashboard/cards/SpendingTrendsCard';
+import SpendingCategoryCard from '@/components/dashboard/cards/SpendingCategoryCard';
+import SpendingTrendCard from '@/components/dashboard/cards/SpendingTrendCard';
 import CardOptimizationCard from '@/components/dashboard/cards/CardOptimizationCard';
 import SavingsPotentialCard from '@/components/dashboard/cards/SavingsPotentialCard';
 
@@ -12,14 +12,15 @@ interface InsightsGridProps {
   dashboardData: DashboardData;
   paymentMethods: PaymentMethod[];
   displayCurrency: Currency;
-  isMobile: boolean;
 }
 
+/**
+ * Grid component that displays financial insights using domain-specific cards
+ */
 const InsightsGrid: React.FC<InsightsGridProps> = ({
   dashboardData,
   paymentMethods,
   displayCurrency,
-  isMobile
 }) => {
   const { filteredTransactions, charts } = dashboardData;
   
@@ -33,34 +34,31 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Payment Methods Chart */}
+        {/* Payment Methods - Using domain-specific card */}
         <PaymentMethodCard
-          title="Payment Methods"
-          paymentMethodData={charts.paymentMethods}
+          data={charts.paymentMethods}
           currency={displayCurrency}
           className={commonCardClass}
+          highlightTopMethod={true}
         />
         
-        {/* Expense Categories Chart */}
-        <CategoryCard
-          title="Expense Categories"
-          categoryData={charts.categories}
+        {/* Expense Categories - Using domain-specific card */}
+        <SpendingCategoryCard
+          data={charts.categories}
           currency={displayCurrency}
           className={commonCardClass}
+          maxCategories={7}
         />
         
-        {/* Spending Trends */}
-        <SpendingTrendsCard
-          title="Spending Trends"
+        {/* Spending Trends - Using domain-specific card with period selector */}
+        <SpendingTrendCard
           transactions={filteredTransactions}
-          period="month"
-          showAverage={true}
-          showInsights={true}
           currency={displayCurrency}
           className={commonCardClass}
+          initialPeriod="month"
         />
         
-        {/* This grid spans 2 columns on mobile, 1 column on desktop */}
+        {/* Container for optimization cards */}
         <div className="grid grid-cols-1 gap-4">
           {/* Card Optimization */}
           <CardOptimizationCard
@@ -85,4 +83,5 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   );
 };
 
+// Use memo to prevent unnecessary re-renders
 export default React.memo(InsightsGrid);

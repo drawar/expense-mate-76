@@ -1,5 +1,5 @@
 // src/components/dashboard/Dashboard.tsx
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import SummarySection from '@/components/dashboard/SummarySection';
@@ -7,8 +7,6 @@ import InsightsGrid from '@/components/dashboard/InsightsGrid';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import LoadingDashboard from '@/components/dashboard/LoadingDashboard';
 import { useDashboard } from '@/hooks/useDashboard';
-import { useState } from 'react';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { TimeframeTab } from '@/utils/transactionProcessor';
 
 interface DashboardProps {
@@ -18,7 +16,6 @@ interface DashboardProps {
   defaultCurrency?: Currency;
 }
 
-// Memoized component to prevent unnecessary re-renders
 const Dashboard: React.FC<DashboardProps> = ({
   transactions,
   paymentMethods,
@@ -30,9 +27,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(defaultCurrency);
   const [useStatementMonth, setUseStatementMonth] = useState(false);
   const [statementCycleDay, setStatementCycleDay] = useState(15);
-  
-  // Media query hook for responsive design
-  const isMobile = useMediaQuery('(max-width: 768px)');
   
   // Use our consolidated hook for all dashboard data processing
   const dashboardData = useDashboard({
@@ -51,6 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       .slice(0, 5);
   }, [transactions]);
   
+  // Early return for loading state
   if (loading) {
     return <LoadingDashboard />;
   }
@@ -70,23 +65,21 @@ const Dashboard: React.FC<DashboardProps> = ({
           setUseStatementMonth={setUseStatementMonth}
           statementCycleDay={statementCycleDay}
           setStatementCycleDay={setStatementCycleDay}
-          isMobile={isMobile}
         />
         
         <InsightsGrid 
           dashboardData={dashboardData}
           paymentMethods={paymentMethods}
           displayCurrency={displayCurrency}
-          isMobile={isMobile}
         />
         
         <RecentTransactions 
-          transactions={recentTransactions} 
-          isMobile={isMobile}
+          transactions={recentTransactions}
         />
       </div>
     </div>
   );
 };
 
+// Use memo to prevent unnecessary re-renders of the entire dashboard
 export default React.memo(Dashboard);

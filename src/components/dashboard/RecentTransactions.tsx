@@ -5,16 +5,18 @@ import { Transaction } from '@/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, ArrowUpRightIcon } from 'lucide-react';
 import TransactionCard from '@/components/expense/TransactionCard';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
-  isMobile: boolean;
 }
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({
-  transactions,
-  isMobile
+  transactions
 }) => {
+  // Use the media query hook for responsive design
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  
   // Render the empty state when no transactions are available
   const renderEmptyState = () => {
     return (
@@ -26,21 +28,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
             {!isMobile && <span>Record Your First Expense</span>}
           </Button>
         </Link>
-      </div>
-    );
-  };
-  
-  // Render the transaction cards grid
-  const renderTransactionCards = () => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {transactions.map((transaction) => (
-          <TransactionCard 
-            key={transaction.id} 
-            transaction={transaction}
-            className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
-          />
-        ))}
       </div>
     );
   };
@@ -58,7 +45,17 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       
       {transactions.length === 0 
         ? renderEmptyState() 
-        : renderTransactionCards()
+        : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {transactions.map((transaction) => (
+              <TransactionCard 
+                key={transaction.id} 
+                transaction={transaction}
+                className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
+              />
+            ))}
+          </div>
+        )
       }
     </div>
   );

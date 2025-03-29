@@ -85,13 +85,19 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
         let potentialReward = 0;
         
         method.rewardRules.forEach(rule => {
-          if (rule.type === 'mcc' || rule.type === 'category') {
+          // Check for merchant/MCC based rules - these can apply to categories
+          if (rule.type === 'mcc' || rule.type === 'merchant') {
             // Check if this rule applies to the current category
             const conditions = Array.isArray(rule.condition) 
               ? rule.condition 
               : [rule.condition];
               
-            if (conditions.some(cond => category.toLowerCase().includes(cond.toLowerCase()))) {
+            // Use lowercase contains match to be more flexible
+            if (conditions.some(cond => {
+              const categoryLower = category.toLowerCase();
+              const condLower = cond.toLowerCase();
+              return categoryLower.includes(condLower) || condLower.includes(categoryLower);
+            })) {
               potentialReward = Math.max(potentialReward, rule.pointsMultiplier);
             }
           }
