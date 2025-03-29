@@ -1,10 +1,11 @@
 // src/components/dashboard/cards/SavingsPotentialCard.tsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { PiggyBankIcon, TrendingDownIcon, BarChart3Icon } from 'lucide-react';
 import { Transaction, Currency } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/formatting';
 import { Progress } from '@/components/ui/progress';
+import { useSavingsPotential } from '@/hooks/useChartData';
 
 interface SavingsPotentialCardProps {
   title: string;
@@ -16,6 +17,7 @@ interface SavingsPotentialCardProps {
 
 /**
  * Card component that analyzes transactions to identify savings potential
+ * Now uses the useSavingsPotential hook for data processing
  */
 const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
   title,
@@ -24,99 +26,8 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
   currency = 'SGD',
   className = ''
 }) => {
-  // Define discretionary spending categories
-  const discretionaryCategories = [
-    'Entertainment', 'Dining', 'Shopping', 'Leisure',
-    'Subscriptions', 'Travel', 'Hobbies', 'Gifts',
-    'Alcohol', 'Coffee', 'Electronics', 'Clothing',
-    'Beauty', 'Fast Food'
-  ];
-  
-  // Analyze savings potential
-  const analysis = useMemo(() => {
-    // No need to process if there are no transactions
-    if (transactions.length === 0) {
-      return {
-        totalSpending: 0,
-        discretionarySpending: 0,
-        savingsTarget: 0,
-        savingsPotential: 0,
-        topDiscretionaryCategories: [],
-        savingsProgress: 0
-      };
-    }
-    
-    // Calculate total spending
-    const totalSpending = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-    
-    // Group spending by category
-    const categorySpending = new Map<string, number>();
-    
-    transactions.forEach(tx => {
-      const category = tx.category || 'Uncategorized';
-      categorySpending.set(
-        category, 
-        (categorySpending.get(category) || 0) + tx.amount
-      );
-    });
-    
-    // Identify discretionary and essential spending
-    let discretionarySpending = 0;
-    const categoryData: Array<{
-      category: string;
-      amount: number;
-      discretionary: boolean;
-      savingsPotential: number;
-    }> = [];
-    
-    categorySpending.forEach((amount, category) => {
-      const isDiscretionary = discretionaryCategories.includes(category);
-      
-      // Calculate potential savings for this category
-      // For discretionary categories, estimate 30% potential savings
-      // For essential categories, estimate 5% potential savings
-      const savingsPotential = isDiscretionary ? amount * 0.3 : amount * 0.05;
-      
-      if (isDiscretionary) {
-        discretionarySpending += amount;
-      }
-      
-      categoryData.push({
-        category,
-        amount,
-        discretionary: isDiscretionary,
-        savingsPotential
-      });
-    });
-    
-    // Sort categories by savings potential
-    const topDiscretionaryCategories = categoryData
-      .filter(cat => cat.discretionary)
-      .sort((a, b) => b.savingsPotential - a.savingsPotential)
-      .slice(0, 3);
-    
-    // Calculate savings target and potential
-    const savingsTarget = totalSpending * (savingsGoalPercentage / 100);
-    const savingsPotential = categoryData.reduce(
-      (sum, cat) => sum + cat.savingsPotential, 
-      0
-    );
-    
-    // Calculate savings progress
-    const savingsProgress = Math.min(
-      100, 
-      savingsPotential > 0 ? (savingsPotential / savingsTarget) * 100 : 0
-    );
-    
-    return {
-      totalSpending,
-      discretionarySpending,
-      savingsTarget,
-      savingsPotential,
-      topDiscretionaryCategories,
-      savingsProgress
-    };
-  }, [transactions, savingsGoalPercentage, discretionaryCategories]);
+  // Use the savings potential hook to get processed data
+  const analysis = useSavingsPotential(transactions, savingsGoalPercentage);
 
   return (
     <Card className={`${className}`}>

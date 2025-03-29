@@ -4,15 +4,52 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
 
 interface SummaryCardProps {
+  /**
+   * Card title displayed in the header
+   */
   title: string;
+  
+  /**
+   * Icon component to display next to the title
+   */
   icon: React.ReactNode;
+  
+  /**
+   * Primary value to display in the card
+   */
   value: string;
+  
+  /**
+   * Optional description text or component
+   */
   description?: string | React.ReactNode;
+  
+  /**
+   * Optional percentage trend value
+   * Positive values show up/red, negative values show down/green
+   */
   trend?: number;
+  
+  /**
+   * Optional background color class for the card
+   */
   cardColor?: string;
+  
+  /**
+   * Optional text color class for the value
+   */
   valueColor?: string;
+  
+  /**
+   * Optional className for additional styling
+   */
+  className?: string;
 }
 
+/**
+ * Reusable summary card component for displaying metric information
+ * Supports trend indicators and custom styling
+ */
 const SummaryCard: React.FC<SummaryCardProps> = ({ 
   title, 
   icon, 
@@ -20,9 +57,10 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   description, 
   trend, 
   cardColor = "bg-card",
-  valueColor = "text-foreground"
+  valueColor = "text-foreground",
+  className = ""
 }) => {
-  // Format trend if available
+  // Format trend data with appropriate styling
   const renderTrend = () => {
     if (trend === undefined) return null;
     
@@ -43,7 +81,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   };
 
   return (
-    <Card className={`summary-card overflow-hidden animate-fadeIn ${cardColor}`}>
+    <Card className={`summary-card overflow-hidden animate-fadeIn ${cardColor} ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
           {icon && <span className="mr-1.5">{icon}</span>}
@@ -51,7 +89,10 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         </CardTitle>
         
         <div className="mt-2">
-          <div className={`text-2xl font-bold truncate ${valueColor}`} title={value}>
+          <div 
+            className={`text-2xl font-bold truncate ${valueColor}`}
+            title={value} // Add title for tooltip on hover
+          >
             {value}
           </div>
         </div>

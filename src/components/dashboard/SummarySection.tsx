@@ -1,103 +1,49 @@
 // src/components/dashboard/SummarySection.tsx
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Currency } from '@/types';
-import { Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from '@/utils/formatting';
-import DisplayCurrencySelect from './DisplayCurrencySelect';
-import StatementCycleFilter from './StatementCycleFilter';
-import { TimeframeTab } from '@/utils/transactionProcessor';
 import { DashboardData } from '@/types/dashboardTypes';
 import SummaryCard from './SummaryCard';
 import { BarChartIcon, ReceiptIcon, CreditCardIcon, CoinsIcon } from 'lucide-react';
+import { Currency } from '@/types';
 
+/**
+ * Props for SummarySection component
+ */
 interface SummarySectionProps {
   dashboardData: DashboardData;
   displayCurrency: Currency;
-  setDisplayCurrency: (currency: Currency) => void;
-  activeTab: TimeframeTab;
-  setActiveTab: (tab: TimeframeTab) => void;
-  useStatementMonth: boolean;
-  setUseStatementMonth: (use: boolean) => void;
-  statementCycleDay: number;
-  setStatementCycleDay: (day: number) => void;
+  activeTab: string;
+  onTabChange?: (value: string) => void;
 }
 
+/**
+ * Displays summary cards with key metrics for the dashboard
+ * No longer contains filter controls (moved to FilterBar)
+ */
 const SummarySection: React.FC<SummarySectionProps> = ({
   dashboardData,
   displayCurrency,
-  setDisplayCurrency,
   activeTab,
-  setActiveTab,
-  useStatementMonth,
-  setUseStatementMonth,
-  statementCycleDay,
-  setStatementCycleDay,
+  onTabChange
 }) => {
-  // Memoize handlers to prevent unnecessary re-renders
-  const handleCurrencyChange = useCallback((currency: Currency) => {
-    setDisplayCurrency(currency);
-  }, [setDisplayCurrency]);
-  
-  const handleTabChange = useCallback((value: string) => {
-    setActiveTab(value as TimeframeTab);
-  }, [setActiveTab]);
-  
   // Destructure metrics for easier access
   const { metrics, top, filteredTransactions } = dashboardData;
+
+  // Handle tab change if provided
+  const handleTabChange = (value: string) => {
+    if (onTabChange) {
+      onTabChange(value);
+    }
+  };
 
   return (
     <div className="space-y-4 w-full">
       <Tabs 
-        defaultValue={activeTab} 
+        defaultValue={activeTab}
         onValueChange={handleTabChange}
         className="w-full"
       >
-        {/* Dashboard header with filter controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
-            Expense Summary
-          </h2>
-          
-          <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
-            {/* Currency Selector */}
-            <DisplayCurrencySelect 
-              value={displayCurrency} 
-              onChange={handleCurrencyChange}
-              className="component-hover-box"
-            />
-            
-            {/* Time Frame Selector */}
-            <div className="component-hover-box">
-              <Filter className="h-5 w-5 text-muted-foreground mr-2" />
-              <Select
-                value={activeTab}
-                onValueChange={handleTabChange}
-              >
-                <SelectTrigger className="w-[120px] h-7 text-sm bg-transparent border-none">
-                  <SelectValue placeholder="This Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="thisMonth">This Month</SelectItem>
-                  <SelectItem value="lastMonth">Last Month</SelectItem>
-                  <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
-                  <SelectItem value="thisYear">This Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Statement Month toggle */}
-            <StatementCycleFilter
-              useStatementMonth={useStatementMonth}
-              setUseStatementMonth={setUseStatementMonth}
-              statementCycleDay={statementCycleDay}
-              setStatementCycleDay={setStatementCycleDay}
-              className="component-hover-box"
-            />
-          </div>
-        </div>
-        
         {/* Main content area */}
         <TabsContent 
           value={activeTab} 

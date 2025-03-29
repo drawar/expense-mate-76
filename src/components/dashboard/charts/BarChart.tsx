@@ -6,6 +6,11 @@ import { Currency } from '@/types';
 import { formatCurrency } from '@/utils/formatting';
 import { Transaction } from '@/types';
 import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
+import { 
+  processTransactionsForChart, 
+  ProcessedChartItem,
+  calculatePercentageChange 
+} from '@/utils/chartDataProcessor';
 
 export interface BarChartProps {
   title: string;
@@ -20,8 +25,8 @@ export interface BarChartProps {
 }
 
 /**
- * Functional replacement for AbstractBarChart
- * Provides a reusable bar chart component for displaying time-based data
+ * Reusable bar chart component for displaying time-based data
+ * Uses consolidated chart processing utility for consistent formatting
  */
 const BarChart: React.FC<BarChartProps> = ({
   title,
@@ -34,147 +39,20 @@ const BarChart: React.FC<BarChartProps> = ({
   className = '',
   showInsights = true
 }) => {
-  // Process data for the chart
+  // Process data for the chart using our utility
   const { chartData, trend, average, topCategories } = useMemo(() => {
-    if (transactions.length === 0) {
-      return { chartData: [], trend: 0, average: 0, topCategories: [] };
-    }
-    
-    // Determine the grouping period based on selected time frame
-    const periodMapping = {
-      week: 'day',
-      month: 'week',
-      quarter: 'month',
-      year: 'month'
-    };
-    
-    const groupBy = periodMapping[period as keyof typeof periodMapping];
-    
-    // Group transactions by date
-    const groupedTransactions = new Map<string, Transaction[]>();
-    
-    transactions.forEach(tx => {
-      const txDate = new Date(tx.date);
-      let key: string;
-      
-      // Create the appropriate date key based on the grouping period
-      switch (groupBy) {
-        case 'day':
-          key = txDate.toISOString().split('T')[0]; // YYYY-MM-DD
-          break;
-        case 'week':
-          // Get the start of the week (Sunday)
-          const startOfWeek = new Date(txDate);
-          startOfWeek.setDate(txDate.getDate() - txDate.getDay());
-          key = startOfWeek.toISOString().split('T')[0];
-          break;
-        case 'month':
-          key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
-          break;
-        default:
-          key = txDate.toISOString().split('T')[0];
-      }
-      
-      if (!groupedTransactions.has(key)) {
-        groupedTransactions.set(key, []);
-      }
-      
-      groupedTransactions.get(key)?.push(tx);
+    return processTransactionsForChart(transactions, {
+      period,
+      includeCategoryBreakdown: true,
+      maxTopCategories: 3,
+      includeTrend: true
     });
-    
-    // Get top categories for the most recent period
-    const sortedKeys = Array.from(groupedTransactions.keys()).sort();
-    const latestKey = sortedKeys[sortedKeys.length - 1];
-    const latestTransactions = latestKey ? (groupedTransactions.get(latestKey) || []) : [];
-    
-    // Group by category for latest period
-    const categoryMap = new Map<string, number>();
-    latestTransactions.forEach(tx => {
-      if (!tx.category) return;
-      const existingAmount = categoryMap.get(tx.category) || 0;
-      categoryMap.set(tx.category, existingAmount + tx.amount);
-    });
-    
-    // Get top categories
-    const topCats = Array.from(categoryMap.entries())
-      .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3);
-    
-    // Format keys for display
-    const formatKey = (key: string, groupBy: string): string => {
-      switch (groupBy) {
-        case 'day':
-          return new Date(key).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        case 'week':
-          const startDate = new Date(key);
-          const endDate = new Date(startDate);
-          endDate.setDate(startDate.getDate() + 6);
-          return `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(undefined, { day: 'numeric' })}`;
-        case 'month':
-          const [year, month] = key.split('-');
-          return new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-        default:
-          return key;
-      }
-    };
-    
-    // Process and format data for chart
-    const data = sortedKeys.map(key => {
-      const periodTransactions = groupedTransactions.get(key) || [];
-      const total = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
-      
-      // Get top categories for this period
-      const periodCategoryMap = new Map<string, number>();
-      periodTransactions.forEach(tx => {
-        if (!tx.category) return;
-        const existingAmount = periodCategoryMap.get(tx.category) || 0;
-        periodCategoryMap.set(tx.category, existingAmount + tx.amount);
-      });
-      
-      const periodTopCategories = Array.from(periodCategoryMap.entries())
-        .map(([category, amount]) => ({ category, amount }))
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 3);
-      
-      return {
-        period: formatKey(key, groupBy),
-        amount: total,
-        originalKey: key,
-        topCategories: periodTopCategories
-      };
-    });
-    
-    // Calculate trend (percentage change)
-    let calculatedTrend = 0;
-    if (data.length >= 2) {
-      const currentAmount = data[data.length - 1].amount;
-      const previousAmount = data[data.length - 2].amount;
-      
-      if (previousAmount === 0) {
-        calculatedTrend = currentAmount > 0 ? 100 : 0;
-      } else {
-        calculatedTrend = ((currentAmount - previousAmount) / previousAmount) * 100;
-      }
-    }
-    
-    // Calculate average
-    const calculatedAverage = data.length > 0
-      ? data.reduce((sum, item) => sum + item.amount, 0) / data.length
-      : 0;
-    
-    return { 
-      chartData: data, 
-      trend: calculatedTrend, 
-      average: calculatedAverage,
-      topCategories: topCats
-    };
   }, [transactions, period]);
   
-  // Custom tooltip
+  // Custom tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const data = payload[0].payload as ProcessedChartItem;
       
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
@@ -187,7 +65,7 @@ const BarChart: React.FC<BarChartProps> = ({
             <>
               <p className="mt-2 font-medium text-xs text-muted-foreground">Top Categories:</p>
               <div className="mt-1 space-y-1">
-                {data.topCategories.map((cat: any, index: number) => (
+                {data.topCategories.map((cat, index) => (
                   <div key={index} className="flex justify-between text-xs">
                     <span>{cat.category}</span>
                     <span>{formatCurrency(cat.amount, currency)}</span>
@@ -202,7 +80,7 @@ const BarChart: React.FC<BarChartProps> = ({
     return null;
   };
   
-  // Generate spending insights
+  // Generate spending insights component
   const renderInsights = () => {
     if (chartData.length < 2) {
       return <p>Not enough data for meaningful insights</p>;

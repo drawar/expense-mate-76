@@ -1,12 +1,14 @@
 // src/components/dashboard/Dashboard.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import SummarySection from '@/components/dashboard/SummarySection';
 import InsightsGrid from '@/components/dashboard/InsightsGrid';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import LoadingDashboard from '@/components/dashboard/LoadingDashboard';
+import FilterBar from '@/components/dashboard/FilterBar';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { TimeframeTab } from '@/utils/transactionProcessor';
 
 interface DashboardProps {
@@ -16,29 +18,30 @@ interface DashboardProps {
   defaultCurrency?: Currency;
 }
 
+/**
+ * Main dashboard component that displays financial data and insights
+ * Now uses a separate FilterBar component for global filters
+ */
 const Dashboard: React.FC<DashboardProps> = ({
   transactions,
   paymentMethods,
   loading,
   defaultCurrency = 'SGD'
 }) => {
-  // UI state for filtering 
-  const [activeTab, setActiveTab] = useState<TimeframeTab>('thisMonth');
-  const [displayCurrency, setDisplayCurrency] = useState<Currency>(defaultCurrency);
-  const [useStatementMonth, setUseStatementMonth] = useState(false);
-  const [statementCycleDay, setStatementCycleDay] = useState(15);
+  // Use our custom filter hook to manage all filter state
+  const filters = useDashboardFilters(defaultCurrency);
   
-  // Use our consolidated hook for all dashboard data processing
+  // Use the dashboard data hook with our filters
   const dashboardData = useDashboard({
     transactions,
-    displayCurrency,
-    timeframe: activeTab,
-    useStatementMonth,
-    statementCycleDay,
+    displayCurrency: filters.displayCurrency,
+    timeframe: filters.activeTab,
+    useStatementMonth: filters.useStatementMonth,
+    statementCycleDay: filters.statementCycleDay,
     calculateDayOfWeekMetrics: true
   });
   
-  // Filter to get recent transactions only once
+  // Memoize recent transactions to avoid unnecessary processing
   const recentTransactions = useMemo(() => {
     return transactions
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -55,24 +58,32 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
         <DashboardHeader />
         
+        {/* Dashboard Title and Global Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
+            Expense Summary
+          </h2>
+          
+          {/* Global Filter Bar - moved from SummarySection */}
+          <FilterBar filters={filters} />
+        </div>
+        
+        {/* Summary Section - now without filters */}
         <SummarySection 
           dashboardData={dashboardData}
-          displayCurrency={displayCurrency}
-          setDisplayCurrency={setDisplayCurrency}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          useStatementMonth={useStatementMonth}
-          setUseStatementMonth={setUseStatementMonth}
-          statementCycleDay={statementCycleDay}
-          setStatementCycleDay={setStatementCycleDay}
+          displayCurrency={filters.displayCurrency}
+          activeTab={filters.activeTab}
+          onTabChange={filters.handleTimeframeChange}
         />
         
+        {/* Insights Grid - with filtered data */}
         <InsightsGrid 
           dashboardData={dashboardData}
           paymentMethods={paymentMethods}
-          displayCurrency={displayCurrency}
+          displayCurrency={filters.displayCurrency}
         />
         
+        {/* Recent Transactions */}
         <RecentTransactions 
           transactions={recentTransactions}
         />
@@ -81,5 +92,5 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-// Use memo to prevent unnecessary re-renders of the entire dashboard
+// Use memo to prevent unnecessary re-renders
 export default React.memo(Dashboard);

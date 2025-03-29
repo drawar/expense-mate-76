@@ -29,13 +29,13 @@ const StatementCycleFilter = ({
   };
   
   return (
-    <div className={`flex items-center h-7 rounded-md ${className}`}>
+    <div className={`flex items-center h-full ${className}`}>
       <Calendar className="h-5 w-5 text-muted-foreground mr-2" />
       <Select
         value={useStatementMonth ? "statement" : "calendar"}
         onValueChange={(value) => setUseStatementMonth(value === "statement")}
       >
-        <SelectTrigger className="w-[160px] h-7 text-sm bg-transparent border-none">
+        <SelectTrigger className="w-[160px] h-8 text-sm bg-transparent border-none">
           <SelectValue placeholder="Calendar Month" />
         </SelectTrigger>
         <SelectContent>
@@ -56,7 +56,7 @@ const StatementCycleFilter = ({
             max={31}
             value={statementCycleDay}
             onChange={handleDayChange}
-            className="h-7 w-14 text-xs px-2"
+            className="h-8 w-14 text-xs px-2"
           />
         </div>
       )}

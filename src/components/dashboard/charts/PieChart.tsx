@@ -1,6 +1,6 @@
 // src/components/dashboard/charts/PieChart.tsx
-import React, { useMemo } from 'react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Currency } from '@/types';
 import { formatCurrency } from '@/utils/formatting';
@@ -26,8 +26,7 @@ export interface PieChartProps {
 }
 
 /**
- * Functional replacement for AbstractPieChart
- * Provides a reusable component for pie/donut charts with consistent styling
+ * Enhanced PieChart component with real-time responsive sizing
  */
 const PieChart: React.FC<PieChartProps> = ({
   title,
@@ -39,6 +38,15 @@ const PieChart: React.FC<PieChartProps> = ({
   outerRadius = 80,
   paddingAngle = 2
 }) => {
+  // Create a ref for the chart container
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State to hold the calculated radius values
+  const [radius, setRadius] = useState({
+    innerRadius: innerRadius,
+    outerRadius: outerRadius
+  });
+
   // Process data to include percentages
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -49,6 +57,41 @@ const PieChart: React.FC<PieChartProps> = ({
       percentage: total > 0 ? (item.value / total * 100) : 0
     }));
   }, [data]);
+  
+  // Use ResizeObserver to monitor the container size and update radius values
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+    
+    // Create a resize observer to watch the container
+    const resizeObserver = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (!entry) return;
+      
+      // Get container dimensions
+      const { width, height } = entry.contentRect;
+      const minDimension = Math.min(width, height);
+      
+      // Calculate radius values proportional to the container size
+      // Scale factor is based on the original radius values
+      const innerScale = innerRadius / 200; // Baseline size of 200px
+      const outerScale = outerRadius / 200; // Baseline size of 200px
+      
+      // Update radius values
+      setRadius({
+        innerRadius: Math.max(minDimension * innerScale, 20), // Minimum inner radius of 20px
+        outerRadius: Math.min(minDimension * outerScale, Math.min(width, height) / 2 - 10) // Max is half container minus margin
+      });
+    });
+    
+    // Start observing the container
+    resizeObserver.observe(container);
+    
+    // Clean up observer when component unmounts
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [innerRadius, outerRadius]);
 
   // Custom tooltip component
   const CustomTooltip = ({ active, payload }: any) => {
@@ -125,18 +168,24 @@ const PieChart: React.FC<PieChartProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col md:flex-row h-64">
-          <div className="w-full md:w-1/2">
+        <div className="flex flex-col md:flex-row h-auto">
+          {/* Chart container that shrinks proportionally - using ref for size detection */}
+          <div 
+            ref={chartContainerRef}
+            className="w-full md:w-1/2 h-[200px] sm:h-[220px] md:h-[240px] lg:h-[260px] flex items-center justify-center"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPie>
                 <Pie
                   data={processedData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={innerRadius}
-                  outerRadius={outerRadius}
+                  innerRadius={radius.innerRadius}
+                  outerRadius={radius.outerRadius}
                   paddingAngle={paddingAngle}
                   dataKey="value"
+                  isAnimationActive={false}
+                  labelLine={false}
                 >
                   {processedData.map((entry, index) => (
                     <Cell 
@@ -152,7 +201,8 @@ const PieChart: React.FC<PieChartProps> = ({
             </ResponsiveContainer>
           </div>
           
-          <div className="w-full md:w-1/2 mt-4 md:mt-0 md:pl-4">
+          {/* Legend container that adapts to available space */}
+          <div className="w-full md:w-1/2 mt-4 md:mt-0 md:pl-4 max-h-[200px] md:max-h-[240px] overflow-y-auto">
             {renderLegendItems()}
           </div>
         </div>

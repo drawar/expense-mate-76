@@ -1,5 +1,5 @@
 // src/components/dashboard/RecentTransactions.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,24 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  maxItems?: number;
 }
 
+/**
+ * Displays the most recent transactions in a grid layout
+ * Optimized with memoization to prevent unnecessary re-renders
+ */
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({
-  transactions
+  transactions,
+  maxItems = 5
 }) => {
   // Use the media query hook for responsive design
   const isMobile = useMediaQuery('(max-width: 768px)');
+  
+  // Memoize the limited transactions to prevent unnecessary processing
+  const recentTransactions = useMemo(() => {
+    return transactions.slice(0, maxItems);
+  }, [transactions, maxItems]);
   
   // Render the empty state when no transactions are available
   const renderEmptyState = () => {
@@ -43,11 +54,11 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Link>
       </div>
       
-      {transactions.length === 0 
+      {recentTransactions.length === 0 
         ? renderEmptyState() 
         : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {transactions.map((transaction) => (
+            {recentTransactions.map((transaction) => (
               <TransactionCard 
                 key={transaction.id} 
                 transaction={transaction}

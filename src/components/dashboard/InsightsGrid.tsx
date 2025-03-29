@@ -16,6 +16,7 @@ interface InsightsGridProps {
 
 /**
  * Grid component that displays financial insights using domain-specific cards
+ * Organizes visualization components in a responsive layout
  */
 const InsightsGrid: React.FC<InsightsGridProps> = ({
   dashboardData,
@@ -34,7 +35,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Payment Methods - Using domain-specific card */}
+        {/* Payment Methods Card */}
         <PaymentMethodCard
           data={charts.paymentMethods}
           currency={displayCurrency}
@@ -42,7 +43,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           highlightTopMethod={true}
         />
         
-        {/* Expense Categories - Using domain-specific card */}
+        {/* Expense Categories Card */}
         <SpendingCategoryCard
           data={charts.categories}
           currency={displayCurrency}
@@ -50,7 +51,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           maxCategories={7}
         />
         
-        {/* Spending Trends - Using domain-specific card with period selector */}
+        {/* Spending Trends Card */}
         <SpendingTrendCard
           transactions={filteredTransactions}
           currency={displayCurrency}
@@ -60,7 +61,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         
         {/* Container for optimization cards */}
         <div className="grid grid-cols-1 gap-4">
-          {/* Card Optimization */}
+          {/* Card Optimization Card */}
           <CardOptimizationCard
             title="Card Optimization"
             transactions={filteredTransactions}
@@ -69,7 +70,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
             className={commonCardClass}
           />
           
-          {/* Savings Potential */}
+          {/* Savings Potential Card */}
           <SavingsPotentialCard
             title="Savings Potential"
             transactions={filteredTransactions}

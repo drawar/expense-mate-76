@@ -5,6 +5,7 @@ import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import Dashboard from '@/components/dashboard/Dashboard';
+import { tryCatchWrapper, ErrorType } from '@/utils/errorHandling';
 
 /**
  * Container component responsible for data fetching and state management
@@ -12,13 +13,16 @@ import Dashboard from '@/components/dashboard/Dashboard';
  * data management from presentation logic.
  */
 const DashboardContainer: React.FC = () => {
+  // State for holding dashboard data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<boolean>(false);
+  
   const { toast } = useToast();
   
-  // Load data function
+  // Load dashboard data with proper error handling
   const loadData = useCallback(async () => {
     try {
       if (!initialized) {
@@ -30,11 +34,21 @@ const DashboardContainer: React.FC = () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      // Get payment methods - these are typically few in number
-      const loadedPaymentMethods = await getPaymentMethods();
+      // Get payment methods - using error handling wrapper
+      const loadedPaymentMethods = await tryCatchWrapper(
+        async () => getPaymentMethods(),
+        ErrorType.DATA_FETCH,
+        { source: 'getPaymentMethods' },
+        [] as PaymentMethod[]
+      );
       
-      // Get transactions and filter to recent ones client-side
-      const allTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
+      // Get transactions - using error handling wrapper
+      const allTransactions = await tryCatchWrapper(
+        async () => getTransactions(USE_LOCAL_STORAGE_DEFAULT),
+        ErrorType.DATA_FETCH,
+        { source: 'getTransactions' },
+        [] as Transaction[]
+      );
       
       // Filter to only recent transactions (last 30 days) to improve performance
       const loadedTransactions = allTransactions
@@ -47,18 +61,21 @@ const DashboardContainer: React.FC = () => {
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
       setLoading(false);
+      setError(null);
     } catch (error) {
       console.error('Error loading data:', error);
+      setError('Failed to load dashboard data');
+      setLoading(false);
+      
       toast({
         title: 'Error loading data',
         description: 'There was a problem loading your expense data',
         variant: 'destructive'
       });
-      setLoading(false);
     }
   }, [initialized, toast]);
   
-  // Set up Supabase realtime subscription
+  // Set up Supabase realtime subscription for data updates
   useEffect(() => {
     loadData();
     
