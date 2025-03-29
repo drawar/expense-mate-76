@@ -15,6 +15,7 @@ export interface SummaryCardProps {
   style?: CSSProperties;
   cardColor?: string;
   valueColor?: string;
+  descriptionClassName?: string; // Added to support custom description styling
 }
 
 /**
@@ -29,16 +30,26 @@ abstract class AbstractSummaryCard<P extends SummaryCardProps> extends Component
   protected abstract renderCardValue(): React.ReactNode;
   
   /**
-   * Optional method subclasses can override to provide additional content
+   * Method that returns the description content - can be overridden by subclasses
+   * By default returns the description prop
+   */
+  protected getDescriptionContent(): ReactNode {
+    return this.props.description;
+  }
+  
+  /**
+   * Method for rendering the card description with consistent styling
+   * Uses the descriptionClassName prop for styling flexibility
    */
   protected renderCardDescription(): React.ReactNode {
-    const { description } = this.props;
+    const content = this.getDescriptionContent();
+    const { descriptionClassName = "text-xs text-muted-foreground flex items-center gap-1" } = this.props;
     
-    if (!description) return null;
+    if (!content) return null;
     
     return (
-      <div className="text-xs text-muted-foreground flex items-center gap-1">
-        {description}
+      <div className={descriptionClassName}>
+        {content}
       </div>
     );
   }
@@ -60,21 +71,21 @@ abstract class AbstractSummaryCard<P extends SummaryCardProps> extends Component
         className={`summary-card overflow-hidden ${cardColor} ${className}`}
         style={style}
       >
-        <CardHeader className="pb-2">
-          {/* Title component with icon */}
-          <CardDescription className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
-            {Icon && <span className="mr-1.5">{createElement(Icon, { className: "h-4 w-4 text-primary" })}</span>}
-            {title}
+        <CardHeader className="pb-2 flex flex-col min-h-[80px]">
+          {/* Title component with icon - fixed height and ellipsis for overflow */}
+          <CardDescription className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center min-h-[20px] w-full">
+            {Icon && <span className="mr-1.5 flex-shrink-0">{createElement(Icon, { className: "h-4 w-4 text-primary" })}</span>}
+            <span className="truncate">{title}</span>
           </CardDescription>
           
-          {/* Body component - value content */}
-          <div className="mt-2">
+          {/* Body component - value content with fixed position */}
+          <div className="mt-2 flex-grow flex items-center min-h-[40px]">
             {this.renderCardValue()}
           </div>
         </CardHeader>
         
-        {/* Footnote component - description */}
-        <CardContent className="pt-0">
+        {/* Footnote component - description with fixed height */}
+        <CardContent className="pt-0 min-h-[24px]">
           {this.renderCardDescription()}
         </CardContent>
       </Card>

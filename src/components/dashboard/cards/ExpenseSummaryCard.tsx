@@ -5,6 +5,7 @@ import AbstractSummaryCard, {
   SummaryCardProps 
 } from '@/components/dashboard/abstractions/AbstractSummaryCard';
 import { Currency } from '@/types';
+import { formatCurrency, formatPercentage, getExpenseTrendColor, isExpenseChangePositive } from '@/utils/formatting';
 
 interface ExpenseSummaryCardProps extends SummaryCardProps {
   totalExpenses: number;
@@ -23,34 +24,30 @@ class ExpenseSummaryCard extends AbstractSummaryCard<ExpenseSummaryCardProps> {
     const { totalExpenses, displayCurrency, valueColor = "text-violet-800 dark:text-violet-300" } = this.props;
     
     return (
-      <div className={`text-2xl font-bold truncate ${valueColor}`}>
-        {`${displayCurrency} ${totalExpenses.toLocaleString()}`}
+      <div className={`text-2xl font-bold truncate w-full ${valueColor}`}>
+        {formatCurrency(totalExpenses, displayCurrency)}
       </div>
     );
   }
   
   /**
-   * Helper function to render percentage change with icon and color
+   * Override getDescriptionContent to provide percentage change with trend icon
+   * This keeps the content separate from the styling, which is handled by renderCardDescription
    */
-  protected renderPercentChange() {
+  protected getDescriptionContent(): React.ReactNode {
     const { percentageChange } = this.props;
-    const isPositive = percentageChange >= 0;
-    const color = isPositive ? "text-red-500 dark:text-red-400" : "text-green-500 dark:text-green-400";
+    const isPositive = isExpenseChangePositive(percentageChange);
     const Icon = isPositive ? TrendingUp : TrendingDown;
+    const trendColor = getExpenseTrendColor(percentageChange);
     
     return (
-      <div className={`flex items-center gap-1 ${color}`}>
-        <Icon className="h-3.5 w-3.5" />
-        <span>{`${isPositive ? '+' : ''}${percentageChange}% since last period`}</span>
-      </div>
+      <>
+        <Icon className={`h-3.5 w-3.5 ${trendColor}`} />
+        <span className={trendColor}>
+          {formatPercentage(percentageChange, isPositive)} since last period
+        </span>
+      </>
     );
-  }
-  
-  /**
-   * Override to provide custom description with trend information
-   */
-  protected renderCardDescription(): React.ReactNode {
-    return this.renderPercentChange();
   }
 }
 

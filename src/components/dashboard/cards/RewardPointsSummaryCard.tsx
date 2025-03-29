@@ -1,70 +1,76 @@
-// src/components/dashboard/cards/RewardPointsSummaryCard.tsx
+// src/components/dashboard/cards/PaymentMethodSummaryCard.tsx
 import React from 'react';
-import { CoinsIcon } from 'lucide-react';
+import { CreditCardIcon } from 'lucide-react';
 import AbstractSummaryCard, { 
   SummaryCardProps 
 } from '@/components/dashboard/abstractions/AbstractSummaryCard';
-import { Transaction } from '@/types';
+import { Currency } from '@/types';
+import { formatCurrency } from '@/utils/formatting';
 
-interface RewardPointsSummaryCardProps extends SummaryCardProps {
-  totalRewardPoints: number;
-  transactions: Transaction[];
+interface PaymentMethodSummaryCardProps extends SummaryCardProps {
+  methodName: string;
+  methodValue: number;
+  displayCurrency: Currency;
 }
 
 /**
- * Summary card component that displays reward points
+ * Summary card component that displays top payment method
  */
-class RewardPointsSummaryCard extends AbstractSummaryCard<RewardPointsSummaryCardProps> {
+class PaymentMethodSummaryCard extends AbstractSummaryCard<PaymentMethodSummaryCardProps> {
   /**
    * Implement the abstract method to provide card value content
    */
   protected renderCardValue(): React.ReactNode {
-    const { totalRewardPoints, valueColor = "text-amber-800 dark:text-amber-300" } = this.props;
+    const { methodName, valueColor = "text-fuchsia-800 dark:text-fuchsia-300" } = this.props;
     
     return (
-      <div className={`text-2xl font-bold truncate ${valueColor}`}>
-        {totalRewardPoints.toLocaleString()}
+      <div className={`text-2xl font-bold truncate w-full ${valueColor}`}>
+        {methodName || "N/A"}
       </div>
     );
   }
   
   /**
-   * Override to provide custom description with transaction count
+   * Override getDescriptionContent to provide method value information
    */
-  protected renderCardDescription(): React.ReactNode {
-    const { transactions } = this.props;
+  protected getDescriptionContent(): React.ReactNode {
+    const { methodName, methodValue, displayCurrency } = this.props;
     
-    const rewardTransactions = transactions.filter(tx => (tx.rewardPoints || 0) > 0).length;
+    if (!methodName) {
+      return "No data";
+    }
     
     return (
-      <div className="text-xs text-muted-foreground">
-        From {rewardTransactions} transactions
-      </div>
+      <>
+        {formatCurrency(methodValue, displayCurrency)} spent
+      </>
     );
   }
 }
 
 /**
- * Factory function to create a RewardPointsSummaryCard with default props
+ * Factory function to create a PaymentMethodSummaryCard with default props
  */
-export const createRewardPointsSummaryCard = (
-  totalRewardPoints: number,
-  transactions: Transaction[]
+export const createPaymentMethodSummaryCard = (
+  methodName: string,
+  methodValue: number,
+  displayCurrency: Currency
 ) => {
   return (
-    <RewardPointsSummaryCard
-      title="Reward Points"
-      icon={CoinsIcon}
-      totalRewardPoints={totalRewardPoints}
-      transactions={transactions}
-      cardColor="bg-gradient-to-br from-amber-500/10 to-orange-600/10"
-      valueColor="text-amber-800 dark:text-amber-300"
+    <PaymentMethodSummaryCard
+      title="Top Payment Method"
+      icon={CreditCardIcon}
+      methodName={methodName}
+      methodValue={methodValue}
+      displayCurrency={displayCurrency}
+      cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
+      valueColor="text-fuchsia-800 dark:text-fuchsia-300"
       className="rounded-xl border border-border/30 hover:border-border/80 hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
       style={{
-        animationDelay: `300ms`,
+        animationDelay: `200ms`,
       }}
     />
   );
 };
 
-export default RewardPointsSummaryCard;
+export default PaymentMethodSummaryCard;

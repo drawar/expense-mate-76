@@ -5,6 +5,7 @@ import AbstractSummaryCard, {
   SummaryCardProps 
 } from '@/components/dashboard/abstractions/AbstractSummaryCard';
 import { Currency } from '@/types';
+import { formatCurrency, formatNumber } from '@/utils/formatting';
 
 interface TransactionSummaryCardProps extends SummaryCardProps {
   transactionCount: number;
@@ -23,22 +24,22 @@ class TransactionSummaryCard extends AbstractSummaryCard<TransactionSummaryCardP
     const { transactionCount, valueColor = "text-blue-800 dark:text-blue-300" } = this.props;
     
     return (
-      <div className={`text-2xl font-bold truncate ${valueColor}`}>
-        {transactionCount.toString()}
+      <div className={`text-2xl font-bold truncate w-full ${valueColor}`}>
+        {formatNumber(transactionCount)}
       </div>
     );
   }
   
   /**
-   * Override to provide custom description with average amount
+   * Override getDescriptionContent to provide average amount information
    */
-  protected renderCardDescription(): React.ReactNode {
+  protected getDescriptionContent(): React.ReactNode {
     const { averageAmount, displayCurrency } = this.props;
     
     return (
-      <div className="text-xs text-muted-foreground">
-        Avg {displayCurrency} {averageAmount.toLocaleString()} per transaction
-      </div>
+      <>
+        Avg {formatCurrency(averageAmount, displayCurrency)} per transaction
+      </>
     );
   }
 }
