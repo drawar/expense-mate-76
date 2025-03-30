@@ -1,13 +1,12 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Roboto+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Add these CSS variables to ensure proper theme support */
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -16,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221 83% 53%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -25,39 +24,48 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 263 70% 50%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
+    --ring: 222.2 84% 4.9%;
 
-    --radius: 0.8rem;
+    --sidebar: 0 0% 100%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-muted: 215.4 16.3% 46.9%;
+    --sidebar-muted-foreground: 215.4 16.3% 46.9%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 225 9% 15%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 225 14% 20%;
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 225 14% 20%;
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 258 90% 66%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 223 14% 25%;
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 258 90% 66%;
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -65,143 +73,24 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 263 70% 50%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --sidebar: 222.2 84% 4.9%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-muted: 215 20.2% 65.1%;
+    --sidebar-muted-foreground: 215 20.2% 65.1%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border selection:bg-primary/20 selection:text-foreground;
+    @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
-  }
-
-  .glass-card {
-    @apply bg-white/80 dark:bg-black/50 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-card;
-  }
-
-  .glass-card-elevated {
-    @apply bg-white/90 dark:bg-black/60 backdrop-blur-xl border border-white/30 dark:border-white/20 shadow-elevation transition-all duration-200;
-  }
-  
-  .glass-card-elevated:hover {
-    @apply shadow-card-hover transform -translate-y-1;
-  }
-
-  .neo-blur {
-    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent;
-  }
-
-  .container-padding {
-    @apply px-4 md:px-6 lg:px-8;
-  }
-
-  .page-transition-enter {
-    @apply opacity-0;
-  }
-  
-  .page-transition-enter-active {
-    @apply opacity-100 transition-opacity duration-300;
-  }
-  
-  .page-transition-exit {
-    @apply opacity-100;
-  }
-  
-  .page-transition-exit-active {
-    @apply opacity-0 transition-opacity duration-300;
-  }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.15);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.25);
-}
-
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.25);
-}
-
-/* Card Hover Effects */
-.hover-scale {
-  @apply transition-transform duration-200 hover:scale-102;
-}
-
-/* Interactive Links */
-.interactive-link {
-  @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
-}
-
-.animate-enter {
-  @apply animate-[fade-in_0.3s_ease-out,scale-in_0.2s_ease-out];
-}
-
-.animate-exit {
-  @apply animate-[fade-out_0.3s_ease-out,scale-out_0.2s_ease-out];
-}
-
-/* Modern Card Styles */
-.modern-card {
-  @apply bg-white/5 dark:bg-gray-800/40 backdrop-blur-md rounded-xl shadow-card border border-white/10 dark:border-white/5 transition-all duration-300 hover:shadow-card-hover;
-}
-
-/* Dashboard summary cards */
-.summary-card {
-  @apply bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-md shadow-card rounded-xl border border-white/10 dark:border-white/5 transition-all duration-300 hover:shadow-lg;
-}
-
-/* Chart container styles */
-.chart-container {
-  @apply bg-white/10 dark:bg-gray-800/30 backdrop-blur-md rounded-xl shadow-card p-4 border border-white/10 dark:border-white/5 transition-all duration-300;
-}
-
-/* Button hover effects */
-.btn-hover-effect {
-  @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
-}
-
-/* Table row hover effect */
-.table-row-hover {
-  @apply transition-colors duration-200 hover:bg-gray-50/10 dark:hover:bg-gray-700/20;
-}
-
-/* Neo-morphism glass effect */
-.glass-card {
-  @apply bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-card;
-}
-
-.glass-card-elevated {
-  @apply bg-white/15 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-elevation transition-all duration-200;
 }

@@ -10,6 +10,8 @@ import NotFound from '@/pages/NotFound';
 import { initDatabase } from './services/LocalDatabaseService';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
+import Navbar from '@/components/layout/Navbar';
+import { ThemeProvider } from '@/components/theme/theme-provider';
 
 function App() {
   const { toast } = useToast();
@@ -34,19 +36,22 @@ function App() {
   }, [toast]);
   
   return (
-    <>
+    <ThemeProvider defaultTheme="system" storageKey="expense-tracker-theme">
       <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/add-expense" element={<AddExpense />} />
-          <Route path="/reward-points" element={<RewardPoints />} />
-          <Route path="/payment-methods" element={<PaymentMethods />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Navbar />
+        <main className="container mx-auto p-4 pt-0">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/add-expense" element={<AddExpense />} />
+            <Route path="/reward-points" element={<RewardPoints />} />
+            <Route path="/payment-methods" element={<PaymentMethods />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
       </Router>
       <Toaster />
-    </>
+    </ThemeProvider>
   );
 }
 
