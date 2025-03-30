@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import PaymentCardDisplay from '../expense/PaymentCardDisplay';
 import RewardRulesAdmin from './RewardRulesAdmin';
+import RewardRuleBadge from './RewardRuleBadge';
 
 interface PaymentMethodCardProps {
   method: PaymentMethod;
@@ -112,24 +113,19 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
             <div className="flex items-center text-sm mt-1">
               <CoinsIcon className="h-4 w-4 mr-2 text-amber-500" />
               <span>
-                {method.rewardRules.length 
+                {method.rewardRules && method.rewardRules.length 
                   ? `${method.rewardRules.length} Reward Rules` 
                   : 'No rewards configured'}
               </span>
             </div>
             
-            {method.rewardRules.length > 0 && (
-              <div className="mt-3 space-y-2">
+            {method.rewardRules && method.rewardRules.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
                 {method.rewardRules.slice(0, 2).map((rule) => (
-                  <div 
-                    key={rule.id} 
-                    className="text-xs px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 inline-block mr-2"
-                  >
-                    {rule.description}
-                  </div>
+                  <RewardRuleBadge key={rule.id} rule={rule} />
                 ))}
                 {method.rewardRules.length > 2 && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 self-center">
                     +{method.rewardRules.length - 2} more
                   </span>
                 )}

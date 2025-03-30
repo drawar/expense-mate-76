@@ -6,7 +6,8 @@ import {
   ShoppingBagIcon, 
   ActivityIcon, 
   AlertTriangleIcon,
-  PiggyBankIcon
+  PiggyBankIcon,
+  CoinsIcon
 } from 'lucide-react';
 
 /**
@@ -83,7 +84,7 @@ const summaryCardConfig: Record<SummaryCardType, CardTypeConfig> = {
   },
   [SummaryCardType.REWARDS]: {
     title: "Reward Points",
-    icon: CreditCardIcon,
+    icon: CoinsIcon,
     cardColor: "bg-blue-50 dark:bg-blue-950/30",
     animationDelay: "600ms"
   },
