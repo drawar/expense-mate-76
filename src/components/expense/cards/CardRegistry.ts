@@ -8,6 +8,7 @@ import { AmexPlatinumCanadaCardWrapper } from './AmexPlatinumCanada';
 import { AmexCobaltCardWrapper } from './AmexCobaltCard';
 import { TDAeroplanVisaInfiniteCardWrapper } from './TDAeroplanVisaInfinite';
 import { UOBLadysSolitaireCardWrapper } from './UOBLadysSolitaireCard';
+import { OCBCRewardsWorldCardWrapper } from './OCBCRewardsWorldCard';
 import { PaymentMethod } from '@/types';
 
 // Interface for card metadata
@@ -93,6 +94,14 @@ const cardsRegistry: CardMetadata[] = [
     pointsCurrency: 'UNI$',
     component: UOBLadysSolitaireCardWrapper,
     description: 'Earn 10X UNI$ on your two preferred categories, up to 7,200 bonus points per month.'
+  },
+  {
+    id: 'ocbc-rewards-world',
+    issuer: 'OCBC',
+    name: 'Rewards World Mastercard',
+    pointsCurrency: 'OCBC$',
+    component: OCBCRewardsWorldCardWrapper,
+    description: 'Earn up to 30x OCBC$ on shopping, dining, and e-commerce.'
   }
 ];
 

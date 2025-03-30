@@ -5,6 +5,7 @@ import { UOBSignatureCardWrapper } from './cards/UOBSignatureCardRefactored';
 import { CitibankRewardsCardWrapper } from './cards/CitibankRewardsCardRefactored';
 import { AmexPlatinumCreditWrapper } from './cards/AmexPlatinumCredit';
 import { AmexPlatinumSGWrapper } from './cards/AmexPlatinumSingapore';
+import { OCBCRewardsWorldCardWrapper } from './cards/OCBCRewardsWorldCard';
 import { GenericPointsCard } from './cards/GenericPointsCard';
 import { PaymentMethod } from '@/types';
 
@@ -104,6 +105,22 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
         amount={amount}
         usedBonusPoints={usedBonusPoints || 0}
         pointsCurrency="MR (Charge Card)"
+      />
+    );
+  }
+  
+  // OCBC Rewards World Mastercard
+  if (selectedPaymentMethod?.issuer === 'OCBC' && 
+      selectedPaymentMethod?.name === 'Rewards World Mastercard') {
+    return (
+      <OCBCRewardsWorldCardWrapper 
+        amount={amount}
+        mcc={mcc}
+        merchantName={selectedPaymentMethod.name}
+        isOnline={isOnline}
+        isContactless={isContactless}
+        usedBonusPoints={usedBonusPoints || 0}
+        pointsCurrency="OCBC$"
       />
     );
   }

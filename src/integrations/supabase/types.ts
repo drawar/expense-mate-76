@@ -240,10 +240,35 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
           base_points: number | null
+          bonus_points: number | null
           category: string | null
           created_at: string | null
           currency: string
@@ -262,6 +287,7 @@ export type Database = {
         Insert: {
           amount: number
           base_points?: number | null
+          bonus_points?: number | null
           category?: string | null
           created_at?: string | null
           currency: string
@@ -280,6 +306,7 @@ export type Database = {
         Update: {
           amount?: number
           base_points?: number | null
+          bonus_points?: number | null
           category?: string | null
           created_at?: string | null
           currency?: string

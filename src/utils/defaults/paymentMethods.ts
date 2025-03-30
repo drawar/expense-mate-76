@@ -209,7 +209,6 @@ export const defaultPaymentMethods: PaymentMethod[] = [
       MYR: 0.31
     }
   },
-  // Adding the missing card entries
   {
     id: 'e5f7a9c2-1b3d-4e8f-a6c9-7d8e2f1b3a4c',
     name: 'Cobalt',
@@ -293,6 +292,21 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     icon: 'credit-card',
     color: '#ddd6fe',
     rewardRules: [], // Special handling in rewards logic
+  },
+  // Add OCBC Rewards World Mastercard
+  {
+    id: 'e9f0a1b2-c3d4-e5f6-a7b8-c9d0e1f2a3b4',
+    name: 'Rewards World Mastercard',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'OCBC',
+    lastFourDigits: '8901',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#eb6e1f', // OCBC orange color
+    rewardRules: [], // Special handling in RewardCalculationService
   },
 ];
 

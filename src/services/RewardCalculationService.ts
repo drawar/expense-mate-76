@@ -11,6 +11,7 @@ import { AmexPlatinumSGWrapper } from '@/components/expense/cards/AmexPlatinumSi
 import { AmexPlatinumCanadaCardWrapper } from '@/components/expense/cards/AmexPlatinumCanada';
 import { AmexCobaltCardWrapper } from '@/components/expense/cards/AmexCobaltCard';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
+import { OCBCRewardsWorldCardWrapper } from '@/components/expense/cards/OCBCRewardsWorldCard';
 
 // Define a transaction type that has more relaxed requirements for simulation
 interface SimulatedTransaction {
@@ -85,6 +86,8 @@ export class RewardCalculationService {
       if (name === 'Platinum Singapore') return AmexPlatinumSGWrapper;
       if (name === 'Platinum Canada') return AmexPlatinumCanadaCardWrapper;
       if (name === 'Cobalt') return AmexCobaltCardWrapper;
+    } else if (issuer === 'OCBC') {
+      if (name === 'Rewards World Mastercard') return OCBCRewardsWorldCardWrapper;
     }
     
     return null;
@@ -261,6 +264,48 @@ export class RewardCalculationService {
           // Additional logic for Cobalt's tiered rewards would go here
         }
       }
+      else if (paymentMethod.issuer === 'OCBC' && paymentMethod.name === 'Rewards World Mastercard') {
+        // OCBC Rewards World Mastercard calculation
+        const roundedAmount = Math.floor(amount / 5) * 5;
+        basePoints = Math.round(roundedAmount * 2); // 2x base points per $5
+        
+        // Tier-1 and Tier-2 eligible MCCs
+        const tier1MCCs = ['5309', '5611', '5621', '5641', '5651', '5655', '5661', '5691', '5699', '5941', '5948'];
+        const tier2MCCs = ['5311'];
+        
+        // Tier-1 and Tier-2 eligible merchant names
+        const tier1Merchants = [
+          'Alibaba', 'AliExpress', 'Amazon', 'Daigou', 'Ezbuy', 'Guardian', 
+          'Lazada', 'Mustafa Centre', 'NTUC Unity', 'Qoo10', 'Shopee', 'Taobao', 'TikTok Shop'
+        ];
+        const tier2Merchants = ['Watsons'];
+        
+        // Check eligibility
+        const isTier1Eligible = 
+          (merchant?.mcc?.code && tier1MCCs.includes(merchant.mcc.code)) || 
+          (merchant?.name && tier1Merchants.some(m => merchant.name.includes(m)));
+        
+        const isTier2Eligible = 
+          (merchant?.mcc?.code && tier2MCCs.includes(merchant.mcc.code)) || 
+          (merchant?.name && tier2Merchants.some(m => merchant.name.includes(m)));
+        
+        // Calculate bonus points
+        if (isTier2Eligible) {
+          // Tier 2: 28x bonus points per $5
+          bonusPoints = Math.round(roundedAmount * 28);
+        } else if (isTier1Eligible) {
+          // Tier 1: 18x bonus points per $5
+          bonusPoints = Math.round(roundedAmount * 18);
+        }
+        
+        // Apply monthly cap of 10,000 bonus points
+        if (bonusPoints > 0) {
+          const maxBonusPoints = 10000;
+          bonusPoints = Math.min(bonusPoints, maxBonusPoints - usedBonusPoints);
+        }
+        
+        pointsCurrency = 'OCBC$';
+      }
       
       return {
         totalPoints: basePoints + bonusPoints,
@@ -337,6 +382,9 @@ export class RewardCalculationService {
       else if (paymentMethod.issuer === 'TD' && paymentMethod.name === 'Aeroplan Visa Infinite') {
         // No cap for TD Aeroplan
         monthlyCap = Number.MAX_SAFE_INTEGER;
+      }
+      else if (paymentMethod.issuer === 'OCBC' && paymentMethod.name === 'Rewards World Mastercard') {
+        monthlyCap = 10000;
       }
       
       // Calculate remaining bonus points if there's a cap
