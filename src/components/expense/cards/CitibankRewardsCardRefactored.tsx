@@ -52,7 +52,7 @@ export class CitibankRewardsCardRefactored extends BaseRewardCard<CitibankReward
    * Base point calculation for Citibank Rewards: 0.4 points per dollar
    */
   calculateBasePoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 0.4);
+    return Math.round(roundedAmount * 1);
   }
 
   /**
@@ -66,7 +66,7 @@ export class CitibankRewardsCardRefactored extends BaseRewardCard<CitibankReward
    * Bonus point calculation for Citibank Rewards: 3.6 additional points per dollar
    */
   calculateBonusPoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 3.6); 
+    return Math.round(roundedAmount * 9); 
   }
 
   /**
