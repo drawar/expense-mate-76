@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import RewardRuleBadge from './RewardRuleBadge';
 import { CoinsIcon, TagIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RewardRulesAdminProps {
   paymentMethod: PaymentMethod;
@@ -118,9 +119,5 @@ const RuleCard: React.FC<{ rule: RewardRule }> = ({ rule }) => {
     </Card>
   );
 };
-
-function cn(...classes: (string | boolean | undefined)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
 
 export default RewardRulesAdmin;
