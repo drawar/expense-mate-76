@@ -21,22 +21,6 @@ export interface SummaryCardProps {
 }
 
 /**
- * Base props interface for all summary cards
- */
-export interface SummaryCardProps {
-  cardType?: SummaryCardType;
-  title?: string; // Optional now, can be provided by config
-  icon?: React.ComponentType<any>; // Optional now, can be provided by config
-  value?: string;
-  description?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-  cardColor?: string; // Optional now, can be provided by config
-  valueColor?: string; // Optional now, can be provided by config
-  descriptionClassName?: string;
-}
-
-/**
  * Abstract base class for all summary cards
  * Provides consistent structure and styling while allowing
  * subclasses to define their specific content
