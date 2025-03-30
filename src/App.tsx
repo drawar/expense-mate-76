@@ -14,6 +14,7 @@ import { ThemeProvider } from '@/components/theme/theme-provider';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNavbar from '@/components/layout/MobileNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 function App() {
   const { toast } = useToast();
@@ -43,6 +44,11 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="expense-tracker-theme">
       <Router>
         <div className="flex h-screen">
+          {/* Theme Toggle in top right corner */}
+          <div className="fixed top-4 right-4 z-50">
+            <ThemeToggle />
+          </div>
+          
           {/* Desktop Sidebar */}
           {!isMobile && (
             <Sidebar 

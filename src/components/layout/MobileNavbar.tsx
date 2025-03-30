@@ -3,7 +3,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { HomeIcon, FileTextIcon, CoinsIcon, CreditCardIcon, PlusCircleIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 const MobileNavbar = () => {
   const location = useLocation();
@@ -20,7 +19,7 @@ const MobileNavbar = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
       <div className="flex justify-between items-center h-16">
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const isAddButton = item.path === '/add-expense';
           
           return (
@@ -53,13 +52,6 @@ const MobileNavbar = () => {
             </Link>
           );
         })}
-        
-        <div className="flex flex-col items-center justify-center py-2 px-1 flex-1">
-          <div className="p-1">
-            <ThemeToggle />
-          </div>
-          <span className="text-xs mt-1">Theme</span>
-        </div>
       </div>
     </nav>
   );

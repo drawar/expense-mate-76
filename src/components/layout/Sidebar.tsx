@@ -13,7 +13,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 interface SidebarProps {
   expanded: boolean;
@@ -72,17 +71,6 @@ const Sidebar = ({ expanded, onToggle }: SidebarProps) => {
             </Link>
           ))}
         </nav>
-      </div>
-
-      {/* Bottom section with theme toggle */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
-        <div className={cn(
-          'flex items-center',
-          expanded ? 'justify-between' : 'justify-center'
-        )}>
-          {expanded && <span className="text-sm text-sidebar-muted-foreground">Theme</span>}
-          <ThemeToggle />
-        </div>
       </div>
     </aside>
   );
