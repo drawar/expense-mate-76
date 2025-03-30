@@ -1,13 +1,13 @@
-
+// src/utils/storage/transactions/add.ts
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { saveTransactionToLocalStorage } from './local-storage';
 import { getTransactions } from './get';
-import { calculatePoints } from './calculations';
-import { addBonusPointsMovement } from './bonus-points';
 import { addOrUpdateMerchant } from '../merchants';
 import { incrementMerchantOccurrence } from '../merchantTracking';
+import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 export const addTransaction = async (
   transaction: Omit<Transaction, 'id'>, 
@@ -20,8 +20,18 @@ export const addTransaction = async (
       return null;
     }
     
-    // Calculate reward points
-    const pointsBreakdown = calculatePoints(transaction);
+    // Get used bonus points for this month for the payment method
+    const paymentMethod = transaction.paymentMethod;
+    const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+      paymentMethod.id
+    );
+    
+    // Calculate reward points using our centralized service
+    const pointsBreakdown = rewardCalculationService.calculatePoints(
+      transaction as Transaction, 
+      usedBonusPoints
+    );
+    
     console.log('Points breakdown calculated:', JSON.stringify(pointsBreakdown, null, 2));
     
     // Prepare complete transaction data with points
@@ -56,7 +66,8 @@ export const addTransaction = async (
             payment_currency: completeTransaction.paymentCurrency,
             notes: completeTransaction.notes || '',
             reward_points: completeTransaction.rewardPoints,
-            base_points: pointsBreakdown.basePoints
+            base_points: pointsBreakdown.basePoints,
+            bonus_points: pointsBreakdown.bonusPoints
           })
           .select()
           .single();
@@ -70,11 +81,11 @@ export const addTransaction = async (
         
         // Record bonus points movement if any
         if (pointsBreakdown.bonusPoints > 0) {
-          await addBonusPointsMovement({
-            transactionId: completeTransaction.id,
-            paymentMethodId: completeTransaction.paymentMethod.id,
-            bonusPoints: pointsBreakdown.bonusPoints
-          });
+          await bonusPointsTrackingService.recordBonusPointsMovement(
+            completeTransaction.id,
+            completeTransaction.paymentMethod.id,
+            pointsBreakdown.bonusPoints
+          );
         }
         
         // Update merchant category mapping for improved suggestions

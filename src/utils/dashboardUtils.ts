@@ -1,8 +1,17 @@
 // src/utils/dashboardUtils.ts
 import { Transaction, Currency, PaymentMethod } from '@/types';
 import { convertCurrency } from '@/utils/currencyConversion';
-import { ChartDataItem } from '@/utils/dashboardCalculations';
 import { TimeframeTab } from '@/utils/transactionProcessor';
+
+/**
+ * Chart data item interface
+ * Moved from dashboardCalculations.ts for centralization
+ */
+export interface ChartDataItem {
+  name: string;
+  value: number;
+  color: string;
+}
 
 /**
  * Calculate total expenses with currency conversion

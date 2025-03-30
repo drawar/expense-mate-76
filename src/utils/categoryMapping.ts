@@ -46,13 +46,9 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
     return 'Shopping';
   }
   
-  // Home & Entertainment
-  // Combining: Home & Garden, Entertainment, etc.
-  if (['5021', '5039', '5200', '5211', '5231', '5251', '5261', '5271', '5531', 
-       '5712', '5713', '5714', '5718', '5719', '5722', '5996', '5998', '7641', // Home & Garden
-       '7832', '7941', '5733', '5735', '5941', '5993', '5994', '7993' // Entertainment
-      ].includes(mccCode)) {
-    return 'Home & Entertainment';
+  // Entertainment
+  if (['7832', '7941', '5733', '5735', '5941', '5993', '5994', '7993'].includes(mccCode)) {
+    return 'Entertainment';
   }
   
   // Health & Personal Care
@@ -86,14 +82,20 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   }
   
   // Financial Services
-  if (['6010', '6011', '6012', '6051', '6211', '6300'].includes(mccCode) || 
-      mccCode.startsWith('6')) {
+  if (['6010', '6011', '6012', '6051', '6211', '6300'].includes(mccCode)) {
     return 'Financial Services';
   }
   
   // For any other MCC code that starts with 5 and is not explicitly categorized
   if (mccCode.startsWith('5')) {
     return 'Shopping';
+  }
+
+  // For any other MCC code that starts with 5 and is not explicitly categorized
+  if (['6513', '1520',
+       '5021', '5039', '5200', '5211', '5231', '5251', '5261', '5271', '5531', 
+       '5712', '5713', '5714', '5718', '5719', '5722', '5996', '5998', '7641'].includes(mccCode)) {
+    return 'Home & Rent';
   }
   
   // For any other MCC code that starts with 7 or 8

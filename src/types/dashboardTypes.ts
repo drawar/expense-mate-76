@@ -1,6 +1,7 @@
 // src/types/dashboardTypes.ts
 import { Transaction, Currency } from '@/types';
-import { ChartDataItem, ChartProcessingResult } from '@/utils/chartDataProcessor';
+import { ChartProcessingResult } from '@/utils/chartDataProcessor';
+import { ChartDataItem } from '@/utils/dashboardUtils';
 
 /**
  * Dashboard metrics interface - contains all numerical indicators

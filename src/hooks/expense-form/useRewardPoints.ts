@@ -1,7 +1,7 @@
-
-import { Transaction, PaymentMethod } from '@/types';
-import { simulateRewardPoints } from '@/utils/rewards/rewardPoints';
-import { cardRuleService } from '@/components/expense/cards/CardRuleService';
+// src/hooks/expense-form/useRewardPoints.ts
+import { PaymentMethod } from '@/types';
+import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 export const useRewardPoints = () => {
   const simulatePoints = async (
@@ -13,26 +13,26 @@ export const useRewardPoints = () => {
     isOnline?: boolean,
     isContactless?: boolean
   ) => {
-    const result = await simulateRewardPoints(
-      amount, 
-      currency, 
-      paymentMethod, 
-      mcc, 
-      merchantName, 
-      isOnline, 
-      isContactless
+    // Get used bonus points for the current month
+    const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+      paymentMethod.id
     );
-
-    // Get points currency from card rules
-    const cardRules = await cardRuleService.loadRules();
-    const matchingRule = cardRules.find(rule => 
-      rule.cardType === paymentMethod.name && rule.enabled
+    
+    // Use the centralized service to simulate points calculation
+    const result = rewardCalculationService.simulatePoints(
+      amount,
+      currency,
+      paymentMethod,
+      mcc,
+      merchantName,
+      isOnline,
+      isContactless,
+      usedBonusPoints
     );
-
-    // Get points currency from either card rules or payment method
-    const pointsCurrency = matchingRule?.pointsCurrency || 
-      (paymentMethod.issuer ? `${paymentMethod.issuer} Points` : 'Points');
-
+    
+    // Get the points currency
+    const pointsCurrency = rewardCalculationService.getPointsCurrency(paymentMethod);
+    
     return {
       ...result,
       pointsCurrency

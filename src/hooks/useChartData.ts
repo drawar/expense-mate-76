@@ -4,9 +4,9 @@ import { Transaction, Currency, PaymentMethod } from '@/types';
 import { 
   processPieChartData, 
   processTransactionsForChart, 
-  ChartDataItem,
   ChartProcessingResult
 } from '@/utils/chartDataProcessor';
+import { ChartDataItem } from '@/utils/dashboardUtils';
 
 /**
  * Hook for generating pie chart data from transactions

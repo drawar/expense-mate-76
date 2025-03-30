@@ -2,20 +2,7 @@
 import { Transaction, Currency } from '@/types';
 import { convertCurrency } from '@/utils/currencyConversion';
 import { CHART_COLORS } from '@/utils/dashboardCalculations';
-
-/**
- * Standard chart data format used across visualizations
- */
-export interface ChartDataItem {
-  /** Display name for the data item */
-  name: string;
-  /** Numerical value of the data item */
-  value: number;
-  /** Color to use when rendering this item (hex format) */
-  color: string;
-  /** Optional percentage relative to the total (calculated during processing) */
-  percentage?: number;
-}
+import { calculatePercentageChange, ChartDataItem } from '@/utils/dashboardUtils';
 
 /**
  * Processed data for bar chart items with additional metadata
@@ -199,18 +186,6 @@ export function getTopCategoriesForPeriod(
     .sort((a, b) => b.amount - a.amount);
   
   return categories.slice(0, maxCategories);
-}
-
-/**
- * Calculate percentage change between two values
- * 
- * @param current - Current value
- * @param previous - Previous value
- * @returns Percentage change
- */
-export function calculatePercentageChange(current: number, previous: number): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / Math.abs(previous)) * 100;
 }
 
 /**

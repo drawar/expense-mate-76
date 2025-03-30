@@ -46,6 +46,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   const merchantName = form.watch('merchantName');
   const currency = form.watch('currency') as any;
   const amount = Number(form.watch('amount')) || 0;
+  const paymentAmount = Number(form.watch('paymentAmount')) || 0;
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   
@@ -65,8 +66,11 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   const calculateEstimatedPoints = async () => {
     if (selectedPaymentMethod && amount > 0) {
       try {
+        // Use paymentAmount when currencies differ, otherwise use amount
+        const amountToUse = shouldOverridePayment ? paymentAmount : amount;
+
         const points = await simulatePoints(
-          amount,
+          amountToUse,
           currency,
           selectedPaymentMethod,
           selectedMCC?.code,
@@ -87,7 +91,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   // Call the calculation function when dependencies change
   useEffect(() => {
     calculateEstimatedPoints();
-  }, [selectedPaymentMethod, amount, currency, selectedMCC, merchantName, isOnline, isContactless]);
+  }, [selectedPaymentMethod, amount, paymentAmount, shouldOverridePayment, currency, selectedMCC, merchantName, isOnline, isContactless]);
 
   return {
     form,
