@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PaymentMethod, RewardRule } from '@/types';
 import { getPaymentMethods, savePaymentMethods } from '@/utils/storageUtils';
@@ -5,18 +6,74 @@ import { useToast } from '@/hooks/use-toast';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
 import { cardRuleService } from '@/components/expense/cards/CardRuleService';
 import { v4 as uuidv4 } from 'uuid';
+import { defaultPaymentMethods } from '@/utils/defaults/paymentMethods';
 
 export const usePaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Helper function to check if a payment method needs to be added from defaults
+  const findMissingDefaultMethods = (existingMethods: PaymentMethod[]): PaymentMethod[] => {
+    const missingMethods: PaymentMethod[] = [];
+    
+    // Check each default payment method
+    defaultPaymentMethods.forEach(defaultMethod => {
+      // For credit cards, check by issuer and name
+      if (defaultMethod.type === 'credit_card' && defaultMethod.issuer && defaultMethod.name) {
+        const exists = existingMethods.some(method => 
+          method.issuer?.toLowerCase() === defaultMethod.issuer?.toLowerCase() && 
+          method.name.toLowerCase() === defaultMethod.name.toLowerCase()
+        );
+        
+        if (!exists) {
+          console.log(`Adding missing card: ${defaultMethod.issuer} ${defaultMethod.name}`);
+          missingMethods.push({
+            ...defaultMethod,
+            id: uuidv4() // Generate a new UUID for the card
+          });
+        }
+      }
+      // For cash methods, check by currency
+      else if (defaultMethod.type === 'cash') {
+        const exists = existingMethods.some(method => 
+          method.type === 'cash' && 
+          method.currency === defaultMethod.currency
+        );
+        
+        if (!exists) {
+          console.log(`Adding missing cash method: ${defaultMethod.name} (${defaultMethod.currency})`);
+          missingMethods.push({
+            ...defaultMethod,
+            id: uuidv4() // Generate a new UUID for the method
+          });
+        }
+      }
+    });
+    
+    return missingMethods;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
         console.log('Loading payment methods...');
-        const methods = await getPaymentMethods();
+        let methods = await getPaymentMethods();
         console.log('Payment methods loaded:', methods);
+        
+        // Check for missing payment methods from defaults
+        const missingMethods = findMissingDefaultMethods(methods);
+        
+        // If any missing methods were found, add them to the database
+        if (missingMethods.length > 0) {
+          console.log(`Found ${missingMethods.length} missing payment methods, adding them now`);
+          methods = [...methods, ...missingMethods];
+          await savePaymentMethods(methods);
+          toast({
+            title: 'Payment Methods Updated',
+            description: `Added ${missingMethods.length} new payment method(s)`,
+          });
+        }
         
         if (!methods || methods.length === 0) {
           console.error('No payment methods found');
