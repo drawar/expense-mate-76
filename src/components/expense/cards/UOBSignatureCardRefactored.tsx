@@ -86,7 +86,7 @@ export class UOBSignatureCardRefactored extends BaseRewardCard<UOBSignatureCardP
    * Base point calculation: 2 points per $5 spent
    */
   calculateBasePoints(roundedAmount: number): number {
-    return Math.round((roundedAmount / 5) * 2);
+    return Math.round(roundedAmount * 0.2);
   }
 
   /**
@@ -102,7 +102,7 @@ export class UOBSignatureCardRefactored extends BaseRewardCard<UOBSignatureCardP
    */
   calculateBonusPoints(roundedAmount: number): number {
     // Get total potential bonus points
-    const potentialBonusPoints = Math.round((roundedAmount / 5) * 18);
+    const potentialBonusPoints = Math.round(roundedAmount * 1.8);
     
     // Return the potential bonus points (capping will be applied later)
     return potentialBonusPoints;

@@ -51,10 +51,10 @@ export class UOBPlatinumCardRefactored extends BaseRewardCard<UOBPlatinumCardPro
   }
 
   /**
-   * Base point calculation: 0.4 points per dollar
+   * Base point calculation: 0.2 UNI$ per dollar
    */
   calculateBasePoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 0.4);
+    return Math.round(roundedAmount * 0.2);
   }
 
   /**
@@ -66,10 +66,10 @@ export class UOBPlatinumCardRefactored extends BaseRewardCard<UOBPlatinumCardPro
   }
 
   /**
-   * Bonus point calculation: 3.6 additional points per dollar
+   * Bonus point calculation: 1.8 additional UNI$ per dollar
    */
   calculateBonusPoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 3.6);
+    return Math.round(roundedAmount * 1.8);
   }
 
   /**

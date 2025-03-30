@@ -29,7 +29,7 @@ const cardsRegistry: CardMetadata[] = [
     name: 'Preferred Visa Platinum',
     pointsCurrency: 'UNI$',
     component: UOBPlatinumCardWrapper,
-    description: 'Earn 10X UNI$ (or 20 miles) per $5 on online, contactless and selected category spend.'
+    description: 'Earn 10X UNI$ (or 4 miles) per $5 on online, contactless and selected category spend.'
   },
   {
     id: 'uob-visa-signature',
@@ -37,7 +37,7 @@ const cardsRegistry: CardMetadata[] = [
     name: 'Visa Signature',
     pointsCurrency: 'UNI$',
     component: UOBSignatureCardWrapper,
-    description: 'Earn 10X UNI$ (or 20 miles) on all foreign currency spend.'
+    description: 'Earn 10X UNI$ (or 4 miles) on all foreign currency spend.'
   },
   {
     id: 'citibank-rewards',
@@ -51,7 +51,7 @@ const cardsRegistry: CardMetadata[] = [
     id: 'amex-platinum-credit',
     issuer: 'American Express',
     name: 'Platinum Credit',
-    pointsCurrency: 'MR (Credit Card)',
+    pointsCurrency: 'SG MR Points',
     component: AmexPlatinumCreditWrapper,
     description: 'Earn 2 Membership Rewards points for every $1.60 spent.'
   },
@@ -59,7 +59,7 @@ const cardsRegistry: CardMetadata[] = [
     id: 'amex-platinum-sg',
     issuer: 'American Express',
     name: 'Platinum Singapore',
-    pointsCurrency: 'MR (Charge Card)',
+    pointsCurrency: 'SG MR Points',
     component: AmexPlatinumSGWrapper,
     description: 'Earn 2 Membership Rewards points for every $1.60 spent.'
   },
@@ -67,7 +67,7 @@ const cardsRegistry: CardMetadata[] = [
     id: 'amex-platinum-canada',
     issuer: 'American Express',
     name: 'Platinum Canada',
-    pointsCurrency: 'MR',
+    pointsCurrency: 'CA MR Points',
     component: AmexPlatinumCanadaCardWrapper,
     description: 'Earn up to 3X MR points on travel and dining purchases.'
   },
@@ -75,7 +75,7 @@ const cardsRegistry: CardMetadata[] = [
     id: 'amex-cobalt',
     issuer: 'American Express',
     name: 'Cobalt',
-    pointsCurrency: 'MR',
+    pointsCurrency: 'CA MR Points',
     component: AmexCobaltCardWrapper,
     description: 'Earn 5X MR points on eats & drinks, 3X on streaming, 2X on travel, and 1X on all else.'
   },
@@ -83,7 +83,7 @@ const cardsRegistry: CardMetadata[] = [
     id: 'td-aeroplan-visa-infinite',
     issuer: 'TD',
     name: 'Aeroplan Visa Infinite',
-    pointsCurrency: 'Aeroplan',
+    pointsCurrency: 'Aeroplan Points',
     component: TDAeroplanVisaInfiniteCardWrapper,
     description: 'Earn 1.5X Aeroplan points on gas, grocery and Air Canada purchases.'
   },

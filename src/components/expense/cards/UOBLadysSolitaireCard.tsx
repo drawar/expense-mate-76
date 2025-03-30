@@ -78,7 +78,7 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
    * Base point calculation: 0.4 points per dollar
    */
   calculateBasePoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 2);
+    return Math.round(roundedAmount * 0.2);
   }
 
   /**
@@ -106,15 +106,15 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
    * Note: In a real implementation, this would be based on monthly aggregated spend
    */
   calculateBonusPoints(roundedAmount: number): number {
-    return Math.round(roundedAmount * 18);
+    return Math.round(roundedAmount * 1.8);
   }
 
   /**
-   * UOB Lady's Solitaire has a 7200 points monthly cap on bonus points
+   * UOB Lady's Solitaire has a 3600 points monthly cap on bonus points
    * that is shared across both selected categories (not per category)
    */
   getBonusPointsCap(): MonthlyCap {
-    return new MonthlyCap(7200);
+    return new MonthlyCap(3600);
   }
   
   /**
@@ -139,7 +139,7 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
     
     // Calculate potential bonus (for this transaction only, for demonstration)
     // In a real app, this would be based on the monthly total
-    const potentialBonusPoints = isEligible ? Math.round(roundedAmount * 3.6) : 0;
+    const potentialBonusPoints = isEligible ? Math.round(roundedAmount * 1.8) : 0;
     
     // Apply monthly cap
     const bonusPointsCap = this.getBonusPointsCap();
