@@ -40,7 +40,7 @@ export function usePieChartData(
  */
 export function useSpendingTrendData(
   transactions: Transaction[],
-  period: 'week' | 'month' | 'quarter' | 'year' = 'month',
+  period: 'day' | 'week' | 'month' | 'quarter' = 'month',
   options: { 
     includeCategoryBreakdown?: boolean;
     maxTopCategories?: number;

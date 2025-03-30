@@ -15,7 +15,7 @@ export interface BarChartProps {
   title: string;
   icon?: React.ReactNode;
   transactions: Transaction[];
-  period?: 'week' | 'month' | 'quarter' | 'year';
+  period?: 'day' | 'week' | 'month' | 'quarter';
   currency?: Currency;
   barColor?: string;
   hoverColor?: string;

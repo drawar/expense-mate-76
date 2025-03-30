@@ -35,7 +35,7 @@ export interface ChartProcessingResult {
  */
 export interface ChartProcessingOptions {
   /** Time period grouping ('day', 'week', 'month', 'year') */
-  period?: 'week' | 'month' | 'quarter' | 'year';
+  period?: 'day' | 'week' | 'month' | 'quarter';
   /** Whether to include category breakdown for tooltip display */
   includeCategoryBreakdown?: boolean;
   /** Maximum number of top categories to include */
@@ -263,7 +263,7 @@ export function processTransactionsForChart(
       const [year, month] = key.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1, 1);
       displayDate = date.toLocaleString('default', { month: 'short' });
-      if (period === 'year') {
+      if (period === 'quarter') {
         displayDate += ` ${year}`;
       }
     }

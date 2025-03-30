@@ -58,7 +58,7 @@ class SpendingTrendChart extends AbstractBarChart<SpendingTrendChartProps> {
         const [year, month] = key.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
         displayDate = date.toLocaleString('default', { month: 'short' });
-        if (period === 'year') {
+        if (period === 'quarter') {
           displayDate += ` ${year}`;
         }
       }

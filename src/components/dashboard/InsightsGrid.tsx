@@ -61,7 +61,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
     transactions: filteredTransactions,
     currency: displayCurrency,
     className: commonCardClass,
-    initialPeriod: 'month' as 'week' | 'month' | 'quarter' | 'year'
+    initialPeriod: 'day' as 'day' | 'week' | 'month' | 'quarter'
   }), [filteredTransactions, displayCurrency, commonCardClass]);
   
   const unusualCardProps = useMemo(() => ({

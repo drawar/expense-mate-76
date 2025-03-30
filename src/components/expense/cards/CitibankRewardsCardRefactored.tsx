@@ -70,10 +70,10 @@ export class CitibankRewardsCardRefactored extends BaseRewardCard<CitibankReward
   }
 
   /**
-   * Citibank Rewards has a 4000 points monthly cap on bonus points
+   * Citibank Rewards has a 9000 points monthly cap on bonus points
    */
   getBonusPointsCap(): MonthlyCap {
-    return new MonthlyCap(4000);
+    return new MonthlyCap(9000);
   }
 }
 

@@ -11,7 +11,7 @@ import { ChartTooltip, ChartTooltipProps } from '@/components/dashboard/tooltips
  */
 export interface BarChartProps extends AbstractChartProps {
   transactions: Transaction[];
-  period?: 'week' | 'month' | 'quarter' | 'year';
+  period?: 'day' | 'week' | 'month' | 'quarter';
   colorScheme?: {
     barColor: string;
     hoverColor: string;

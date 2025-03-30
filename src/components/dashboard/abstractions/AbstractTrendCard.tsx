@@ -10,7 +10,7 @@ import AbstractFinancialInsightCard, {
  */
 export interface TrendCardProps extends FinancialInsightCardProps {
   transactions: Transaction[];
-  period?: 'week' | 'month' | 'quarter' | 'year';
+  period?: 'day' | 'week' | 'month' | 'quarter';
   comparisonPeriod?: 'previous' | 'lastYear';
   currency?: string;
 }

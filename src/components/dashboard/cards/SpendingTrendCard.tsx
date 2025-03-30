@@ -11,7 +11,7 @@ interface SpendingTrendCardProps {
   title?: string;
   transactions: Transaction[];
   currency?: Currency;
-  initialPeriod?: 'week' | 'month' | 'quarter' | 'year';
+  initialPeriod?: 'day' | 'week' | 'month' | 'quarter';
   className?: string;
 }
 
@@ -133,7 +133,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         const [year, month] = key.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
         displayDate = date.toLocaleString('default', { month: 'short' });
-        if (selectedPeriod === 'year') {
+        if (selectedPeriod === 'quarter') {
           displayDate += ` ${year}`;
         }
       }
@@ -212,7 +212,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   
   // Handle period change
   const handlePeriodChange = (value: string) => {
-    setSelectedPeriod(value as 'week' | 'month' | 'quarter' | 'year');
+    setSelectedPeriod(value as 'day' | 'week' | 'month' | 'quarter');
   };
   
   // Return the custom card with period selector and trends
@@ -234,10 +234,10 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="week">Weekly</SelectItem>
-              <SelectItem value="month">Monthly</SelectItem>
-              <SelectItem value="quarter">Quarterly</SelectItem>
-              <SelectItem value="year">Yearly</SelectItem>
+              <SelectItem value="week">Daily</SelectItem>
+              <SelectItem value="month">Weekly</SelectItem>
+              <SelectItem value="quarter">Monthly</SelectItem>
+              <SelectItem value="year">Quarterly</SelectItem>
             </SelectContent>
           </Select>
         </div>
