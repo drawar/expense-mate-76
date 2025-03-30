@@ -111,7 +111,7 @@ export const useOptimizedTransactionData = (forceOnline = false) => {
       toast({
         title: 'Offline mode',
         description: 'Cannot sync data while offline',
-        variant: 'warning'
+        variant: 'destructive'
       });
       return;
     }

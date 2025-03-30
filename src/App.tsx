@@ -1,10 +1,8 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
-import NewExpense from '@/pages/NewExpense';
-import RewardPoints from '@/pages/RewardPoints';
-import Settings from '@/pages/Settings';
 import { initDatabase } from './services/LocalDatabaseService';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -37,9 +35,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/transactions" element={<Transactions />} />
-          <Route path="/new" element={<NewExpense />} />
-          <Route path="/reward-points" element={<RewardPoints />} />
-          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Router>
       <Toaster />

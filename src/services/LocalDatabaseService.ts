@@ -1,8 +1,8 @@
 
 import Dexie, { Table } from 'dexie';
-import { Transaction, PaymentMethod, Merchant } from '@/types';
+import { Transaction, PaymentMethod, Merchant, Currency } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 // Define our database class extending Dexie
 export class ExpenseDatabase extends Dexie {
@@ -132,7 +132,8 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
         for (const pm of paymentMethods) {
           await db.paymentMethods.put({
             ...pm,
-            currency: pm.currency as Currency
+            currency: pm.currency as Currency,
+            rewardRules: pm.reward_rules || []
           });
         }
       }
@@ -141,7 +142,15 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
       if (merchants.length > 0) {
         console.log(`Syncing ${merchants.length} merchants`);
         for (const merchant of merchants) {
-          await db.merchants.put(merchant);
+          await db.merchants.put({
+            id: merchant.id,
+            name: merchant.name,
+            address: merchant.address,
+            coordinates: merchant.coordinates,
+            mcc: merchant.mcc,
+            isOnline: merchant.is_online,
+            is_deleted: merchant.is_deleted
+          });
         }
       }
       
@@ -187,6 +196,7 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
             notes: tx.notes,
             category: tx.category,
             isContactless: tx.is_contactless,
+            is_deleted: tx.is_deleted
           };
         });
         
@@ -206,12 +216,6 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
   } catch (error) {
     console.error('Sync failed:', error);
     await setSyncInProgress(false);
-    
-    toast({
-      title: 'Sync Failed',
-      description: error instanceof Error ? error.message : 'Unknown error during sync',
-      variant: 'destructive'
-    });
     
     return false;
   }

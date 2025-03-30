@@ -1,9 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, Cloud, CloudOff, Check } from 'lucide-react';
+import { Loader2, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { syncTransactionsWithSupabase, getLastSyncTime } from '@/services/LocalDatabaseService';
+import { getLastSyncTime } from '@/services/LocalDatabaseService';
 import { formatDistanceToNow } from 'date-fns';
 
 interface StorageSyncStatusProps {
@@ -22,7 +22,7 @@ const StorageSyncStatus: React.FC<StorageSyncStatusProps> = ({
   const { toast } = useToast();
 
   // Get last sync time when component mounts
-  useState(() => {
+  useEffect(() => {
     getLastSyncTime().then(date => {
       setLastSync(date);
     });
