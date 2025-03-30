@@ -1,8 +1,10 @@
+
 // src/utils/storage/transactions/add.ts
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { saveTransactionToLocalStorage } from './local-storage';
+import { saveLocalTransaction } from '@/services/LocalDatabaseService';
 import { getTransactions } from './get';
 import { addOrUpdateMerchant } from '../merchants';
 import { incrementMerchantOccurrence } from '../merchantTracking';
@@ -43,7 +45,17 @@ export const addTransaction = async (
     
     console.log('Using local storage flag:', forceLocalStorage);
     
-    if (!forceLocalStorage) {
+    const isOffline = !navigator.onLine;
+    
+    // First, save to the local IndexedDB for immediate access
+    const savedLocally = await saveLocalTransaction(completeTransaction);
+    
+    if (!savedLocally) {
+      console.error('Failed to save transaction to local database');
+    }
+    
+    // If we're online and not forced to use local storage, also send to Supabase
+    if (!isOffline && !forceLocalStorage) {
       try {
         // First save or update the merchant
         if (transaction.merchant) {
@@ -74,50 +86,49 @@ export const addTransaction = async (
         
         if (error) {
           console.error('Error saving transaction to Supabase:', error);
-          throw error;
+          // Continue with local data only - the sync process will handle this later
+        } else {
+          console.log('Transaction saved to Supabase with ID:', data.id);
+          
+          // Record bonus points movement if any
+          if (pointsBreakdown.bonusPoints > 0) {
+            await bonusPointsTrackingService.recordBonusPointsMovement(
+              completeTransaction.id,
+              completeTransaction.paymentMethod.id,
+              pointsBreakdown.bonusPoints
+            );
+          }
+          
+          // Update merchant category mapping for improved suggestions
+          if (transaction.merchant && transaction.merchant.mcc) {
+            await incrementMerchantOccurrence(transaction.merchant.name, transaction.merchant.mcc);
+            console.log('Updated merchant category mapping for', transaction.merchant.name);
+          }
         }
-        
-        console.log('Transaction saved to Supabase with ID:', data.id);
-        
-        // Record bonus points movement if any
-        if (pointsBreakdown.bonusPoints > 0) {
-          await bonusPointsTrackingService.recordBonusPointsMovement(
-            completeTransaction.id,
-            completeTransaction.paymentMethod.id,
-            pointsBreakdown.bonusPoints
-          );
-        }
-        
-        // Update merchant category mapping for improved suggestions
-        if (transaction.merchant && transaction.merchant.mcc) {
-          await incrementMerchantOccurrence(transaction.merchant.name, transaction.merchant.mcc);
-          console.log('Updated merchant category mapping for', transaction.merchant.name);
-        }
-        
-        return completeTransaction;
       } catch (err) {
-        console.error('Failed to save to Supabase, falling back to localStorage:', err);
-        // Fall back to localStorage if Supabase fails
+        console.error('Failed to save to Supabase, will rely on sync process later:', err);
+        // The scheduled sync will handle this error case
       }
+    } else {
+      // Save to localStorage as additional fallback
+      const transactions = await getTransactions(true); // Force local storage
+      const localId = completeTransaction.id || (transactions.length + 1).toString();
+      
+      const localTransaction: Transaction = {
+        ...completeTransaction,
+        id: localId
+      };
+      
+      const saved = await saveTransactionToLocalStorage(localTransaction);
+      if (!saved) {
+        console.error('Failed to save transaction to localStorage');
+        // Still return the transaction as it was saved to IndexedDB
+      }
+      
+      console.log('Transaction saved to local storage with data:', JSON.stringify(localTransaction, null, 2));
     }
     
-    // Save to localStorage as fallback or if forced
-    const transactions = await getTransactions(true); // Force local storage
-    const localId = (transactions.length + 1).toString();
-    
-    const localTransaction: Transaction = {
-      ...completeTransaction,
-      id: localId
-    };
-    
-    const saved = await saveTransactionToLocalStorage(localTransaction);
-    if (!saved) {
-      console.error('Failed to save transaction to localStorage');
-      return null;
-    }
-    
-    console.log('Transaction saved to local storage with data:', JSON.stringify(localTransaction, null, 2));
-    return localTransaction;
+    return completeTransaction;
   } catch (error) {
     console.error('Error in addTransaction:', error);
     return null;

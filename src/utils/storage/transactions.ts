@@ -10,6 +10,11 @@ import {
   getTransactionsFromLocalStorage, 
   saveTransactionsToLocalStorage 
 } from './transactions/local-storage';
+import {
+  getLocalTransactions,
+  saveLocalTransaction,
+  deleteLocalTransaction
+} from '@/services/LocalDatabaseService';
 
 // Export all transaction-related functions
 export {
@@ -20,5 +25,9 @@ export {
   deleteTransaction,
   exportTransactionsToCSV,
   getTransactionsFromLocalStorage,
-  saveTransactionsToLocalStorage
+  saveTransactionsToLocalStorage,
+  // Export the new functions to make them available
+  getLocalTransactions,
+  saveLocalTransaction,
+  deleteLocalTransaction
 };

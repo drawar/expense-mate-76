@@ -1,72 +1,49 @@
-import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@/components/theme/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
-import Sidebar from '@/components/layout/Sidebar';
-
-// Remove App.css import to prevent conflicts with Tailwind
-import '@/styles/global-enhancements.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
-import AddExpense from '@/pages/AddExpense';
-import PaymentMethods from '@/pages/PaymentMethods';
+import NewExpense from '@/pages/NewExpense';
 import RewardPoints from '@/pages/RewardPoints';
-import NotFound from '@/pages/NotFound';
+import Settings from '@/pages/Settings';
+import { initDatabase } from './services/LocalDatabaseService';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
 
 function App() {
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const isMobile = useIsMobile();
+  const { toast } = useToast();
   
-  const toggleSidebar = () => {
-    setSidebarExpanded(!sidebarExpanded);
-  };
+  // Initialize the local database when the app starts
+  useEffect(() => {
+    const initializeStorage = async () => {
+      try {
+        await initDatabase();
+        console.log('Local database initialized');
+      } catch (error) {
+        console.error('Error initializing local database:', error);
+        toast({
+          title: 'Storage Error',
+          description: 'Failed to initialize local database. Some features may not work properly.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    initializeStorage();
+  }, [toast]);
   
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <>
       <Router>
-        <div className="relative min-h-screen bg-background">
-          <Sidebar 
-            expanded={sidebarExpanded} 
-            onToggle={toggleSidebar} 
-            sidebarVisible={sidebarVisible}
-            setSidebarVisible={setSidebarVisible}
-          />
-          <main 
-            className={`transition-all duration-300 ${
-              isMobile 
-                ? 'ml-0 pt-16' // No left margin but add top padding for horizontal navbar on mobile
-                : (sidebarExpanded ? 'ml-48' : 'ml-20')
-            }`}
-            onClick={() => {
-              if (isMobile && sidebarVisible) {
-                setSidebarVisible(false);
-              }
-            }}
-          >
-            <div 
-              className={`mx-auto p-6 ${isMobile ? 'px-5 max-w-full pt-4' : 'container px-6 pt-8'}`}
-              onClick={() => {
-                if (isMobile && sidebarVisible) {
-                  setSidebarVisible(false);
-                }
-              }}
-            >
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/add-expense" element={<AddExpense />} />
-                <Route path="/payment-methods" element={<PaymentMethods />} />
-                <Route path="/reward-points" element={<RewardPoints />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </main>
-        </div>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/new" element={<NewExpense />} />
+          <Route path="/reward-points" element={<RewardPoints />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
       </Router>
       <Toaster />
-    </ThemeProvider>
+    </>
   );
 }
 
