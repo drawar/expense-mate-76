@@ -47,24 +47,51 @@ const PieChart: React.FC<PieChartProps> = ({
     outerRadius: outerRadius
   });
 
-  // Process data to include percentages
+  // Process data to include percentages - optimized to avoid deep copying when not needed
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
     
     const total = data.reduce((sum, item) => sum + item.value, 0);
+    
+    if (total === 0) return [];
+    
     return data.map(item => ({
       ...item,
-      percentage: total > 0 ? (item.value / total * 100) : 0
+      percentage: (item.value / total * 100)
     }));
   }, [data]);
   
-  // Use ResizeObserver to monitor the container size and update radius values
+  // Memoize radius calculation based on original props
+  const baseRadius = useMemo(() => ({
+    innerScale: innerRadius / 200,
+    outerScale: outerRadius / 200
+  }), [innerRadius, outerRadius]);
+
+  // Use ResizeObserver with fewer dependencies and throttled updates
   useEffect(() => {
     const container = chartContainerRef.current;
-    if (!container) return;
+    if (!container || !processedData.length) return;
     
-    // Create a resize observer to watch the container
-    const resizeObserver = new ResizeObserver(entries => {
+    // Throttle resize calculations to reduce performance impact
+    let rafId: number;
+    let lastUpdateTime = 0;
+    const THROTTLE_DELAY = 100; // ms
+    
+    // Create a throttled handler for resize events
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      const now = Date.now();
+      if (now - lastUpdateTime < THROTTLE_DELAY) {
+        // Cancel any pending updates and schedule a new one
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => processResize(entries));
+        return;
+      }
+      
+      lastUpdateTime = now;
+      processResize(entries);
+    };
+    
+    const processResize = (entries: ResizeObserverEntry[]) => {
       const entry = entries[0];
       if (!entry) return;
       
@@ -72,50 +99,46 @@ const PieChart: React.FC<PieChartProps> = ({
       const { width, height } = entry.contentRect;
       const minDimension = Math.min(width, height);
       
-      // Calculate radius values proportional to the container size
-      // Scale factor is based on the original radius values
-      const innerScale = innerRadius / 200; // Baseline size of 200px
-      const outerScale = outerRadius / 200; // Baseline size of 200px
-      
-      // Update radius values
+      // Update radius values using memoized scales
       setRadius({
-        innerRadius: Math.max(minDimension * innerScale, 20), // Minimum inner radius of 20px
-        outerRadius: Math.min(minDimension * outerScale, Math.min(width, height) / 2 - 10) // Max is half container minus margin
+        innerRadius: Math.max(minDimension * baseRadius.innerScale, 20),
+        outerRadius: Math.min(minDimension * baseRadius.outerScale, Math.min(width, height) / 2 - 10)
       });
-    });
+    };
     
-    // Start observing the container
+    const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
     
-    // Clean up observer when component unmounts
     return () => {
+      cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
     };
-  }, [innerRadius, outerRadius]);
+  }, [baseRadius, processedData.length]); // Only re-setup when base scales change or data presence changes
 
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const totalValue = data.reduce((sum, item) => sum + item.value, 0);
-      const percentage = Math.round((payload[0].value / totalValue) * 100);
+  // Memoize tooltip component to prevent recreation on each render
+  const CustomTooltip = useMemo(() => {
+    return ({ active, payload }: any) => {
+      if (!active || !payload || !payload.length) return null;
+      
+      const item = payload[0];
+      const entry = item.payload;
       
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-lg">
-          <p className="font-medium text-sm mb-1">{payload[0].name}</p>
+          <p className="font-medium text-sm mb-1">{item.name}</p>
           <p className="text-primary font-bold">
-            {formatCurrency(payload[0].value, currency)}
+            {formatCurrency(item.value, currency)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            {percentage}% of total
+            {Math.round(entry.percentage)}% of total
           </p>
         </div>
       );
-    }
-    return null;
-  };
+    };
+  }, [currency]);
   
-  // Render legend items
-  const renderLegendItems = () => {
+  // Memoize legend items to prevent expensive re-calculation
+  const legendItems = useMemo(() => {
     if (!processedData || processedData.length === 0) return null;
     
     return (
@@ -138,7 +161,7 @@ const PieChart: React.FC<PieChartProps> = ({
         ))}
       </div>
     );
-  };
+  }, [processedData]);
 
   // Empty state
   if (processedData.length === 0) {
@@ -203,7 +226,7 @@ const PieChart: React.FC<PieChartProps> = ({
           
           {/* Legend container that adapts to available space */}
           <div className="w-full md:w-1/2 mt-4 md:mt-0 md:pl-4 max-h-[200px] md:max-h-[240px] overflow-y-auto">
-            {renderLegendItems()}
+            {legendItems}
           </div>
         </div>
       </CardContent>

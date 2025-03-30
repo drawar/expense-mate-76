@@ -23,17 +23,15 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   // Use the media query hook for responsive design
   const isMobile = useMediaQuery('(max-width: 768px)');
   
-  // Memoize the limited transactions to prevent unnecessary processing
+  // Optimize to only sort and slice without creating new objects
+  // This avoids unnecessary object creation and deep cloning of transaction objects
   const recentTransactions = useMemo(() => {
-    console.log('Processing recent transactions');
+    if (!transactions.length) return [];
+    
+    // Sort transactions by date (newest first) and take only what we need
     return transactions
       .slice(0, maxItems)
-      .map(transaction => ({
-        ...transaction,
-        // Pre-process any data needed by children to avoid passing the entire transaction
-        id: transaction.id,
-        // Only include necessary fields to minimize unnecessary re-renders
-      }));
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, maxItems]);
   
   // Render the empty state when no transactions are available
@@ -51,7 +49,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
     );
   }, [isMobile]);
   
-  console.log(`RecentTransactions rendering with ${recentTransactions.length} transactions`);
+  // Removed console.log
   
   // Create a stable reference for the transaction cards
   const transactionCards = useMemo(() => {

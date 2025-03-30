@@ -113,14 +113,15 @@ const DashboardContainer: React.FC = () => {
   }, [loadData]);
 
   // Create stable props object for Dashboard component to prevent unnecessary re-renders
+  // Removed lastUpdateTimestamp from dependencies as it doesn't affect the actual props structure
   const dashboardProps = useMemo(() => ({
     transactions,
     paymentMethods,
     loading,
     defaultCurrency: "SGD" as Currency
-  }), [transactions, paymentMethods, loading, lastUpdateTimestamp]);
+  }), [transactions, paymentMethods, loading]);
   
-  console.log(`DashboardContainer rendering, data updated at: ${new Date(lastUpdateTimestamp).toISOString()}`);
+  // Removed console.log which would execute on every render
   
   return <Dashboard {...dashboardProps} />;
 };

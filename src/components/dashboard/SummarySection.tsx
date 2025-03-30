@@ -31,17 +31,30 @@ const SummarySection: React.FC<SummarySectionProps> = ({
   // Destructure metrics for easier access
   const { metrics, top, filteredTransactions } = dashboardData;
   
+  // Verify we have data - early optimization
+  const hasData = 
+    dashboardData && 
+    dashboardData.metrics && 
+    dashboardData.metrics.transactionCount > 0;
+  
   // Use the custom currency formatter hook
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Handle tab change if provided
-  const handleTabChange = (value: string) => {
+  // Memoize the count of transactions with reward points to prevent recalculation
+  const rewardPointTransactionsCount = React.useMemo(() => {
+    if (!hasData || !dashboardData.filteredTransactions) return 0;
+    
+    // More efficient than filter().length as it avoids creating a new array
+    return dashboardData.filteredTransactions.reduce((count, tx) => 
+      (tx.rewardPoints || 0) > 0 ? count + 1 : count, 0);
+  }, [hasData, dashboardData.filteredTransactions]);
+
+  // Handle tab change if provided - memoized to prevent recreation on every render
+  const handleTabChange = React.useCallback((value: string) => {
     if (onTabChange) {
       onTabChange(value);
     }
-  };
-  
-  console.log("SummarySection rendering");
+  }, [onTabChange]);
 
   return (
     <div className="space-y-4 w-full">
@@ -94,7 +107,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               title="Reward Points"
               icon={<CoinsIcon className="h-5 w-5 text-primary" />}
               value={metrics.totalRewardPoints.toLocaleString()}
-              description={`From ${filteredTransactions.filter(tx => (tx.rewardPoints || 0) > 0).length} transactions`}
+              description={`From ${rewardPointTransactionsCount} transactions`}
               cardColor="bg-gradient-to-br from-amber-500/10 to-orange-600/10"
               valueColor="text-amber-800 dark:text-amber-300"
             />

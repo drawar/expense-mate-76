@@ -42,17 +42,23 @@ const BarChart: React.FC<BarChartProps> = ({
   // Use the chart currency formatter hook
   const { tooltipFormatter, axisFormatter } = useChartCurrencyFormatter(currency);
   
-  // Process data for the chart using our utility
+  // Early return with empty data when no transactions to avoid unnecessary processing
+  const hasTransactions = transactions.length > 0;
+  
+  // Process data for the chart using our utility - only when we have transactions
   const { chartData, trend, average, topCategories } = useMemo(() => {
-    console.log(`Processing chart data for ${transactions.length} transactions`);
+    if (!hasTransactions) {
+      return { chartData: [], trend: 0, average: 0, topCategories: [] };
+    }
+    
     return processTransactionsForChart(transactions, {
       period,
-      includeCategoryBreakdown: true,
+      includeCategoryBreakdown: showInsights,  // Only include category data if insights are shown
       maxTopCategories: 3,
-      includeTrend: true,
+      includeTrend: showInsights,
       displayCurrency: currency
     });
-  }, [transactions, period, currency]);
+  }, [transactions, period, currency, hasTransactions, showInsights]);
   
   // Memoize tooltip component to prevent unnecessary re-renders
   const CustomTooltip = useMemo(() => {
@@ -150,8 +156,6 @@ const BarChart: React.FC<BarChartProps> = ({
     );
   }
   
-  console.log(`Rendering BarChart with ${chartData.length} data points`);
-
   return (
     <Card className={`${className}`}>
       <CardHeader className="pb-2">

@@ -33,50 +33,54 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const spendingBarColor = '#8884d8';
   const spendingHoverColor = '#7171d6';
   
-  // Process transactions for spending trends analysis
-  const { chartData, trend, average, topCategories } = useMemo(() => {
-    // Function to get top spending categories for a set of transactions
-    const getTopCategoriesForPeriod = (transactions: Transaction[]): Array<{ category: string; amount: number }> => {
-      // Group by category
-      const categoryMap = new Map<string, number>();
-      
-      transactions.forEach(tx => {
-        if (!tx.category) return;
-        
-        const existingAmount = categoryMap.get(tx.category) || 0;
-        categoryMap.set(tx.category, existingAmount + tx.amount);
-      });
-      
-      // Convert to array and sort by amount (descending)
-      const categories = Array.from(categoryMap.entries())
-        .map(([category, amount]) => ({ category, amount }))
-        .sort((a, b) => b.amount - a.amount);
-      
-      return categories.slice(0, 3); // Return top 3 categories
-    };
+  // Check if transactions exist early to prevent unnecessary calculations
+  const hasTransactions = transactions.length > 0;
 
-    if (transactions.length === 0) {
+  // Memoize category processing function to avoid recreation on each render
+  const getTopCategoriesForPeriod = React.useCallback((periodTransactions: Transaction[]): Array<{ category: string; amount: number }> => {
+    // Group by category
+    const categoryMap = new Map<string, number>();
+    
+    periodTransactions.forEach(tx => {
+      if (!tx.category) return;
+      
+      const existingAmount = categoryMap.get(tx.category) || 0;
+      categoryMap.set(tx.category, existingAmount + tx.amount);
+    });
+    
+    // Convert to array and sort by amount (descending)
+    const categories = Array.from(categoryMap.entries())
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
+    
+    return categories.slice(0, 3); // Return top 3 categories
+  }, []);
+
+  // Memoize period mapping to avoid recreation on each render
+  const periodMapping = React.useMemo(() => ({
+    week: 'day',
+    month: 'week',
+    quarter: 'month',
+    year: 'month'
+  }), []);
+  
+  // Process transactions for spending trends analysis with optimized memoization
+  const { chartData, trend, average, topCategories } = useMemo(() => {
+    if (!hasTransactions) {
       return { chartData: [], trend: 0, average: 0, topCategories: [] };
     }
     
-    // Determine the grouping period based on selected time frame
-    // This mimics the implementation from SpendingTrendChart
-    const periodMapping = {
-      week: 'day',
-      month: 'week',
-      quarter: 'month',
-      year: 'month'
-    };
-    
     // Group transactions by date
     const groupedTransactions = new Map<string, Transaction[]>();
+    
+    // Use the selected period to determine the grouping granularity
+    const groupBy = periodMapping[selectedPeriod];
     
     transactions.forEach(tx => {
       const txDate = new Date(tx.date);
       let key: string;
       
       // Create the appropriate date key based on the grouping period
-      const groupBy = periodMapping[selectedPeriod];
       switch (groupBy) {
         case 'day':
           key = txDate.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -101,31 +105,30 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       groupedTransactions.get(key)?.push(tx);
     });
     
-    // Get top categories for the most recent period
+    // Get sorted keys once to avoid repeated sorting
     const sortedKeys = Array.from(groupedTransactions.keys()).sort();
-    const latestKey = sortedKeys[sortedKeys.length - 1];
-    const latestTransactions = latestKey ? (groupedTransactions.get(latestKey) || []) : [];
     
-    // Get top categories
+    // Get most recent period data for top categories
+    const latestKey = sortedKeys.length > 0 ? sortedKeys[sortedKeys.length - 1] : null;
+    const latestTransactions = latestKey ? (groupedTransactions.get(latestKey) || []) : [];
     const topCats = getTopCategoriesForPeriod(latestTransactions);
     
-    // Format keys for display
+    // Process data for chart with a single loop
     const processedChartData = sortedKeys.map(key => {
       const periodTransactions = groupedTransactions.get(key) || [];
+      
+      // Calculate total with a single reduce operation
       const total = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
       
-      // Get top categories for this period
-      const periodTopCategories = getTopCategoriesForPeriod(periodTransactions);
-      
-      // Format the key for display (mimicking the original implementation)
+      // Optimize date formatting based on period type
       let displayDate = key;
-      if (periodMapping[selectedPeriod] === 'week') {
+      if (groupBy === 'week') {
         // For weeks, show date range
         const startDate = new Date(key);
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
         displayDate = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
-      } else if (periodMapping[selectedPeriod] === 'month') {
+      } else if (groupBy === 'month') {
         // For months, show month name
         const [year, month] = key.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -139,26 +142,30 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         period: displayDate,
         amount: total,
         originalKey: key,
-        topCategories: periodTopCategories
+        // Only calculate top categories when needed (helps performance for large datasets)
+        topCategories: periodTransactions.length > 0 ? getTopCategoriesForPeriod(periodTransactions) : []
       };
     });
     
-    // Calculate trend (period-over-period change)
+    // Calculate trend and average in a single pass if possible
     let calculatedTrend = 0;
+    let calculatedTotal = 0;
+    
     if (processedChartData.length >= 2) {
       const currentAmount = processedChartData[processedChartData.length - 1].amount;
       const previousAmount = processedChartData[processedChartData.length - 2].amount;
       
-      if (previousAmount === 0) {
-        calculatedTrend = currentAmount > 0 ? 100 : 0;
-      } else {
-        calculatedTrend = ((currentAmount - previousAmount) / previousAmount) * 100;
-      }
+      calculatedTrend = previousAmount === 0 
+        ? (currentAmount > 0 ? 100 : 0) 
+        : ((currentAmount - previousAmount) / previousAmount) * 100;
     }
     
-    // Calculate average
+    // Calculate average in a single pass to avoid a second loop
     const calculatedAverage = processedChartData.length > 0
-      ? processedChartData.reduce((sum, item) => sum + item.amount, 0) / processedChartData.length
+      ? processedChartData.reduce((sum, item) => {
+          calculatedTotal += item.amount;
+          return calculatedTotal;
+        }, 0) / processedChartData.length
       : 0;
     
     return { 
@@ -167,7 +174,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       average: calculatedAverage,
       topCategories: topCats
     };
-  }, [transactions, selectedPeriod]);
+  }, [transactions, selectedPeriod, periodMapping, getTopCategoriesForPeriod, hasTransactions]);
 
   // Generate spending insights
   const renderInsights = () => {

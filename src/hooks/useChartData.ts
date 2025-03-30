@@ -85,9 +85,15 @@ export interface CardSuggestion {
   potentialSavings: number;
 }
 
+// Constants for optimization calculations
+const MINIMUM_TRANSACTIONS_PER_CATEGORY = 3;
+const DEFAULT_REWARD_RATE = 1; // Assume standard 1x points for baseline comparison
+const SAVINGS_MULTIPLIER = 0.01; // Convert percentage to decimal (1% = 0.01)
+
 /**
  * Hook for generating payment method optimization recommendations
  * Analyzes transaction patterns and suggests better card choices per category
+ * Optimized for performance with large datasets
  * 
  * @param transactions - Array of transactions to analyze
  * @param paymentMethods - Available payment methods to consider
@@ -98,102 +104,172 @@ export function usePaymentMethodOptimization(
   paymentMethods: PaymentMethod[]
 ): CardSuggestion[] {
   return useMemo(() => {
-    // Skip processing if there's insufficient data
+    // Skip processing if there's insufficient data (early return)
     if (transactions.length === 0 || paymentMethods.length < 2) {
       return [];
     }
 
-    // Group transactions by category to analyze spending patterns
-    const categoryTransactions = new Map<string, Transaction[]>();
+    // Pre-processing: Cache active payment methods to avoid repeated checks
+    const activePaymentMethods = paymentMethods.filter(method => method.active);
+    if (activePaymentMethods.length < 2) return []; // Need at least 2 active methods
     
-    transactions.forEach(tx => {
-      const category = tx.category || 'Uncategorized';
-      if (!categoryTransactions.has(category)) {
-        categoryTransactions.set(category, []);
-      }
-      categoryTransactions.get(category)!.push(tx);
-    });
+    // Pre-compute payment method reward rules for faster lookup
+    const methodRewardMap = new Map<string, {
+      methodName: string;
+      categoryRules: Map<string, number>;
+      defaultRate: number;
+    }>();
     
-    const results: CardSuggestion[] = [];
-    
-    // Analyze each category to find optimization opportunities
-    categoryTransactions.forEach((categoryTxs, category) => {
-      // Skip categories with too few transactions
-      if (categoryTxs.length < 3) return;
+    // Pre-process payment methods and their rules for faster lookups
+    activePaymentMethods.forEach(method => {
+      const categoryRules = new Map<string, number>();
+      let defaultRate = DEFAULT_REWARD_RATE; // Default if no rules found
       
-      // Group by current payment method to find the predominant one
-      const methodCount = new Map<string, number>();
-      const methodAmount = new Map<string, number>();
-      
-      categoryTxs.forEach(tx => {
-        const methodName = tx.paymentMethod?.name || 'Unknown';
-        methodCount.set(methodName, (methodCount.get(methodName) || 0) + 1);
-        methodAmount.set(methodName, (methodAmount.get(methodName) || 0) + tx.amount);
+      method.rewardRules.forEach(rule => {
+        if (rule.type === 'mcc' || rule.type === 'merchant') {
+          // Category-specific rules
+          const conditions = Array.isArray(rule.condition) 
+            ? rule.condition 
+            : [rule.condition];
+          
+          // Store lowercase conditions for case-insensitive matching
+          conditions.forEach(cond => {
+            if (typeof cond === 'string') {
+              const condLower = cond.toLowerCase();
+              categoryRules.set(condLower, Math.max(
+                categoryRules.get(condLower) || 0, 
+                rule.pointsMultiplier
+              ));
+            }
+          });
+        } else if (rule.type === 'generic' || rule.type === 'currency' || !rule.type) {
+          // Default/base/generic reward rule
+          defaultRate = rule.pointsMultiplier;
+        }
       });
       
-      // Find the most commonly used payment method
-      const entries = Array.from(methodCount.entries());
-      if (entries.length === 0) return;
+      methodRewardMap.set(method.name, {
+        methodName: method.name,
+        categoryRules,
+        defaultRate
+      });
+    });
+    
+    // Optimized data structures for category analysis (single pass)
+    type CategoryData = {
+      transactions: number;
+      amount: number;
+      methods: Map<string, { count: number; amount: number }>;
+      lowerCaseName: string;
+    };
+    
+    const categoryDataMap = new Map<string, CategoryData>();
+    
+    // Process all transactions in a single pass
+    transactions.forEach(tx => {
+      const category = tx.category || 'Uncategorized';
+      const methodName = tx.paymentMethod?.name || 'Unknown';
+      const amount = tx.amount;
       
-      entries.sort((a, b) => b[1] - a[1]);
-      const currentMethod = entries[0][0];
+      // Get or create category data
+      let catData = categoryDataMap.get(category);
+      if (!catData) {
+        catData = {
+          transactions: 0,
+          amount: 0,
+          methods: new Map(),
+          lowerCaseName: category.toLowerCase()
+        };
+        categoryDataMap.set(category, catData);
+      }
+      
+      // Update category totals
+      catData.transactions++;
+      catData.amount += amount;
+      
+      // Update method usage within category
+      let methodData = catData.methods.get(methodName);
+      if (!methodData) {
+        methodData = { count: 0, amount: 0 };
+        catData.methods.set(methodName, methodData);
+      }
+      methodData.count++;
+      methodData.amount += amount;
+    });
+    
+    // Process categories to find optimization opportunities (single pass)
+    const results: CardSuggestion[] = [];
+    
+    categoryDataMap.forEach((catData, category) => {
+      // Skip categories with too few transactions
+      if (catData.transactions < MINIMUM_TRANSACTIONS_PER_CATEGORY) return;
+      
+      // Find predominant payment method for this category
+      let currentMethod = '';
+      let currentMethodCount = 0;
+      let currentMethodAmount = 0;
+      
+      catData.methods.forEach((data, method) => {
+        if (data.count > currentMethodCount) {
+          currentMethod = method;
+          currentMethodCount = data.count;
+          currentMethodAmount = data.amount;
+        }
+      });
+      
+      if (!currentMethod) return; // Skip if no method found
       
       // Find the best rewards card for this category
       let bestMethod = currentMethod;
-      let bestReward = 0;
+      let bestReward = DEFAULT_REWARD_RATE; // Start with assumption of 1x for current
       
-      paymentMethods.forEach(method => {
-        if (!method.active) return;
+      // Get the current method's reward info if available
+      const currentMethodInfo = methodRewardMap.get(currentMethod);
+      if (currentMethodInfo) {
+        bestReward = currentMethodInfo.defaultRate;
+      }
+      
+      // Check each payment method for better rewards
+      methodRewardMap.forEach((methodInfo, methodName) => {
+        if (methodName === currentMethod) return; // Skip current method
         
-        // Calculate potential reward points based on method's rules
-        let potentialReward = 0;
+        // Start with default rate
+        let potentialReward = methodInfo.defaultRate;
         
-        method.rewardRules.forEach(rule => {
-          // Check for merchant/MCC based rules - these can apply to categories
-          if (rule.type === 'mcc' || rule.type === 'merchant') {
-            // Check if this rule applies to the current category
-            const conditions = Array.isArray(rule.condition) 
-              ? rule.condition 
-              : [rule.condition];
-              
-            // Use lowercase contains match to be more flexible
-            if (conditions.some(cond => {
-              const categoryLower = category.toLowerCase();
-              const condLower = typeof cond === 'string' ? cond.toLowerCase() : '';
-              return categoryLower.includes(condLower) || condLower.includes(categoryLower);
-            })) {
-              potentialReward = Math.max(potentialReward, rule.pointsMultiplier);
+        // Check for category-specific rules that might apply
+        // Use the pre-computed category rules for faster lookup
+        const categoryLower = catData.lowerCaseName;
+        
+        // Check exact category match first (most efficient)
+        if (methodInfo.categoryRules.has(categoryLower)) {
+          potentialReward = Math.max(potentialReward, methodInfo.categoryRules.get(categoryLower)!);
+        } else {
+          // Check partial matches if no exact match found
+          methodInfo.categoryRules.forEach((rate, ruleCat) => {
+            if (categoryLower.includes(ruleCat) || ruleCat.includes(categoryLower)) {
+              potentialReward = Math.max(potentialReward, rate);
             }
-          }
-        });
-        
-        // If no category-specific rules found, use the default reward rate
-        if (potentialReward === 0 && method.rewardRules.length > 0) {
-          // Find default/base reward rule
-          const defaultRule = method.rewardRules.find(rule => 
-            rule.type !== 'mcc' && rule.type !== 'merchant'
-          );
-          if (defaultRule) {
-            potentialReward = defaultRule.pointsMultiplier;
-          }
+          });
         }
         
+        // Update best method if we found a better one
         if (potentialReward > bestReward) {
           bestReward = potentialReward;
-          bestMethod = method.name;
+          bestMethod = methodName;
         }
       });
       
       // If we found a better method, add it to suggestions
       if (bestMethod !== currentMethod) {
-        const totalAmount = methodAmount.get(currentMethod) || 0;
-        const currentReward = 1; // Assume standard 1x points for current method
-        const potentialSavings = totalAmount * (bestReward - currentReward) / 100;
+        // Get current method's reward rate
+        const currentReward = currentMethodInfo?.defaultRate || DEFAULT_REWARD_RATE;
+        const potentialSavings = currentMethodAmount * (bestReward - currentReward) * SAVINGS_MULTIPLIER;
         
+        // Only add suggestions with meaningful savings
         if (potentialSavings > 0) {
           results.push({
             category,
-            transactionCount: methodCount.get(currentMethod) || 0,
+            transactionCount: currentMethodCount,
             currentMethod,
             suggestedMethod: bestMethod,
             potentialSavings
@@ -239,8 +315,23 @@ export interface SavingsAnalysis {
   savingsProgress: number;
 }
 
+// Define discretionary spending categories once instead of in every render
+const DISCRETIONARY_CATEGORIES = new Set([
+  'entertainment', 'dining', 'shopping', 'leisure',
+  'subscriptions', 'travel', 'hobbies', 'gifts',
+  'alcohol', 'coffee', 'electronics', 'clothing',
+  'beauty', 'fast food', 'food & drinks', 'food and drinks',
+  'home & entertainment', 'restaurants'
+].map(cat => cat.toLowerCase()));
+
+// Constants for savings calculations to avoid magic numbers
+const DISCRETIONARY_SAVINGS_RATE = 0.3; // 30% potential savings on discretionary spending
+const ESSENTIAL_SAVINGS_RATE = 0.05;    // 5% potential savings on essential spending
+const TOP_CATEGORIES_COUNT = 3;         // Number of top categories to return
+
 /**
  * Hook for analyzing spending patterns to identify savings opportunities
+ * Optimized for performance with large datasets
  * 
  * @param transactions - Transactions to analyze
  * @param savingsGoalPercentage - Target percentage of total spending to save
@@ -251,6 +342,7 @@ export function useSavingsPotential(
   savingsGoalPercentage: number = 20
 ): SavingsAnalysis {
   return useMemo(() => {
+    // Early return for empty data to avoid unnecessary processing
     if (!transactions || transactions.length === 0) {
       return {
         totalSpending: 0,
@@ -262,82 +354,103 @@ export function useSavingsPotential(
       };
     }
     
-    // Define discretionary spending categories
-    const discretionaryCategories = [
-      'Entertainment', 'Dining', 'Shopping', 'Leisure',
-      'Subscriptions', 'Travel', 'Hobbies', 'Gifts',
-      'Alcohol', 'Coffee', 'Electronics', 'Clothing',
-      'Beauty', 'Fast Food', 'Food & Drinks',
-      'Home & Entertainment'
-    ];
-    
-    // Calculate total spending
-    const totalSpending = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-    
-    // Group spending by category
-    const categorySpending = new Map<string, number>();
-    
-    transactions.forEach(tx => {
-      const category = tx.category || 'Uncategorized';
-      categorySpending.set(
-        category, 
-        (categorySpending.get(category) || 0) + tx.amount
-      );
-    });
-    
-    // Identify discretionary and essential spending
+    let totalSpending = 0;
     let discretionarySpending = 0;
-    const categoryData: CategorySavingsPotential[] = [];
+    let totalSavingsPotential = 0;
     
-    categorySpending.forEach((amount, category) => {
-      // Check if this category is considered discretionary spending
-      const isDiscretionary = discretionaryCategories.some(c => 
-        category.toLowerCase().includes(c.toLowerCase()) || 
-        c.toLowerCase().includes(category.toLowerCase())
-      );
+    // Category data storage with category name as key for faster lookups
+    const categoryData = new Map<string, CategorySavingsPotential>();
+    
+    // Single pass algorithm - process all transactions in one loop
+    // This combines the three separate loops in the original implementation
+    transactions.forEach(tx => {
+      const amount = tx.amount;
+      const category = tx.category || 'Uncategorized';
+      const categoryLower = category.toLowerCase();
       
-      // Calculate potential savings for this category
-      // For discretionary categories, estimate 30% potential savings
-      // For essential categories, estimate 5% potential savings
-      const savingsPotential = isDiscretionary ? amount * 0.3 : amount * 0.05;
+      // Add to total spending (replaces the first reduce)
+      totalSpending += amount;
       
-      if (isDiscretionary) {
+      // Get or create category data entry
+      let catData = categoryData.get(category);
+      if (!catData) {
+        // Check if this is a discretionary category (case-insensitive)
+        // Using the Set for O(1) lookups instead of array iteration
+        const isDiscretionary = DISCRETIONARY_CATEGORIES.has(categoryLower) ||
+          Array.from(DISCRETIONARY_CATEGORIES).some(c => 
+            categoryLower.includes(c) || c.includes(categoryLower)
+          );
+        
+        catData = {
+          category,
+          amount: 0,
+          discretionary: isDiscretionary,
+          savingsPotential: 0
+        };
+        categoryData.set(category, catData);
+      }
+      
+      // Update category amount
+      catData.amount += amount;
+      
+      // Recalculate savings potential for this category
+      const savingsRate = catData.discretionary ? DISCRETIONARY_SAVINGS_RATE : ESSENTIAL_SAVINGS_RATE;
+      catData.savingsPotential = catData.amount * savingsRate;
+      
+      // Update discretionary spending total
+      if (catData.discretionary) {
         discretionarySpending += amount;
       }
       
-      categoryData.push({
-        category,
-        amount,
-        discretionary: isDiscretionary,
-        savingsPotential
-      });
+      // Update total savings potential
+      totalSavingsPotential = 0; // Will recalculate below
     });
     
-    // Sort categories by savings potential and filter to discretionary only
-    const topDiscretionaryCategories = categoryData
-      .filter(cat => cat.discretionary)
-      .sort((a, b) => b.savingsPotential - a.savingsPotential)
-      .slice(0, 3);
+    // Calculate total savings potential from all categories
+    categoryData.forEach(cat => {
+      totalSavingsPotential += cat.savingsPotential;
+    });
     
-    // Calculate savings target and potential
+    // Calculate savings target based on goal percentage
     const savingsTarget = totalSpending * (savingsGoalPercentage / 100);
-    const savingsPotential = categoryData.reduce(
-      (sum, cat) => sum + cat.savingsPotential, 
-      0
-    );
     
-    // Calculate savings progress
+    // Calculate savings progress as percentage of target (capped at 100%)
     const savingsProgress = Math.min(
       100, 
-      savingsPotential > 0 ? (savingsPotential / savingsTarget) * 100 : 0
+      totalSavingsPotential > 0 && savingsTarget > 0 ? 
+        (totalSavingsPotential / savingsTarget) * 100 : 0
     );
+    
+    // Find top discretionary categories more efficiently
+    // Instead of filtering and sorting the entire array, we maintain a top N list
+    const topCategories: CategorySavingsPotential[] = [];
+    
+    categoryData.forEach(catData => {
+      if (!catData.discretionary) return; // Skip non-discretionary categories
+      
+      // Special case for first few items to avoid unnecessary comparisons
+      if (topCategories.length < TOP_CATEGORIES_COUNT) {
+        topCategories.push(catData);
+        // Sort after pushing to maintain descending order by savingsPotential
+        topCategories.sort((a, b) => b.savingsPotential - a.savingsPotential);
+        return;
+      }
+      
+      // Check if this category should replace the lowest in the top list
+      const lowestTopIndex = topCategories.length - 1;
+      if (catData.savingsPotential > topCategories[lowestTopIndex].savingsPotential) {
+        // Replace the lowest entry and resort
+        topCategories[lowestTopIndex] = catData;
+        topCategories.sort((a, b) => b.savingsPotential - a.savingsPotential);
+      }
+    });
     
     return {
       totalSpending,
       discretionarySpending,
       savingsTarget,
-      savingsPotential,
-      topDiscretionaryCategories,
+      savingsPotential: totalSavingsPotential,
+      topDiscretionaryCategories: topCategories,
       savingsProgress
     };
   }, [transactions, savingsGoalPercentage]);

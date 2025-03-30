@@ -31,22 +31,60 @@ const Dashboard: React.FC<DashboardProps> = ({
   // Use our custom filter hook to manage all filter state
   const filters = useDashboardFilters(defaultCurrency);
   
-  // Use the dashboard data hook with our filters
-  const dashboardData = useDashboard({
+  // Early optimization - avoid calculations for empty arrays
+  const hasTransactions = transactions.length > 0;
+  
+  // Memoize filter options object to prevent unnecessary hook calls
+  const dashboardOptions = useMemo(() => ({
     transactions,
     displayCurrency: filters.displayCurrency,
     timeframe: filters.activeTab,
     useStatementMonth: filters.useStatementMonth,
     statementCycleDay: filters.statementCycleDay,
-    calculateDayOfWeekMetrics: true
-  });
+    calculateDayOfWeekMetrics: hasTransactions // Only calculate when we have data
+  }), [
+    transactions, 
+    filters.displayCurrency, 
+    filters.activeTab, 
+    filters.useStatementMonth, 
+    filters.statementCycleDay,
+    hasTransactions
+  ]);
   
-  // Memoize recent transactions to avoid unnecessary processing
+  // Use the dashboard data hook with our memoized options
+  const dashboardData = useDashboard(dashboardOptions);
+  
+  // More efficient recent transactions calculation
+  // Finds 5 most recent without sorting the entire array
   const recentTransactions = useMemo(() => {
-    return transactions
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-  }, [transactions]);
+    if (!hasTransactions) return [];
+    
+    // Use a more efficient approach by maintaining a top-5 array
+    return transactions.reduce((recent, transaction) => {
+      const txDate = new Date(transaction.date).getTime();
+      
+      // If we have fewer than 5 items, simply add the new one
+      if (recent.length < 5) {
+        recent.push(transaction);
+        // Sort only when needed
+        if (recent.length === 5) {
+          recent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }
+        return recent;
+      }
+      
+      // Check if this transaction is more recent than the oldest in our array
+      const oldestDate = new Date(recent[recent.length - 1].date).getTime();
+      if (txDate > oldestDate) {
+        // Replace the oldest and re-sort
+        recent.pop();
+        recent.push(transaction);
+        recent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      }
+      
+      return recent;
+    }, [] as Transaction[]);
+  }, [transactions, hasTransactions]);
   
   // Early return for loading state
   if (loading) {
