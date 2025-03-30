@@ -32,17 +32,23 @@ const db = new ExpenseDatabase();
 function convertJsonToRewardRules(json: Json | null): RewardRule[] {
   if (!json) return [];
   if (Array.isArray(json)) {
-    return json.map(rule => ({
-      id: String(rule.id || ''),
-      name: String(rule.name || ''),
-      description: String(rule.description || ''),
-      type: (rule.type || 'generic') as 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic',
-      condition: Array.isArray(rule.condition) ? rule.condition.map(String) : String(rule.condition || ''),
-      pointsMultiplier: Number(rule.pointsMultiplier || 1),
-      minSpend: rule.minSpend ? Number(rule.minSpend) : undefined,
-      maxSpend: rule.maxSpend ? Number(rule.maxSpend) : undefined,
-      pointsCurrency: rule.pointsCurrency ? String(rule.pointsCurrency) : undefined
-    }));
+    return json.map(rule => {
+      // Ensure rule is an object
+      if (typeof rule !== 'object' || rule === null) return {} as RewardRule;
+      
+      const ruleObj = rule as Record<string, any>;
+      return {
+        id: String(ruleObj.id || ''),
+        name: String(ruleObj.name || ''),
+        description: String(ruleObj.description || ''),
+        type: (ruleObj.type || 'generic') as 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic',
+        condition: Array.isArray(ruleObj.condition) ? ruleObj.condition.map(String) : String(ruleObj.condition || ''),
+        pointsMultiplier: Number(ruleObj.pointsMultiplier || 1),
+        minSpend: ruleObj.minSpend ? Number(ruleObj.minSpend) : undefined,
+        maxSpend: ruleObj.maxSpend ? Number(ruleObj.maxSpend) : undefined,
+        pointsCurrency: ruleObj.pointsCurrency ? String(ruleObj.pointsCurrency) : undefined
+      };
+    });
   }
   return [];
 }
@@ -179,9 +185,19 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
         console.log(`Syncing ${paymentMethods.length} payment methods`);
         for (const pm of paymentMethods) {
           await db.paymentMethods.put({
-            ...pm,
+            id: pm.id,
+            name: pm.name,
+            type: pm.type as PaymentMethod['type'], // Cast to specific type
             currency: pm.currency as Currency,
-            rewardRules: convertJsonToRewardRules(pm.reward_rules)
+            rewardRules: convertJsonToRewardRules(pm.reward_rules),
+            active: pm.active,
+            lastFourDigits: pm.last_four_digits,
+            issuer: pm.issuer,
+            statementStartDay: pm.statement_start_day,
+            isMonthlyStatement: pm.is_monthly_statement,
+            icon: pm.icon,
+            color: pm.color,
+            imageUrl: pm.image_url
           });
         }
       }
@@ -196,8 +212,7 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
             address: merchant.address,
             coordinates: convertJsonToCoordinates(merchant.coordinates),
             mcc: convertJsonToMCC(merchant.mcc),
-            isOnline: merchant.is_online,
-            is_deleted: merchant.is_deleted
+            isOnline: merchant.is_online
           });
         }
       }
@@ -227,7 +242,7 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
             paymentMethod: {
               id: paymentMethod.id,
               name: paymentMethod.name,
-              type: paymentMethod.type,
+              type: paymentMethod.type as PaymentMethod['type'], // Cast to specific type
               currency: paymentMethod.currency as Currency,
               rewardRules: convertJsonToRewardRules(paymentMethod.reward_rules),
               active: paymentMethod.active,

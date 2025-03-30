@@ -3,6 +3,10 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
+import AddExpense from '@/pages/AddExpense';
+import RewardPoints from '@/pages/RewardPoints';
+import PaymentMethods from '@/pages/PaymentMethods';
+import NotFound from '@/pages/NotFound';
 import { initDatabase } from './services/LocalDatabaseService';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +39,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="/add-expense" element={<AddExpense />} />
+          <Route path="/reward-points" element={<RewardPoints />} />
+          <Route path="/payment-methods" element={<PaymentMethods />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
       <Toaster />
