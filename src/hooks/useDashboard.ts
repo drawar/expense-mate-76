@@ -111,12 +111,11 @@ export function useDashboard(options: DashboardOptions): DashboardData {
    */
   const paymentMethods = usePieChartData(filteredTransactions, 'paymentMethod', displayCurrency);
   const categories = usePieChartData(filteredTransactions, 'category', displayCurrency);
-  
+
   /**
-   * Generate spending trend data
+   * Map dashboard timeframe filter to chart period grouping
    */
-  const spendingTrends = useMemo(() => {
-    // Map dashboard timeframe filter to chart period grouping
+  const chartPeriod = useMemo(() => {
     const periodMapping: Record<string, 'week' | 'month' | 'quarter' | 'year'> = {
       'thisMonth': 'week',      // For current month view, group by week
       'lastMonth': 'week',      // For last month view, group by week
@@ -124,13 +123,25 @@ export function useDashboard(options: DashboardOptions): DashboardData {
       'thisYear': 'month'      // For yearly view, group by month
     };
     
-    const chartPeriod = periodMapping[timeframe] || 'month';
-    
-    return useSpendingTrendData(filteredTransactions, chartPeriod, {
-      includeCategoryBreakdown: true,
-      displayCurrency
-    });
-  }, [filteredTransactions, timeframe, displayCurrency]);
+    return periodMapping[timeframe] || 'month';
+  }, [timeframe]);
+
+  /**
+   * Memoize options for spending trend data
+   */
+  const spendingTrendOptions = useMemo(() => ({
+    includeCategoryBreakdown: true,
+    displayCurrency
+  }), [displayCurrency]);
+  
+  /**
+   * Generate spending trend data - now at the top level with memoized options
+   */
+  const spendingTrends = useSpendingTrendData(
+    filteredTransactions, 
+    chartPeriod, 
+    spendingTrendOptions
+  );
 
   /**
    * Calculate day-of-week spending metrics (optional)

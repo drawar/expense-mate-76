@@ -1,11 +1,11 @@
 // src/components/dashboard/SummarySection.tsx
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatCurrency } from '@/utils/formatting';
 import { DashboardData } from '@/types/dashboardTypes';
 import SummaryCard from './SummaryCard';
 import { BarChartIcon, ReceiptIcon, CreditCardIcon, CoinsIcon } from 'lucide-react';
 import { Currency } from '@/types';
+import { useCurrencyFormatter } from '@/hooks/useCurrencyFormatter';
 
 /**
  * Props for SummarySection component
@@ -20,6 +20,7 @@ interface SummarySectionProps {
 /**
  * Displays summary cards with key metrics for the dashboard
  * No longer contains filter controls (moved to FilterBar)
+ * Optimized to use currency formatting hook
  */
 const SummarySection: React.FC<SummarySectionProps> = ({
   dashboardData,
@@ -29,6 +30,9 @@ const SummarySection: React.FC<SummarySectionProps> = ({
 }) => {
   // Destructure metrics for easier access
   const { metrics, top, filteredTransactions } = dashboardData;
+  
+  // Use the custom currency formatter hook
+  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
   // Handle tab change if provided
   const handleTabChange = (value: string) => {
@@ -36,6 +40,8 @@ const SummarySection: React.FC<SummarySectionProps> = ({
       onTabChange(value);
     }
   };
+  
+  console.log("SummarySection rendering");
 
   return (
     <div className="space-y-4 w-full">
@@ -55,7 +61,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
             <SummaryCard
               title="Total Expenses"
               icon={<BarChartIcon className="h-5 w-5 text-primary" />}
-              value={formatCurrency(metrics.totalExpenses, displayCurrency)}
+              value={formatCurrency(metrics.totalExpenses)}
               trend={metrics.percentageChange}
               cardColor="bg-gradient-to-br from-violet-500/10 to-purple-600/10"
               valueColor="text-violet-800 dark:text-violet-300"
@@ -66,7 +72,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               title="Transactions"
               icon={<ReceiptIcon className="h-5 w-5 text-primary" />}
               value={metrics.transactionCount.toString()}
-              description={`Avg ${formatCurrency(metrics.averageAmount, displayCurrency)} per transaction`}
+              description={`Avg ${formatCurrency(metrics.averageAmount)} per transaction`}
               cardColor="bg-gradient-to-br from-blue-500/10 to-indigo-600/10"
               valueColor="text-blue-800 dark:text-blue-300"
             />
@@ -77,7 +83,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               icon={<CreditCardIcon className="h-5 w-5 text-primary" />}
               value={top.paymentMethod?.name || "N/A"}
               description={top.paymentMethod 
-                ? `${formatCurrency(top.paymentMethod.value, displayCurrency)} spent` 
+                ? `${formatCurrency(top.paymentMethod.value)} spent` 
                 : "No data"}
               cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
               valueColor="text-fuchsia-800 dark:text-fuchsia-300"

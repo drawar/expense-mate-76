@@ -3,14 +3,13 @@ import React, { useMemo } from 'react';
 import { BarChart as RechartsBar, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Currency } from '@/types';
-import { formatCurrency } from '@/utils/formatting';
 import { Transaction } from '@/types';
 import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
 import { 
   processTransactionsForChart, 
-  ProcessedChartItem,
-  calculatePercentageChange 
+  ProcessedChartItem
 } from '@/utils/chartDataProcessor';
+import { useChartCurrencyFormatter } from '@/hooks/useCurrencyFormatter';
 
 export interface BarChartProps {
   title: string;
@@ -27,6 +26,7 @@ export interface BarChartProps {
 /**
  * Reusable bar chart component for displaying time-based data
  * Uses consolidated chart processing utility for consistent formatting
+ * Optimized with custom hooks for currency formatting
  */
 const BarChart: React.FC<BarChartProps> = ({
   title,
@@ -39,49 +39,65 @@ const BarChart: React.FC<BarChartProps> = ({
   className = '',
   showInsights = true
 }) => {
+  // Use the chart currency formatter hook
+  const { tooltipFormatter, axisFormatter } = useChartCurrencyFormatter(currency);
+  
   // Process data for the chart using our utility
   const { chartData, trend, average, topCategories } = useMemo(() => {
+    console.log(`Processing chart data for ${transactions.length} transactions`);
     return processTransactionsForChart(transactions, {
       period,
       includeCategoryBreakdown: true,
       maxTopCategories: 3,
-      includeTrend: true
+      includeTrend: true,
+      displayCurrency: currency
     });
-  }, [transactions, period]);
+  }, [transactions, period, currency]);
   
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as ProcessedChartItem;
-      
-      return (
-        <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
-          <p className="font-medium">{label}</p>
-          <p className="text-primary text-lg font-semibold">
-            {formatCurrency(payload[0].value, currency)}
-          </p>
-          
-          {showInsights && data.topCategories && data.topCategories.length > 0 && (
-            <>
-              <p className="mt-2 font-medium text-xs text-muted-foreground">Top Categories:</p>
-              <div className="mt-1 space-y-1">
-                {data.topCategories.map((cat, index) => (
-                  <div key={index} className="flex justify-between text-xs">
-                    <span>{cat.category}</span>
-                    <span>{formatCurrency(cat.amount, currency)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
+  // Memoize tooltip component to prevent unnecessary re-renders
+  const CustomTooltip = useMemo(() => {
+    // Return a function component for the tooltip
+    return function TooltipComponent({ active, payload, label }: any) {
+      if (active && payload && payload.length) {
+        const data = payload[0].payload as ProcessedChartItem;
+        
+        // Pre-format currency values
+        const amountFormatted = axisFormatter(payload[0].value);
+        
+        return (
+          <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
+            <p className="font-medium">{label}</p>
+            <p className="text-primary text-lg font-semibold">
+              {amountFormatted}
+            </p>
+            
+            {showInsights && data.topCategories && data.topCategories.length > 0 && (
+              <>
+                <p className="mt-2 font-medium text-xs text-muted-foreground">Top Categories:</p>
+                <div className="mt-1 space-y-1">
+                  {data.topCategories.map((cat, index) => {
+                    // Pre-format category amounts
+                    const catAmountFormatted = axisFormatter(cat.amount);
+                    
+                    return (
+                      <div key={index} className="flex justify-between text-xs">
+                        <span>{cat.category}</span>
+                        <span>{catAmountFormatted}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      }
+      return null;
+    };
+  }, [showInsights, axisFormatter]);
   
   // Generate spending insights component
-  const renderInsights = () => {
+  const renderInsights = useMemo(() => {
     if (chartData.length < 2) {
       return <p>Not enough data for meaningful insights</p>;
     }
@@ -95,6 +111,7 @@ const BarChart: React.FC<BarChartProps> = ({
     
     // Find the highest spending category
     const topCategory = topCategories[0];
+    const topCategoryAmountFormatted = topCategory ? axisFormatter(topCategory.amount) : '';
     
     return (
       <div className="mt-2 text-sm space-y-1">
@@ -107,12 +124,12 @@ const BarChart: React.FC<BarChartProps> = ({
         
         {topCategory && (
           <p className="text-muted-foreground">
-            Highest spending: {formatCurrency(topCategory.amount, currency)} on {topCategory.category}
+            Highest spending: {topCategoryAmountFormatted} on {topCategory.category}
           </p>
         )}
       </div>
     );
-  };
+  }, [chartData.length, trend, topCategories, axisFormatter]);
   
   // Empty state
   if (chartData.length === 0) {
@@ -132,6 +149,8 @@ const BarChart: React.FC<BarChartProps> = ({
       </Card>
     );
   }
+  
+  console.log(`Rendering BarChart with ${chartData.length} data points`);
 
   return (
     <Card className={`${className}`}>
@@ -159,9 +178,9 @@ const BarChart: React.FC<BarChartProps> = ({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 12 }}
-                tickFormatter={(value) => formatCurrency(value, currency)}
+                tickFormatter={axisFormatter}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={CustomTooltip} />
               <Bar 
                 dataKey="amount" 
                 fill={barColor}
@@ -173,7 +192,7 @@ const BarChart: React.FC<BarChartProps> = ({
         </div>
         
         {/* Show insights if enabled */}
-        {showInsights && renderInsights()}
+        {showInsights && renderInsights}
       </CardContent>
     </Card>
   );

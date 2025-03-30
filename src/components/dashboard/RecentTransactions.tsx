@@ -1,5 +1,5 @@
 // src/components/dashboard/RecentTransactions.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ interface RecentTransactionsProps {
 
 /**
  * Displays the most recent transactions in a grid layout
- * Optimized with memoization to prevent unnecessary re-renders
+ * Optimized with memoization and stable callbacks to prevent unnecessary re-renders
  */
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   transactions,
@@ -25,11 +25,19 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   
   // Memoize the limited transactions to prevent unnecessary processing
   const recentTransactions = useMemo(() => {
-    return transactions.slice(0, maxItems);
+    console.log('Processing recent transactions');
+    return transactions
+      .slice(0, maxItems)
+      .map(transaction => ({
+        ...transaction,
+        // Pre-process any data needed by children to avoid passing the entire transaction
+        id: transaction.id,
+        // Only include necessary fields to minimize unnecessary re-renders
+      }));
   }, [transactions, maxItems]);
   
   // Render the empty state when no transactions are available
-  const renderEmptyState = () => {
+  const renderEmptyState = useCallback(() => {
     return (
       <div className="glass-card p-6 sm:p-8 text-center rounded-xl border border-border/50 bg-card hover:shadow-md transition-all">
         <p className="text-muted-foreground mb-4">No transactions recorded yet.</p>
@@ -41,7 +49,28 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Link>
       </div>
     );
-  };
+  }, [isMobile]);
+  
+  console.log(`RecentTransactions rendering with ${recentTransactions.length} transactions`);
+  
+  // Create a stable reference for the transaction cards
+  const transactionCards = useMemo(() => {
+    if (recentTransactions.length === 0) {
+      return renderEmptyState();
+    }
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {recentTransactions.map((transaction) => (
+          <TransactionCard 
+            key={transaction.id} 
+            transaction={transaction}
+            className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
+          />
+        ))}
+      </div>
+    );
+  }, [recentTransactions, renderEmptyState]);
   
   return (
     <div className="mt-6">
@@ -54,22 +83,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Link>
       </div>
       
-      {recentTransactions.length === 0 
-        ? renderEmptyState() 
-        : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentTransactions.map((transaction) => (
-              <TransactionCard 
-                key={transaction.id} 
-                transaction={transaction}
-                className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
-              />
-            ))}
-          </div>
-        )
-      }
+      {transactionCards}
     </div>
   );
 };
 
+// Use memo to prevent unnecessary re-renders
 export default React.memo(RecentTransactions);

@@ -1,5 +1,5 @@
 // src/containers/DashboardContainer.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { tryCatchWrapper, ErrorType } from '@/utils/errorHandling';
  * Container component responsible for data fetching and state management
  * for the Dashboard page. Implements the container pattern by separating
  * data management from presentation logic.
+ * Optimized to prevent unnecessary re-renders of child components.
  */
 const DashboardContainer: React.FC = () => {
   // State for holding dashboard data
@@ -19,11 +20,13 @@ const DashboardContainer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState<boolean>(false);
+  const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(Date.now());
   
   const { toast } = useToast();
   
   // Load dashboard data with proper error handling
   const loadData = useCallback(async () => {
+    console.log('Loading dashboard data');
     try {
       if (!initialized) {
         setLoading(true);
@@ -62,6 +65,7 @@ const DashboardContainer: React.FC = () => {
       setPaymentMethods(loadedPaymentMethods);
       setLoading(false);
       setError(null);
+      setLastUpdateTimestamp(Date.now());
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load dashboard data');
@@ -107,15 +111,18 @@ const DashboardContainer: React.FC = () => {
       supabase.removeChannel(channel);
     };
   }, [loadData]);
+
+  // Create stable props object for Dashboard component to prevent unnecessary re-renders
+  const dashboardProps = useMemo(() => ({
+    transactions,
+    paymentMethods,
+    loading,
+    defaultCurrency: "SGD" as Currency
+  }), [transactions, paymentMethods, loading, lastUpdateTimestamp]);
   
-  return (
-    <Dashboard
-      transactions={transactions}
-      paymentMethods={paymentMethods}
-      loading={loading}
-      defaultCurrency="SGD"
-    />
-  );
+  console.log(`DashboardContainer rendering, data updated at: ${new Date(lastUpdateTimestamp).toISOString()}`);
+  
+  return <Dashboard {...dashboardProps} />;
 };
 
 export default DashboardContainer;

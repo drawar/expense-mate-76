@@ -47,13 +47,12 @@ export function useSpendingTrendData(
     displayCurrency?: Currency; 
   } = {}
 ): ChartProcessingResult {
+  // Extract options with defaults to use as direct dependencies
+  const includeCategoryBreakdown = options.includeCategoryBreakdown ?? true;
+  const maxTopCategories = options.maxTopCategories ?? 3;
+  const displayCurrency = options.displayCurrency ?? 'SGD';
+  
   return useMemo(() => {
-    const {
-      includeCategoryBreakdown = true,
-      maxTopCategories = 3,
-      displayCurrency = 'SGD'
-    } = options;
-    
     return processTransactionsForChart(transactions, {
       period,
       includeCategoryBreakdown,
@@ -61,7 +60,13 @@ export function useSpendingTrendData(
       includeTrend: true,
       displayCurrency
     });
-  }, [transactions, period, options]);
+  }, [
+    transactions, 
+    period, 
+    includeCategoryBreakdown, 
+    maxTopCategories, 
+    displayCurrency
+  ]);
 }
 
 /**
