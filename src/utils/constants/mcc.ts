@@ -2,6 +2,7 @@
 export const MCC_CODES = (() => {
   // Original list of codes
   const originalCodes = [
+    { code: '1520', description: 'General Contractors–Residential and Commercial' },    
     { code: '5411', description: 'Grocery Stores & Supermarkets' },
     { code: '5812', description: 'Restaurants & Eating Places' },
     { code: '5814', description: 'Fast Food Restaurants' },
@@ -112,6 +113,7 @@ export const MCC_CODES = (() => {
     { code: '5997', description: 'Electric Razor Stores–Sales and Service' },
     { code: '5998', description: 'Tent and Awning Shops' },
     { code: '5999', description: 'Miscellaneous and Specialty Retail Stores' },
+    { code: '6513', description: 'Real Estate Agents and Managers–Rentals' },
     
     { code: '7230', description: 'Barber and Beauty Shops' },
     { code: '7251', description: 'Hat Cleaning Shops, Shoe Repair Shops, Shoe Shine Parlors' },
