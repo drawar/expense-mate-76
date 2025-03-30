@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
@@ -10,11 +10,15 @@ import NotFound from '@/pages/NotFound';
 import { initDatabase } from './services/LocalDatabaseService';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import Navbar from '@/components/layout/Navbar';
 import { ThemeProvider } from '@/components/theme/theme-provider';
+import Sidebar from '@/components/layout/Sidebar';
+import MobileNavbar from '@/components/layout/MobileNavbar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function App() {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   
   // Initialize the local database when the app starts
   useEffect(() => {
@@ -38,19 +42,33 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="expense-tracker-theme">
       <Router>
-        <Navbar />
-        <main className="container mx-auto p-4 pt-0">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/add-expense" element={<AddExpense />} />
-            <Route path="/reward-points" element={<RewardPoints />} />
-            <Route path="/payment-methods" element={<PaymentMethods />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+        <div className="flex h-screen">
+          {/* Desktop Sidebar */}
+          {!isMobile && (
+            <Sidebar 
+              expanded={sidebarExpanded} 
+              onToggle={() => setSidebarExpanded(!sidebarExpanded)} 
+            />
+          )}
+          
+          <div className={`flex flex-col flex-1 ${isMobile ? 'pb-16' : ''}`}>
+            <main className="container mx-auto p-4 pt-0 flex-1 overflow-y-auto">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/add-expense" element={<AddExpense />} />
+                <Route path="/reward-points" element={<RewardPoints />} />
+                <Route path="/payment-methods" element={<PaymentMethods />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            
+            {/* Mobile Bottom Navigation */}
+            {isMobile && <MobileNavbar />}
+          </div>
+        </div>
+        <Toaster />
       </Router>
-      <Toaster />
     </ThemeProvider>
   );
 }
