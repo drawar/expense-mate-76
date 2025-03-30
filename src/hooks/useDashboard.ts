@@ -2,23 +2,34 @@
 import { useMemo } from 'react';
 import { Transaction, Currency } from '@/types';
 import { DashboardData, DashboardOptions } from '@/types/dashboardTypes';
-import { filterTransactionsByTimeframe, getDaysInPeriod, TimeframeTab } from '@/utils/transactionProcessor';
+import { filterTransactionsByTimeframe, getDaysInPeriod } from '@/utils/transactionProcessor';
+import { usePieChartData, useSpendingTrendData } from '@/hooks/useChartData';
 import {
   calculateTotalExpenses,
   calculatePercentageChange,
   calculateAverageAmount,
   calculateTotalRewardPoints,
   calculateTransactionVelocity,
-  calculateAverageByDayOfWeek
-} from '@/utils/dashboardCalculations';
-import { usePieChartData } from '@/hooks/useChartData';
+  calculateAverageByDayOfWeek,
+  getTopChartItem,
+  getPreviousTimeframe,
+  hasEnoughDataForTrends
+} from '@/utils/dashboardUtils';
 
 /**
  * Custom hook that processes transaction data and calculates dashboard metrics
- * Uses memoization to avoid unnecessary recalculations
+ * 
+ * This hook is responsible for:
+ * 1. Filtering transactions based on selected timeframe
+ * 2. Calculating key metrics (expenses, counts, averages)
+ * 3. Generating chart data for visualizations
+ * 4. Computing comparison metrics with previous periods
+ * 
+ * @param options Configuration options for dashboard processing
+ * @returns Processed dashboard data ready for display
  */
 export function useDashboard(options: DashboardOptions): DashboardData {
-  // Extract and set default options
+  // Extract and set default options with destructuring
   const {
     transactions = [],
     displayCurrency = 'SGD',
@@ -30,7 +41,9 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     calculateVelocity = false
   } = options;
 
-  // Filter transactions based on timeframe
+  /**
+   * Filter transactions for the current timeframe
+   */
   const filteredTransactions = useMemo(() => 
     filterTransactionsByTimeframe(
       transactions,
@@ -41,18 +54,22 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     [transactions, timeframe, useStatementMonth, statementCycleDay]
   );
 
-  // Filter previous period transactions
+  /**
+   * Generate previous period transactions for comparison
+   */
   const filteredPreviousPeriodTransactions = useMemo(() => {
-    if (previousPeriodTransactions.length === 0) {
-      // If no previous transactions provided, generate them from current dataset
-      // Make sure we only use valid TimeframeTab values
-      let prevTimeframe: TimeframeTab = 'lastMonth';
+    if (previousPeriodTransactions.length > 0) {
+      // If explicit previous transactions provided, use those
+      return filterTransactionsByTimeframe(
+        previousPeriodTransactions,
+        timeframe,
+        useStatementMonth,
+        statementCycleDay
+      );
+    } else {
+      // Otherwise, generate from current dataset using an appropriate previous timeframe
+      const prevTimeframe = getPreviousTimeframe(timeframe);
       
-      if (timeframe === 'thisMonth') prevTimeframe = 'lastMonth';
-      else if (timeframe === 'lastMonth') prevTimeframe = 'lastThreeMonths';
-      else if (timeframe === 'lastThreeMonths') prevTimeframe = 'thisYear';
-      else prevTimeframe = 'lastMonth';
-        
       return filterTransactionsByTimeframe(
         transactions,
         prevTimeframe,
@@ -60,58 +77,82 @@ export function useDashboard(options: DashboardOptions): DashboardData {
         statementCycleDay
       );
     }
-    
-    return filterTransactionsByTimeframe(
-      previousPeriodTransactions,
-      timeframe,
-      useStatementMonth,
-      statementCycleDay
-    );
   }, [previousPeriodTransactions, transactions, timeframe, useStatementMonth, statementCycleDay]);
 
-  // Calculate basic metrics
+  /**
+   * Calculate primary financial metrics
+   */
   const basicMetrics = useMemo(() => {
+    // Current period metrics
     const totalExpenses = calculateTotalExpenses(filteredTransactions, displayCurrency);
     const transactionCount = filteredTransactions.length;
     const averageAmount = calculateAverageAmount(totalExpenses, transactionCount);
     const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
     
-    // Calculate comparison metrics
+    // Comparison metrics with previous period
     const previousExpenses = calculateTotalExpenses(filteredPreviousPeriodTransactions, displayCurrency);
     const percentageChange = calculatePercentageChange(totalExpenses, previousExpenses);
+    
+    // Check if we have enough data for meaningful metrics
+    const hasEnoughData = hasEnoughDataForTrends(filteredTransactions);
     
     return {
       totalExpenses,
       transactionCount,
       averageAmount,
       totalRewardPoints,
-      percentageChange
+      percentageChange,
+      hasEnoughData
     };
   }, [filteredTransactions, filteredPreviousPeriodTransactions, displayCurrency]);
 
-  // Use our custom hooks for chart data
+  /**
+   * Generate chart data using specialized hooks
+   */
   const paymentMethods = usePieChartData(filteredTransactions, 'paymentMethod', displayCurrency);
   const categories = usePieChartData(filteredTransactions, 'category', displayCurrency);
+  
+  /**
+   * Generate spending trend data
+   */
+  const spendingTrends = useMemo(() => {
+    // Map dashboard timeframe filter to chart period grouping
+    const periodMapping: Record<string, 'week' | 'month' | 'quarter' | 'year'> = {
+      'thisMonth': 'week',      // For current month view, group by week
+      'lastMonth': 'week',      // For last month view, group by week
+      'lastThreeMonths': 'month', // For quarterly view, group by month
+      'thisYear': 'month'      // For yearly view, group by month
+    };
+    
+    const chartPeriod = periodMapping[timeframe] || 'month';
+    
+    return useSpendingTrendData(filteredTransactions, chartPeriod, {
+      includeCategoryBreakdown: true,
+      displayCurrency
+    });
+  }, [filteredTransactions, timeframe, displayCurrency]);
 
-  // Compute day of week spending if requested
+  /**
+   * Calculate day-of-week spending metrics (optional)
+   */
   const dayOfWeekSpending = useMemo(() => {
     if (!calculateDayOfWeekMetrics) return undefined;
     return calculateAverageByDayOfWeek(filteredTransactions, displayCurrency);
   }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics]);
 
-  // Get top values
+  /**
+   * Extract top values from chart data for summary display
+   */
   const topValues = useMemo(() => {
     return {
-      paymentMethod: paymentMethods.length > 0 
-        ? { name: paymentMethods[0].name, value: paymentMethods[0].value } 
-        : undefined,
-      category: categories.length > 0 
-        ? { name: categories[0].name, value: categories[0].value } 
-        : undefined
+      paymentMethod: getTopChartItem(paymentMethods),
+      category: getTopChartItem(categories)
     };
   }, [paymentMethods, categories]);
 
-  // Calculate additional metrics if enabled
+  /**
+   * Calculate additional optional metrics
+   */
   const additionalMetrics = useMemo(() => {
     const metrics: { transactionVelocity?: number } = {};
     
@@ -126,18 +167,28 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     return metrics;
   }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity]);
 
-  // Return combined dashboard data
+  /**
+   * Combine all calculated data into the final dashboard data structure
+   */
   return {
+    // Raw filtered transaction data
     filteredTransactions,
+    
+    // Combined metrics
     metrics: {
       ...basicMetrics,
       ...additionalMetrics
     },
+    
+    // Top values for summary display
     top: topValues,
+    
+    // Chart data for visualizations
     charts: {
       paymentMethods,
       categories,
-      dayOfWeekSpending
+      dayOfWeekSpending,
+      spendingTrends
     }
   };
 }

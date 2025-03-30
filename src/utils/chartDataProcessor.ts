@@ -1,95 +1,172 @@
 // src/utils/chartDataProcessor.ts
 import { Transaction, Currency } from '@/types';
-import { convertCurrency } from './currencyConversion';
+import { convertCurrency } from '@/utils/currencyConversion';
+import { CHART_COLORS } from '@/utils/dashboardCalculations';
 
 /**
- * Period grouping types for chart data
+ * Standard chart data format used across visualizations
  */
-export type GroupingPeriod = 'day' | 'week' | 'month' | 'year';
+export interface ChartDataItem {
+  /** Display name for the data item */
+  name: string;
+  /** Numerical value of the data item */
+  value: number;
+  /** Color to use when rendering this item (hex format) */
+  color: string;
+  /** Optional percentage relative to the total (calculated during processing) */
+  percentage?: number;
+}
 
 /**
- * Chart data item with display properties
+ * Processed data for bar chart items with additional metadata
  */
-export interface ProcessedChartItem {
+export interface ProcessedChartItem extends ChartDataItem {
+  /** Period label (e.g., "Jan", "Q1", "Week 1") */
   period: string;
-  amount: number;
+  /** Original date/time key before formatting */
   originalKey: string;
+  /** Top spending categories for this period */
   topCategories?: Array<{ category: string; amount: number }>;
 }
 
 /**
- * Result of chart data processing
+ * Result of chart data processing with trend analysis
  */
 export interface ChartProcessingResult {
+  /** Formatted data ready for chart rendering */
   chartData: ProcessedChartItem[];
+  /** Percentage change compared to previous period */
   trend: number;
+  /** Average value across all periods */
   average: number;
+  /** Top categories across all periods */
   topCategories: Array<{ category: string; amount: number }>;
 }
 
 /**
- * Options for grouping transactions
+ * Options for chart data processing
  */
-export interface GroupingOptions {
-  period: 'week' | 'month' | 'quarter' | 'year';
+export interface ChartProcessingOptions {
+  /** Time period grouping ('day', 'week', 'month', 'year') */
+  period?: 'week' | 'month' | 'quarter' | 'year';
+  /** Whether to include category breakdown for tooltip display */
   includeCategoryBreakdown?: boolean;
+  /** Maximum number of top categories to include */
   maxTopCategories?: number;
+  /** Whether to calculate trend percentage */
   includeTrend?: boolean;
+  /** Currency for display and conversion */
+  displayCurrency?: Currency;
 }
 
 /**
- * Map period type to appropriate grouping
+ * Process transaction data into pie chart format
+ * 
+ * @param transactions - Transactions to process
+ * @param groupByField - Field to group by (paymentMethod, category, etc.)
+ * @param displayCurrency - Currency to convert values to
+ * @param colorPalette - Color scheme to use
+ * @returns Array of formatted chart data items
  */
-const periodMappings: Record<string, GroupingPeriod> = {
-  'week': 'day',
-  'month': 'week',
-  'quarter': 'month',
-  'year': 'month'
-};
+/**
+ * Process transactions into pie chart data format
+ * 
+ * @param transactions - Transactions to process
+ * @param groupByField - Field to group by (paymentMethod, category, etc.)
+ * @param displayCurrency - Currency to convert values to
+ * @param colorPalette - Color scheme to use
+ * @returns Array of formatted chart data items
+ */
+export function processPieChartData(
+  transactions: Transaction[],
+  groupByField: 'paymentMethod' | 'category' | string,
+  displayCurrency: Currency,
+  colorPalette: string[] = CHART_COLORS
+): ChartDataItem[] {
+  if (!transactions || transactions.length === 0) return [];
+  
+  // Group transactions by the specified field
+  const groups = new Map<string, number>();
+  
+  transactions.forEach(tx => {
+    let key = 'Uncategorized';
+    
+    if (groupByField === 'paymentMethod') {
+      key = tx.paymentMethod?.name || 'Unknown';
+    } else if (groupByField === 'category') {
+      key = tx.category || 'Uncategorized';
+    } else if (tx[groupByField as keyof Transaction]) {
+      // Handle other potential grouping fields
+      key = String(tx[groupByField as keyof Transaction]);
+    }
+    
+    // Convert amount to display currency
+    const convertedAmount = convertCurrency(
+      tx.amount,
+      tx.currency as Currency,
+      displayCurrency,
+      tx.paymentMethod
+    );
+    
+    groups.set(key, (groups.get(key) || 0) + convertedAmount);
+  });
+  
+  // Calculate total for percentage calculations
+  const total = Array.from(groups.values()).reduce((sum, value) => sum + value, 0);
+  
+  // Convert to chart data array with colors
+  return Array.from(groups.entries())
+    .map(([name, value], index) => ({
+      name,
+      value,
+      color: colorPalette[index % colorPalette.length],
+      percentage: total > 0 ? (value / total) * 100 : 0
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by value descending
+}
 
 /**
- * Group transactions by time period
+ * Groups transactions by time period (day, week, month, year)
+ * 
+ * @param transactions - Transactions to group
+ * @param groupBy - Time period to group by
+ * @returns Map of date keys to transaction arrays
  */
 export function groupTransactionsByPeriod(
   transactions: Transaction[],
-  groupBy: GroupingPeriod
+  groupBy: 'day' | 'week' | 'month' | 'year'
 ): Map<string, Transaction[]> {
   const grouped = new Map<string, Transaction[]>();
   
-  if (!transactions || transactions.length === 0) {
-    return grouped;
-  }
-  
-  transactions.forEach(tx => {
-    const txDate = new Date(tx.date);
+  transactions.forEach(transaction => {
+    const date = new Date(transaction.date);
     let key: string;
     
-    // Create the appropriate date key based on the grouping period
     switch (groupBy) {
       case 'day':
-        key = txDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
         break;
       case 'week':
         // Get the start of the week (Sunday)
-        const startOfWeek = new Date(txDate);
-        startOfWeek.setDate(txDate.getDate() - txDate.getDay());
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
         key = startOfWeek.toISOString().split('T')[0];
         break;
       case 'month':
-        key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         break;
       case 'year':
-        key = `${txDate.getFullYear()}`;
+        key = `${date.getFullYear()}`;
         break;
       default:
-        key = txDate.toISOString().split('T')[0];
+        key = date.toISOString().split('T')[0]; // Default to day
     }
     
     if (!grouped.has(key)) {
       grouped.set(key, []);
     }
     
-    grouped.get(key)?.push(tx);
+    grouped.get(key)?.push(transaction);
   });
   
   return grouped;
@@ -97,200 +174,153 @@ export function groupTransactionsByPeriod(
 
 /**
  * Get top spending categories for a set of transactions
+ * 
+ * @param transactions - Transactions to analyze
+ * @param maxCategories - Maximum number of categories to return
+ * @returns Array of category and amount pairs
  */
-export function getTopCategoriesForTransactions(
+export function getTopCategoriesForPeriod(
   transactions: Transaction[],
   maxCategories: number = 3
 ): Array<{ category: string; amount: number }> {
-  if (!transactions || transactions.length === 0) {
-    return [];
-  }
-  
   // Group by category
   const categoryMap = new Map<string, number>();
   
   transactions.forEach(tx => {
     if (!tx.category) return;
     
-    const category = tx.category || 'Uncategorized';
-    const existingAmount = categoryMap.get(category) || 0;
-    categoryMap.set(category, existingAmount + tx.amount);
+    const existingAmount = categoryMap.get(tx.category) || 0;
+    categoryMap.set(tx.category, existingAmount + tx.amount);
   });
   
   // Convert to array and sort by amount (descending)
-  return Array.from(categoryMap.entries())
+  const categories = Array.from(categoryMap.entries())
     .map(([category, amount]) => ({ category, amount }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, maxCategories);
-}
-
-/**
- * Format a period key for display
- */
-export function formatPeriodKey(key: string, groupBy: GroupingPeriod): string {
-  switch (groupBy) {
-    case 'day':
-      return new Date(key).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    case 'week': {
-      const startDate = new Date(key);
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      return `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(undefined, { day: 'numeric' })}`;
-    }
-    case 'month': {
-      const [year, month] = key.split('-');
-      return new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-    }
-    case 'year':
-      return key;
-    default:
-      return key;
-  }
+    .sort((a, b) => b.amount - a.amount);
+  
+  return categories.slice(0, maxCategories);
 }
 
 /**
  * Calculate percentage change between two values
+ * 
+ * @param current - Current value
+ * @param previous - Previous value
+ * @returns Percentage change
  */
 export function calculatePercentageChange(current: number, previous: number): number {
   if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
+  return ((current - previous) / Math.abs(previous)) * 100;
 }
 
 /**
- * Process transactions for chart visualization
+ * Process transactions for time-based chart visualization
+ * 
+ * @param transactions - Transactions to process
+ * @param options - Processing options
+ * @returns Processed chart data with trends and insights
  */
 export function processTransactionsForChart(
   transactions: Transaction[],
-  options: GroupingOptions
+  options: ChartProcessingOptions = {}
 ): ChartProcessingResult {
-  if (!transactions || transactions.length === 0) {
-    return { 
-      chartData: [], 
-      trend: 0, 
+  const {
+    period = 'month',
+    includeCategoryBreakdown = true,
+    maxTopCategories = 3,
+    includeTrend = true,
+    displayCurrency = 'SGD'
+  } = options;
+  
+  if (transactions.length === 0) {
+    return {
+      chartData: [],
+      trend: 0,
       average: 0,
-      topCategories: [] 
+      topCategories: []
     };
   }
   
   // Determine the grouping period based on selected time frame
-  const groupBy = periodMappings[options.period] || 'month';
+  const periodMapping: Record<string, 'day' | 'week' | 'month' | 'year'> = {
+    week: 'day',
+    month: 'week',
+    quarter: 'month',
+    year: 'month'
+  };
   
   // Group transactions by date
-  const groupedTransactions = groupTransactionsByPeriod(transactions, groupBy as GroupingPeriod);
-  
-  // Get top categories for the full dataset
-  const allTopCategories = getTopCategoriesForTransactions(
+  const groupedTransactions = groupTransactionsByPeriod(
     transactions, 
-    options.maxTopCategories || 3
+    periodMapping[period] || 'month'
   );
   
-  // Get all keys and sort them chronologically
+  // Get top categories for the most recent period
   const sortedKeys = Array.from(groupedTransactions.keys()).sort();
+  const latestKey = sortedKeys[sortedKeys.length - 1];
+  const latestTransactions = latestKey 
+    ? (groupedTransactions.get(latestKey) || []) 
+    : [];
   
-  // Process each time period
-  const processedData = sortedKeys.map(key => {
+  // Get top categories
+  const topCats = getTopCategoriesForPeriod(latestTransactions, maxTopCategories);
+  
+  // Format keys for display
+  const processedChartData = sortedKeys.map(key => {
     const periodTransactions = groupedTransactions.get(key) || [];
     const total = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
     
-    const result: ProcessedChartItem = {
-      period: formatPeriodKey(key, groupBy as GroupingPeriod),
-      amount: total,
-      originalKey: key,
-    };
+    // Get top categories for this period if requested
+    const periodTopCategories = includeCategoryBreakdown 
+      ? getTopCategoriesForPeriod(periodTransactions, maxTopCategories)
+      : [];
     
-    // Add category breakdown if requested
-    if (options.includeCategoryBreakdown) {
-      result.topCategories = getTopCategoriesForTransactions(
-        periodTransactions, 
-        options.maxTopCategories || 3
-      );
+    // Format the key for display
+    let displayDate = key;
+    if (periodMapping[period] === 'week') {
+      // For weeks, show date range
+      const startDate = new Date(key);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      displayDate = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
+    } else if (periodMapping[period] === 'month') {
+      // For months, show month name
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      displayDate = date.toLocaleString('default', { month: 'short' });
+      if (period === 'year') {
+        displayDate += ` ${year}`;
+      }
     }
     
-    return result;
+    return {
+      period: displayDate,
+      amount: total,
+      originalKey: key,
+      name: displayDate, // For consistency with ChartDataItem
+      value: total, // For consistency with ChartDataItem
+      color: '#8884d8', // Default color
+      topCategories: periodTopCategories
+    };
   });
   
-  // Calculate trend if requested and if we have enough data
-  let trend = 0;
-  if (options.includeTrend !== false && processedData.length >= 2) {
-    const currentAmount = processedData[processedData.length - 1].amount;
-    const previousAmount = processedData[processedData.length - 2].amount;
-    trend = calculatePercentageChange(currentAmount, previousAmount);
+  // Calculate trend (period-over-period change)
+  let calculatedTrend = 0;
+  if (includeTrend && processedChartData.length >= 2) {
+    const currentAmount = processedChartData[processedChartData.length - 1].amount;
+    const previousAmount = processedChartData[processedChartData.length - 2].amount;
+    calculatedTrend = calculatePercentageChange(currentAmount, previousAmount);
   }
   
   // Calculate average
-  const average = processedData.length > 0
-    ? processedData.reduce((sum, item) => sum + item.amount, 0) / processedData.length
+  const calculatedAverage = processedChartData.length > 0
+    ? processedChartData.reduce((sum, item) => sum + item.amount, 0) / processedChartData.length
     : 0;
   
-  return {
-    chartData: processedData,
-    trend,
-    average,
-    topCategories: allTopCategories
+  return { 
+    chartData: processedChartData, 
+    trend: calculatedTrend, 
+    average: calculatedAverage,
+    topCategories: topCats
   };
-}
-
-/**
- * Process pie chart data with consistent formatting
- */
-export function processPieChartData(
-  transactions: Transaction[],
-  groupByField: 'paymentMethod' | 'category' | string,
-  displayCurrency: Currency,
-  colorPalette: string[] = []
-): Array<{ name: string; value: number; color: string }> {
-  if (!transactions || transactions.length === 0) {
-    return [];
-  }
-  
-  // Default colors if none provided
-  const colors = colorPalette.length > 0 ? colorPalette : [
-    '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899',
-    '#6366F1', '#EF4444', '#14B8A6', '#F97316', '#0EA5E9'
-  ];
-  
-  // Group and sum transactions
-  const groupMap = new Map<string, number>();
-  
-  transactions.forEach(tx => {
-    try {
-      // Determine the group key based on the field
-      let keyName = 'Unknown';
-      
-      if (groupByField === 'paymentMethod' && tx.paymentMethod) {
-        keyName = tx.paymentMethod.name;
-      } else if (groupByField === 'category') {
-        keyName = tx.category || 'Uncategorized';
-      } else if (tx[groupByField as keyof Transaction]) {
-        keyName = String(tx[groupByField as keyof Transaction]);
-      }
-      
-      // Convert amount to display currency if needed
-      let amount = tx.amount;
-      if (tx.currency !== displayCurrency) {
-        amount = convertCurrency(
-          tx.amount,
-          tx.currency as Currency,
-          displayCurrency,
-          tx.paymentMethod
-        );
-      }
-      
-      // Add to group total
-      const current = groupMap.get(keyName) || 0;
-      groupMap.set(keyName, current + amount);
-      
-    } catch (error) {
-      console.error(`Error processing transaction for ${groupByField}:`, error);
-    }
-  });
-  
-  // Convert to array and add colors
-  return Array.from(groupMap.entries())
-    .map(([name, value], index) => ({
-      name,
-      value,
-      color: colors[index % colors.length]
-    }))
-    .sort((a, b) => b.value - a.value);
 }

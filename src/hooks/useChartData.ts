@@ -1,68 +1,92 @@
 // src/hooks/useChartData.ts
 import { useMemo } from 'react';
 import { Transaction, Currency, PaymentMethod } from '@/types';
-import { processPieChartData } from '@/utils/chartDataProcessor';
-import { CHART_COLORS } from '@/utils/dashboardCalculations';
+import { 
+  processPieChartData, 
+  processTransactionsForChart, 
+  ChartDataItem,
+  ChartProcessingResult
+} from '@/utils/chartDataProcessor';
 
 /**
  * Hook for generating pie chart data from transactions
+ * 
+ * @param transactions - Array of transactions to visualize
+ * @param groupByField - Field to group by (e.g., 'paymentMethod', 'category')
+ * @param displayCurrency - Currency to display values in
+ * @returns Array of formatted chart data items
  */
 export function usePieChartData(
   transactions: Transaction[],
   groupByField: 'paymentMethod' | 'category' | string,
   displayCurrency: Currency
-) {
+): ChartDataItem[] {
   return useMemo(() => {
     return processPieChartData(
       transactions,
       groupByField,
-      displayCurrency,
-      CHART_COLORS
+      displayCurrency
     );
   }, [transactions, groupByField, displayCurrency]);
 }
 
 /**
  * Hook for generating spending trend data
+ * 
+ * @param transactions - Transactions to analyze
+ * @param period - Time period for grouping (week, month, quarter, year)
+ * @param options - Additional chart processing options
+ * @returns Processed chart data with trends and insights
  */
 export function useSpendingTrendData(
   transactions: Transaction[],
-  period: 'week' | 'month' | 'quarter' | 'year' = 'month'
-) {
+  period: 'week' | 'month' | 'quarter' | 'year' = 'month',
+  options: { 
+    includeCategoryBreakdown?: boolean;
+    maxTopCategories?: number;
+    displayCurrency?: Currency; 
+  } = {}
+): ChartProcessingResult {
   return useMemo(() => {
-    // This call will be implemented in the future
-    // when the processTransactionsForChart utility is ready
-    const result = {
-      chartData: [],
-      trend: 0,
-      average: 0,
-      topCategories: []
-    };
+    const {
+      includeCategoryBreakdown = true,
+      maxTopCategories = 3,
+      displayCurrency = 'SGD'
+    } = options;
     
-    // This is only placeholder data for now
-    return {
-      chartData: [],
-      trend: 0,
-      average: 0,
-      topCategories: []
-    };
-  }, [transactions, period]);
+    return processTransactionsForChart(transactions, {
+      period,
+      includeCategoryBreakdown,
+      maxTopCategories,
+      includeTrend: true,
+      displayCurrency
+    });
+  }, [transactions, period, options]);
 }
 
 /**
  * Interface for card optimization suggestions
  */
 export interface CardSuggestion {
+  /** Category name where optimization is possible */
   category: string;
+  /** Number of transactions in this category */
   transactionCount: number;
+  /** Currently used payment method */
   currentMethod: string;
+  /** Recommended payment method for better rewards */
   suggestedMethod: string;
+  /** Estimated monthly savings/additional rewards when using suggested method */
   potentialSavings: number;
 }
 
 /**
- * Hook for generating payment method optimization data
- * Returns suggested better payment methods for different categories
+ * Hook for generating payment method optimization recommendations
+ * Analyzes transaction patterns and suggests better card choices per category
+ * 
+ * @param transactions - Array of transactions to analyze
+ * @param paymentMethods - Available payment methods to consider
+ * @returns Array of card optimization suggestions
  */
 export function usePaymentMethodOptimization(
   transactions: Transaction[],
@@ -138,6 +162,17 @@ export function usePaymentMethodOptimization(
           }
         });
         
+        // If no category-specific rules found, use the default reward rate
+        if (potentialReward === 0 && method.rewardRules.length > 0) {
+          // Find default/base reward rule
+          const defaultRule = method.rewardRules.find(rule => 
+            rule.type !== 'mcc' && rule.type !== 'merchant'
+          );
+          if (defaultRule) {
+            potentialReward = defaultRule.pointsMultiplier;
+          }
+        }
+        
         if (potentialReward > bestReward) {
           bestReward = potentialReward;
           bestMethod = method.name;
@@ -171,19 +206,45 @@ export function usePaymentMethodOptimization(
  * Interface for category savings potential
  */
 export interface CategorySavingsPotential {
+  /** Category name */
   category: string;
+  /** Total spending amount in this category */
   amount: number;
+  /** Estimated potential savings amount */
   savingsPotential: number;
+  /** Whether this is considered discretionary (non-essential) spending */
   discretionary: boolean;
 }
 
 /**
- * Hook for generating savings potential data
+ * Interface for the complete savings analysis result
+ */
+export interface SavingsAnalysis {
+  /** Total spending across all categories */
+  totalSpending: number;
+  /** Total discretionary (non-essential) spending */
+  discretionarySpending: number;
+  /** Target savings amount based on goal percentage */
+  savingsTarget: number;
+  /** Total potential savings amount across all categories */
+  savingsPotential: number;
+  /** Top discretionary categories with savings opportunities */
+  topDiscretionaryCategories: CategorySavingsPotential[];
+  /** Progress toward savings goal (as percentage) */
+  savingsProgress: number;
+}
+
+/**
+ * Hook for analyzing spending patterns to identify savings opportunities
+ * 
+ * @param transactions - Transactions to analyze
+ * @param savingsGoalPercentage - Target percentage of total spending to save
+ * @returns Detailed savings analysis
  */
 export function useSavingsPotential(
   transactions: Transaction[],
   savingsGoalPercentage: number = 20
-) {
+): SavingsAnalysis {
   return useMemo(() => {
     if (!transactions || transactions.length === 0) {
       return {
@@ -224,6 +285,7 @@ export function useSavingsPotential(
     const categoryData: CategorySavingsPotential[] = [];
     
     categorySpending.forEach((amount, category) => {
+      // Check if this category is considered discretionary spending
       const isDiscretionary = discretionaryCategories.some(c => 
         category.toLowerCase().includes(c.toLowerCase()) || 
         c.toLowerCase().includes(category.toLowerCase())
@@ -246,7 +308,7 @@ export function useSavingsPotential(
       });
     });
     
-    // Sort categories by savings potential
+    // Sort categories by savings potential and filter to discretionary only
     const topDiscretionaryCategories = categoryData
       .filter(cat => cat.discretionary)
       .sort((a, b) => b.savingsPotential - a.savingsPotential)
