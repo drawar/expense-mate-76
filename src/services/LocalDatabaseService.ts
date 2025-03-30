@@ -1,8 +1,9 @@
 
 import Dexie, { Table } from 'dexie';
-import { Transaction, PaymentMethod, Merchant, Currency } from '@/types';
+import { Transaction, PaymentMethod, Merchant, Currency, MerchantCategoryCode, RewardRule } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 // Define our database class extending Dexie
 export class ExpenseDatabase extends Dexie {
@@ -26,6 +27,53 @@ export class ExpenseDatabase extends Dexie {
 
 // Create a single database instance
 const db = new ExpenseDatabase();
+
+// Helper function to convert JSON to RewardRule[]
+function convertJsonToRewardRules(json: Json | null): RewardRule[] {
+  if (!json) return [];
+  if (Array.isArray(json)) {
+    return json.map(rule => ({
+      id: String(rule.id || ''),
+      name: String(rule.name || ''),
+      description: String(rule.description || ''),
+      type: (rule.type || 'generic') as 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic',
+      condition: Array.isArray(rule.condition) ? rule.condition.map(String) : String(rule.condition || ''),
+      pointsMultiplier: Number(rule.pointsMultiplier || 1),
+      minSpend: rule.minSpend ? Number(rule.minSpend) : undefined,
+      maxSpend: rule.maxSpend ? Number(rule.maxSpend) : undefined,
+      pointsCurrency: rule.pointsCurrency ? String(rule.pointsCurrency) : undefined
+    }));
+  }
+  return [];
+}
+
+// Helper function to convert JSON to coordinates
+function convertJsonToCoordinates(json: Json | null): { latitude: number; longitude: number } | undefined {
+  if (!json || typeof json !== 'object') return undefined;
+  
+  const coords = json as Record<string, any>;
+  if (typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+    return {
+      latitude: coords.latitude,
+      longitude: coords.longitude
+    };
+  }
+  return undefined;
+}
+
+// Helper function to convert JSON to MerchantCategoryCode
+function convertJsonToMCC(json: Json | null): MerchantCategoryCode | undefined {
+  if (!json || typeof json !== 'object') return undefined;
+  
+  const mcc = json as Record<string, any>;
+  if (typeof mcc.code === 'string' && typeof mcc.description === 'string') {
+    return {
+      code: mcc.code,
+      description: mcc.description
+    };
+  }
+  return undefined;
+}
 
 // Initialize sync info if not exists
 async function initSyncInfo() {
@@ -133,7 +181,7 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
           await db.paymentMethods.put({
             ...pm,
             currency: pm.currency as Currency,
-            rewardRules: pm.reward_rules || []
+            rewardRules: convertJsonToRewardRules(pm.reward_rules)
           });
         }
       }
@@ -146,8 +194,8 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
             id: merchant.id,
             name: merchant.name,
             address: merchant.address,
-            coordinates: merchant.coordinates,
-            mcc: merchant.mcc,
+            coordinates: convertJsonToCoordinates(merchant.coordinates),
+            mcc: convertJsonToMCC(merchant.mcc),
             isOnline: merchant.is_online,
             is_deleted: merchant.is_deleted
           });
@@ -170,8 +218,8 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
               id: merchant.id,
               name: merchant.name,
               address: merchant.address,
-              mcc: merchant.mcc,
-              coordinates: merchant.coordinates,
+              mcc: convertJsonToMCC(merchant.mcc),
+              coordinates: convertJsonToCoordinates(merchant.coordinates),
               isOnline: merchant.is_online,
             },
             amount: Number(tx.amount),
@@ -181,7 +229,7 @@ export async function syncTransactionsWithSupabase(forceFullSync = false): Promi
               name: paymentMethod.name,
               type: paymentMethod.type,
               currency: paymentMethod.currency as Currency,
-              rewardRules: paymentMethod.reward_rules || [],
+              rewardRules: convertJsonToRewardRules(paymentMethod.reward_rules),
               active: paymentMethod.active,
               lastFourDigits: paymentMethod.last_four_digits,
               issuer: paymentMethod.issuer,
