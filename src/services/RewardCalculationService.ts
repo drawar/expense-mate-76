@@ -1,3 +1,4 @@
+
 // src/services/RewardCalculationService.ts
 import { Transaction, PaymentMethod } from '@/types';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
@@ -174,10 +175,38 @@ export class RewardCalculationService {
     if (!paymentMethod) return 'Points';
     
     try {
-      // Get the calculator and ask for its points currency
-      const calculator = this.getCalculator(paymentMethod);
-      return calculator.getPointsCurrencyPublic();
-    } catch (error) {
+      // Map specific issuers and card types to their points currencies
+      if (paymentMethod.issuer === 'UOB') {
+        return 'UNI$';
+      } 
+      else if (paymentMethod.issuer === 'Citibank') {
+        return 'ThankYou Points';
+      }
+      else if (paymentMethod.issuer === 'OCBC') {
+        return 'OCBC$';
+      }
+      else if (paymentMethod.issuer === 'American Express') {
+        if (paymentMethod.name === 'Platinum Singapore' || paymentMethod.name === 'Platinum Credit') {
+          return 'SG MR Points';
+        }
+        else if (paymentMethod.name === 'Cobalt' || paymentMethod.name === 'Platinum Canada') {
+          return 'CA MR Points';
+        }
+        // Default for other Amex cards
+        return 'Membership Rewards';
+      }
+      else if (paymentMethod.issuer === 'TD' && paymentMethod.name === 'Aeroplan Visa Infinite') {
+        return 'Aeroplan Points';
+      }
+      
+      // Try to get from calculator as a fallback
+      try {
+        const calculator = this.getCalculator(paymentMethod);
+        return calculator.getPointsCurrencyPublic();
+      } catch (error) {
+        // Ignore and continue to further fallback options
+      }
+      
       // Fallback to CardRegistry if calculator is unavailable
       const cardInfo = CardRegistry.findCard(
         paymentMethod.issuer || '',
@@ -186,6 +215,9 @@ export class RewardCalculationService {
       
       return cardInfo?.pointsCurrency || 
         (paymentMethod.issuer ? `${paymentMethod.issuer} Points` : 'Points');
+    } catch (error) {
+      console.error('Error getting points currency:', error);
+      return paymentMethod.issuer ? `${paymentMethod.issuer} Points` : 'Points';
     }
   }
 }

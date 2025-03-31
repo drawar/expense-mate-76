@@ -201,6 +201,7 @@ export type Database = {
           last_four_digits: string | null
           name: string
           reward_rules: Json | null
+          selected_categories: Json | null
           statement_start_day: number | null
           type: string
         }
@@ -218,6 +219,7 @@ export type Database = {
           last_four_digits?: string | null
           name: string
           reward_rules?: Json | null
+          selected_categories?: Json | null
           statement_start_day?: number | null
           type: string
         }
@@ -235,6 +237,7 @@ export type Database = {
           last_four_digits?: string | null
           name?: string
           reward_rules?: Json | null
+          selected_categories?: Json | null
           statement_start_day?: number | null
           type?: string
         }

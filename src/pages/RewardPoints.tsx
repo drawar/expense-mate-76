@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTransactionList } from '@/hooks/useTransactionList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,15 +6,16 @@ import { CoinsIcon } from 'lucide-react';
 import PointsCurrencyAggregator from '@/components/expense/PointsCurrencyAggregator';
 import { Transaction } from '@/types';
 import StatementCycleFilter from '@/components/dashboard/StatementCycleFilter';
+import { rewardCalculationService } from '@/services/RewardCalculationService';
 
 // Helper component for displaying points by payment method
 const PointsByPaymentMethod = ({ transactions }: { transactions: Transaction[] }) => {
   const pointsByMethod = transactions.reduce<Record<string, { points: number, currency: string }>>((acc, transaction) => {
+    if (!transaction.paymentMethod || !transaction.rewardPoints) return acc;
+    
     const methodName = transaction.paymentMethod.name;
-    // Get a default currency name based on the payment method
-    const pointsCurrency = transaction.paymentMethod.issuer 
-      ? `${transaction.paymentMethod.issuer} Points` 
-      : 'Points';
+    // Get the correct points currency for this payment method
+    const pointsCurrency = rewardCalculationService.getPointsCurrency(transaction.paymentMethod);
     
     if (!acc[methodName]) {
       acc[methodName] = { points: 0, currency: pointsCurrency };

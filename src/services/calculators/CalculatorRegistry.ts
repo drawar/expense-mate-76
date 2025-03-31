@@ -1,88 +1,89 @@
+
+// src/services/calculators/CalculatorRegistry.ts
 import { BaseCalculator } from './BaseCalculator';
 import { RuleBasedCalculator } from './RuleBasedCalculator';
 import { PaymentMethod } from '@/types';
-import { CardRegistry } from '@/components/expense/cards/CardRegistry';
 
 /**
- * Registry for calculator instances
- * 
- * This registry serves as a cache and factory for calculator instances,
- * similar to how CardRegistry works for card components.
+ * Registry of available calculators for different payment methods
  */
-export class CalculatorRegistry {
-  private static instance: CalculatorRegistry;
-  private calculators: Map<string, BaseCalculator> = new Map();
-  
-  private constructor() {}
+export class calculatorRegistry {
+  private static calculators: Map<string, BaseCalculator> = new Map();
   
   /**
-   * Get singleton instance
+   * Initialize predefined calculators
    */
-  public static getInstance(): CalculatorRegistry {
-    if (!CalculatorRegistry.instance) {
-      CalculatorRegistry.instance = new CalculatorRegistry();
-    }
-    return CalculatorRegistry.instance;
+  private static initializeCalculators() {
+    if (this.calculators.size > 0) return;
+    
+    // Add specific calculators for different card types
+    this.addCalculator('uob-platinum', new RuleBasedCalculator('uob-platinum'));
+    this.addCalculator('uob-signature', new RuleBasedCalculator('uob-signature'));
+    this.addCalculator('uob-ladys-solitaire', new RuleBasedCalculator('uob-ladys-solitaire'));
+    this.addCalculator('citibank-rewards', new RuleBasedCalculator('citibank-rewards'));
+    this.addCalculator('ocbc-rewards', new RuleBasedCalculator('ocbc-rewards'));
+    this.addCalculator('amex-platinum-sg', new RuleBasedCalculator('amex-platinum-sg'));
+    this.addCalculator('amex-platinum-credit', new RuleBasedCalculator('amex-platinum-credit'));
+    this.addCalculator('amex-cobalt', new RuleBasedCalculator('amex-cobalt'));
+    this.addCalculator('amex-platinum-canada', new RuleBasedCalculator('amex-platinum-canada'));
+    this.addCalculator('td-aeroplan', new RuleBasedCalculator('td-aeroplan'));
   }
   
   /**
-   * Get the appropriate calculator for a payment method
+   * Add a calculator for a specific card type
    */
-  public getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
-    if (!paymentMethod || !paymentMethod.issuer || !paymentMethod.name) {
-      // Return a default calculator for cash or unknown payment methods
-      return new RuleBasedCalculator('default');
+  static addCalculator(cardType: string, calculator: BaseCalculator) {
+    this.calculators.set(cardType, calculator);
+  }
+  
+  /**
+   * Get a calculator by card type
+   */
+  static getCalculator(cardType: string): BaseCalculator | null {
+    this.initializeCalculators();
+    return this.calculators.get(cardType) || null;
+  }
+  
+  /**
+   * Get calculator for a payment method based on issuer and name
+   */
+  static getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
+    this.initializeCalculators();
+    
+    const { issuer, name } = paymentMethod;
+    let calculatorKey = '';
+    
+    // Map the payment method to the appropriate calculator key
+    if (issuer === 'UOB') {
+      if (name === 'Preferred Visa Platinum') calculatorKey = 'uob-platinum';
+      else if (name === 'Visa Signature') calculatorKey = 'uob-signature';
+      else if (name === 'Lady\'s Solitaire') calculatorKey = 'uob-ladys-solitaire';
+    } 
+    else if (issuer === 'Citibank' && name === 'Rewards Visa Signature') {
+      calculatorKey = 'citibank-rewards';
+    }
+    else if (issuer === 'OCBC' && name === 'Rewards World Mastercard') {
+      calculatorKey = 'ocbc-rewards';
+    }
+    else if (issuer === 'American Express') {
+      if (name === 'Platinum Singapore') calculatorKey = 'amex-platinum-sg';
+      else if (name === 'Platinum Credit') calculatorKey = 'amex-platinum-credit';
+      else if (name === 'Cobalt') calculatorKey = 'amex-cobalt';
+      else if (name === 'Platinum Canada') calculatorKey = 'amex-platinum-canada';
+    }
+    else if (issuer === 'TD' && name === 'Aeroplan Visa Infinite') {
+      calculatorKey = 'td-aeroplan';
     }
     
-    const cardId = this.getCardTypeId(paymentMethod);
+    // Try to get the calculator for this payment method
+    let calculator = this.getCalculator(calculatorKey);
     
-    // Check if we already have a calculator for this card type
-    if (this.calculators.has(cardId)) {
-      return this.calculators.get(cardId)!;
+    // Fallback to a generic calculator if no specific one is found
+    if (!calculator) {
+      calculator = new RuleBasedCalculator('generic');
+      console.log(`No specific calculator found for ${issuer} ${name}, using generic calculator`);
     }
-    
-    // Create a new calculator
-    const calculator = this.createCalculatorForCardType(cardId);
-    
-    // Cache it for future use
-    this.calculators.set(cardId, calculator);
     
     return calculator;
   }
-  
-  /**
-   * Create a calculator for a specific card type
-   */
-  private createCalculatorForCardType(cardTypeId: string): BaseCalculator {
-    // For now, we just create a RuleBasedCalculator for all card types
-    // In the future, we could add special calculators for specific card types
-    return new RuleBasedCalculator(cardTypeId);
-  }
-  
-  /**
-   * Get the card type ID from a payment method
-   */
-  private getCardTypeId(paymentMethod: PaymentMethod): string {
-    const { issuer, name } = paymentMethod;
-    
-    // Try to get card info from registry
-    const cardInfo = CardRegistry.findCard(issuer, name);
-    
-    if (cardInfo) {
-      return cardInfo.id;
-    }
-    
-    // Fall back to a standardized ID format
-    return `${issuer.toLowerCase().replace(/\s+/g, '-')}-${name.toLowerCase().replace(/\s+/g, '-')}`;
-  }
-  
-  /**
-   * Clear all cached calculators
-   */
-  public clearCache(): void {
-    this.calculators.clear();
-  }
 }
-
-// Export a singleton instance
-export const calculatorRegistry = CalculatorRegistry.getInstance();
