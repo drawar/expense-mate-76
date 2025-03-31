@@ -60,10 +60,10 @@ export const useRewardPoints = () => {
       setError(errorMessage);
       console.error('Error in simulatePoints hook:', err);
       
-      // Return fallback result with error
+      // Return fallback result with error - using Math.round for proper rounding
       return {
-        totalPoints: Math.floor(amount),
-        basePoints: Math.floor(amount),
+        totalPoints: Math.round(amount),
+        basePoints: Math.round(amount),
         bonusPoints: 0,
         error: errorMessage,
         isLoading: false,
@@ -109,10 +109,10 @@ export const useRewardPoints = () => {
         pointsCurrency: rewardCalculationService.getPointsCurrency(paymentMethod)
       };
     } catch (err) {
-      // Return fallback result for sync calculation
+      // Return fallback result for sync calculation - using Math.round for proper rounding
       return {
-        totalPoints: Math.floor(amount),
-        basePoints: Math.floor(amount),
+        totalPoints: Math.round(amount),
+        basePoints: Math.round(amount),
         bonusPoints: 0,
         pointsCurrency: rewardCalculationService.getPointsCurrency(paymentMethod)
       };

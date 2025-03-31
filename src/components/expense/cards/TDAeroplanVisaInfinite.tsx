@@ -37,10 +37,10 @@ export class TDAeroplanVisaInfiniteCard extends BaseRewardCard<TDAeroplanVisaInf
   ];
 
   /**
-   * No rounding applied to transaction amount
+   * Round amount to nearest integer for Aeroplan points calculation
    */
   calculateRoundedAmount(amount: number): number {
-    return amount; // No rounding on amount
+    return Math.round(amount); // Round to nearest integer
   }
 
   /**

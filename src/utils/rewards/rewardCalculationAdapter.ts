@@ -128,10 +128,10 @@ export async function simulateRewardPoints(
     };
   } catch (error) {
     console.error('Error simulating reward points:', error);
-    // Provide a fallback response in case of errors
+    // Provide a fallback response in case of errors - using Math.round for proper rounding
     return { 
-      totalPoints: Math.floor(amount), 
-      basePoints: Math.floor(amount),
+      totalPoints: Math.round(amount), 
+      basePoints: Math.round(amount),
       bonusPoints: 0,
       messageText: 'Error calculating points' 
     };

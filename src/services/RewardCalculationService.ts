@@ -66,9 +66,14 @@ export class RewardCalculationService {
     transaction: Transaction | SimulatedTransaction, 
     usedBonusPoints: number = 0
   ): CalculationInput {
+    // Determine if we should use paymentAmount (for currency conversion scenarios)
+    const amountToUse = transaction.currency !== transaction.paymentCurrency 
+      ? transaction.paymentAmount 
+      : transaction.amount;
+      
     return {
-      amount: transaction.amount,
-      currency: transaction.currency,
+      amount: amountToUse,
+      currency: transaction.paymentCurrency, // Use payment currency for calculation
       mcc: transaction.merchant?.mcc?.code,
       merchantName: transaction.merchant?.name,
       isOnline: transaction.merchant?.isOnline,
@@ -113,8 +118,8 @@ export class RewardCalculationService {
       };
     } catch (error) {
       console.error('Error calculating rewards:', error);
-      // Fallback to basic calculation
-      const basePoints = Math.floor(transactionInput.amount);
+      // Fallback to basic calculation - using Math.round for proper rounding
+      const basePoints = Math.round(transactionInput.amount);
       return {
         totalPoints: basePoints,
         basePoints,
@@ -137,6 +142,9 @@ export class RewardCalculationService {
     usedBonusPoints: number = 0
   ): PointsCalculation {
     try {
+      // Determine if currency conversion is needed
+      const isCurrencyDifferent = currency !== paymentMethod.currency;
+      
       // Create a simulated transaction
       const simulatedTransaction: SimulatedTransaction = {
         id: 'simulated',
@@ -147,11 +155,11 @@ export class RewardCalculationService {
           mcc: mcc ? { code: mcc, description: '' } : undefined,
           isOnline: !!isOnline
         },
-        amount,
-        currency,
+        amount: isCurrencyDifferent ? amount : amount, // Original amount
+        currency: isCurrencyDifferent ? currency : currency, // Original currency
         paymentMethod,
-        paymentAmount: amount,
-        paymentCurrency: currency,
+        paymentAmount: amount, // For consistency, this is the amount in payment currency
+        paymentCurrency: isCurrencyDifferent ? paymentMethod.currency : currency, // Payment currency
         isContactless: !!isContactless
       };
       
@@ -159,10 +167,10 @@ export class RewardCalculationService {
       return this.calculatePoints(simulatedTransaction, usedBonusPoints);
     } catch (error) {
       console.error('Error in simulatePoints:', error);
-      // Fallback to basic calculation
+      // Fallback to basic calculation - using Math.round for proper rounding
       return {
-        totalPoints: Math.floor(amount),
-        basePoints: Math.floor(amount),
+        totalPoints: Math.round(amount),
+        basePoints: Math.round(amount),
         bonusPoints: 0
       };
     }

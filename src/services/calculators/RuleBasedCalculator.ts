@@ -162,6 +162,12 @@ export class RuleBasedCalculator extends BaseCalculator {
    */
   calculateRoundedAmount(amount: number): number {
     const rule = this.getActiveRule();
+    
+    // Special handling for TD Aeroplan Visa Infinite
+    if (this.cardType === 'td-aeroplan-visa-infinite') {
+      return Math.round(amount); // Always round to nearest integer for TD Aeroplan
+    }
+    
     if (!rule) return Math.floor(amount); // Default to floor rounding
     
     switch (rule.rounding) {
