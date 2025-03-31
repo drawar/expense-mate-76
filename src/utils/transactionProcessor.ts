@@ -42,7 +42,9 @@ export function generateDateRanges(
   
   // Calculate standard date ranges
   const thisMonthStart = new Date(currentYear, currentMonth, 1);
+  // Set end time to the end of today (23:59:59.999) to include all of today's transactions
   const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+  thisMonthEnd.setHours(23, 59, 59, 999);
   
   const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
   const lastMonthEnd = new Date(currentYear, currentMonth, 0);
@@ -134,8 +136,18 @@ export function filterTransactionsByDateRange(
   dateRange: DateRange
 ): Transaction[] {
   return transactions.filter(tx => {
+    // Create a date object from the transaction date string
     const txDate = new Date(tx.date);
-    return txDate >= dateRange.start && txDate <= dateRange.end;
+    
+    // Reset hours to ensure date-only comparison (start of day)
+    const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+    const rangeStartDate = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate());
+    
+    // For end date comparison, set to end of day to include all transactions on that day
+    const rangeEndDate = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate());
+    rangeEndDate.setHours(23, 59, 59, 999);
+    
+    return txDateOnly >= rangeStartDate && txDateOnly <= rangeEndDate;
   });
 }
 

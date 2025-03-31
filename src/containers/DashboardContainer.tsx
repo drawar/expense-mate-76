@@ -29,8 +29,10 @@ const DashboardContainer: React.FC = () => {
   const loadData = useCallback(async () => {
     console.log('Loading dashboard data');
     try {
+      // Always set loading when starting to load data
+      setLoading(true);
+      
       if (!initialized) {
-        setLoading(true);
         setInitialized(true);
       }
       
@@ -57,8 +59,15 @@ const DashboardContainer: React.FC = () => {
       // Filter to only recent transactions (last 30 days) to improve performance
       const loadedTransactions = allTransactions
         .filter(tx => {
+          if (tx.is_deleted) return false;
+          
+          // Create date objects for comparison (removing time components)
           const txDate = new Date(tx.date);
-          return !tx.is_deleted && txDate >= thirtyDaysAgo;
+          const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+          const comparisonDate = new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate());
+          
+          // Include the transaction if it's on or after the comparison date
+          return txDateOnly >= comparisonDate;
         })
         .slice(0, 50); // Limit to 50 most recent transactions for homepage performance
       
@@ -82,8 +91,9 @@ const DashboardContainer: React.FC = () => {
     }
   }, [initialized, toast]);
   
-  // Set up Supabase realtime subscription for data updates
+  // Set up Supabase realtime subscription for data updates and force reload when component mounts
   useEffect(() => {
+    // Load data immediately when component mounts
     loadData();
     
     // Set up real-time subscriptions

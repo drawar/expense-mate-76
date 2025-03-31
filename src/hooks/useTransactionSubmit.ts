@@ -58,8 +58,8 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         description: 'Transaction saved successfully to ' + (useLocalStorage ? 'local storage' : 'Supabase'),
       });
       
-      // Navigate back to the dashboard
-      navigate('/transactions');
+      // Navigate back to the dashboard to see updated metrics
+      navigate('/');
       return result;
     } catch (error) {
       console.error('Error saving transaction:', error);
