@@ -31,6 +31,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   defaultCurrency = 'SGD',
   lastUpdate
 }) => {
+  // Log the lastUpdate timestamp to verify it's changing
+  console.log('Dashboard component rendering with lastUpdate:', lastUpdate);
+
   // Use our custom filter hook to manage all filter state
   const filters = useDashboardFilters(defaultCurrency);
   
@@ -117,6 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           displayCurrency={filters.displayCurrency}
           activeTab={filters.activeTab}
           onTabChange={filters.handleTimeframeChange}
+          key={`summary-${lastUpdate}-${filters.displayCurrency}-${filters.activeTab}`}
         />
         
         {/* Insights Grid - with filtered data */}
@@ -124,16 +128,18 @@ const Dashboard: React.FC<DashboardProps> = ({
           dashboardData={dashboardData}
           paymentMethods={paymentMethods}
           displayCurrency={filters.displayCurrency}
+          key={`insights-${lastUpdate}-${filters.displayCurrency}`}
         />
         
         {/* Recent Transactions */}
         <RecentTransactions 
           transactions={recentTransactions}
+          key={`recent-${lastUpdate}`}
         />
       </div>
     </div>
   );
 };
 
-// Use memo to prevent unnecessary re-renders
-export default React.memo(Dashboard);
+// Don't memo the Dashboard component to ensure it re-renders when props change
+export default Dashboard;

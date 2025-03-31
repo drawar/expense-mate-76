@@ -1,3 +1,4 @@
+
 // src/components/dashboard/SummaryCard.tsx
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,6 +81,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     );
   };
 
+  // Add debugging to show what values are received
+  console.log(`SummaryCard rendering: ${title} = ${value}`);
+
   return (
     <Card className={`summary-card overflow-hidden animate-fadeIn ${cardColor} ${className}`}>
       <CardHeader className="pb-2">
@@ -107,4 +111,5 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   );
 };
 
+// Use memo to prevent unnecessary re-renders but with proper dependencies tracking
 export default React.memo(SummaryCard);

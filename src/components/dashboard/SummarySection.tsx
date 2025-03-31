@@ -1,3 +1,4 @@
+
 // src/components/dashboard/SummarySection.tsx
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,14 +41,17 @@ const SummarySection: React.FC<SummarySectionProps> = ({
   // Use the custom currency formatter hook
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
+  // Add debugging for metrics
+  console.log('SummarySection received metrics:', metrics);
+
   // Memoize the count of transactions with reward points to prevent recalculation
   const rewardPointTransactionsCount = React.useMemo(() => {
-    if (!hasData || !dashboardData.filteredTransactions) return 0;
+    if (!hasData || !filteredTransactions) return 0;
     
     // More efficient than filter().length as it avoids creating a new array
-    return dashboardData.filteredTransactions.reduce((count, tx) => 
+    return filteredTransactions.reduce((count, tx) => 
       (tx.rewardPoints || 0) > 0 ? count + 1 : count, 0);
-  }, [hasData, dashboardData.filteredTransactions]);
+  }, [hasData, filteredTransactions]);
 
   // Handle tab change if provided - memoized to prevent recreation on every render
   const handleTabChange = React.useCallback((value: string) => {
@@ -118,4 +122,5 @@ const SummarySection: React.FC<SummarySectionProps> = ({
   );
 };
 
-export default React.memo(SummarySection);
+// Re-render the component when props change by removing memo or adding key props
+export default SummarySection;

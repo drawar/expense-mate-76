@@ -1,3 +1,4 @@
+
 // src/hooks/useDashboard.ts
 import { useMemo } from 'react';
 import { Transaction, Currency } from '@/types';
@@ -186,6 +187,14 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     
     return metrics;
   }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity, lastUpdate]);
+
+  // Add a console.log to debug the metrics calculation
+  console.log('Dashboard metrics calculated:', {
+    totalExpenses: basicMetrics.totalExpenses,
+    transactionCount: basicMetrics.transactionCount,
+    averageAmount: basicMetrics.averageAmount,
+    totalRewardPoints: basicMetrics.totalRewardPoints
+  });
 
   /**
    * Combine all calculated data into the final dashboard data structure

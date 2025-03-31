@@ -62,10 +62,12 @@ const DashboardContainer: React.FC = () => {
         })
         .slice(0, 50); // Limit to 50 most recent transactions for homepage performance
       
+      console.log(`Loaded ${loadedTransactions.length} transactions for dashboard`);
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
       setLoading(false);
       setError(null);
+      // Force refresh by updating timestamp
       setLastUpdateTimestamp(Date.now());
       
       console.log(`Dashboard data loaded with ${loadedTransactions.length} transactions`);
@@ -116,7 +118,15 @@ const DashboardContainer: React.FC = () => {
     lastUpdate: lastUpdateTimestamp
   }), [transactions, paymentMethods, loading, lastUpdateTimestamp]);
   
-  return <Dashboard {...dashboardProps} />;
+  // Add debug info to track updates
+  console.log(`DashboardContainer re-rendering with lastUpdate: ${lastUpdateTimestamp}`);
+  console.log(`Transactions loaded: ${transactions.length}`);
+  
+  // Track what currencies are present in transactions for debugging
+  const currenciesPresent = [...new Set(transactions.map(tx => tx.currency))];
+  console.log('Currencies present:', currenciesPresent);
+  
+  return <Dashboard {...dashboardProps} key={lastUpdateTimestamp} />;
 };
 
 export default DashboardContainer;
