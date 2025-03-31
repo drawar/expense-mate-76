@@ -11,7 +11,7 @@ const currencySymbols: Record<Currency, string> = {
   CNY: '¥',
   INR: '₹',
   TWD: 'NT$',
-  SGD: 'S$',
+  SGD: 'S$',  // Explicitly set to 'S$' for consistency
   VND: '₫',
   IDR: 'Rp',
   THB: '฿',
@@ -58,3 +58,4 @@ export const currencyOptions: { value: Currency; label: string }[] = [
   { value: 'THB', label: 'THB - Thai Baht (฿)' },
   { value: 'MYR', label: 'MYR - Malaysian Ringgit (RM)' },
 ];
+
