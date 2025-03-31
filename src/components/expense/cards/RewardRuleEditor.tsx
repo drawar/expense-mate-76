@@ -131,21 +131,23 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
       {/* Basic Information */}
       <div className="mb-4">
         <label className="block mb-2">Rule Name</label>
-        <input 
-          type="text" 
-          className="w-full p-2 border rounded" 
-          value={config.name} 
-          onChange={(e) => updateField('name', e.target.value)} 
-        />
+          <input 
+            type="text" 
+            className="w-full p-2 border rounded font-medium" 
+            value={config.name} 
+            onChange={(e) => updateField('name', e.target.value)} 
+            style={{ color: '#000000' }}
+          />
       </div>
       
       <div className="mb-4">
         <label className="block mb-2">Description</label>
-        <textarea 
-          className="w-full p-2 border rounded" 
-          value={config.description} 
-          onChange={(e) => updateField('description', e.target.value)} 
-        />
+          <textarea 
+            className="w-full p-2 border rounded font-medium" 
+            value={config.description} 
+            onChange={(e) => updateField('description', e.target.value)} 
+            style={{ color: '#000000' }}
+          />
       </div>
       
       <div className="mb-4">
@@ -169,9 +171,10 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <input 
             type="number" 
             step="0.1" 
-            className="w-full p-2 border rounded" 
+            className="w-full p-2 border rounded font-medium" 
             value={config.basePointRate} 
-            onChange={(e) => updateField('basePointRate', parseFloat(e.target.value))} 
+            onChange={(e) => updateField('basePointRate', parseFloat(e.target.value))}
+            style={{ color: '#000000' }}
           />
         </div>
         
@@ -180,9 +183,10 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <input 
             type="number" 
             step="0.1" 
-            className="w-full p-2 border rounded" 
+            className="w-full p-2 border rounded font-medium" 
             value={config.bonusPointRate} 
-            onChange={(e) => updateField('bonusPointRate', parseFloat(e.target.value))} 
+            onChange={(e) => updateField('bonusPointRate', parseFloat(e.target.value))}
+            style={{ color: '#000000' }}
           />
         </div>
         
@@ -190,9 +194,10 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <label className="block mb-1">Monthly Bonus Points Cap</label>
           <input 
             type="number" 
-            className="w-full p-2 border rounded" 
+            className="w-full p-2 border rounded font-medium" 
             value={config.monthlyCap} 
-            onChange={(e) => updateField('monthlyCap', parseInt(e.target.value))} 
+            onChange={(e) => updateField('monthlyCap', parseInt(e.target.value))}
+            style={{ color: '#000000' }}
           />
         </div>
       </div>
@@ -235,10 +240,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div className="flex">
             <input 
               type="text" 
-              className="flex-1 p-2 border rounded-l" 
+              className="flex-1 p-2 border rounded-l font-medium" 
               value={newMCC} 
               onChange={(e) => setNewMCC(e.target.value)}
               placeholder="Enter MCC code"
+              style={{ color: '#000000' }}
             />
             <button 
               className="px-3 py-2 bg-green-500 text-white rounded-r"
@@ -310,10 +316,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <label className="block mb-1">Minimum Spend</label>
           <input 
             type="number" 
-            className="w-full p-2 border rounded" 
+            className="w-full p-2 border rounded font-medium" 
             value={config.minSpend || ''} 
             onChange={(e) => updateField('minSpend', e.target.value ? parseFloat(e.target.value) : undefined)} 
             placeholder="No minimum"
+            style={{ color: '#000000' }}
           />
         </div>
         
@@ -321,10 +328,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <label className="block mb-1">Maximum Spend</label>
           <input 
             type="number" 
-            className="w-full p-2 border rounded" 
+            className="w-full p-2 border rounded font-medium" 
             value={config.maxSpend || ''} 
             onChange={(e) => updateField('maxSpend', e.target.value ? parseFloat(e.target.value) : undefined)} 
             placeholder="No maximum"
+            style={{ color: '#000000' }}
           />
         </div>
       </div>

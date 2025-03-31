@@ -1,13 +1,7 @@
-
 import React from 'react';
-import { UOBPlatinumCardWrapper } from './cards/UOBPlatinumCardRefactored';
-import { UOBSignatureCardWrapper } from './cards/UOBSignatureCardRefactored';
-import { CitibankRewardsCardWrapper } from './cards/CitibankRewardsCardRefactored';
-import { AmexPlatinumCreditWrapper } from './cards/AmexPlatinumCredit';
-import { AmexPlatinumSGWrapper } from './cards/AmexPlatinumSingapore';
-import { OCBCRewardsWorldCardWrapper } from './cards/OCBCRewardsWorldCard';
 import { GenericPointsCard } from './cards/GenericPointsCard';
 import { PaymentMethod } from '@/types';
+import { rewardCalculationService } from '@/services/RewardCalculationService';
 
 interface PointsDisplayProps {
   selectedPaymentMethod: PaymentMethod | undefined;
@@ -25,108 +19,40 @@ interface PointsDisplayProps {
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
     messageText?: string;
+    pointsCurrency?: string;
   };
 }
 
+/**
+ * PointsDisplay component that shows reward point calculations using the
+ * centralized calculation system.
+ * 
+ * IMPORTANT: This component is part of the reward points calculation refactoring.
+ * It now uses a single source of truth (estimatedPoints from the useRewardPoints hook)
+ * instead of using individual card components for calculations.
+ */
 const PointsDisplay: React.FC<PointsDisplayProps> = ({
   selectedPaymentMethod,
-  amount,
-  currency,
-  mcc,
-  isOnline,
-  isContactless,
-  usedBonusPoints = 0,
-  nonSgdSpendTotal = 0,
-  hasSgdTransactions = false,
   estimatedPoints
 }) => {
   // Only hide for cash payment methods or if no payment method is selected
-  if (!selectedPaymentMethod || amount <= 0 || selectedPaymentMethod.type === 'cash') {
+  if (!selectedPaymentMethod || selectedPaymentMethod.type === 'cash') {
     return null;
   }
 
-  // UOB Preferred Visa Platinum
-  if (selectedPaymentMethod?.issuer === 'UOB' && 
-      selectedPaymentMethod?.name === 'Preferred Visa Platinum') {
-    return (
-      <UOBPlatinumCardWrapper 
-        amount={amount}
-        mcc={mcc}
-        isOnline={isOnline}
-        isContactless={isContactless}
-        usedBonusPoints={usedBonusPoints}
-      />
-    );
-  }
-  
-  // UOB Visa Signature
-  if (selectedPaymentMethod?.issuer === 'UOB' && 
-      selectedPaymentMethod?.name === 'Visa Signature') {
-    return (
-      <UOBSignatureCardWrapper 
-        amount={amount}
-        currency={currency}
-        nonSgdSpendTotal={nonSgdSpendTotal}
-        hasSgdTransactions={hasSgdTransactions}
-      />
-    );
-  }
-  
-  // Citibank Rewards Visa Signature
-  if (selectedPaymentMethod?.issuer === 'Citibank' && 
-      selectedPaymentMethod?.name === 'Rewards Visa Signature') {
-    return (
-      <CitibankRewardsCardWrapper 
-        amount={amount}
-        mcc={mcc}
-        isOnline={isOnline}
-        usedBonusPoints={usedBonusPoints}
-      />
-    );
-  }
-  
-  // American Express Platinum Credit Card
-  if (selectedPaymentMethod?.issuer === 'American Express' && 
-      selectedPaymentMethod?.name === 'Platinum Credit') {
-    return (
-      <AmexPlatinumCreditWrapper 
-        amount={amount}
-        usedBonusPoints={usedBonusPoints || 0}
-        pointsCurrency="MR (Credit Card)"
-      />
-    );
-  }
-  
-  // American Express Platinum Singapore
-  if (selectedPaymentMethod?.issuer === 'American Express' && 
-      selectedPaymentMethod?.name === 'Platinum Singapore') {
-    return (
-      <AmexPlatinumSGWrapper 
-        amount={amount}
-        usedBonusPoints={usedBonusPoints || 0}
-        pointsCurrency="MR (Charge Card)"
-      />
-    );
-  }
-  
-  // OCBC Rewards World Mastercard
-  if (selectedPaymentMethod?.issuer === 'OCBC' && 
-      selectedPaymentMethod?.name === 'Rewards World Mastercard') {
-    return (
-      <OCBCRewardsWorldCardWrapper 
-        amount={amount}
-        mcc={mcc}
-        merchantName={selectedPaymentMethod.name}
-        isOnline={isOnline}
-        isContactless={isContactless}
-        usedBonusPoints={usedBonusPoints || 0}
-        pointsCurrency="OCBC$"
-      />
-    );
-  }
-  
-  // Generic point display for other cards
-  return <GenericPointsCard pointsInfo={estimatedPoints} />;
+  // If estimatedPoints is just a number, create a proper object
+  const pointsInfo = typeof estimatedPoints === 'number' 
+    ? { 
+        totalPoints: estimatedPoints,
+        pointsCurrency: selectedPaymentMethod ? 
+          rewardCalculationService.getPointsCurrency(selectedPaymentMethod) : 
+          'Points'
+      } 
+    : estimatedPoints;
+
+  // Use the GenericPointsCard for all card types
+  // This ensures a single source of truth for all reward calculations
+  return <GenericPointsCard pointsInfo={pointsInfo} />;
 };
 
 export default PointsDisplay;

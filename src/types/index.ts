@@ -34,6 +34,7 @@ export interface PaymentMethod {
   color?: string; // Color for the card
   imageUrl?: string; // URL to custom card image
   conversionRate?: Record<Currency, number>; // Exchange rates for currency conversion
+  selectedCategories?: string[]; // Selected categories for category-based cards like UOB Lady's
 }
 
 export interface Merchant {

@@ -1,12 +1,47 @@
-// src/utils/rewards/rewardCalculationAdapters.ts
+// src/utils/rewards/rewardCalculationAdapter.ts
 import { Transaction, PaymentMethod } from '@/types';
 import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 /**
  * Adapter for the calculatePoints function in storage/transactions/calculations.ts
  * Replaces the existing switch statement with a call to the centralized service
  */
-export function calculatePoints(transaction: Transaction): {
+export async function calculatePoints(transaction: Transaction): Promise<{
+  basePoints: number;
+  bonusPoints: number;
+  totalPoints: number;
+}> {
+  // Skip calculation for cash payments
+  if (transaction.paymentMethod.type === 'cash') {
+    return {
+      basePoints: 0,
+      bonusPoints: 0,
+      totalPoints: 0
+    };
+  }
+  
+  // Get transaction date components
+  const txDate = new Date(transaction.date);
+  const year = txDate.getFullYear();
+  const month = txDate.getMonth();
+  
+  // Get used bonus points for this month for the payment method
+  const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+    transaction.paymentMethod.id,
+    year,
+    month
+  );
+  
+  // Use the centralized service to calculate points
+  return rewardCalculationService.calculatePoints(transaction, usedBonusPoints);
+}
+
+/**
+ * Synchronous version for immediate calculations
+ * Uses a default of 0 for usedBonusPoints when tracking service can't be used synchronously
+ */
+export function calculatePointsSync(transaction: Transaction): {
   basePoints: number;
   bonusPoints: number;
   totalPoints: number;
@@ -20,10 +55,9 @@ export function calculatePoints(transaction: Transaction): {
     };
   }
   
-  // Get used bonus points for this month for the payment method
-  // Note: This would ideally be fetched from a central bonus points tracking service
-  // For now, we'll assume 0 used points
-  const usedBonusPoints = 0; // This should be replaced with actual tracking
+  // Use 0 as default for usedBonusPoints in synchronous context
+  // This is a simplified approach for when we need immediate results
+  const usedBonusPoints = 0;
   
   // Use the centralized service to calculate points
   return rewardCalculationService.calculatePoints(transaction, usedBonusPoints);
@@ -54,10 +88,16 @@ export async function simulateRewardPoints(
     return { totalPoints: 0 };
   }
   
-  // This would be replaced with a call to a bonus points tracking service
-  // The service would get used bonus points for the current month
-  // For now, we'll use 0 as a placeholder
-  const usedBonusPoints = 0; // This should be replaced with actual tracking
+  // Extract year and month from date
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  
+  // Get used bonus points for the current month from the tracking service
+  const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+    paymentMethod.id,
+    year,
+    month
+  );
   
   try {
     // Use the centralized service to simulate points
@@ -72,10 +112,14 @@ export async function simulateRewardPoints(
       usedBonusPoints
     );
     
-    // Format a message text (this could be enhanced with card-specific messages)
+    // Format a message text based on calculation results
     let messageText;
     if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
       messageText = "Monthly bonus points cap reached";
+    } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints > 0) {
+      messageText = "Not eligible for bonus points";
+    } else if (result.remainingMonthlyBonusPoints !== undefined) {
+      messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
     }
     
     return {
@@ -102,31 +146,20 @@ export async function calculateTransactionPoints(
   transaction: Transaction,
   allTransactions: Transaction[]
 ): Promise<number> {
-  // Calculate used bonus points from previous transactions in the same month
-  const paymentMethodId = transaction.paymentMethod.id;
+  // Extract date components
   const txDate = new Date(transaction.date);
-  const txMonth = txDate.getMonth();
-  const txYear = txDate.getFullYear();
+  const year = txDate.getFullYear();
+  const month = txDate.getMonth();
   
-  // Find transactions from the same payment method in the current month
-  const monthTransactions = allTransactions.filter(tx => {
-    const date = new Date(tx.date);
-    return tx.paymentMethod.id === paymentMethodId &&
-           date.getMonth() === txMonth &&
-           date.getFullYear() === txYear &&
-           tx.id !== transaction.id; // Exclude current transaction
-  });
-  
-  // Calculate used bonus points
-  let usedBonusPoints = 0;
-  monthTransactions.forEach(tx => {
-    if (tx.rewardPoints > 0) {
-      // This is simplified and should be replaced with the actual base/bonus calculation
-      // Ideally, we would store the base/bonus breakdown in the transaction record
-      const calculatedPoints = rewardCalculationService.calculatePoints(tx);
-      usedBonusPoints += calculatedPoints.bonusPoints;
-    }
-  });
+  // Get used bonus points from previous transactions in the same month
+  // using the BonusPointsTrackingService
+  const relevantTransactions = allTransactions.filter(tx => tx.id !== transaction.id); // Exclude current transaction
+  const usedBonusPoints = bonusPointsTrackingService.calculateUsedBonusPointsFromTransactions(
+    relevantTransactions,
+    transaction.paymentMethod.id,
+    year,
+    month
+  );
   
   // Use the centralized service to calculate points
   const calculatedPoints = rewardCalculationService.calculatePoints(
