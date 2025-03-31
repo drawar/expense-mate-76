@@ -1,3 +1,4 @@
+
 // src/utils/formatting.ts
 import { Currency } from '@/types';
 
@@ -19,7 +20,7 @@ export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   CNY: '¥',
   INR: '₹',
   TWD: 'NT$',
-  SGD: 'S$',
+  SGD: 'S$', // Explicitly using S$ for Singapore Dollar
   VND: '₫',
   IDR: 'Rp',
   THB: '฿',
@@ -62,6 +63,7 @@ export const formatCurrency = (amount: number, currency: Currency): string => {
   
   // Format the number part with appropriate decimal places
   const formatter = new Intl.NumberFormat('en-US', {
+    style: 'decimal', // Use decimal style to avoid built-in currency symbols
     minimumFractionDigits: decimalPlaces,
     maximumFractionDigits: decimalPlaces,
   });

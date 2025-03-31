@@ -28,14 +28,17 @@ export const formatCurrency = (amount: number, currency: Currency): string => {
     currency = 'USD' as Currency;
   }
   
+  // Instead of using the built-in Intl.NumberFormat currency formatting,
+  // we'll use our custom currency symbols and format the number separately
   const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
+    style: 'decimal', // Use decimal instead of currency to avoid built-in currency symbols
     minimumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
     maximumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
   });
   
-  return formatter.format(amount);
+  // Get the symbol from our mapping and combine with the formatted number
+  const symbol = currencySymbols[currency];
+  return `${symbol}${formatter.format(amount)}`;
 };
 
 export const getCurrencySymbol = (currency: Currency): string => {
@@ -58,4 +61,3 @@ export const currencyOptions: { value: Currency; label: string }[] = [
   { value: 'THB', label: 'THB - Thai Baht (฿)' },
   { value: 'MYR', label: 'MYR - Malaysian Ringgit (RM)' },
 ];
-
