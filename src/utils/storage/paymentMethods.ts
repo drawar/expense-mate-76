@@ -79,6 +79,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
           color: method.color,
           image_url: method.imageUrl,
           conversion_rate: convertConversionRateToJson(method.conversionRate),
+          selected_categories: method.selectedCategories || [], // Explicitly store selected categories
         }, { onConflict: 'id' });
         
       if (upsertError) {
@@ -130,6 +131,8 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
     color: method.color,
     imageUrl: method.image_url,
     conversionRate: method.conversion_rate as unknown as Record<Currency, number>,
+    selectedCategories: Array.isArray((method as any).selected_categories) ? (method as any).selected_categories : 
+                      typeof (method as any).selected_categories === 'string' ? JSON.parse((method as any).selected_categories) : [], // Safely retrieve categories
   }));
 };
 

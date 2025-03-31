@@ -73,6 +73,7 @@ export class RewardCalculationService {
       isOnline: transaction.merchant?.isOnline,
       isContactless: transaction.isContactless,
       usedBonusPoints,
+      paymentMethod: transaction.paymentMethod, // Include full paymentMethod for selectedCategories
       // Additional fields could be added here for specialized card calculators
     };
   }

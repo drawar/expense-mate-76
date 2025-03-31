@@ -27,6 +27,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [isLoading, setIsLoading] = useState(false);
   const [rules, setRules] = useState<RewardRule[]>(paymentMethod.rewardRules || []);
+  const [editorConfig, setEditorConfig] = useState<any>(undefined);
   const { toast } = useToast();
   
   // Check if this is a UOB Lady's Solitaire card
@@ -40,11 +41,67 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
 
   // Handler for when categories are changed by the CategorySelector
   const handleCategoriesChanged = useCallback((newCategories: string[]) => {
+    console.log('Categories changed in CategorySelector:', newCategories);
     setSelectedCategories(newCategories);
-  }, []);
+    
+    // Update paymentMethod with the new categories for use in calculations
+    getPaymentMethods().then(methods => {
+      const currentMethod = methods.find(m => m.id === paymentMethod.id);
+      if (currentMethod) {
+        console.log('Current saved categories:', currentMethod.selectedCategories);
+      }
+    });
+  }, [paymentMethod.id]);
+
+  // This effect runs when selectedCategories changes
+  useEffect(() => {
+    if (isUOBLadysCard) {
+      console.log('selectedCategories state updated:', selectedCategories);
+    }
+  }, [selectedCategories, isUOBLadysCard]);
+
+  // When editing rule changes, load the actual configuration
+  useEffect(() => {
+    const loadRuleConfig = async () => {
+      if (editingRule) {
+        // Load the actual saved configuration from CardRuleService
+        try {
+          setIsLoading(true);
+          const config = await createInitialConfig(editingRule);
+          setEditorConfig(config);
+        } catch (error) {
+          console.error('Error loading rule configuration:', error);
+          // Fallback to defaults if there's an error
+          setEditorConfig({
+            name: editingRule.name,
+            description: editingRule.description || '',
+            enabled: true,
+            basePointRate: 0.4,
+            bonusPointRate: (editingRule.pointsMultiplier || 1) - 0.4,
+            monthlyCap: editingRule.maxSpend || 0,
+            rounding: paymentMethod.issuer === 'UOB' ? 'nearest5' : 
+                      paymentMethod.issuer === 'Citibank' ? 'floor' : 'nearest',
+            isOnlineOnly: editingRule.type === 'online',
+            isContactlessOnly: editingRule.type === 'contactless',
+            isForeignCurrency: editingRule.type === 'currency',
+            includedMCCs: Array.isArray(editingRule.condition) ? editingRule.condition : [],
+            excludedMCCs: []
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // For adding new rules, use defaults
+        setEditorConfig(undefined);
+      }
+    };
+    
+    loadRuleConfig();
+  }, [editingRule, paymentMethod.issuer]);
 
   const handleAddRule = () => {
     setEditingRule(null);
+    setEditorConfig(undefined);
     setDialogMode('add');
     setIsDialogOpen(true);
   };
@@ -52,6 +109,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
   const handleEditRule = (rule: RewardRule) => {
     setEditingRule(rule);
     setDialogMode('edit');
+    // Dialog opening is deferred until config is loaded
     setIsDialogOpen(true);
   };
 
@@ -111,6 +169,12 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase().replace(/\s+/g, '-')}` : 
         'generic';
       
+      // Set currency restrictions based on isForeignCurrency flag
+      let currencyRestrictions = config.currencyRestrictions;
+      if (config.isForeignCurrency) {
+        currencyRestrictions = ['!SGD']; // Exclude SGD transactions
+      }
+      
       // Create rule config
       const ruleConfig: RuleConfiguration = {
         id: editingRule?.id || uuidv4(),
@@ -118,7 +182,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         description: config.description || config.name,
         cardType,
         enabled: config.enabled,
-        rounding: 'nearest',
+        rounding: config.rounding, // Use user-selected rounding method
         basePointRate: config.basePointRate,
         bonusPointRate: config.bonusPointRate,
         monthlyCap: config.monthlyCap,
@@ -128,7 +192,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         excludedMCCs: config.excludedMCCs || [],
         minSpend: config.minSpend,
         maxSpend: config.maxSpend,
-        currencyRestrictions: config.currencyRestrictions,
+        currencyRestrictions: currencyRestrictions,
         pointsCurrency: paymentMethod.issuer ? `${paymentMethod.issuer} Points` : 'Points',
       };
       
@@ -142,6 +206,7 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
         description: ruleConfig.description,
         type: ruleConfig.isOnlineOnly ? 'online' : 
               ruleConfig.isContactlessOnly ? 'contactless' : 
+              ruleConfig.currencyRestrictions?.includes('!SGD') ? 'currency' :
               ruleConfig.includedMCCs.length > 0 ? 'mcc' : 'merchant',
         condition: ruleConfig.includedMCCs.length > 0 ? ruleConfig.includedMCCs : '',
         pointsMultiplier: ruleConfig.basePointRate + ruleConfig.bonusPointRate,
@@ -189,27 +254,55 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
     }
   };
 
-  // Create initial config from RewardRule
-  const createInitialConfig = (rule: RewardRule) => {
-    // Determine base and bonus point rates
-    const totalRate = rule.pointsMultiplier || 1;
-    const basePointRate = 0.4; // Default base rate
-    const bonusPointRate = totalRate - basePointRate;
+  // Create initial config from RewardRule with actual saved values
+  const createInitialConfig = async (rule: RewardRule) => {
+    console.log('Loading configuration for rule:', rule.id);
+    
+    // Default values in case we can't load the actual config
+    let basePointRate = 0.4;
+    let bonusPointRate = (rule.pointsMultiplier || 1) - 0.4;
+    let rounding = paymentMethod.issuer === 'UOB' ? 'nearest5' : 
+                  paymentMethod.issuer === 'Citibank' ? 'floor' : 'nearest';
+    let currencyRestrictions: string[] = [];
+    let isForeignCurrency = rule.type === 'currency';
+    
+    // Try to get the actual saved rule from CardRuleService
+    if (rule.id) {
+      try {
+        const savedRule = await cardRuleService.getRule(rule.id);
+        console.log('Loaded saved rule:', savedRule);
+        
+        if (savedRule) {
+          // Use the actual saved values
+          basePointRate = savedRule.basePointRate || basePointRate;
+          bonusPointRate = savedRule.bonusPointRate || bonusPointRate;
+          rounding = savedRule.rounding || rounding;
+          currencyRestrictions = savedRule.currencyRestrictions || [];
+          isForeignCurrency = currencyRestrictions.includes('!SGD') || rule.type === 'currency';
+        }
+      } catch (error) {
+        console.error('Failed to load saved rule config:', error);
+        // Continue with fallback values
+      }
+    }
     
     // Determine included MCCs from condition
     const includedMCCs = Array.isArray(rule.condition) ? rule.condition : [];
     
     return {
       name: rule.name,
-      description: rule.description,
+      description: rule.description || '',
       enabled: true,
       basePointRate,
       bonusPointRate,
       monthlyCap: rule.maxSpend || 0,
+      rounding,
       isOnlineOnly: rule.type === 'online',
       isContactlessOnly: rule.type === 'contactless',
+      isForeignCurrency,
       includedMCCs,
       excludedMCCs: [],
+      currencyRestrictions,
     };
   };
 
@@ -281,11 +374,18 @@ const RewardRulesAdmin: React.FC<RewardRulesAdminProps> = ({ paymentMethod }) =>
             </DialogTitle>
           </DialogHeader>
           
-          <RewardRuleEditor 
-            initialConfig={editingRule ? createInitialConfig(editingRule) : undefined}
-            onSave={handleSaveRule}
-            onCancel={() => setIsDialogOpen(false)}
-          />
+          {isLoading && dialogMode === 'edit' && !editorConfig ? (
+            <div className="py-8 text-center">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Loading rule configuration...</p>
+            </div>
+          ) : (
+            <RewardRuleEditor 
+              initialConfig={editorConfig}
+              onSave={handleSaveRule}
+              onCancel={() => setIsDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

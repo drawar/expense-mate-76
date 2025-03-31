@@ -29,7 +29,9 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
   // Define MCC categories
   private readonly categoryMCCs: Record<string, string[]> = {
     'Beauty & Wellness': ['5912', '5977', '7230', '7231', '7298', '7297', '5912', '5977', '7230', '7231', '7298', '7297'],
-    'Dining': ['5811', '5812', '5814', '5499'],
+    // Expanded Dining MCCs to include more restaurant/food-related codes
+    'Dining': ['5811', '5812', '5813', '5814', '5499', '5441', '5462', '5310', '5411', '5310', 
+               '0811', '0812', '0813', '0814', '811', '812', '813', '814'], // Different formats
     'Entertainment': ['5813', '7832', '7922'],
     'Family': ['5411', '5641'],
     'Fashion': ['5311', '5611', '5621', '5631', '5651', '5655', '5661', '5691', '5699', '5948'],
@@ -82,22 +84,51 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
   }
 
   /**
+   * Normalize MCC codes by removing leading zeros and whitespace
+   */
+  private normalizeMCC(mcc: string): string {
+    if (!mcc) return '';
+    // Remove leading zeros and trim whitespace
+    return mcc.replace(/^0+/, '').trim();
+  }
+
+  /**
    * Determines if a transaction is eligible for bonus points
    * based on its MCC code falling within the selected categories
    */
   getBonusPointsEligibility(props: UOBLadysSolitaireCardProps): boolean {
-    if (!props.mcc || !props.selectedCategories || props.selectedCategories.length === 0) {
+    if (!props.mcc) {
+      console.log('UOB Lady\'s Card: No MCC code provided for transaction');
       return false;
     }
     
+    if (!props.selectedCategories || props.selectedCategories.length === 0) {
+      console.log('UOB Lady\'s Card: No categories selected');
+      return false;
+    }
+    
+    // Normalize the transaction MCC
+    const normalizedMCC = this.normalizeMCC(props.mcc);
+    console.log(`UOB Lady's Card: Checking MCC ${props.mcc} (normalized: ${normalizedMCC})`);
+    console.log(`UOB Lady's Card: Selected categories: ${props.selectedCategories.join(', ')}`);
+    
     // Check if transaction MCC falls into any selected category
     for (const category of props.selectedCategories) {
+      console.log(`UOB Lady's Card: Checking category: ${category}`);
       const categoryMCCs = this.categoryMCCs[category] || [];
-      if (categoryMCCs.includes(props.mcc)) {
-        return true;
+      
+      // Check both normalized and original MCCs
+      for (const categoryMCC of categoryMCCs) {
+        const normalizedCategoryMCC = this.normalizeMCC(categoryMCC);
+        
+        if (normalizedCategoryMCC === normalizedMCC || categoryMCC === props.mcc) {
+          console.log(`UOB Lady's Card: Match found! MCC ${props.mcc} is in category ${category}`);
+          return true;
+        }
       }
     }
     
+    console.log(`UOB Lady's Card: No matches found for MCC ${props.mcc} in selected categories`);
     return false;
   }
 
@@ -128,8 +159,18 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
     const roundedAmount = this.calculateRoundedAmount(amount);
     const basePoints = this.calculateBasePoints(roundedAmount);
     
+    // Log current state for debugging
+    console.log('UOB Lady\'s Card calculateRewards:');
+    console.log('- Amount:', amount);
+    console.log('- MCC:', mcc);
+    console.log('- Selected Categories:', props.selectedCategories);
+    console.log('- Rounded Amount:', roundedAmount);
+    console.log('- Base Points:', basePoints);
+    
     // Determine bonus eligibility
     const isEligible = this.getBonusPointsEligibility(props);
+    console.log('- Is Eligible for Bonus:', isEligible);
+    
     let bonusPointMessage = "";
     
     // For demonstration, we're showing a simplified calculation
@@ -140,15 +181,18 @@ export class UOBLadysSolitaireCard extends BaseRewardCard<UOBLadysSolitaireCardP
     // Calculate potential bonus (for this transaction only, for demonstration)
     // In a real app, this would be based on the monthly total
     const potentialBonusPoints = isEligible ? Math.round(roundedAmount * 1.8) : 0;
+    console.log('- Potential Bonus Points:', potentialBonusPoints);
     
     // Apply monthly cap
     const bonusPointsCap = this.getBonusPointsCap();
     const actualBonusPoints = bonusPointsCap.applyCap(potentialBonusPoints, usedBonusPoints);
+    console.log('- Actual Bonus Points (after cap):', actualBonusPoints);
     
     const remainingBonusPoints = bonusPointsCap.getRemainingBonusPoints(
       usedBonusPoints,
       actualBonusPoints
     );
+    console.log('- Remaining Monthly Bonus Points:', remainingBonusPoints);
 
     // Generate appropriate message
     if (!isEligible) {

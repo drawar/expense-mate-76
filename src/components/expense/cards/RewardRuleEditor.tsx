@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RewardRule, RewardRuleFactory } from './BaseRewardCard';
 
 /**
@@ -14,10 +14,12 @@ interface EditableRuleConfig {
   basePointRate: number;
   bonusPointRate: number;
   monthlyCap: number;
+  rounding: 'floor' | 'ceiling' | 'nearest5' | 'nearest';
 
   // Eligibility criteria
   isOnlineOnly: boolean;
   isContactlessOnly: boolean;
+  isForeignCurrency: boolean;
   
   // MCC codes
   includedMCCs: string[];
@@ -37,8 +39,10 @@ const defaultRuleConfig: EditableRuleConfig = {
   basePointRate: 0.4,
   bonusPointRate: 0,
   monthlyCap: 0,
+  rounding: 'nearest', // Default to round to nearest dollar
   isOnlineOnly: false,
   isContactlessOnly: false,
+  isForeignCurrency: false,
   includedMCCs: [],
   excludedMCCs: []
 };
@@ -62,6 +66,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
 }) => {
   const [config, setConfig] = useState<EditableRuleConfig>(initialConfig);
   const [newMCC, setNewMCC] = useState<string>('');
+  
+  // Update internal state when initialConfig changes
+  // This ensures point rates are properly displayed when editing existing rules
+  useEffect(() => {
+    setConfig(initialConfig);
+  }, [initialConfig]);
   
   // Update a single field in the config
   const updateField = (field: keyof EditableRuleConfig, value: any) => {
@@ -109,6 +119,16 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
     // Add contactless transaction rule if enabled
     if (config.isContactlessOnly) {
       rules.push(RewardRuleFactory.createContactlessTransactionRule());
+    }
+    
+    // Add foreign currency rule if enabled
+    if (config.isForeignCurrency) {
+      // This would be connected to currencyRestrictions in the actual rule
+      // with a value of ["!SGD"] to exclude SGD transactions
+      rules.push({
+        isEligible: (props) => props.currency !== undefined && props.currency !== 'SGD',
+        calculatePoints: () => 0 // Calculation done elsewhere
+      });
     }
     
     // Add MCC inclusion rule if MCCs are defined
@@ -200,6 +220,24 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             style={{ color: '#000000' }}
           />
         </div>
+        
+        <div className="mb-2">
+          <label className="block mb-1">Amount Rounding Method</label>
+          <select
+            className="w-full p-2 border rounded font-medium"
+            value={config.rounding}
+            onChange={(e) => updateField('rounding', e.target.value)}
+            style={{ color: '#000000' }}
+          >
+            <option value="floor">Round Down (Floor) - $13.70 → $13</option>
+            <option value="ceiling">Round Up (Ceiling) - $13.30 → $14</option>
+            <option value="nearest">Round to Nearest Dollar - $13.50 → $14</option>
+            <option value="nearest5">Round Down to Nearest $5 - $13.70 → $10, $4.80 → $0</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            {config.rounding === 'nearest5' && "Note: Small amounts under $5 will round to $0, earning no points."}
+          </p>
+        </div>
       </div>
       
       {/* Eligibility Criteria */}
@@ -227,6 +265,18 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
               className="mr-2"
             />
             Contactless Payments Only
+          </label>
+        </div>
+        
+        <div className="mb-2">
+          <label className="flex items-center">
+            <input 
+              type="checkbox" 
+              checked={config.isForeignCurrency} 
+              onChange={(e) => updateField('isForeignCurrency', e.target.checked)} 
+              className="mr-2"
+            />
+            Foreign Currency Transactions Only
           </label>
         </div>
       </div>

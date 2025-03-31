@@ -17,6 +17,7 @@ export interface RewardRuleFormData {
   monthlyCap: number;
   isOnlineOnly: boolean;
   isContactlessOnly: boolean;
+  isForeignCurrency: boolean;
   includedMCCs: string[];
   excludedMCCs: string[];
 }
@@ -38,6 +39,7 @@ const defaultFormData: RewardRuleFormData = {
   monthlyCap: 0,
   isOnlineOnly: false,
   isContactlessOnly: false,
+  isForeignCurrency: false,
   includedMCCs: [],
   excludedMCCs: []
 };
@@ -218,6 +220,15 @@ const RewardRuleEditDialog: React.FC<RewardRuleEditDialogProps> = ({
                   onCheckedChange={(checked) => handleCheckboxChange('isContactlessOnly', checked as boolean)}
                 />
                 <Label htmlFor="isContactlessOnly" className="text-white">Contactless Payments Only</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isForeignCurrency"
+                  checked={formData.isForeignCurrency}
+                  onCheckedChange={(checked) => handleCheckboxChange('isForeignCurrency', checked as boolean)}
+                />
+                <Label htmlFor="isForeignCurrency" className="text-white">Foreign Currency Transactions Only</Label>
               </div>
             </div>
           </div>
