@@ -1,9 +1,7 @@
 
 import { Currency } from '@/types';
 
-// Default symbol mapping for currencies
 const currencySymbols: Record<Currency, string> = {
-  SGD: 'S$',
   USD: '$',
   EUR: '€',
   GBP: '£',
@@ -13,65 +11,53 @@ const currencySymbols: Record<Currency, string> = {
   CNY: '¥',
   INR: '₹',
   TWD: 'NT$',
+  SGD: 'S$',  // Explicitly set to 'S$' for consistency
   VND: '₫',
   IDR: 'Rp',
   THB: '฿',
-  MYR: 'RM'
+  MYR: 'RM',
 };
 
-/**
- * Format a number as currency with the appropriate symbol
- * 
- * @param amount - Amount to format
- * @param currency - Currency code
- * @param options - Intl.NumberFormat options to override defaults
- * @returns Formatted currency string
- */
-export const formatCurrency = (
-  amount: number,
-  currency: Currency,
-  options: Intl.NumberFormatOptions = {}
-): string => {
-  try {
-    // Log for debugging
-    console.log(`Formatting currency: ${amount} ${currency}`);
-
-    // For Singapore Dollar, use a custom format with S$ prefix
-    if (currency === 'SGD') {
-      // Use decimal style without currency symbol
-      const formatter = new Intl.NumberFormat('en-SG', {
-        style: 'decimal',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        ...options
-      });
-      
-      // Format with 'S$' prefix
-      return `S$${formatter.format(amount)}`;
-    }
-    
-    // For other currencies, use standard formatting
-    const formatter = new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      ...options
-    });
-    
-    return formatter.format(amount);
-  } catch (error) {
-    console.error(`Error formatting currency ${currency}:`, error);
-    return `${amount} ${currency}`; // Fallback format
+export const formatCurrency = (amount: number, currency: Currency): string => {
+  // Added debug log to check currency formatting
+  console.log(`Formatting currency: ${amount} ${currency}`);
+  
+  // Handle edge cases where currency might be undefined or invalid
+  if (!currency || !Object.keys(currencySymbols).includes(currency)) {
+    console.warn(`Invalid currency provided: ${currency}, using USD as fallback`);
+    currency = 'USD' as Currency;
   }
+  
+  // Instead of using the built-in Intl.NumberFormat currency formatting,
+  // we'll use our custom currency symbols and format the number separately
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'decimal', // Use decimal instead of currency to avoid built-in currency symbols
+    minimumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
+    maximumFractionDigits: ['JPY', 'VND', 'IDR', 'TWD'].includes(currency) ? 0 : 2,
+  });
+  
+  // Get the symbol from our mapping and combine with the formatted number
+  const symbol = currencySymbols[currency];
+  return `${symbol}${formatter.format(amount)}`;
 };
 
-/**
- * Get currency symbol for given currency code
- * 
- * @param currency - Currency code
- * @returns Currency symbol or code if not found
- */
 export const getCurrencySymbol = (currency: Currency): string => {
   return currencySymbols[currency] || currency;
 };
+
+export const currencyOptions: { value: Currency; label: string }[] = [
+  { value: 'USD', label: 'USD - US Dollar ($)' },
+  { value: 'EUR', label: 'EUR - Euro (€)' },
+  { value: 'GBP', label: 'GBP - British Pound (£)' },
+  { value: 'JPY', label: 'JPY - Japanese Yen (¥)' },
+  { value: 'AUD', label: 'AUD - Australian Dollar (A$)' },
+  { value: 'CAD', label: 'CAD - Canadian Dollar (C$)' },
+  { value: 'CNY', label: 'CNY - Chinese Yuan (¥)' },
+  { value: 'INR', label: 'INR - Indian Rupee (₹)' },
+  { value: 'TWD', label: 'TWD - New Taiwan Dollar (NT$)' },
+  { value: 'SGD', label: 'SGD - Singapore Dollar (S$)' },
+  { value: 'VND', label: 'VND - Vietnamese Dong (₫)' },
+  { value: 'IDR', label: 'IDR - Indonesian Rupiah (Rp)' },
+  { value: 'THB', label: 'THB - Thai Baht (฿)' },
+  { value: 'MYR', label: 'MYR - Malaysian Ringgit (RM)' },
+];
