@@ -1,3 +1,4 @@
+
 // src/containers/DashboardContainer.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
@@ -66,6 +67,8 @@ const DashboardContainer: React.FC = () => {
       setLoading(false);
       setError(null);
       setLastUpdateTimestamp(Date.now());
+      
+      console.log(`Dashboard data loaded with ${loadedTransactions.length} transactions`);
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load dashboard data');
@@ -85,24 +88,15 @@ const DashboardContainer: React.FC = () => {
     
     // Set up real-time subscriptions
     const channel = supabase
-      .channel('public:transactions')
+      .channel('dashboard_transactions')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'transactions'
       }, (payload: any) => {
-        // Check if this is a recent transaction before triggering reload
-        const payloadDate = payload.new?.date || payload.old?.date;
-        if (payloadDate) {
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          const txDate = new Date(payloadDate);
-          
-          // Only reload if this is a recent transaction
-          if (txDate >= thirtyDaysAgo) {
-            loadData();
-          }
-        }
+        console.log('Received transaction update:', payload.eventType);
+        // Force reload on any transaction changes without filtering
+        loadData();
       })
       .subscribe();
     
@@ -113,15 +107,14 @@ const DashboardContainer: React.FC = () => {
   }, [loadData]);
 
   // Create stable props object for Dashboard component to prevent unnecessary re-renders
-  // Removed lastUpdateTimestamp from dependencies as it doesn't affect the actual props structure
+  // Include lastUpdateTimestamp to force re-rendering when data changes
   const dashboardProps = useMemo(() => ({
     transactions,
     paymentMethods,
     loading,
-    defaultCurrency: "SGD" as Currency
-  }), [transactions, paymentMethods, loading]);
-  
-  // Removed console.log which would execute on every render
+    defaultCurrency: "SGD" as Currency,
+    lastUpdate: lastUpdateTimestamp
+  }), [transactions, paymentMethods, loading, lastUpdateTimestamp]);
   
   return <Dashboard {...dashboardProps} />;
 };

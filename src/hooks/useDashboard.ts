@@ -38,7 +38,8 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     statementCycleDay = 15,
     previousPeriodTransactions = [],
     calculateDayOfWeekMetrics = false,
-    calculateVelocity = false
+    calculateVelocity = false,
+    lastUpdate = Date.now() // Add lastUpdate with default
   } = options;
 
   /**
@@ -56,13 +57,15 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     // Early return for empty transactions to avoid unnecessary processing
     if (!transactions.length) return [];
     
+    console.log(`Filtering ${transactions.length} transactions for timeframe ${timeframe}`);
+    
     return filterTransactionsByTimeframe(
       transactions,
       timeframe,
       useStatementMonth,
       statementCycleDay
     );
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
+  }, [transactions, timeframe, useStatementMonth, statementCycleDay, lastUpdate]);
 
   /**
    * Step 3: Generate comparison data - separating this from other calculations
@@ -87,7 +90,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
         statementCycleDay
       );
     }
-  }, [previousPeriodTransactions, transactions, timeframe, useStatementMonth, statementCycleDay]);
+  }, [previousPeriodTransactions, transactions, timeframe, useStatementMonth, statementCycleDay, lastUpdate]);
 
   /**
    * Step 4: Calculate primary metrics only when filtered data or currency changes
@@ -104,6 +107,8 @@ export function useDashboard(options: DashboardOptions): DashboardData {
         hasEnoughData: false
       };
     }
+    
+    console.log(`Calculating metrics for ${filteredTransactions.length} filtered transactions`);
     
     // Current period metrics
     const totalExpenses = calculateTotalExpenses(filteredTransactions, displayCurrency);
@@ -123,7 +128,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
       percentageChange,
       hasEnoughData: hasEnoughDataForTrends(filteredTransactions)
     };
-  }, [filteredTransactions, filteredPreviousPeriodTransactions, displayCurrency]);
+  }, [filteredTransactions, filteredPreviousPeriodTransactions, displayCurrency, lastUpdate]);
 
   /**
    * Step 5: Generate chart data using specialized hooks
@@ -155,7 +160,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
   const dayOfWeekSpending = useMemo(() => {
     if (!calculateDayOfWeekMetrics || !filteredTransactions.length) return undefined;
     return calculateAverageByDayOfWeek(filteredTransactions, displayCurrency);
-  }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics]);
+  }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics, lastUpdate]);
 
   /**
    * Extract top values with appropriate dependencies
@@ -180,7 +185,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     }
     
     return metrics;
-  }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity]);
+  }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity, lastUpdate]);
 
   /**
    * Combine all calculated data into the final dashboard data structure

@@ -1,3 +1,4 @@
+
 // src/components/dashboard/Dashboard.tsx
 import React, { useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
@@ -16,6 +17,7 @@ interface DashboardProps {
   paymentMethods: PaymentMethod[];
   loading: boolean;
   defaultCurrency?: Currency;
+  lastUpdate?: number; // Add timestamp for forcing updates
 }
 
 /**
@@ -26,7 +28,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   transactions,
   paymentMethods,
   loading,
-  defaultCurrency = 'SGD'
+  defaultCurrency = 'SGD',
+  lastUpdate
 }) => {
   // Use our custom filter hook to manage all filter state
   const filters = useDashboardFilters(defaultCurrency);
@@ -41,14 +44,16 @@ const Dashboard: React.FC<DashboardProps> = ({
     timeframe: filters.activeTab,
     useStatementMonth: filters.useStatementMonth,
     statementCycleDay: filters.statementCycleDay,
-    calculateDayOfWeekMetrics: hasTransactions // Only calculate when we have data
+    calculateDayOfWeekMetrics: hasTransactions, // Only calculate when we have data
+    lastUpdate // Pass through the update timestamp
   }), [
     transactions, 
     filters.displayCurrency, 
     filters.activeTab, 
     filters.useStatementMonth, 
     filters.statementCycleDay,
-    hasTransactions
+    hasTransactions,
+    lastUpdate // Add as dependency to refresh calculations
   ]);
   
   // Use the dashboard data hook with our memoized options
