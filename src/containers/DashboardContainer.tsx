@@ -1,4 +1,3 @@
-
 // src/containers/DashboardContainer.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Transaction, PaymentMethod, Currency } from '@/types';
@@ -36,10 +35,6 @@ const DashboardContainer: React.FC = () => {
         setInitialized(true);
       }
       
-      // Get only recent transactions for homepage (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
       // Get payment methods - using error handling wrapper
       const loadedPaymentMethods = await tryCatchWrapper(
         async () => getPaymentMethods(),
@@ -56,28 +51,17 @@ const DashboardContainer: React.FC = () => {
         [] as Transaction[]
       );
       
-      // Filter to only recent transactions (last 30 days) to improve performance
-      const loadedTransactions = allTransactions
-        .filter(tx => {
-          if (tx.is_deleted) return false;
-          
-          // Create date objects for comparison (removing time components)
-          const txDate = new Date(tx.date);
-          const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
-          const comparisonDate = new Date(thirtyDaysAgo.getFullYear(), thirtyDaysAgo.getMonth(), thirtyDaysAgo.getDate());
-          
-          // Include the transaction if it's on or after the comparison date
-          return txDateOnly >= comparisonDate;
-        })
-        .slice(0, 50); // Limit to 50 most recent transactions for homepage performance
+      // Filter out deleted transactions but keep all valid transactions (even old ones)
+      // Filtering by timeframe will be handled by the dashboard components
+      const loadedTransactions = allTransactions.filter(tx => !tx.is_deleted);
+      
+      console.log(`Loaded ${loadedTransactions.length} total transactions for dashboard`);
       
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
       setLoading(false);
       setError(null);
       setLastUpdateTimestamp(Date.now());
-      
-      console.log(`Dashboard data loaded with ${loadedTransactions.length} transactions`);
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load dashboard data');

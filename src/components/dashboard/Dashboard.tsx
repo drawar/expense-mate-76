@@ -41,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const dashboardOptions = useMemo(() => ({
     transactions,
     displayCurrency: filters.displayCurrency,
-    timeframe: filters.activeTab,
+    timeframe: filters.activeTab as TimeframeTab,
     useStatementMonth: filters.useStatementMonth,
     statementCycleDay: filters.statementCycleDay,
     calculateDayOfWeekMetrics: hasTransactions, // Only calculate when we have data
@@ -58,6 +58,31 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   // Use the dashboard data hook with our memoized options
   const dashboardData = useDashboard(dashboardOptions);
+  
+  // Ensure we always have valid dashboard data structure even when filtering returns no data
+  const safeDashboardData = useMemo(() => {
+    // Default/fallback data when no results are available
+    const defaultData = {
+      filteredTransactions: [],
+      metrics: {
+        totalExpenses: 0,
+        transactionCount: 0,
+        averageAmount: 0,
+        totalRewardPoints: 0,
+        percentageChange: 0,
+        hasEnoughData: false,
+      },
+      top: {},
+      charts: {
+        paymentMethods: [],
+        categories: [],
+        spendingTrends: { labels: [], datasets: [] }
+      }
+    };
+    
+    // If dashboardData is null or undefined, return the default data
+    return dashboardData || defaultData;
+  }, [dashboardData]);
   
   // More efficient recent transactions calculation
   // Finds 5 most recent without sorting the entire array
@@ -95,6 +120,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   if (loading) {
     return <LoadingDashboard />;
   }
+
+  console.log('Dashboard rendering with timeframe:', filters.activeTab);
+  console.log('Has filtered transactions:', safeDashboardData.filteredTransactions?.length || 0);
   
   return (
     <div className="min-h-screen">  
@@ -113,7 +141,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         
         {/* Summary Section - now without filters */}
         <SummarySection 
-          dashboardData={dashboardData}
+          dashboardData={safeDashboardData}
           displayCurrency={filters.displayCurrency}
           activeTab={filters.activeTab}
           onTabChange={filters.handleTimeframeChange}
@@ -121,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         
         {/* Insights Grid - with filtered data */}
         <InsightsGrid 
-          dashboardData={dashboardData}
+          dashboardData={safeDashboardData}
           paymentMethods={paymentMethods}
           displayCurrency={filters.displayCurrency}
         />

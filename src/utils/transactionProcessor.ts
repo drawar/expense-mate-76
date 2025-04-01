@@ -1,3 +1,4 @@
+
 // src/utils/transactionProcessor.ts
 import { Transaction, Currency } from '@/types';
 import { getCategoryFromMCC, getCategoryFromMerchantName } from './categoryMapping';
@@ -46,13 +47,16 @@ export function generateDateRanges(
   const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
   thisMonthEnd.setHours(23, 59, 59, 999);
   
+  // Last month date range
   const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
   const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+  lastMonthEnd.setHours(23, 59, 59, 999);  // Make sure to include all transactions on the last day
   
   const threeMonthsAgo = new Date(currentYear, currentMonth - 3, now.getDate());
   
   const thisYearStart = new Date(currentYear, 0, 1);
   const thisYearEnd = new Date(currentYear, 11, 31);
+  thisYearEnd.setHours(23, 59, 59, 999);
   
   // Statement date range if enabled
   let statementRange = { start: thisMonthStart, end: thisMonthEnd };
@@ -101,7 +105,17 @@ export function filterTransactionsByTimeframe(
   useStatementMonth: boolean,
   statementCycleDay: number
 ): Transaction[] {
+  // Get all date ranges
   const dateRanges = generateDateRanges(useStatementMonth, statementCycleDay);
+  
+  // Early return if no transactions
+  if (!transactions || transactions.length === 0) {
+    console.log('No transactions to filter');
+    return [];
+  }
+  
+  console.log(`Filtering ${transactions.length} transactions by timeframe: ${timeframe}`);
+  console.log('UseStatementMonth:', useStatementMonth);
   
   // If statement cycle is enabled, filter by statement period
   if (useStatementMonth) {
@@ -113,7 +127,9 @@ export function filterTransactionsByTimeframe(
     case 'thisMonth':
       return filterTransactionsByDateRange(transactions, dateRanges.thisMonth as DateRange);
     case 'lastMonth':
-      return filterTransactionsByDateRange(transactions, dateRanges.lastMonth as DateRange);
+      const result = filterTransactionsByDateRange(transactions, dateRanges.lastMonth as DateRange);
+      console.log(`Last month filtering: found ${result.length} transactions from ${dateRanges.lastMonth.start.toISOString()} to ${dateRanges.lastMonth.end.toISOString()}`);
+      return result;
     case 'lastThreeMonths': {
       const threeMonthsAgo = dateRanges.threeMonthsAgo as Date;
       return transactions.filter(tx => {
@@ -124,6 +140,7 @@ export function filterTransactionsByTimeframe(
     case 'thisYear':
       return filterTransactionsByDateRange(transactions, dateRanges.thisYear as DateRange);
     default:
+      console.warn(`Unknown timeframe: ${timeframe}, defaulting to all transactions`);
       return transactions;
   }
 }
@@ -135,6 +152,11 @@ export function filterTransactionsByDateRange(
   transactions: Transaction[],
   dateRange: DateRange
 ): Transaction[] {
+  if (!dateRange || !dateRange.start || !dateRange.end) {
+    console.warn('Invalid date range provided for filtering');
+    return transactions;
+  }
+
   return transactions.filter(tx => {
     // Create a date object from the transaction date string
     const txDate = new Date(tx.date);
