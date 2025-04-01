@@ -1,78 +1,11 @@
 
 // src/types/dashboardTypes.ts
-import { Transaction, Currency } from '@/types';
+import { Transaction, Currency, PaymentMethod } from '@/types';
 import { TimeframeTab } from '@/utils/transactionProcessor';
+import { ChartDataItem } from '@/utils/dashboardUtils';
 
 /**
- * Options for configuring dashboard data processing
- */
-export interface DashboardOptions {
-  /**
-   * Array of transactions to analyze
-   */
-  transactions: Transaction[];
-  
-  /**
-   * Currency to display monetary values in
-   */
-  displayCurrency: Currency;
-  
-  /**
-   * Selected time period for filtering transactions
-   */
-  timeframe: TimeframeTab;
-  
-  /**
-   * Whether to use statement month filtering (for credit cards)
-   */
-  useStatementMonth?: boolean;
-  
-  /**
-   * Day of month when statement cycle begins
-   */
-  statementCycleDay?: number;
-  
-  /**
-   * Optional array of transactions from a previous period for comparison
-   */
-  previousPeriodTransactions?: Transaction[];
-  
-  /**
-   * Whether to calculate day of week metrics (more expensive)
-   */
-  calculateDayOfWeekMetrics?: boolean;
-  
-  /**
-   * Whether to calculate transaction velocity (transactions per day)
-   */
-  calculateVelocity?: boolean;
-  
-  /**
-   * Timestamp to force refresh calculations when data is updated
-   */
-  lastUpdate?: number;
-}
-
-/**
- * Structure of processed dashboard data ready for display
- */
-export interface DashboardData {
-  filteredTransactions: Transaction[];
-  metrics: DashboardMetrics;
-  top: {
-    paymentMethod?: { name: string; value: number };
-    category?: { name: string; value: number };
-  };
-  charts: {
-    paymentMethods: ChartItem[];
-    categories: ChartItem[];
-    dayOfWeekSpending?: Record<string, number>;
-    spendingTrends: any;
-  };
-}
-
-/**
- * Dashboard metrics calculated from transactions
+ * Dashboard metrics
  */
 export interface DashboardMetrics {
   totalExpenses: number;
@@ -80,24 +13,56 @@ export interface DashboardMetrics {
   averageAmount: number;
   totalRewardPoints: number;
   percentageChange: number;
-  hasEnoughData: boolean;
   transactionVelocity?: number;
+  hasEnoughData?: boolean;
+  totalReimbursed?: number; // New: Total reimbursed amount
 }
 
 /**
- * Generic chart data item
+ * Chart data structure
  */
-export interface ChartItem {
-  name: string;
-  value: number;
-  color: string;
+export interface DashboardChartData {
+  paymentMethods: ChartDataItem[];
+  categories: ChartDataItem[];
+  dayOfWeekSpending?: Record<string, number>;
+  spendingTrends: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+    }[];
+  };
 }
 
 /**
- * Options for spending trend chart data generation
+ * Top values structure
  */
-export interface SpendingTrendOptions {
-  includeCategoryBreakdown?: boolean;
+export interface DashboardTopValues {
+  paymentMethod?: { name: string; value: number };
+  category?: { name: string; value: number };
+}
+
+/**
+ * Complete dashboard data structure
+ */
+export interface DashboardData {
+  filteredTransactions: Transaction[];
+  metrics: DashboardMetrics;
+  top: DashboardTopValues;
+  charts: DashboardChartData;
+}
+
+/**
+ * Options for dashboard data processing
+ */
+export interface DashboardOptions {
+  transactions: Transaction[];
   displayCurrency: Currency;
+  timeframe: TimeframeTab;
+  useStatementMonth: boolean;
+  statementCycleDay: number;
+  previousPeriodTransactions?: Transaction[];
+  calculateDayOfWeekMetrics?: boolean;
+  calculateVelocity?: boolean;
+  lastUpdate?: number;
 }
-

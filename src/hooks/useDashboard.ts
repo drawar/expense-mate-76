@@ -1,3 +1,4 @@
+
 // src/hooks/useDashboard.ts
 import { useMemo } from 'react';
 import { Transaction, Currency } from '@/types';
@@ -11,6 +12,7 @@ import {
   calculateTotalRewardPoints,
   calculateTransactionVelocity,
   calculateAverageByDayOfWeek,
+  calculateTotalReimbursed, // New function to calculate reimbursements
   getTopChartItem,
   getPreviousTimeframe,
   hasEnoughDataForTrends
@@ -24,6 +26,7 @@ import {
  * 2. Calculating key metrics (expenses, counts, averages)
  * 3. Generating chart data for visualizations
  * 4. Computing comparison metrics with previous periods
+ * 5. Now also calculating reimbursement amounts
  * 
  * @param options Configuration options for dashboard processing
  * @returns Processed dashboard data ready for display
@@ -104,6 +107,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
         averageAmount: 0,
         totalRewardPoints: 0,
         percentageChange: 0,
+        totalReimbursed: 0, // Add reimbursement total
         hasEnoughData: false
       };
     }
@@ -115,10 +119,17 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     const transactionCount = filteredTransactions.length;
     const averageAmount = calculateAverageAmount(totalExpenses, transactionCount);
     const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
+    const totalReimbursed = calculateTotalReimbursed(filteredTransactions, displayCurrency);
     
     // Comparison metrics with previous period
+    // For net expenses, we should use (totalExpenses - totalReimbursed) for both current and previous periods
     const previousExpenses = calculateTotalExpenses(filteredPreviousPeriodTransactions, displayCurrency);
-    const percentageChange = calculatePercentageChange(totalExpenses, previousExpenses);
+    const previousReimbursed = calculateTotalReimbursed(filteredPreviousPeriodTransactions, displayCurrency);
+    
+    // Calculate percentage change based on net expenses (expenses - reimbursements)
+    const currentNetExpenses = totalExpenses - totalReimbursed;
+    const previousNetExpenses = previousExpenses - previousReimbursed;
+    const percentageChange = calculatePercentageChange(currentNetExpenses, previousNetExpenses);
     
     return {
       totalExpenses,
@@ -126,6 +137,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
       averageAmount,
       totalRewardPoints,
       percentageChange,
+      totalReimbursed,
       hasEnoughData: hasEnoughDataForTrends(filteredTransactions)
     };
   }, [filteredTransactions, filteredPreviousPeriodTransactions, displayCurrency, lastUpdate]);
@@ -142,7 +154,8 @@ export function useDashboard(options: DashboardOptions): DashboardData {
    */
   const spendingTrendOptions = useMemo(() => ({
     includeCategoryBreakdown: true,
-    displayCurrency
+    displayCurrency,
+    accountForReimbursements: true // Include this flag for reimbursement calculation
   }), [displayCurrency]);
   
   /**

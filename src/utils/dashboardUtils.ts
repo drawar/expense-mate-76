@@ -1,3 +1,4 @@
+
 // src/utils/dashboardUtils.ts
 import { Transaction, Currency, PaymentMethod } from '@/types';
 import { convertCurrency } from '@/utils/currencyConversion';
@@ -35,6 +36,36 @@ export function calculateTotalExpenses(
       return total + convertedAmount;
     } catch (error) {
       console.error('Error converting currency:', error);
+      return total;
+    }
+  }, 0);
+}
+
+/**
+ * Calculate total reimbursed amount with currency conversion
+ * 
+ * @param transactions - Transactions to sum reimbursements from
+ * @param displayCurrency - Currency to convert amounts to
+ * @returns Total reimbursed amount in the display currency
+ */
+export function calculateTotalReimbursed(
+  transactions: Transaction[],
+  displayCurrency: Currency
+): number {
+  return transactions.reduce((total, tx) => {
+    try {
+      // Skip if no reimbursement amount
+      if (!tx.reimbursementAmount) return total;
+      
+      const convertedAmount = convertCurrency(
+        tx.reimbursementAmount,
+        tx.currency as Currency, // Reimbursement is in the same currency as the transaction
+        displayCurrency,
+        tx.paymentMethod
+      );
+      return total + convertedAmount;
+    } catch (error) {
+      console.error('Error converting reimbursement currency:', error);
       return total;
     }
   }, 0);
@@ -129,7 +160,17 @@ export function calculateAverageByDayOfWeek(
         tx.paymentMethod
       );
       
-      dayTotals.set(dayOfWeek, (dayTotals.get(dayOfWeek) || 0) + convertedAmount);
+      // If there's a reimbursement, subtract it from the amount
+      const netAmount = convertedAmount - (tx.reimbursementAmount 
+        ? convertCurrency(
+            tx.reimbursementAmount,
+            tx.currency as Currency,
+            displayCurrency,
+            tx.paymentMethod
+          ) 
+        : 0);
+      
+      dayTotals.set(dayOfWeek, (dayTotals.get(dayOfWeek) || 0) + netAmount);
       dayCounts.set(dayOfWeek, (dayCounts.get(dayOfWeek) || 0) + 1);
     } catch (error) {
       console.error('Error calculating day of week average:', error);

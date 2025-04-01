@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -37,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 const TransactionDetailsForm = () => {
   const form = useFormContext();
+  const currency = form.watch('currency');
 
   return (
     <Card>
@@ -106,6 +108,30 @@ const TransactionDetailsForm = () => {
             )}
           />
         </div>
+        
+        {/* New Reimbursement Amount Field */}
+        <FormField
+          control={form.control}
+          name="reimbursementAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reimbursement Amount</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Amount reimbursed for this expense (in {currency})
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}

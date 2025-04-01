@@ -1,3 +1,4 @@
+
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'TWD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export type MerchantCategoryCode = {
@@ -65,6 +66,7 @@ export interface Transaction {
   tags?: string[];
   isContactless?: boolean;
   is_deleted?: boolean; // Add this field to match the backend schema
+  reimbursementAmount?: number; // Add reimbursement amount to track expense reimbursements
 }
 
 export interface ExpenseSummary {

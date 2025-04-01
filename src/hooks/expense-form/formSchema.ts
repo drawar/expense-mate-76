@@ -16,6 +16,9 @@ export const formSchema = z.object({
   paymentAmount: z.string().refine(value => !isNaN(Number(value)) && Number(value) >= 0, {
     message: 'Payment amount must be a non-negative number',
   }).optional(),
+  reimbursementAmount: z.string().refine(value => value === '' || (!isNaN(Number(value)) && Number(value) >= 0), {
+    message: 'Reimbursement amount must be a non-negative number',
+  }).default('0'),
   date: z.date({
     required_error: 'Date is required',
   }),

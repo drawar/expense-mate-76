@@ -1,3 +1,4 @@
+
 // src/utils/chartDataProcessor.ts
 import { Transaction, Currency } from '@/types';
 import { convertCurrency } from '@/utils/currencyConversion';
@@ -44,6 +45,8 @@ export interface ChartProcessingOptions {
   includeTrend?: boolean;
   /** Currency for display and conversion */
   displayCurrency?: Currency;
+  /** Whether to account for reimbursements in calculations */
+  accountForReimbursements?: boolean;
 }
 
 /**
@@ -53,22 +56,15 @@ export interface ChartProcessingOptions {
  * @param groupByField - Field to group by (paymentMethod, category, etc.)
  * @param displayCurrency - Currency to convert values to
  * @param colorPalette - Color scheme to use
- * @returns Array of formatted chart data items
- */
-/**
- * Process transactions into pie chart data format
- * 
- * @param transactions - Transactions to process
- * @param groupByField - Field to group by (paymentMethod, category, etc.)
- * @param displayCurrency - Currency to convert values to
- * @param colorPalette - Color scheme to use
+ * @param accountForReimbursements - Whether to subtract reimbursed amounts
  * @returns Array of formatted chart data items
  */
 export function processPieChartData(
   transactions: Transaction[],
   groupByField: 'paymentMethod' | 'category' | string,
   displayCurrency: Currency,
-  colorPalette: string[] = CHART_COLORS
+  colorPalette: string[] = CHART_COLORS,
+  accountForReimbursements: boolean = true
 ): ChartDataItem[] {
   if (!transactions || transactions.length === 0) return [];
   
@@ -95,7 +91,19 @@ export function processPieChartData(
       tx.paymentMethod
     );
     
-    groups.set(key, (groups.get(key) || 0) + convertedAmount);
+    // Adjust for reimbursements if applicable
+    let finalAmount = convertedAmount;
+    if (accountForReimbursements && tx.reimbursementAmount) {
+      const reimbursedAmount = convertCurrency(
+        tx.reimbursementAmount,
+        tx.currency as Currency, // Reimbursement is in same currency as transaction
+        displayCurrency,
+        tx.paymentMethod
+      );
+      finalAmount -= reimbursedAmount;
+    }
+    
+    groups.set(key, (groups.get(key) || 0) + finalAmount);
   });
   
   // Calculate total for percentage calculations
@@ -164,11 +172,15 @@ export function groupTransactionsByPeriod(
  * 
  * @param transactions - Transactions to analyze
  * @param maxCategories - Maximum number of categories to return
+ * @param displayCurrency - Currency to convert amounts to
+ * @param accountForReimbursements - Whether to subtract reimbursed amounts
  * @returns Array of category and amount pairs
  */
 export function getTopCategoriesForPeriod(
   transactions: Transaction[],
-  maxCategories: number = 3
+  maxCategories: number = 3,
+  displayCurrency: Currency = 'SGD',
+  accountForReimbursements: boolean = true
 ): Array<{ category: string; amount: number }> {
   // Group by category
   const categoryMap = new Map<string, number>();
@@ -176,8 +188,28 @@ export function getTopCategoriesForPeriod(
   transactions.forEach(tx => {
     if (!tx.category) return;
     
+    // Convert to display currency
+    const convertedAmount = convertCurrency(
+      tx.amount,
+      tx.currency as Currency,
+      displayCurrency,
+      tx.paymentMethod
+    );
+    
+    // Adjust for reimbursements if applicable
+    let finalAmount = convertedAmount;
+    if (accountForReimbursements && tx.reimbursementAmount) {
+      const reimbursedAmount = convertCurrency(
+        tx.reimbursementAmount,
+        tx.currency as Currency,
+        displayCurrency,
+        tx.paymentMethod
+      );
+      finalAmount -= reimbursedAmount;
+    }
+    
     const existingAmount = categoryMap.get(tx.category) || 0;
-    categoryMap.set(tx.category, existingAmount + tx.amount);
+    categoryMap.set(tx.category, existingAmount + finalAmount);
   });
   
   // Convert to array and sort by amount (descending)
@@ -204,7 +236,8 @@ export function processTransactionsForChart(
     includeCategoryBreakdown = true,
     maxTopCategories = 3,
     includeTrend = true,
-    displayCurrency = 'SGD'
+    displayCurrency = 'SGD',
+    accountForReimbursements = true
   } = options;
   
   if (transactions.length === 0) {
@@ -238,16 +271,50 @@ export function processTransactionsForChart(
     : [];
   
   // Get top categories
-  const topCats = getTopCategoriesForPeriod(latestTransactions, maxTopCategories);
+  const topCats = getTopCategoriesForPeriod(
+    latestTransactions, 
+    maxTopCategories, 
+    displayCurrency, 
+    accountForReimbursements
+  );
   
   // Format keys for display
   const processedChartData = sortedKeys.map(key => {
     const periodTransactions = groupedTransactions.get(key) || [];
-    const total = periodTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+    
+    // Calculate total for the period with reimbursement adjustments
+    const total = periodTransactions.reduce((sum, tx) => {
+      // Convert to display currency
+      const convertedAmount = convertCurrency(
+        tx.amount,
+        tx.currency as Currency,
+        displayCurrency,
+        tx.paymentMethod
+      );
+      
+      // Adjust for reimbursements if applicable
+      let finalAmount = convertedAmount;
+      if (accountForReimbursements && tx.reimbursementAmount) {
+        const reimbursedAmount = convertCurrency(
+          tx.reimbursementAmount,
+          tx.currency as Currency,
+          displayCurrency,
+          tx.paymentMethod
+        );
+        finalAmount -= reimbursedAmount;
+      }
+      
+      return sum + finalAmount;
+    }, 0);
     
     // Get top categories for this period if requested
     const periodTopCategories = includeCategoryBreakdown 
-      ? getTopCategoriesForPeriod(periodTransactions, maxTopCategories)
+      ? getTopCategoriesForPeriod(
+          periodTransactions, 
+          maxTopCategories, 
+          displayCurrency, 
+          accountForReimbursements
+        )
       : [];
     
     // Format the key for display

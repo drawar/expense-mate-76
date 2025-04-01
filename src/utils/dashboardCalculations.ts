@@ -1,3 +1,4 @@
+
 // src/utils/dashboardCalculations.ts
 import { Transaction, Currency } from '@/types';
 import { 
@@ -7,6 +8,7 @@ import {
   calculateTotalRewardPoints, 
   calculateTransactionVelocity, 
   calculateAverageByDayOfWeek,
+  calculateTotalReimbursed,
   getTopChartItem,
   ChartDataItem
 } from './dashboardUtils';
@@ -29,10 +31,12 @@ export const CHART_COLORS = [
 
 /**
  * Generate payment method chart data
+ * Now accounts for reimbursed amounts
  */
 export function generatePaymentMethodChartData(
   transactions: Transaction[],
-  displayCurrency: Currency
+  displayCurrency: Currency,
+  accountForReimbursements: boolean = true
 ): ChartDataItem[] {
   if (transactions.length === 0) return [];
   
@@ -49,8 +53,20 @@ export function generatePaymentMethodChartData(
         tx.paymentMethod
       );
       
+      // Subtract reimbursement if enabled
+      let finalAmount = convertedAmount;
+      if (accountForReimbursements && tx.reimbursementAmount) {
+        const convertedReimbursement = convertCurrency(
+          tx.reimbursementAmount,
+          tx.currency as Currency,
+          displayCurrency,
+          tx.paymentMethod
+        );
+        finalAmount -= convertedReimbursement;
+      }
+      
       const current = methodTotals.get(methodName) || 0;
-      methodTotals.set(methodName, current + convertedAmount);
+      methodTotals.set(methodName, current + finalAmount);
     } catch (error) {
       console.error('Error processing payment method data:', error);
     }
@@ -68,10 +84,12 @@ export function generatePaymentMethodChartData(
 
 /**
  * Generate category chart data
+ * Now accounts for reimbursed amounts
  */
 export function generateCategoryChartData(
   transactions: Transaction[],
-  displayCurrency: Currency
+  displayCurrency: Currency,
+  accountForReimbursements: boolean = true
 ): ChartDataItem[] {
   if (transactions.length === 0) return [];
   
@@ -88,8 +106,20 @@ export function generateCategoryChartData(
         tx.paymentMethod
       );
       
+      // Subtract reimbursement if enabled
+      let finalAmount = convertedAmount;
+      if (accountForReimbursements && tx.reimbursementAmount) {
+        const convertedReimbursement = convertCurrency(
+          tx.reimbursementAmount,
+          tx.currency as Currency,
+          displayCurrency,
+          tx.paymentMethod
+        );
+        finalAmount -= convertedReimbursement;
+      }
+      
       const current = categoryTotals.get(category) || 0;
-      categoryTotals.set(category, current + convertedAmount);
+      categoryTotals.set(category, current + finalAmount);
     } catch (error) {
       console.error('Error processing category data:', error);
     }

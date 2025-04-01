@@ -43,6 +43,7 @@ const TransactionEditForm = ({
           currency: transaction.currency,
           paymentMethodId: transaction.paymentMethod.id,
           paymentAmount: transaction.paymentAmount.toString(),
+          reimbursementAmount: transaction.reimbursementAmount ? transaction.reimbursementAmount.toString() : '0',
           date: new Date(transaction.date),
           notes: transaction.notes,
           mcc: transaction.merchant.mcc,
