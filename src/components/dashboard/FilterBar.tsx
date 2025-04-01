@@ -1,13 +1,18 @@
 // src/components/dashboard/FilterBar.tsx
-import React from 'react';
-import { Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import DisplayCurrencySelect from './DisplayCurrencySelect';
-import StatementCycleFilter from './StatementCycleFilter';
-import { TimeframeTab } from '@/utils/transactionProcessor';
-import { Currency } from '@/types';
-// Import the CSS directly (make sure to create this file from the dashboard-filters.css we created)
-import './dashboard-filters.css';
+import React from "react";
+import { Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import DisplayCurrencySelect from "./DisplayCurrencySelect";
+import StatementCycleFilter from "./StatementCycleFilter";
+import { TimeframeTab } from "@/utils/transactionProcessor";
+import { Currency } from "@/types";
+import "./dashboard-filters.css";
 
 /**
  * Props for the FilterBar component
@@ -28,42 +33,34 @@ interface FilterBarProps {
 
 /**
  * Global filter bar component for dashboard
- * Contains all filter controls that affect dashboard data
  */
-const FilterBar: React.FC<FilterBarProps> = ({ 
-  filters,
-  className = ''
-}) => {
-  const { 
-    activeTab, 
-    displayCurrency, 
-    useStatementMonth, 
+const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
+  const {
+    activeTab,
+    displayCurrency,
+    useStatementMonth,
     statementCycleDay,
     handleTimeframeChange,
     handleCurrencyChange,
     handleStatementMonthToggle,
-    handleStatementCycleDayChange
+    handleStatementCycleDayChange,
   } = filters;
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {/* Apply consistent height and alignment to all filter components */}
+      {/* Currency Selector */}
       <div className="flex items-center h-10">
-        {/* Currency Selector */}
-        <DisplayCurrencySelect 
-          value={displayCurrency} 
+        <DisplayCurrencySelect
+          value={displayCurrency}
           onChange={handleCurrencyChange}
           className="component-hover-box"
         />
       </div>
-      
+
       {/* Time Frame Selector */}
       <div className="flex items-center h-10 component-hover-box">
         <Filter className="h-5 w-5 text-muted-foreground mr-2" />
-        <Select
-          value={activeTab}
-          onValueChange={handleTimeframeChange}
-        >
+        <Select value={activeTab} onValueChange={handleTimeframeChange}>
           <SelectTrigger className="w-[120px] h-8 text-sm bg-transparent border-none">
             <SelectValue placeholder="This Month" />
           </SelectTrigger>
@@ -75,7 +72,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           </SelectContent>
         </Select>
       </div>
-      
+
       {/* Statement Month toggle */}
       <div className="flex items-center h-10">
         <StatementCycleFilter

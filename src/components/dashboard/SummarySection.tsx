@@ -1,35 +1,23 @@
-
 // src/components/dashboard/SummarySection.tsx
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardData } from '@/types/dashboardTypes';
-import SummaryCard from './SummaryCard';
-import { BarChartIcon, ArrowDownLeftIcon } from 'lucide-react';
-import { Currency } from '@/types';
-import { useCurrencyFormatter } from '@/hooks/useCurrencyFormatter';
-
-/**
- * Props for SummarySection component
- */
-interface SummarySectionProps {
-  dashboardData: DashboardData;
-  displayCurrency: Currency;
-  activeTab: string;
-  onTabChange?: (value: string) => void;
-}
+import React from "react";
+import { useDashboardContext } from "@/contexts/DashboardContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SummaryCard from "./SummaryCard";
+import { BarChartIcon, ArrowDownLeftIcon } from "lucide-react";
+import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
+import { TimeframeTab } from "@/utils/transactionProcessor";
 
 /**
  * Displays summary cards with key metrics for the dashboard
- * No longer contains filter controls (moved to FilterBar)
- * Optimized to use currency formatting hook
- * Now accounts for reimbursement amounts in calculations
+ * Uses the Dashboard context instead of props
  */
-const SummarySection: React.FC<SummarySectionProps> = ({
-  dashboardData,
-  displayCurrency,
-  activeTab,
-  onTabChange
-}) => {
+const SummarySection: React.FC = () => {
+  const { dashboardData, displayCurrency, activeTab, setActiveTab } =
+    useDashboardContext();
+
+  // Use the custom currency formatter hook
+  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
+
   // Ensure we have valid data structure to prevent errors
   const metrics = dashboardData?.metrics || {
     totalExpenses: 0,
@@ -37,53 +25,45 @@ const SummarySection: React.FC<SummarySectionProps> = ({
     averageAmount: 0,
     totalRewardPoints: 0,
     percentageChange: 0,
-    totalReimbursed: 0, // Add total reimbursed metric
+    totalReimbursed: 0,
   };
-  
-  const filteredTransactions = dashboardData?.filteredTransactions || [];
-  
-  // Use the custom currency formatter hook
-  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
   // Calculate count of transactions with reimbursements
   const reimbursedTransactionsCount = React.useMemo(() => {
+    // Get the filtered transactions inside the useMemo to avoid dependency warnings
+    const filteredTransactions = dashboardData?.filteredTransactions || [];
+
     if (!filteredTransactions.length) return 0;
-    
-    return filteredTransactions.reduce((count, tx) => 
-      (tx.reimbursementAmount || 0) > 0 ? count + 1 : count, 0);
-  }, [filteredTransactions]);
 
-  // Handle tab change if provided
-  const handleTabChange = React.useCallback((value: string) => {
-    if (onTabChange) {
-      onTabChange(value);
-    }
-  }, [onTabChange]);
-
-  // For debugging - log values to see what's happening
-  console.log('SummarySection rendering with:', {
-    activeTab,
-    metricsExist: !!metrics,
-    totalExpenses: metrics?.totalExpenses,
-    transactionCount: metrics?.transactionCount,
-    filteredTransactionsCount: filteredTransactions?.length,
-    totalReimbursed: metrics?.totalReimbursed || 0
-  });
+    return filteredTransactions.reduce(
+      (count, tx) => ((tx.reimbursementAmount || 0) > 0 ? count + 1 : count),
+      0
+    );
+  }, [dashboardData]);
 
   // Calculate net expenses (total expenses minus reimbursements)
-  const netExpenses = (metrics?.totalExpenses || 0) - (metrics?.totalReimbursed || 0);
+  const netExpenses =
+    (metrics?.totalExpenses || 0) - (metrics?.totalReimbursed || 0);
+
+  // Handle tab change
+  const handleTabChange = React.useCallback(
+    (value: string) => {
+      setActiveTab(value as TimeframeTab);
+    },
+    [setActiveTab]
+  );
 
   return (
     <div className="space-y-4 w-full">
-      <Tabs 
-        defaultValue={activeTab || 'thisMonth'}
-        value={activeTab || 'thisMonth'}
+      <Tabs
+        defaultValue={activeTab || "thisMonth"}
+        value={activeTab || "thisMonth"}
         onValueChange={handleTabChange}
         className="w-full"
       >
         {/* Always render content regardless of tab selection */}
-        <TabsContent 
-          value={activeTab || 'thisMonth'} 
+        <TabsContent
+          value={activeTab || "thisMonth"}
           className="mt-4 space-y-4 animate-fadeIn"
           forceMount
         >
@@ -98,7 +78,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               cardColor="bg-gradient-to-br from-violet-500/10 to-purple-600/10"
               valueColor="text-violet-800 dark:text-violet-300"
             />
-            
+
             {/* Reimbursements Card */}
             <SummaryCard
               title="Reimbursements"
