@@ -121,8 +121,16 @@ const Dashboard: React.FC<DashboardProps> = ({
     return <LoadingDashboard />;
   }
 
-  console.log('Dashboard rendering with timeframe:', filters.activeTab);
-  console.log('Has filtered transactions:', safeDashboardData.filteredTransactions?.length || 0);
+  // Add debug logging to help identify issues
+  console.log('Dashboard rendering with:', {
+    timeframe: filters.activeTab,
+    hasData: !!safeDashboardData,
+    filteredTransactionCount: safeDashboardData.filteredTransactions?.length || 0,
+    metrics: safeDashboardData.metrics
+  });
+  
+  // Ensure activeTab is defined and valid for the SummarySection
+  const ensuredActiveTab = filters.activeTab || 'thisMonth';
   
   return (
     <div className="min-h-screen">  
@@ -143,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <SummarySection 
           dashboardData={safeDashboardData}
           displayCurrency={filters.displayCurrency}
-          activeTab={filters.activeTab}
+          activeTab={ensuredActiveTab}
           onTabChange={filters.handleTimeframeChange}
         />
         

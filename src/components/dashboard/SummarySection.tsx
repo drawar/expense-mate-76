@@ -29,40 +29,59 @@ const SummarySection: React.FC<SummarySectionProps> = ({
   activeTab,
   onTabChange
 }) => {
-  // Destructure metrics for easier access
-  const { metrics, top, filteredTransactions } = dashboardData;
+  // Ensure we have valid data structure to prevent errors
+  const metrics = dashboardData?.metrics || {
+    totalExpenses: 0,
+    transactionCount: 0,
+    averageAmount: 0,
+    totalRewardPoints: 0,
+    percentageChange: 0,
+  };
+  
+  const top = dashboardData?.top || {};
+  const filteredTransactions = dashboardData?.filteredTransactions || [];
   
   // Use the custom currency formatter hook
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Memoize the count of transactions with reward points to prevent recalculation
+  // Calculate count of transactions with reward points
   const rewardPointTransactionsCount = React.useMemo(() => {
-    if (!dashboardData.filteredTransactions) return 0;
+    if (!filteredTransactions.length) return 0;
     
     // More efficient than filter().length as it avoids creating a new array
-    return dashboardData.filteredTransactions.reduce((count, tx) => 
+    return filteredTransactions.reduce((count, tx) => 
       (tx.rewardPoints || 0) > 0 ? count + 1 : count, 0);
-  }, [dashboardData.filteredTransactions]);
+  }, [filteredTransactions]);
 
-  // Handle tab change if provided - memoized to prevent recreation on every render
+  // Handle tab change if provided
   const handleTabChange = React.useCallback((value: string) => {
     if (onTabChange) {
       onTabChange(value);
     }
   }, [onTabChange]);
 
-  // Always render the summary section regardless of data availability
+  // For debugging - log values to see what's happening
+  console.log('SummarySection rendering with:', {
+    activeTab,
+    metricsExist: !!metrics,
+    totalExpenses: metrics?.totalExpenses,
+    transactionCount: metrics?.transactionCount,
+    filteredTransactionsCount: filteredTransactions?.length
+  });
+
   return (
     <div className="space-y-4 w-full">
       <Tabs 
-        defaultValue={activeTab}
+        defaultValue={activeTab || 'thisMonth'}
+        value={activeTab || 'thisMonth'}
         onValueChange={handleTabChange}
         className="w-full"
       >
-        {/* Main content area */}
+        {/* Always render content regardless of tab selection */}
         <TabsContent 
-          value={activeTab} 
+          value={activeTab || 'thisMonth'} 
           className="mt-4 space-y-4 animate-fadeIn"
+          forceMount
         >
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -92,7 +111,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               icon={<CreditCardIcon className="h-5 w-5 text-primary" />}
               value={top?.paymentMethod?.name || "N/A"}
               description={top?.paymentMethod 
-                ? `${formatCurrency(top.paymentMethod.value)} spent` 
+                ? `${formatCurrency(top.paymentMethod.value || 0)} spent` 
                 : "No data"}
               cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
               valueColor="text-fuchsia-800 dark:text-fuchsia-300"
