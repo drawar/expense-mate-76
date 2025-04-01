@@ -1,0 +1,6 @@
+/dist
+/build
+/public
+/coverage
+/postcss.config.js
+/tailwind.config.js
