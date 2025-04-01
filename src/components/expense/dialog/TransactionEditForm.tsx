@@ -22,6 +22,10 @@ const TransactionEditForm = ({
   onSubmit,
   onCancel,
 }: TransactionEditFormProps) => {
+  // Log transaction to debug
+  console.log('Editing transaction with data:', transaction);
+  console.log('Reimbursement amount:', transaction.reimbursementAmount);
+  
   return (
     <>
       <DialogHeader>

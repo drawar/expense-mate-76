@@ -93,6 +93,7 @@ export const getTransactions = async (forceLocalStorage = false): Promise<Transa
         notes: tx.notes,
         category: tx.category,
         isContactless: tx.is_contactless,
+        reimbursementAmount: tx.reimbursement_amount ? Number(tx.reimbursement_amount) : 0, // Properly include reimbursement amount
       };
     });
     

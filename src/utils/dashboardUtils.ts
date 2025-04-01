@@ -199,9 +199,7 @@ export function getPreviousTimeframe(currentTimeframe: TimeframeTab): TimeframeT
     case 'thisMonth':
       return 'lastMonth';
     case 'lastMonth':
-      return 'lastThreeMonths';
-    case 'lastThreeMonths':
-      return 'thisYear';
+      return 'thisMonth'; // Changed from lastThreeMonths to thisMonth since lastThreeMonths is not in TimeframeTab
     case 'thisYear':
       return 'lastMonth'; // Fallback to last month
     default:

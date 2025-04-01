@@ -34,6 +34,9 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
   try {
     const savedMerchant = await addOrUpdateMerchant(updatedTransaction.merchant);
     
+    // Log the reimbursement amount to debug
+    console.log('Updating transaction with reimbursement amount:', updatedTransaction.reimbursementAmount);
+    
     const { data, error } = await supabase
       .from('transactions')
       .update({
@@ -72,7 +75,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
       notes: data.notes,
       category: data.category,
       isContactless: data.is_contactless,
-      reimbursementAmount: data.reimbursement_amount || 0, // Make sure to include this in the returned data
+      reimbursementAmount: Number(data.reimbursement_amount) || 0, // Make sure to include this in the returned data
     };
   } catch (error) {
     console.error('Error in editTransaction:', error);
