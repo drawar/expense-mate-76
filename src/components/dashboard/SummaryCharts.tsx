@@ -1,8 +1,16 @@
-import { Currency } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { CreditCardIcon, TagIcon } from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { Currency } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  TooltipProps,
+} from "recharts";
+import { CreditCardIcon, TagIcon } from "lucide-react";
+import { CurrencyService } from "@/services/CurrencyService";
 
 interface ChartData {
   name: string;
@@ -16,14 +24,36 @@ interface SummaryChartsProps {
   displayCurrency: Currency;
 }
 
+// Define the value and name types that will be used in TooltipProps
+type ValueType = number;
+type NameType = string;
+
+// Define a formatter function type
+type FormatterFunc = (value: ValueType) => string;
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: ValueType;
+    payload: {
+      totalValue: number;
+    };
+  }>;
+  formatter?: FormatterFunc;
+}
+
 const SummaryCharts = ({
   paymentMethodChartData,
   categoryChartData,
   displayCurrency,
 }: SummaryChartsProps) => {
-  
   // Custom tooltip component
-  const CustomTooltip = ({ active, payload, formatter }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    formatter,
+  }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-lg">
@@ -32,7 +62,10 @@ const SummaryCharts = ({
             {formatter ? formatter(payload[0].value) : payload[0].value}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            {Math.round((payload[0].value / payload[0].payload.totalValue) * 100)}% of total
+            {Math.round(
+              (payload[0].value / payload[0].payload.totalValue) * 100
+            )}
+            % of total
           </p>
         </div>
       );
@@ -43,9 +76,9 @@ const SummaryCharts = ({
   // Add total value to each data point for percentage calculation
   const prepareChartData = (data: ChartData[]) => {
     const totalValue = data.reduce((sum, item) => sum + item.value, 0);
-    return data.map(item => ({
+    return data.map((item) => ({
       ...item,
-      totalValue
+      totalValue,
     }));
   };
 
@@ -77,20 +110,26 @@ const SummaryCharts = ({
                     dataKey="value"
                   >
                     {preparedMethodData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.color} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
                         stroke="var(--background)"
                         strokeWidth={2}
                       />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    content={<CustomTooltip formatter={(value: number) => formatCurrency(value, displayCurrency)} />}
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        formatter={(value: number) =>
+                          CurrencyService.format(value, displayCurrency)
+                        }
+                      />
+                    }
                   />
-                  <Legend 
-                    layout="vertical" 
-                    verticalAlign="middle" 
+                  <Legend
+                    layout="vertical"
+                    verticalAlign="middle"
                     align="right"
                     formatter={(value, entry, index) => (
                       <span className="text-xs">{value}</span>
@@ -106,7 +145,7 @@ const SummaryCharts = ({
           )}
         </CardContent>
       </Card>
-            
+
       {/* Categories Chart */}
       <Card className="rounded-xl border border-border/50 bg-card hover:shadow-md transition-all overflow-hidden">
         <CardHeader className="pb-2">
@@ -130,20 +169,26 @@ const SummaryCharts = ({
                     dataKey="value"
                   >
                     {preparedCategoryData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={entry.color}
                         stroke="var(--background)"
                         strokeWidth={2}
                       />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    content={<CustomTooltip formatter={(value: number) => formatCurrency(value, displayCurrency)} />}
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        formatter={(value: number) =>
+                          CurrencyService.format(value, displayCurrency)
+                        }
+                      />
+                    }
                   />
-                  <Legend 
-                    layout="vertical" 
-                    verticalAlign="middle" 
+                  <Legend
+                    layout="vertical"
+                    verticalAlign="middle"
                     align="right"
                     formatter={(value, entry, index) => (
                       <span className="text-xs">{value}</span>

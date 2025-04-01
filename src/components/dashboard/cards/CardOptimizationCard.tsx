@@ -1,11 +1,11 @@
 // src/components/dashboard/cards/CardOptimizationCard.tsx
-import React from 'react';
-import { CreditCardIcon, RefreshCwIcon, ArrowRightIcon } from 'lucide-react';
-import { Transaction, PaymentMethod, Currency } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/utils/formatting';
-import { Button } from '@/components/ui/button';
-import { usePaymentMethodOptimization } from '@/hooks/useChartData';
+import React from "react";
+import { CreditCardIcon, RefreshCwIcon, ArrowRightIcon } from "lucide-react";
+import { Transaction, PaymentMethod, Currency } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CurrencyService } from "@/services/CurrencyService";
+import { Button } from "@/components/ui/button";
+import { usePaymentMethodOptimization } from "@/hooks/useChartData";
 
 interface CardOptimizationCardProps {
   title: string;
@@ -23,17 +23,21 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
   title,
   transactions,
   paymentMethods,
-  currency = 'SGD',
-  className = ''
+  currency = "SGD",
+  className = "",
 }) => {
   // Use the payment method optimization hook
-  const suggestions = usePaymentMethodOptimization(transactions, paymentMethods);
-  
+  const suggestions = usePaymentMethodOptimization(
+    transactions,
+    paymentMethods
+  );
+
   // Calculate total potential annual savings
-  const totalPotentialSavings = suggestions.reduce(
-    (sum, suggestion) => sum + suggestion.potentialSavings, 
-    0
-  ) * 12; // Multiply by 12 for annual estimate
+  const totalPotentialSavings =
+    suggestions.reduce(
+      (sum, suggestion) => sum + suggestion.potentialSavings,
+      0
+    ) * 12; // Multiply by 12 for annual estimate
 
   return (
     <Card className={className}>
@@ -43,20 +47,24 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
             <CreditCardIcon className="h-5 w-5 text-primary" />
             {title}
           </CardTitle>
-          
+
           <Button variant="ghost" size="sm" className="h-8 px-2">
             <RefreshCwIcon className="h-4 w-4 mr-1" />
             <span className="text-xs">Refresh</span>
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {suggestions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-60 text-center">
             <CreditCardIcon className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No card optimization suggestions available.</p>
-            <p className="text-xs text-muted-foreground mt-1">You're already using optimal payment methods!</p>
+            <p className="text-muted-foreground">
+              No card optimization suggestions available.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              You're already using optimal payment methods!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -65,17 +73,27 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
                 Potential annual savings with optimal cards:
               </p>
               <p className="font-medium text-green-500">
-                +{formatCurrency(totalPotentialSavings, currency)}
+                +{CurrencyService.format(totalPotentialSavings, currency)}
               </p>
             </div>
-            
+
             <div className="space-y-3">
               {suggestions.map((suggestion, index) => (
-                <div key={index} className="p-3 rounded-lg border border-border bg-muted/30">
+                <div
+                  key={index}
+                  className="p-3 rounded-lg border border-border bg-muted/30"
+                >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-medium text-sm">{suggestion.category}</span>
+                    <span className="font-medium text-sm">
+                      {suggestion.category}
+                    </span>
                     <span className="text-green-500 text-xs">
-                      +{formatCurrency(suggestion.potentialSavings, currency)}/mo
+                      +
+                      {CurrencyService.format(
+                        suggestion.potentialSavings,
+                        currency
+                      )}
+                      /mo
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -84,14 +102,18 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Current</p>
-                      <p className="text-xs font-medium truncate">{suggestion.currentMethod}</p>
+                      <p className="text-xs font-medium truncate">
+                        {suggestion.currentMethod}
+                      </p>
                     </div>
                     <div className="mx-2">
                       <ArrowRightIcon size={16} />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Suggested</p>
-                      <p className="text-xs font-medium text-primary truncate">{suggestion.suggestedMethod}</p>
+                      <p className="text-xs font-medium text-primary truncate">
+                        {suggestion.suggestedMethod}
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -1,12 +1,15 @@
 // src/components/dashboard/cards/UnusualSpendingCard.tsx
-import React from 'react';
-import { AlertTriangleIcon, ChevronRightIcon } from 'lucide-react';
-import { Transaction, Currency } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/utils/formatting';
-import { SpendingAnomaly, useUnusualSpending } from '@/utils/unusualSpendingDetection';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
+import { Transaction, Currency } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CurrencyService } from "@/services/CurrencyService";
+import {
+  SpendingAnomaly,
+  useUnusualSpending,
+} from "@/utils/unusualSpendingDetection";
+import { Link } from "react-router-dom";
 
 interface UnusualSpendingCardProps {
   title?: string;
@@ -20,25 +23,29 @@ interface UnusualSpendingCardProps {
  * Card component that displays unusual spending patterns and anomalies
  */
 const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
-  title = 'Unusual Spending',
+  title = "Unusual Spending",
   transactions,
-  currency = 'USD',
-  className = '',
-  maxDisplayedAnomalies = 3
+  currency = "USD",
+  className = "",
+  maxDisplayedAnomalies = 3,
 }) => {
   // Use our custom hook to detect anomalies
   const { anomalies, alertCount } = useUnusualSpending(transactions);
-  
+
   // Get a subset of anomalies to display
   const displayedAnomalies = anomalies.slice(0, maxDisplayedAnomalies);
-  
+
   // Helper to get dot color based on severity
-  const getSeverityColor = (severity: 'low' | 'medium' | 'high'): string => {
+  const getSeverityColor = (severity: "low" | "medium" | "high"): string => {
     switch (severity) {
-      case 'high': return 'text-red-500 fill-red-500';
-      case 'medium': return 'text-orange-500 fill-orange-500';
-      case 'low': return 'text-blue-500 fill-blue-500';
-      default: return 'text-gray-500 fill-gray-500';
+      case "high":
+        return "text-red-500 fill-red-500";
+      case "medium":
+        return "text-orange-500 fill-orange-500";
+      case "low":
+        return "text-blue-500 fill-blue-500";
+      default:
+        return "text-gray-500 fill-gray-500";
     }
   };
 
@@ -50,22 +57,27 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
             <AlertTriangleIcon className="h-5 w-5 text-amber-500" />
             {title}
           </CardTitle>
-          
+
           {alertCount > 0 && (
-            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 px-2 py-0.5">
-              {alertCount} {alertCount === 1 ? 'alert' : 'alerts'}
+            <Badge
+              variant="outline"
+              className="bg-amber-100 text-amber-800 border-amber-200 px-2 py-0.5"
+            >
+              {alertCount} {alertCount === 1 ? "alert" : "alerts"}
             </Badge>
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {anomalies.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full mb-3">
               <AlertTriangleIcon className="h-6 w-6 text-green-500" />
             </div>
-            <p className="text-muted-foreground">No unusual spending detected.</p>
+            <p className="text-muted-foreground">
+              No unusual spending detected.
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
               We'll notify you when we spot any anomalies in your spending.
             </p>
@@ -75,30 +87,37 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
             {/* Anomaly List */}
             <div className="space-y-3">
               {displayedAnomalies.map((anomaly, index) => (
-                <div key={anomaly.transactionId} className="flex items-start justify-between py-2">
+                <div
+                  key={anomaly.transactionId}
+                  className="flex items-start justify-between py-2"
+                >
                   <div className="flex items-start gap-3">
                     {/* Severity Dot */}
-                    <div className={`mt-1.5 h-2 w-2 rounded-full ${getSeverityColor(anomaly.severity)}`} />
-                    
+                    <div
+                      className={`mt-1.5 h-2 w-2 rounded-full ${getSeverityColor(anomaly.severity)}`}
+                    />
+
                     {/* Merchant and Reason */}
                     <div>
                       <p className="font-medium">{anomaly.merchantName}</p>
-                      <p className="text-sm text-muted-foreground">{anomaly.reason}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {anomaly.reason}
+                      </p>
                     </div>
                   </div>
-                  
+
                   {/* Amount */}
                   <div className="text-right font-medium">
-                    {formatCurrency(anomaly.amount, currency)}
+                    {CurrencyService.format(anomaly.amount, currency)}
                   </div>
                 </div>
               ))}
             </div>
-            
+
             {/* View All Link */}
             {alertCount > maxDisplayedAnomalies && (
-              <Link 
-                to="/transactions?filter=anomalies" 
+              <Link
+                to="/transactions?filter=anomalies"
                 className="text-sm text-primary flex items-center justify-center mt-2 hover:underline"
               >
                 View All Anomalies <ChevronRightIcon className="h-4 w-4 ml-1" />

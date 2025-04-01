@@ -1,11 +1,10 @@
-
-import { useFormContext } from 'react-hook-form';
-import { format } from 'date-fns';
-import { Currency } from '@/types';
-import { currencyOptions } from '@/utils/currencyFormatter';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
+import { useFormContext } from "react-hook-form";
+import { format } from "date-fns";
+import { Currency } from "@/types";
+import { CurrencyService } from "@/services/CurrencyService";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -13,32 +12,29 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+
+const currencyOptions = CurrencyService.getCurrencyOptions();
 
 const TransactionDetailsForm = () => {
   const form = useFormContext();
-  const currency = form.watch('currency');
+  const currency = form.watch("currency");
 
   return (
     <Card>
@@ -66,9 +62,10 @@ const TransactionDetailsForm = () => {
                     onChange={(e) => {
                       field.onChange(e);
                       // Update payment amount automatically when transaction amount changes
-                      const currentPaymentMethod = form.getValues('paymentMethodId');
+                      const currentPaymentMethod =
+                        form.getValues("paymentMethodId");
                       if (currentPaymentMethod) {
-                        form.setValue('paymentAmount', e.target.value);
+                        form.setValue("paymentAmount", e.target.value);
                       }
                     }}
                   />
@@ -77,7 +74,7 @@ const TransactionDetailsForm = () => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="currency"
@@ -108,7 +105,7 @@ const TransactionDetailsForm = () => {
             )}
           />
         </div>
-        
+
         {/* New Reimbursement Amount Field */}
         <FormField
           control={form.control}
@@ -132,7 +129,7 @@ const TransactionDetailsForm = () => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="date"
@@ -181,7 +178,7 @@ const TransactionDetailsForm = () => {
             <FormItem>
               <FormLabel>Notes (Optional)</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Add any notes about this transaction"
                   className="resize-none"
                   {...field}

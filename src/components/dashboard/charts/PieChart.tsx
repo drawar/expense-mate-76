@@ -1,9 +1,15 @@
 // src/components/dashboard/charts/PieChart.tsx
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Currency } from '@/types';
-import { formatCurrency } from '@/utils/formatting';
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import {
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Currency } from "@/types";
+import { CurrencyService } from "@/services/CurrencyService";
 
 /**
  * Common data structure for pie chart data
@@ -32,51 +38,54 @@ const PieChart: React.FC<PieChartProps> = ({
   title,
   icon,
   data,
-  currency = 'SGD',
-  className = '',
+  currency = "SGD",
+  className = "",
   innerRadius = 60,
   outerRadius = 80,
-  paddingAngle = 2
+  paddingAngle = 2,
 }) => {
   // Create a ref for the chart container
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // State to hold the calculated radius values
   const [radius, setRadius] = useState({
     innerRadius: innerRadius,
-    outerRadius: outerRadius
+    outerRadius: outerRadius,
   });
 
   // Process data to include percentages - optimized to avoid deep copying when not needed
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     const total = data.reduce((sum, item) => sum + item.value, 0);
-    
+
     if (total === 0) return [];
-    
-    return data.map(item => ({
+
+    return data.map((item) => ({
       ...item,
-      percentage: (item.value / total * 100)
+      percentage: (item.value / total) * 100,
     }));
   }, [data]);
-  
+
   // Memoize radius calculation based on original props
-  const baseRadius = useMemo(() => ({
-    innerScale: innerRadius / 200,
-    outerScale: outerRadius / 200
-  }), [innerRadius, outerRadius]);
+  const baseRadius = useMemo(
+    () => ({
+      innerScale: innerRadius / 200,
+      outerScale: outerRadius / 200,
+    }),
+    [innerRadius, outerRadius]
+  );
 
   // Use ResizeObserver with fewer dependencies and throttled updates
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container || !processedData.length) return;
-    
+
     // Throttle resize calculations to reduce performance impact
     let rafId: number;
     let lastUpdateTime = 0;
     const THROTTLE_DELAY = 100; // ms
-    
+
     // Create a throttled handler for resize events
     const handleResize = (entries: ResizeObserverEntry[]) => {
       const now = Date.now();
@@ -86,29 +95,32 @@ const PieChart: React.FC<PieChartProps> = ({
         rafId = requestAnimationFrame(() => processResize(entries));
         return;
       }
-      
+
       lastUpdateTime = now;
       processResize(entries);
     };
-    
+
     const processResize = (entries: ResizeObserverEntry[]) => {
       const entry = entries[0];
       if (!entry) return;
-      
+
       // Get container dimensions
       const { width, height } = entry.contentRect;
       const minDimension = Math.min(width, height);
-      
+
       // Update radius values using memoized scales
       setRadius({
         innerRadius: Math.max(minDimension * baseRadius.innerScale, 20),
-        outerRadius: Math.min(minDimension * baseRadius.outerScale, Math.min(width, height) / 2 - 10)
+        outerRadius: Math.min(
+          minDimension * baseRadius.outerScale,
+          Math.min(width, height) / 2 - 10
+        ),
       });
     };
-    
+
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
-    
+
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
@@ -117,17 +129,31 @@ const PieChart: React.FC<PieChartProps> = ({
 
   // Memoize tooltip component to prevent recreation on each render
   const CustomTooltip = useMemo(() => {
-    return ({ active, payload }: any) => {
+    // Define proper types for the tooltip props
+    interface TooltipProps {
+      active?: boolean;
+      payload?: Array<{
+        name: string;
+        value: number;
+        payload: {
+          percentage: number;
+          [key: string]: unknown;
+        };
+        [key: string]: unknown;
+      }>;
+    }
+
+    return ({ active, payload }: TooltipProps) => {
       if (!active || !payload || !payload.length) return null;
-      
+
       const item = payload[0];
       const entry = item.payload;
-      
+
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-lg">
           <p className="font-medium text-sm mb-1">{item.name}</p>
           <p className="text-primary font-bold">
-            {formatCurrency(item.value, currency)}
+            {CurrencyService.format(item.value, currency)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {Math.round(entry.percentage)}% of total
@@ -136,18 +162,21 @@ const PieChart: React.FC<PieChartProps> = ({
       );
     };
   }, [currency]);
-  
+
   // Memoize legend items to prevent expensive re-calculation
   const legendItems = useMemo(() => {
     if (!processedData || processedData.length === 0) return null;
-    
+
     return (
       <div className="grid grid-cols-1 gap-2 w-full max-h-[240px] overflow-y-auto pr-2">
         {processedData.map((entry, index) => (
-          <div key={`legend-${index}`} className="flex items-center justify-between text-xs">
+          <div
+            key={`legend-${index}`}
+            className="flex items-center justify-between text-xs"
+          >
             <div className="flex items-center">
-              <div 
-                className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
+              <div
+                className="w-3 h-3 rounded-sm mr-2 flex-shrink-0"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="truncate max-w-[150px]" title={entry.name}>
@@ -193,7 +222,7 @@ const PieChart: React.FC<PieChartProps> = ({
       <CardContent>
         <div className="flex flex-col md:flex-row h-auto">
           {/* Chart container that shrinks proportionally - using ref for size detection */}
-          <div 
+          <div
             ref={chartContainerRef}
             className="w-full md:w-1/2 h-[200px] sm:h-[220px] md:h-[240px] lg:h-[260px] flex items-center justify-center"
           >
@@ -211,9 +240,9 @@ const PieChart: React.FC<PieChartProps> = ({
                   labelLine={false}
                 >
                   {processedData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.color} 
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
                       stroke="var(--background)"
                       strokeWidth={2}
                     />
@@ -223,7 +252,7 @@ const PieChart: React.FC<PieChartProps> = ({
               </RechartsPie>
             </ResponsiveContainer>
           </div>
-          
+
           {/* Legend container that adapts to available space */}
           <div className="w-full md:w-1/2 mt-4 md:mt-0 md:pl-4 max-h-[200px] md:max-h-[240px] overflow-y-auto">
             {legendItems}

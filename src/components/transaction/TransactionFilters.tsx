@@ -1,23 +1,22 @@
-
-import { FilterIcon, XIcon, CheckIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { FilterIcon, XIcon, CheckIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { PaymentMethod, Currency } from '@/types';
-import { currencyOptions } from '@/utils/currencyFormatter';
+} from "@/components/ui/popover";
+import { PaymentMethod, Currency } from "@/types";
+import { CurrencyService } from "@/services/CurrencyService";
 
 export type FilterOptions = {
   merchantName: string;
@@ -34,6 +33,8 @@ interface TransactionFiltersProps {
   onFilterChange: (key: keyof FilterOptions, value: string) => void;
   onResetFilters: () => void;
 }
+
+const currencyOptions = CurrencyService.getCurrencyOptions();
 
 const TransactionFilters = ({
   filterOptions,
@@ -59,22 +60,24 @@ const TransactionFilters = ({
         <PopoverContent className="w-80">
           <div className="space-y-4">
             <h4 className="font-medium">Filter Transactions</h4>
-            
+
             <div className="space-y-2">
               <Label htmlFor="merchant-filter">Merchant</Label>
               <Input
                 id="merchant-filter"
                 placeholder="Enter merchant name"
                 value={filterOptions.merchantName}
-                onChange={(e) => onFilterChange('merchantName', e.target.value)}
+                onChange={(e) => onFilterChange("merchantName", e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="payment-method-filter">Payment Method</Label>
               <Select
                 value={filterOptions.paymentMethodId}
-                onValueChange={(value) => onFilterChange('paymentMethodId', value)}
+                onValueChange={(value) =>
+                  onFilterChange("paymentMethodId", value)
+                }
               >
                 <SelectTrigger id="payment-method-filter">
                   <SelectValue placeholder="Select payment method" />
@@ -89,12 +92,12 @@ const TransactionFilters = ({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="currency-filter">Currency</Label>
               <Select
                 value={filterOptions.currency}
-                onValueChange={(value) => onFilterChange('currency', value)}
+                onValueChange={(value) => onFilterChange("currency", value)}
               >
                 <SelectTrigger id="currency-filter">
                   <SelectValue placeholder="Select currency" />
@@ -109,7 +112,7 @@ const TransactionFilters = ({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start-date">Start Date</Label>
@@ -117,21 +120,21 @@ const TransactionFilters = ({
                   id="start-date"
                   type="date"
                   value={filterOptions.startDate}
-                  onChange={(e) => onFilterChange('startDate', e.target.value)}
+                  onChange={(e) => onFilterChange("startDate", e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="end-date">End Date</Label>
                 <Input
                   id="end-date"
                   type="date"
                   value={filterOptions.endDate}
-                  onChange={(e) => onFilterChange('endDate', e.target.value)}
+                  onChange={(e) => onFilterChange("endDate", e.target.value)}
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-between">
               <Button
                 variant="outline"
@@ -142,7 +145,7 @@ const TransactionFilters = ({
                 <XIcon className="h-4 w-4" />
                 Reset
               </Button>
-              
+
               <Button
                 size="sm"
                 className="gap-2"
@@ -164,7 +167,7 @@ const TransactionFilters = ({
               {filter}
             </Badge>
           ))}
-          
+
           <Button
             variant="ghost"
             size="sm"
