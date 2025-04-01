@@ -4,7 +4,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardData } from '@/types/dashboardTypes';
 import SummaryCard from './SummaryCard';
-import { BarChartIcon, ReceiptIcon, CreditCardIcon, CoinsIcon, ArrowDownLeftIcon } from 'lucide-react';
+import { BarChartIcon, ArrowDownLeftIcon } from 'lucide-react';
 import { Currency } from '@/types';
 import { useCurrencyFormatter } from '@/hooks/useCurrencyFormatter';
 
@@ -40,21 +40,11 @@ const SummarySection: React.FC<SummarySectionProps> = ({
     totalReimbursed: 0, // Add total reimbursed metric
   };
   
-  const top = dashboardData?.top || {};
   const filteredTransactions = dashboardData?.filteredTransactions || [];
   
   // Use the custom currency formatter hook
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Calculate count of transactions with reward points
-  const rewardPointTransactionsCount = React.useMemo(() => {
-    if (!filteredTransactions.length) return 0;
-    
-    // More efficient than filter().length as it avoids creating a new array
-    return filteredTransactions.reduce((count, tx) => 
-      (tx.rewardPoints || 0) > 0 ? count + 1 : count, 0);
-  }, [filteredTransactions]);
-  
   // Calculate count of transactions with reimbursements
   const reimbursedTransactionsCount = React.useMemo(() => {
     if (!filteredTransactions.length) return 0;
@@ -97,9 +87,9 @@ const SummarySection: React.FC<SummarySectionProps> = ({
           className="mt-4 space-y-4 animate-fadeIn"
           forceMount
         >
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            {/* Net Expenses Card (New) */}
+          {/* Summary Cards - Removed specified cards and rearranged grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {/* Net Expenses Card */}
             <SummaryCard
               title="Net Expenses"
               icon={<BarChartIcon className="h-5 w-5 text-primary" />}
@@ -109,17 +99,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               valueColor="text-violet-800 dark:text-violet-300"
             />
             
-            {/* Total Expenses Card (Original) */}
-            <SummaryCard
-              title="Total Expenses"
-              icon={<BarChartIcon className="h-5 w-5 text-primary" />}
-              value={formatCurrency(metrics?.totalExpenses || 0)}
-              description={`${formatCurrency(metrics?.totalReimbursed || 0)} reimbursed`}
-              cardColor="bg-gradient-to-br from-blue-500/10 to-indigo-600/10"
-              valueColor="text-blue-800 dark:text-blue-300"
-            />
-            
-            {/* Reimbursements Card (New) */}
+            {/* Reimbursements Card */}
             <SummaryCard
               title="Reimbursements"
               icon={<ArrowDownLeftIcon className="h-5 w-5 text-primary" />}
@@ -127,28 +107,6 @@ const SummarySection: React.FC<SummarySectionProps> = ({
               description={`From ${reimbursedTransactionsCount} transactions`}
               cardColor="bg-gradient-to-br from-green-500/10 to-emerald-600/10"
               valueColor="text-green-800 dark:text-green-300"
-            />
-            
-            {/* Top Payment Method Card */}
-            <SummaryCard
-              title="Top Payment Method"
-              icon={<CreditCardIcon className="h-5 w-5 text-primary" />}
-              value={top?.paymentMethod?.name || "N/A"}
-              description={top?.paymentMethod 
-                ? `${formatCurrency(top.paymentMethod.value || 0)} spent` 
-                : "No data"}
-              cardColor="bg-gradient-to-br from-fuchsia-500/10 to-pink-600/10"
-              valueColor="text-fuchsia-800 dark:text-fuchsia-300"
-            />
-            
-            {/* Reward Points Card */}
-            <SummaryCard
-              title="Reward Points"
-              icon={<CoinsIcon className="h-5 w-5 text-primary" />}
-              value={(metrics?.totalRewardPoints || 0).toLocaleString()}
-              description={`From ${rewardPointTransactionsCount} transactions`}
-              cardColor="bg-gradient-to-br from-amber-500/10 to-orange-600/10"
-              valueColor="text-amber-800 dark:text-amber-300"
             />
           </div>
         </TabsContent>

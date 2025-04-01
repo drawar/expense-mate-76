@@ -1,213 +1,219 @@
-
 // src/utils/transactionProcessor.ts
-import { Transaction, Currency } from '@/types';
-import { getCategoryFromMCC, getCategoryFromMerchantName } from './categoryMapping';
+import { Transaction } from '@/types';
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
 
-export type TimeframeTab = 'thisMonth' | 'lastMonth' | 'lastThreeMonths' | 'thisYear';
-
-export interface DateRange {
-  start: Date;
-  end: Date;
-}
-
-/**
- * Process transactions to ensure all have categories
- */
-export function processCategoriesForTransactions(transactions: Transaction[]): Transaction[] {
-  return transactions.map(tx => {
-    if (tx.category && tx.category !== 'Uncategorized') {
-      return tx;
-    }
-    
-    let category = 'Uncategorized';
-    if (tx.merchant?.mcc?.code) {
-      category = getCategoryFromMCC(tx.merchant.mcc.code);
-    } else if (tx.merchant?.name) {
-      category = getCategoryFromMerchantName(tx.merchant.name) || 'Uncategorized';
-    }
-    
-    return {...tx, category};
-  });
-}
+export type TimeframeTab =
+  | 'thisMonth'
+  | 'lastMonth'
+  | 'thisYear'
+  | 'lastYear'
+  | 'thisWeek'
+  | 'lastWeek'
+  | 'allTime'
+  | 'custom';
 
 /**
- * Generate date ranges based on current date and filtering options
+ * Filters transactions based on the selected timeframe.
+ * @param transactions An array of transactions to filter.
+ * @param timeframe A string representing the timeframe to filter by.
+ * @param useStatementMonth A boolean indicating whether to use the statement month for filtering.
+ * @param statementCycleDay A number representing the day of the month when the statement cycle starts.
+ * @returns An array of transactions filtered by the selected timeframe.
  */
-export function generateDateRanges(
-  useStatementMonth: boolean = false, 
-  statementCycleDay: number = 1
-): Record<string, DateRange | Date> {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  
-  // Calculate standard date ranges
-  const thisMonthStart = new Date(currentYear, currentMonth, 1);
-  // Set end time to the end of today (23:59:59.999) to include all of today's transactions
-  const thisMonthEnd = new Date(currentYear, currentMonth + 1, 0);
-  thisMonthEnd.setHours(23, 59, 59, 999);
-  
-  // Last month date range
-  const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
-  const lastMonthEnd = new Date(currentYear, currentMonth, 0);
-  lastMonthEnd.setHours(23, 59, 59, 999);  // Make sure to include all transactions on the last day
-  
-  const threeMonthsAgo = new Date(currentYear, currentMonth - 3, now.getDate());
-  
-  const thisYearStart = new Date(currentYear, 0, 1);
-  const thisYearEnd = new Date(currentYear, 11, 31);
-  thisYearEnd.setHours(23, 59, 59, 999);
-  
-  // Statement date range if enabled
-  let statementRange = { start: thisMonthStart, end: thisMonthEnd };
-  
-  if (useStatementMonth) {
-    // Start date: statementCycleDay of previous month
-    let startMonth = currentMonth - 1;
-    let startYear = currentYear;
-    if (startMonth < 0) {
-      startMonth = 11;
-      startYear -= 1;
-    }
-    
-    const statementStart = new Date(startYear, startMonth, statementCycleDay);
-    
-    // End date: day before statementCycleDay of current month
-    let statementEnd = new Date(currentYear, currentMonth, statementCycleDay - 1);
-    // If statementCycleDay is 1, set to end of previous month
-    if (statementCycleDay === 1) {
-      statementEnd = new Date(currentYear, currentMonth, 0);
-    }
-    
-    // Ensure end date is not in the future
-    if (statementEnd > now) {
-      statementEnd = now;
-    }
-    
-    statementRange = { start: statementStart, end: statementEnd };
-  }
-  
-  return {
-    thisMonth: { start: thisMonthStart, end: thisMonthEnd },
-    lastMonth: { start: lastMonthStart, end: lastMonthEnd },
-    threeMonthsAgo,
-    thisYear: { start: thisYearStart, end: thisYearEnd },
-    statement: statementRange
-  };
-}
-
-/**
- * Filter transactions based on timeframe and statement settings
- */
-export function filterTransactionsByTimeframe(
+export const filterTransactionsByTimeframe = (
   transactions: Transaction[],
   timeframe: TimeframeTab,
   useStatementMonth: boolean,
   statementCycleDay: number
-): Transaction[] {
-  // Get all date ranges
-  const dateRanges = generateDateRanges(useStatementMonth, statementCycleDay);
-  
-  // Early return if no transactions
+): Transaction[] => {
   if (!transactions || transactions.length === 0) {
-    console.log('No transactions to filter');
     return [];
   }
-  
-  console.log(`Filtering ${transactions.length} transactions by timeframe: ${timeframe}`);
-  console.log('UseStatementMonth:', useStatementMonth);
-  
-  // If statement cycle is enabled, filter by statement period
-  if (useStatementMonth) {
-    return filterTransactionsByDateRange(transactions, dateRanges.statement as DateRange);
-  }
-  
-  // Otherwise filter by selected timeframe
-  switch (timeframe) {
-    case 'thisMonth':
-      return filterTransactionsByDateRange(transactions, dateRanges.thisMonth as DateRange);
-    case 'lastMonth':
-      const result = filterTransactionsByDateRange(transactions, dateRanges.lastMonth as DateRange);
-      console.log(`Last month filtering: found ${result.length} transactions from ${dateRanges.lastMonth.start.toISOString()} to ${dateRanges.lastMonth.end.toISOString()}`);
-      return result;
-    case 'lastThreeMonths': {
-      const threeMonthsAgo = dateRanges.threeMonthsAgo as Date;
-      return transactions.filter(tx => {
-        const txDate = new Date(tx.date);
-        return txDate >= threeMonthsAgo;
-      });
-    }
-    case 'thisYear':
-      return filterTransactionsByDateRange(transactions, dateRanges.thisYear as DateRange);
-    default:
-      console.warn(`Unknown timeframe: ${timeframe}, defaulting to all transactions`);
-      return transactions;
-  }
-}
 
-/**
- * Filter transactions by date range
- */
-export function filterTransactionsByDateRange(
-  transactions: Transaction[],
-  dateRange: DateRange
-): Transaction[] {
-  if (!dateRange || !dateRange.start || !dateRange.end) {
-    console.warn('Invalid date range provided for filtering');
+  let startDate: Date;
+  let endDate: Date;
+
+  if (timeframe === 'allTime') {
     return transactions;
   }
 
-  return transactions.filter(tx => {
-    // Create a date object from the transaction date string
-    const txDate = new Date(tx.date);
-    
-    // Reset hours to ensure date-only comparison (start of day)
-    const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
-    const rangeStartDate = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate());
-    
-    // For end date comparison, set to end of day to include all transactions on that day
-    const rangeEndDate = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate());
-    rangeEndDate.setHours(23, 59, 59, 999);
-    
-    return txDateOnly >= rangeStartDate && txDateOnly <= rangeEndDate;
+  if (useStatementMonth) {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    // Determine the start and end dates based on the statement cycle day
+    if (today.getDate() >= statementCycleDay) {
+      // We are in the current statement cycle
+      startDate = new Date(currentYear, currentMonth, statementCycleDay);
+      endDate = new Date(currentYear, currentMonth + 1, statementCycleDay - 1);
+    } else {
+      // We are in the previous statement cycle
+      startDate = new Date(currentYear, currentMonth - 1, statementCycleDay);
+      endDate = new Date(currentYear, currentMonth, statementCycleDay - 1);
+    }
+
+    // Adjust dates based on the selected timeframe
+    switch (timeframe) {
+      case 'thisMonth':
+        break; // Use the calculated startDate and endDate for the current statement cycle
+      case 'lastMonth':
+        startDate = subMonths(startDate, 1);
+        endDate = subMonths(endDate, 1);
+        break;
+      case 'thisYear':
+        startDate = startOfMonth(new Date(currentYear, currentMonth, statementCycleDay));
+        endDate = endOfMonth(new Date(currentYear, currentMonth + 1, statementCycleDay - 1));
+        break;
+      case 'lastYear':
+        startDate = startOfMonth(new Date(currentYear - 1, currentMonth, statementCycleDay));
+        endDate = endOfMonth(new Date(currentYear, currentMonth, statementCycleDay - 1));
+        break;
+      default:
+        break;
+    }
+  } else {
+    // Use calendar month
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentDay = today.getDate();
+
+    switch (timeframe) {
+      case 'thisMonth':
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+      case 'lastMonth':
+        startDate = startOfMonth(subMonths(today, 1));
+        endDate = endOfMonth(subMonths(today, 1));
+        break;
+      case 'thisYear':
+        startDate = startOfYear(today);
+        endDate = endOfYear(today);
+        break;
+      case 'lastYear':
+        startDate = startOfYear(subYears(today, 1));
+        endDate = endOfYear(subYears(today, 1));
+        break;
+      case 'thisWeek':
+        startDate = startOfWeek(today, { weekStartsOn: 0 });
+        endDate = endOfWeek(today, { weekStartsOn: 0 });
+        break;
+      case 'lastWeek':
+        const lastWeekStart = subMonths(startOfWeek(today, { weekStartsOn: 0 }), 1);
+        startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
+        endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
+        break;
+      default:
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+    }
+  }
+
+  const filtered = transactions.filter((transaction) => {
+    const transactionDate = new Date(transaction.date);
+    return transactionDate >= startDate && transactionDate <= endDate;
   });
-}
+
+  return filtered;
+};
 
 /**
- * Calculate the date range duration in days
+ * Calculates the number of days in the selected timeframe.
+ * @param timeframe A string representing the timeframe.
+ * @param useStatementMonth A boolean indicating whether to use the statement month.
+ * @param statementCycleDay A number representing the day of the month when the statement cycle starts.
+ * @returns The number of days in the selected timeframe.
  */
-export function calculateDateRangeDuration(dateRange: DateRange): number {
-  const diffTime = dateRange.end.getTime() - dateRange.start.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
-/**
- * Get the number of days in the current filter period
- */
-export function getDaysInPeriod(
+export const getDaysInPeriod = (
   timeframe: TimeframeTab,
   useStatementMonth: boolean,
   statementCycleDay: number
-): number {
-  const dateRanges = generateDateRanges(useStatementMonth, statementCycleDay);
-  
+): number => {
+  let startDate: Date;
+  let endDate: Date;
+
   if (useStatementMonth) {
-    return calculateDateRangeDuration(dateRanges.statement as DateRange);
-  }
-  
-  switch (timeframe) {
-    case 'thisMonth':
-      return calculateDateRangeDuration(dateRanges.thisMonth as DateRange);
-    case 'lastMonth':
-      return calculateDateRangeDuration(dateRanges.lastMonth as DateRange);
-    case 'lastThreeMonths': {
-      const threeMonthsAgo = dateRanges.threeMonthsAgo as Date;
-      const now = new Date();
-      return Math.ceil((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24));
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    if (today.getDate() >= statementCycleDay) {
+      startDate = new Date(currentYear, currentMonth, statementCycleDay);
+      endDate = new Date(currentYear, currentMonth + 1, statementCycleDay - 1);
+    } else {
+      startDate = new Date(currentYear, currentMonth - 1, statementCycleDay);
+      endDate = new Date(currentYear, currentMonth, statementCycleDay - 1);
     }
-    case 'thisYear':
-      return calculateDateRangeDuration(dateRanges.thisYear as DateRange);
-    default:
-      return 30; // Default to 30 days
+
+    switch (timeframe) {
+      case 'thisMonth':
+        break;
+      case 'lastMonth':
+        startDate = subMonths(startDate, 1);
+        endDate = subMonths(endDate, 1);
+        break;
+      case 'thisYear':
+        startDate = startOfMonth(new Date(currentYear, currentMonth, statementCycleDay));
+        endDate = endOfMonth(new Date(currentYear, currentMonth + 1, statementCycleDay - 1));
+        break;
+      case 'lastYear':
+        startDate = startOfMonth(new Date(currentYear - 1, currentMonth, statementCycleDay));
+        endDate = endOfMonth(new Date(currentYear, currentMonth, statementCycleDay - 1));
+        break;
+      default:
+        break;
+    }
+  } else {
+    const today = new Date();
+
+    switch (timeframe) {
+      case 'thisMonth':
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+      case 'lastMonth':
+        startDate = startOfMonth(subMonths(today, 1));
+        endDate = endOfMonth(subMonths(today, 1));
+        break;
+      case 'thisYear':
+        startDate = startOfYear(today);
+        endDate = endOfYear(today);
+        break;
+      case 'lastYear':
+        startDate = startOfYear(subYears(today, 1));
+        endDate = endOfYear(subYears(today, 1));
+        break;
+      case 'thisWeek':
+        startDate = startOfWeek(today, { weekStartsOn: 0 });
+        endDate = endOfWeek(today, { weekStartsOn: 0 });
+        break;
+      case 'lastWeek':
+        const lastWeekStart = subMonths(startOfWeek(today, { weekStartsOn: 0 }), 1);
+        startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
+        endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
+        break;
+      default:
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+    }
   }
-}
+
+  const interval = { start: startDate, end: endDate };
+  const days = eachDayOfInterval(interval);
+  return days.length;
+};
+
+const getDateRangeValues = (dateObj: Date | { start: Date, end: Date }) => {
+  // Check if the date is a Date object or a DateRange object
+  if (dateObj instanceof Date) {
+    // If it's a Date, use the same date for both start and end
+    return { start: dateObj, end: dateObj };
+  } else {
+    // It's a DateRange object, so we can safely access start and end
+    return { start: dateObj.start, end: dateObj.end };
+  }
+};

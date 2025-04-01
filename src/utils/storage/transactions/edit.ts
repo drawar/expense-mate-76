@@ -48,6 +48,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
         notes: updatedTransaction.notes,
         category: updatedTransaction.category || getCategoryFromMCC(updatedTransaction.merchant.mcc?.code),
         is_contactless: updatedTransaction.isContactless,
+        reimbursement_amount: updatedTransaction.reimbursementAmount || 0, // Add this field to ensure it's saved
       })
       .eq('id', id)
       .select()
@@ -71,6 +72,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
       notes: data.notes,
       category: data.category,
       isContactless: data.is_contactless,
+      reimbursementAmount: data.reimbursement_amount || 0, // Make sure to include this in the returned data
     };
   } catch (error) {
     console.error('Error in editTransaction:', error);

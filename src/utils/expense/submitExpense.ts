@@ -60,6 +60,8 @@ export const prepareTransactionData = async (
     notes: values.notes,
     isContactless: !values.isOnline ? values.isContactless : false,
     category,
+    // Add reimbursement amount to the transaction
+    reimbursementAmount: values.reimbursementAmount ? Number(values.reimbursementAmount) : 0,
   };
   
   return transaction;

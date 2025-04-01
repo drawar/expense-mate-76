@@ -285,6 +285,7 @@ export type Database = {
           payment_amount: number
           payment_currency: string
           payment_method_id: string
+          reimbursement_amount: number | null
           reward_points: number | null
         }
         Insert: {
@@ -304,6 +305,7 @@ export type Database = {
           payment_amount: number
           payment_currency: string
           payment_method_id: string
+          reimbursement_amount?: number | null
           reward_points?: number | null
         }
         Update: {
@@ -323,6 +325,7 @@ export type Database = {
           payment_amount?: number
           payment_currency?: string
           payment_method_id?: string
+          reimbursement_amount?: number | null
           reward_points?: number | null
         }
         Relationships: [

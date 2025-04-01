@@ -12,7 +12,7 @@ import {
   calculateTotalRewardPoints,
   calculateTransactionVelocity,
   calculateAverageByDayOfWeek,
-  calculateTotalReimbursed, // New function to calculate reimbursements
+  calculateTotalReimbursed,
   getTopChartItem,
   getPreviousTimeframe,
   hasEnoughDataForTrends
@@ -200,6 +200,14 @@ export function useDashboard(options: DashboardOptions): DashboardData {
     return metrics;
   }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity, lastUpdate]);
 
+  // Create a properly typed spending trends object that matches the expected interface
+  const typedSpendingTrends = useMemo(() => {
+    return {
+      labels: spendingTrends?.labels || [],
+      datasets: spendingTrends?.datasets || []
+    };
+  }, [spendingTrends]);
+
   /**
    * Combine all calculated data into the final dashboard data structure
    */
@@ -221,7 +229,7 @@ export function useDashboard(options: DashboardOptions): DashboardData {
       paymentMethods,
       categories,
       dayOfWeekSpending,
-      spendingTrends
+      spendingTrends: typedSpendingTrends // Use the properly typed version
     }
   };
 }
