@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BaseRewardCard } from './BaseRewardCard';
+import { GenericPointsCard } from './GenericPointsCard';
 
 interface DBSWomansWorldCardProps {
   pointsInfo: {
@@ -19,23 +19,23 @@ interface DBSWomansWorldCardProps {
 export const DBSWomansWorldCard: React.FC<DBSWomansWorldCardProps> = ({ 
   pointsInfo 
 }) => {
-  // Define custom styles or logic specific to this card if needed
+  // Define custom styles specific to this card
   const cardStyles = {
     borderColor: '#eb008b', // DBS Woman's World Card pink color
     gradientStart: '#eb008b',
     gradientEnd: '#8b005e'
   };
   
-  // Return the BaseRewardCard with DBS-specific information
+  // Return the GenericPointsCard with DBS-specific information
   return (
-    <BaseRewardCard
+    <GenericPointsCard
       title="DBS Woman's World MasterCard"
       pointsInfo={pointsInfo}
       pointsCurrency={pointsInfo.pointsCurrency || 'DBS Points'}
-      styles={cardStyles}
       basePointsDescription="1 DBS Point per S$5 spent"
       bonusDescription="9 bonus DBS Points on online transactions"
-      bonusCap="2,700 bonus DBS Points per month"
+      bonusCap="Monthly cap: 2,700 bonus DBS Points"
+      styles={cardStyles}
     />
   );
 };
