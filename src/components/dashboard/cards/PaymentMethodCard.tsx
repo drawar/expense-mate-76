@@ -1,8 +1,11 @@
+
 // src/components/dashboard/cards/PaymentMethodCard.tsx
 import React from 'react';
 import { CreditCardIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { PieChart, ChartDataItem } from '@/components/dashboard/charts/PieChart';
+import { CurrencyService } from '@/services/CurrencyService';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ChartDataItem } from '@/components/dashboard/charts/PieChart';
 
 interface PaymentMethodCardProps {
   title?: string;
@@ -13,8 +16,7 @@ interface PaymentMethodCardProps {
 }
 
 /**
- * A specialized card for displaying payment method distribution
- * Wraps the PieChart component with payment-specific formatting and behavior
+ * A grid-based card for displaying payment method distribution
  */
 const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   title = 'Payment Methods',
@@ -31,10 +33,9 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     const sortedData = [...data].sort((a, b) => b.value - a.value);
     
     if (sortedData.length > 0) {
-      // Add visual differentiation to the top method (slightly larger outer radius)
+      // Add visual differentiation to the top method
       return sortedData.map((item, index) => ({
         ...item,
-        // Attributes specific to payment visualization could be added here
         highlighted: index === 0
       }));
     }
@@ -42,20 +43,52 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     return data;
   }, [data, highlightTopMethod]);
   
-  // Payment method chart can use different radius to distinguish it from category chart
-  const innerRadius = 50;
-  const outerRadius = 80;
-  
   return (
-    <PieChart
-      title={title}
-      icon={<CreditCardIcon className="h-5 w-5 text-primary" />}
-      data={processedData}
-      currency={currency}
-      className={className}
-      innerRadius={innerRadius}
-      outerRadius={outerRadius}
-    />
+    <Card className={className}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex items-center gap-2">
+          <CreditCardIcon className="h-5 w-5 text-primary" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {processedData && processedData.length > 0 ? (
+          <div className="mt-2 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {processedData.map((item, index) => (
+                <React.Fragment key={`${item.name}-${index}`}>
+                  <div className="flex items-center">
+                    <div 
+                      className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
+                      style={{ backgroundColor: item.color }} 
+                    />
+                    <span 
+                      className={`truncate text-[14px] font-medium text-olive-green dark:text-white ${
+                        item.highlighted ? 'font-semibold' : ''
+                      }`} 
+                      title={item.name}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
+                  <div 
+                    className={`text-right text-[14px] font-semibold text-olive-green dark:text-white ${
+                      item.highlighted ? 'font-semibold' : ''
+                    }`}
+                  >
+                    {CurrencyService.format(item.value, currency)}
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-36 text-muted-foreground">
+            <p>No payment method data available</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,12 +1,12 @@
+
 // src/components/dashboard/InsightsGrid.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import PaymentMethodCard from "@/components/dashboard/cards/PaymentMethodCard";
-import SpendingCategoryCard from "@/components/dashboard/cards/SpendingCategoryCard";
 import SpendingTrendCard from "@/components/dashboard/cards/SpendingTrendCard";
 import CardOptimizationCard from "@/components/dashboard/cards/CardOptimizationCard";
 import SavingsPotentialCard from "@/components/dashboard/cards/SavingsPotentialCard";
 import UnusualSpendingCard from "@/components/dashboard/cards/UnusualSpendingCard";
+import SpendingDistributionCard from "@/components/dashboard/cards/SpendingDistributionCard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { EmptyState } from "./EmptyState";
 import { BarChartIcon } from "lucide-react";
@@ -64,28 +64,14 @@ const InsightsGrid: React.FC = () => {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Payment Methods Card */}
-        <PaymentMethodCard
-          data={charts.paymentMethods}
-          currency={displayCurrency}
-          className={commonCardClass}
-          highlightTopMethod={true}
-        />
-
-        {/* Expense Categories Card */}
-        <SpendingCategoryCard
-          data={charts.categories}
+        {/* Combined Spending Distribution Card */}
+        <SpendingDistributionCard
+          categoryData={charts.categories}
+          paymentMethodData={charts.paymentMethods}
           currency={displayCurrency}
           className={commonCardClass}
           maxCategories={7}
-        />
-
-        {/* Spending Trends Card */}
-        <SpendingTrendCard
-          transactions={filteredTransactions}
-          currency={displayCurrency}
-          className={commonCardClass}
-          initialPeriod="day"
+          highlightTopMethod={true}
         />
 
         {/* Unusual Spending Card */}
@@ -96,11 +82,19 @@ const InsightsGrid: React.FC = () => {
           maxDisplayedAnomalies={isMobile ? 2 : 3}
         />
 
+        {/* Spending Trends Card */}
+        <SpendingTrendCard
+          transactions={filteredTransactions}
+          currency={displayCurrency}
+          className={commonCardClass}
+          initialPeriod="day"
+        />
+
         {/* Container for optimization cards */}
         <div
-          className={`grid grid-cols-1 gap-4 ${isMobile ? "" : "col-span-2"}`}
+          className={`grid grid-cols-1 gap-4 ${isMobile ? "" : "col-span-1"}`}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {/* Card Optimization Card */}
             <CardOptimizationCard
               title="Card Optimization"

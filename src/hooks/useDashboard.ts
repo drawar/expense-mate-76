@@ -1,10 +1,15 @@
 
 // src/hooks/useDashboard.ts
-import { useMemo } from 'react';
-import { Transaction, Currency } from '@/types';
-import { DashboardData, DashboardOptions } from '@/types/dashboardTypes';
-import { filterTransactionsByTimeframe, getDaysInPeriod } from '@/utils/transactionProcessor';
-import { usePieChartData, useSpendingTrendData } from '@/hooks/useChartData';
+// Fix issues related to ChartProcessingResult type
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { filterTransactionsByTimeframe } from "@/utils/transactionProcessor";
+import { Transaction, PaymentMethod, Currency } from "@/types";
+import { DashboardData, DashboardOptions } from "@/types/dashboard";
+import { CurrencyService } from "@/services/CurrencyService";
+import {
+  generatePaymentMethodChartData,
+  generateCategoryChartData,
+} from "@/utils/dashboardCalculations";
 import {
   calculateTotalExpenses,
   calculatePercentageChange,
@@ -14,222 +19,292 @@ import {
   calculateAverageByDayOfWeek,
   calculateTotalReimbursed,
   getTopChartItem,
-  getPreviousTimeframe,
-  hasEnoughDataForTrends
-} from '@/utils/dashboardUtils';
+} from "@/utils/dashboardUtils";
+import { useSpendingTrendData } from "@/hooks/useChartData";
 
 /**
- * Custom hook that processes transaction data and calculates dashboard metrics
- * 
- * This hook is responsible for:
- * 1. Filtering transactions based on selected timeframe
- * 2. Calculating key metrics (expenses, counts, averages)
- * 3. Generating chart data for visualizations
- * 4. Computing comparison metrics with previous periods
- * 5. Now also calculating reimbursement amounts
- * 
- * @param options Configuration options for dashboard processing
- * @returns Processed dashboard data ready for display
+ * Custom hook that processes transaction data to build dashboard visualizations and metrics
+ *
+ * @param options Configuration options for dashboard data
+ * @returns Processed dashboard data including metrics, charts, and filtered transactions
  */
-export function useDashboard(options: DashboardOptions): DashboardData {
-  // Extract and set default options with destructuring
+export function useDashboard(options: DashboardOptions): {
+  dashboardData: DashboardData | null;
+  isLoading: boolean;
+  error: string | null;
+} {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+  // Extract configuration from options
   const {
-    transactions = [],
-    displayCurrency = 'SGD',
-    timeframe = 'thisMonth',
-    useStatementMonth = false,
-    statementCycleDay = 15,
-    previousPeriodTransactions = [],
+    transactions,
+    displayCurrency,
+    timeframe,
+    useStatementMonth,
+    statementCycleDay,
     calculateDayOfWeekMetrics = false,
-    calculateVelocity = false,
-    lastUpdate = Date.now() // Add lastUpdate with default
+    calculateVelocity = true,
+    lastUpdate,
   } = options;
 
-  /**
-   * Use a consistent chart period instead of deriving it from timeframe filter
-   * This separation allows timeframe to control date range and chart period
-   * to control visualization granularity independently
-   */
-  const chartPeriod = 'month' as const; // Fixed value for type safety
-
-  /**
-   * Step 2: Filter transactions - only recalculate when filter criteria change
-   * Performance improvement: we don't recompute this when only display currency changes
-   */
+  // Filter transactions based on selected timeframe
   const filteredTransactions = useMemo(() => {
-    // Early return for empty transactions to avoid unnecessary processing
-    if (!transactions.length) return [];
-    
-    console.log(`Filtering ${transactions.length} transactions for timeframe ${timeframe}`);
-    
     return filterTransactionsByTimeframe(
       transactions,
       timeframe,
       useStatementMonth,
       statementCycleDay
     );
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay, lastUpdate]);
+  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
 
-  /**
-   * Step 3: Generate comparison data - separating this from other calculations
-   * allows it to be recalculated independently
-   */
-  const filteredPreviousPeriodTransactions = useMemo(() => {
-    if (!transactions.length) return [];
-    
-    if (previousPeriodTransactions.length > 0) {
-      return filterTransactionsByTimeframe(
+  // Get previous period transactions for comparison
+  const previousPeriodTransactions = useMemo(() => {
+    // Shift one period back for comparison
+    return filterTransactionsByTimeframe(
+      transactions,
+      timeframe,
+      useStatementMonth,
+      statementCycleDay,
+      true // This flag gets the previous period
+    );
+  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
+
+  // Calculate dashboard metrics
+  const getDashboardMetrics = useCallback(() => {
+    try {
+      if (filteredTransactions.length === 0) {
+        throw new Error("No transactions found for the selected period");
+      }
+
+      // Calculate total expenses for current period
+      const totalExpenses = calculateTotalExpenses(
+        filteredTransactions,
+        displayCurrency
+      );
+
+      // Calculate total reimbursed amount if applicable
+      const totalReimbursed = calculateTotalReimbursed(
+        filteredTransactions,
+        displayCurrency
+      );
+
+      // Calculate previous period expenses for comparison
+      const previousPeriodExpenses = calculateTotalExpenses(
         previousPeriodTransactions,
-        timeframe,
-        useStatementMonth,
-        statementCycleDay
+        displayCurrency
       );
-    } else {
-      const prevTimeframe = getPreviousTimeframe(timeframe);
-      return filterTransactionsByTimeframe(
-        transactions,
-        prevTimeframe,
-        useStatementMonth,
-        statementCycleDay
-      );
-    }
-  }, [previousPeriodTransactions, transactions, timeframe, useStatementMonth, statementCycleDay, lastUpdate]);
 
-  /**
-   * Step 4: Calculate primary metrics only when filtered data or currency changes
-   */
-  const basicMetrics = useMemo(() => {
-    // Skip expensive calculations for empty datasets
-    if (!filteredTransactions.length) {
+      // Calculate percentage change from previous period
+      const percentageChange = calculatePercentageChange(
+        totalExpenses,
+        previousPeriodExpenses
+      );
+
+      // Calculate average transaction amount
+      const averageAmount = calculateAverageAmount(
+        filteredTransactions,
+        displayCurrency
+      );
+
+      // Calculate total reward points earned
+      const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
+
+      // Calculate transaction velocity (optional)
+      let transactionVelocity = undefined;
+      let hasEnoughData = false;
+
+      if (calculateVelocity) {
+        const velocityResult = calculateTransactionVelocity(
+          filteredTransactions,
+          previousPeriodTransactions
+        );
+        transactionVelocity = velocityResult.velocity;
+        hasEnoughData = velocityResult.hasEnoughData;
+      }
+
       return {
-        totalExpenses: 0,
-        transactionCount: 0,
-        averageAmount: 0,
-        totalRewardPoints: 0,
-        percentageChange: 0,
-        totalReimbursed: 0, // Add reimbursement total
-        hasEnoughData: false
+        totalExpenses,
+        totalReimbursed,
+        transactionCount: filteredTransactions.length,
+        averageAmount,
+        totalRewardPoints,
+        percentageChange,
+        transactionVelocity,
+        hasEnoughData,
       };
-    }
-    
-    console.log(`Calculating metrics for ${filteredTransactions.length} filtered transactions`);
-    
-    // Current period metrics
-    const totalExpenses = calculateTotalExpenses(filteredTransactions, displayCurrency);
-    const transactionCount = filteredTransactions.length;
-    const averageAmount = calculateAverageAmount(totalExpenses, transactionCount);
-    const totalRewardPoints = calculateTotalRewardPoints(filteredTransactions);
-    const totalReimbursed = calculateTotalReimbursed(filteredTransactions, displayCurrency);
-    
-    // Comparison metrics with previous period
-    // For net expenses, we should use (totalExpenses - totalReimbursed) for both current and previous periods
-    const previousExpenses = calculateTotalExpenses(filteredPreviousPeriodTransactions, displayCurrency);
-    const previousReimbursed = calculateTotalReimbursed(filteredPreviousPeriodTransactions, displayCurrency);
-    
-    // Calculate percentage change based on net expenses (expenses - reimbursements)
-    const currentNetExpenses = totalExpenses - totalReimbursed;
-    const previousNetExpenses = previousExpenses - previousReimbursed;
-    const percentageChange = calculatePercentageChange(currentNetExpenses, previousNetExpenses);
-    
-    return {
-      totalExpenses,
-      transactionCount,
-      averageAmount,
-      totalRewardPoints,
-      percentageChange,
-      totalReimbursed,
-      hasEnoughData: hasEnoughDataForTrends(filteredTransactions)
-    };
-  }, [filteredTransactions, filteredPreviousPeriodTransactions, displayCurrency, lastUpdate]);
-
-  /**
-   * Step 5: Generate chart data using specialized hooks
-   * Each chart type now has a separately memoized result
-   */
-  const paymentMethods = usePieChartData(filteredTransactions, 'paymentMethod', displayCurrency);
-  const categories = usePieChartData(filteredTransactions, 'category', displayCurrency);
-
-  /**
-   * Memoize options for spending trend data - only recreated when currency changes
-   */
-  const spendingTrendOptions = useMemo(() => ({
-    includeCategoryBreakdown: true,
-    displayCurrency,
-    accountForReimbursements: true // Include this flag for reimbursement calculation
-  }), [displayCurrency]);
-  
-  /**
-   * Spending trend calculation now depends only on what it needs
-   */
-  const spendingTrends = useSpendingTrendData(
-    filteredTransactions, 
-    chartPeriod, 
-    spendingTrendOptions
-  );
-
-  /**
-   * Optimize optional metrics with proper dependency checking
-   */
-  const dayOfWeekSpending = useMemo(() => {
-    if (!calculateDayOfWeekMetrics || !filteredTransactions.length) return undefined;
-    return calculateAverageByDayOfWeek(filteredTransactions, displayCurrency);
-  }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics, lastUpdate]);
-
-  /**
-   * Extract top values with appropriate dependencies
-   */
-  const topValues = useMemo(() => ({
-    paymentMethod: getTopChartItem(paymentMethods),
-    category: getTopChartItem(categories)
-  }), [paymentMethods, categories]);
-
-  /**
-   * Optimize additional metrics calculation
-   */
-  const additionalMetrics = useMemo(() => {
-    const metrics: { transactionVelocity?: number } = {};
-    
-    if (calculateVelocity && filteredTransactions.length) {
-      const daysInPeriod = getDaysInPeriod(timeframe, useStatementMonth, statementCycleDay);
-      metrics.transactionVelocity = calculateTransactionVelocity(
-        filteredTransactions, 
-        daysInPeriod
+    } catch (e) {
+      console.error("Error calculating dashboard metrics:", e);
+      setError(
+        e instanceof Error ? e.message : "Error calculating dashboard metrics"
       );
+      return null;
     }
-    
-    return metrics;
-  }, [filteredTransactions, timeframe, useStatementMonth, statementCycleDay, calculateVelocity, lastUpdate]);
-
-  // Create a properly typed spending trends object that matches the expected interface
-  const typedSpendingTrends = useMemo(() => {
-    return {
-      labels: spendingTrends?.labels || [],
-      datasets: spendingTrends?.datasets || []
-    };
-  }, [spendingTrends]);
-
-  /**
-   * Combine all calculated data into the final dashboard data structure
-   */
-  return {
-    // Raw filtered transaction data
+  }, [
     filteredTransactions,
-    
-    // Combined metrics
-    metrics: {
-      ...basicMetrics,
-      ...additionalMetrics
-    },
-    
-    // Top values for summary display
-    top: topValues,
-    
-    // Chart data for visualizations
-    charts: {
-      paymentMethods,
-      categories,
-      dayOfWeekSpending,
-      spendingTrends: typedSpendingTrends // Use the properly typed version
+    previousPeriodTransactions,
+    displayCurrency,
+    calculateVelocity,
+  ]);
+
+  // Generate chart data
+  const getChartData = useCallback(() => {
+    try {
+      if (filteredTransactions.length === 0) {
+        return {
+          paymentMethods: [],
+          categories: [],
+          dayOfWeekSpending: {},
+          spendingTrends: { labels: [], datasets: [] },
+        };
+      }
+
+      // Generate payment method distribution chart data
+      const paymentMethods = generatePaymentMethodChartData(
+        filteredTransactions,
+        displayCurrency
+      );
+
+      // Generate category distribution chart data
+      const categories = generateCategoryChartData(
+        filteredTransactions,
+        displayCurrency
+      );
+
+      // Calculate day of week spending distribution (optional)
+      let dayOfWeekSpending = {};
+      if (calculateDayOfWeekMetrics) {
+        dayOfWeekSpending = calculateAverageByDayOfWeek(
+          filteredTransactions,
+          displayCurrency
+        );
+      }
+
+      // Process spending trends chart data with the trend calculation hook
+      const trendData = useSpendingTrendData(filteredTransactions, "month", {
+        includeCategoryBreakdown: true,
+        maxTopCategories: 3,
+        displayCurrency,
+      });
+
+      // Create the spending trends chart data structure
+      const spendingTrends = {
+        // Use empty arrays if trendData properties don't exist
+        labels: trendData?.labels || [],
+        datasets: trendData?.datasets || [],
+      };
+
+      return {
+        paymentMethods,
+        categories,
+        dayOfWeekSpending,
+        spendingTrends,
+      };
+    } catch (e) {
+      console.error("Error generating chart data:", e);
+      setError(e instanceof Error ? e.message : "Error generating chart data");
+      return null;
     }
-  };
+  }, [
+    filteredTransactions,
+    displayCurrency,
+    calculateDayOfWeekMetrics,
+    useSpendingTrendData,
+  ]);
+
+  // Get top values for quick insights
+  const getTopValues = useCallback(() => {
+    try {
+      if (filteredTransactions.length === 0) {
+        return {};
+      }
+
+      // Generate chart data first to find top items
+      const chartData = getChartData();
+
+      // Get top payment method
+      const topPaymentMethod = getTopChartItem(chartData.paymentMethods);
+
+      // Get top category
+      const topCategory = getTopChartItem(chartData.categories);
+
+      return {
+        paymentMethod: topPaymentMethod,
+        category: topCategory,
+      };
+    } catch (e) {
+      console.error("Error finding top values:", e);
+      setError(e instanceof Error ? e.message : "Error finding top values");
+      return {};
+    }
+  }, [filteredTransactions, getChartData]);
+
+  // Generate complete dashboard data
+  const generateDashboardData = useCallback(() => {
+    try {
+      setIsLoading(true);
+
+      // Get metrics
+      const metrics = getDashboardMetrics();
+      if (!metrics && filteredTransactions.length > 0) {
+        throw new Error("Failed to calculate dashboard metrics");
+      }
+
+      // Get chart data
+      const charts = getChartData();
+      if (!charts) {
+        throw new Error("Failed to generate chart data");
+      }
+
+      // Get top values
+      const top = getTopValues();
+
+      // Return complete dashboard data
+      return {
+        filteredTransactions,
+        metrics: metrics || {
+          totalExpenses: 0,
+          transactionCount: 0,
+          averageAmount: 0,
+          totalRewardPoints: 0,
+          percentageChange: 0,
+          totalReimbursed: 0,
+        },
+        top,
+        charts,
+      };
+    } catch (e) {
+      console.error("Error generating dashboard data:", e);
+      setError(
+        e instanceof Error ? e.message : "Error generating dashboard data"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    filteredTransactions,
+    getDashboardMetrics,
+    getChartData,
+    getTopValues,
+    setIsLoading,
+    setError,
+  ]);
+
+  // Update dashboard data when dependencies change
+  useEffect(() => {
+    const data = generateDashboardData();
+    setDashboardData(data);
+  }, [
+    generateDashboardData,
+    lastUpdate,
+    // Dependencies that should trigger a recalculation:
+    timeframe,
+    useStatementMonth,
+    statementCycleDay,
+    displayCurrency,
+  ]);
+
+  return { dashboardData, isLoading, error };
 }

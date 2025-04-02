@@ -1,8 +1,11 @@
+
 // src/components/dashboard/cards/SpendingCategoryCard.tsx
 import React from 'react';
 import { TagIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { PieChart, ChartDataItem } from '@/components/dashboard/charts/PieChart';
+import { CurrencyService } from '@/services/CurrencyService';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ChartDataItem } from '@/components/dashboard/charts/PieChart';
 
 interface SpendingCategoryCardProps {
   title?: string;
@@ -13,8 +16,7 @@ interface SpendingCategoryCardProps {
 }
 
 /**
- * A specialized card for displaying spending by category
- * Wraps the PieChart component with domain-specific defaults and styling
+ * A grid-based card for displaying spending by category
  */
 const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
   title = 'Expense Categories',
@@ -51,20 +53,48 @@ const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
     return topCategories;
   }, [data, maxCategories]);
   
-  // Use specific domain settings for category visualization
-  const innerRadius = 50;
-  const outerRadius = 80;
-  
   return (
-    <PieChart
-      title={title}
-      icon={<TagIcon className="h-5 w-5 text-primary" />}
-      data={processedData}
-      currency={currency}
-      className={className}
-      innerRadius={innerRadius}
-      outerRadius={outerRadius}
-    />
+    <Card className={className}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex items-center gap-2">
+          <TagIcon className="h-5 w-5 text-primary" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {processedData && processedData.length > 0 ? (
+          <div className="mt-2 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {processedData.map((item, index) => (
+                <React.Fragment key={`${item.name}-${index}`}>
+                  <div className="flex items-center">
+                    <div 
+                      className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
+                      style={{ backgroundColor: item.color }} 
+                    />
+                    <span 
+                      className="truncate text-[14px] font-medium text-olive-green dark:text-white" 
+                      title={item.name}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
+                  <div 
+                    className="text-right text-[14px] font-semibold text-olive-green dark:text-white"
+                  >
+                    {CurrencyService.format(item.value, currency)}
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-36 text-muted-foreground">
+            <p>No category data available</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
