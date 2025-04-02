@@ -19,6 +19,19 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        mono: ['Roboto Mono', 'monospace'],
+      },
+      scale: {
+        '102': '1.02',
+      },
+      boxShadow: {
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'elevation': '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -69,6 +82,22 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "fade-out": {
+          from: { opacity: "1" },
+          to: { opacity: "0" },
+        },
+        "scale-in": {
+          from: { transform: "scale(0.95)" },
+          to: { transform: "scale(1)" },
+        },
+        "scale-out": {
+          from: { transform: "scale(1)" },
+          to: { transform: "scale(0.95)" },
         },
       },
       animation: {
