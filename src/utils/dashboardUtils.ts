@@ -2,17 +2,7 @@
 import { Transaction, Currency, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
 import { TimeframeTab } from "@/utils/transactionProcessor";
-
-/**
- * Chart data item interface
- * Moved from dashboardCalculations.ts for centralization
- */
-export interface ChartDataItem {
-  name: string;
-  value: number;
-  color: string;
-  highlighted?: boolean;
-}
+import { ChartDataItem } from "@/types/dashboard";
 
 /**
  * Calculate total expenses with currency conversion

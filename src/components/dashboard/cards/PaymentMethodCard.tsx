@@ -5,7 +5,7 @@ import { CreditCardIcon } from 'lucide-react';
 import { Currency } from '@/types';
 import { CurrencyService } from '@/services/CurrencyService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ChartDataItem } from '@/components/dashboard/charts/PieChart';
+import { ChartDataItem } from '@/types/dashboard';
 
 interface PaymentMethodCardProps {
   title?: string;
