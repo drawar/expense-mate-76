@@ -19,25 +19,20 @@ interface DBSWomansWorldCardProps {
 export const DBSWomansWorldCard: React.FC<DBSWomansWorldCardProps> = ({ 
   pointsInfo 
 }) => {
-  // Define custom styles specific to this card
-  const cardStyles = {
-    borderColor: '#eb008b', // DBS Woman's World Card pink color
-    gradientStart: '#eb008b',
-    gradientEnd: '#8b005e'
+  // The GenericPointsCard only accepts pointsInfo, so we need to include all the card-specific
+  // details in the pointsInfo object itself
+  
+  // Create a modified pointsInfo with additional metadata if needed
+  const enhancedPointsInfo = {
+    ...pointsInfo,
+    pointsCurrency: pointsInfo.pointsCurrency || 'DBS Points',
+    // We can add a message with the specific card details
+    messageText: pointsInfo.messageText || 
+      "1 DBS Point per S$5 spent + 9 bonus points on online transactions (monthly cap: 2,700 bonus points)"
   };
   
-  // Return the GenericPointsCard with DBS-specific information
-  return (
-    <GenericPointsCard
-      title="DBS Woman's World MasterCard"
-      pointsInfo={pointsInfo}
-      pointsCurrency={pointsInfo.pointsCurrency || 'DBS Points'}
-      basePointsDescription="1 DBS Point per S$5 spent"
-      bonusDescription="9 bonus DBS Points on online transactions"
-      bonusCap="Monthly cap: 2,700 bonus DBS Points"
-      styles={cardStyles}
-    />
-  );
+  // GenericPointsCard only accepts the pointsInfo prop
+  return <GenericPointsCard pointsInfo={enhancedPointsInfo} />;
 };
 
 /**
