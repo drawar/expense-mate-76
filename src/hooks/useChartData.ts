@@ -6,7 +6,7 @@ import {
   processTransactionsForChart, 
   ChartProcessingResult
 } from '@/utils/chartDataProcessor';
-import { ChartDataItem } from '@/utils/dashboardUtils';
+import { ChartDataItem } from '@/types/dashboard';
 
 /**
  * Hook for generating pie chart data from transactions

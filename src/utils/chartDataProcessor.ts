@@ -2,10 +2,8 @@
 import { Transaction, Currency } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
 import { CHART_COLORS } from "@/utils/dashboardCalculations";
-import {
-  calculatePercentageChange,
-  ChartDataItem,
-} from "@/utils/dashboardUtils";
+import { calculatePercentageChange } from "@/utils/dashboardUtils";
+import { ChartDataItem } from "@/types/dashboard";
 
 /**
  * Processed data for bar chart items with additional metadata
@@ -98,7 +96,7 @@ export function processPieChartData(
     if (accountForReimbursements && tx.reimbursementAmount) {
       const reimbursedAmount = CurrencyService.convert(
         tx.reimbursementAmount,
-        tx.currency as Currency, // Reimbursement is in same currency as transaction
+        tx.currency as Currency,
         displayCurrency,
         tx.paymentMethod
       );

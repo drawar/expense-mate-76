@@ -4,6 +4,16 @@ import { Transaction, Currency } from "@/types";
 import { TimeframeTab } from "@/utils/transactionProcessor";
 
 /**
+ * Chart data structure
+ */
+export interface ChartDataItem {
+  name: string;
+  value: number;
+  color: string;
+  highlighted?: boolean; // Added highlighted property to resolve TS errors
+}
+
+/**
  * Dashboard metrics
  */
 export interface DashboardMetrics {
@@ -20,13 +30,6 @@ export interface DashboardMetrics {
 /**
  * Chart data structure
  */
-export interface ChartDataItem {
-  name: string;
-  value: number;
-  color: string;
-  highlighted?: boolean; // Added highlighted property for chart items
-}
-
 export interface DashboardChartData {
   paymentMethods: ChartDataItem[];
   categories: ChartDataItem[];

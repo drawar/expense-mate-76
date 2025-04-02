@@ -10,8 +10,8 @@ import {
   calculateAverageByDayOfWeek,
   calculateTotalReimbursed,
   getTopChartItem,
-  ChartDataItem,
 } from "./dashboardUtils";
+import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/services/CurrencyService";
 
 /**
