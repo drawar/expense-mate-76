@@ -114,11 +114,10 @@ export function useDashboard(options: DashboardOptions): {
       let hasEnoughData = false;
 
       if (calculateVelocity) {
-        // Fix: Pass the correct parameters - transaction count and days
-        transactionVelocity = calculateTransactionVelocity(
-          filteredTransactions.length, 
-          30 // Assuming 30 days as a default period
-        );
+        // Fixed: Pass only the required parameters - transaction count and days
+        const transactionCount = filteredTransactions.length;
+        const days = 30; // Assuming 30 days as a default period
+        transactionVelocity = calculateTransactionVelocity(transactionCount, days);
         hasEnoughData = filteredTransactions.length >= 5; // Basic check for enough data
       }
 
