@@ -89,15 +89,16 @@ export function calculatePercentageChange(
 /**
  * Calculate average transaction amount
  *
- * @param totalAmount - Sum of all transaction amounts
- * @param transactionCount - Number of transactions
+ * @param transactions - Transactions to analyze
+ * @param displayCurrency - Currency to convert amounts to
  * @returns Average amount per transaction
  */
 export function calculateAverageAmount(
-  totalAmount: number,
-  transactionCount: number
+  transactions: Transaction[],
+  displayCurrency: Currency
 ): number {
-  return transactionCount > 0 ? totalAmount / transactionCount : 0;
+  const totalAmount = calculateTotalExpenses(transactions, displayCurrency);
+  return transactions.length > 0 ? totalAmount / transactions.length : 0;
 }
 
 /**

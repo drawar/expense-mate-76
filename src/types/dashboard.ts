@@ -1,3 +1,4 @@
+
 // src/types/dashboard.ts
 import { Transaction, Currency } from "@/types";
 import { TimeframeTab } from "@/utils/transactionProcessor";
@@ -23,6 +24,7 @@ export interface ChartDataItem {
   name: string;
   value: number;
   color: string;
+  highlighted?: boolean; // Added highlighted property for chart items
 }
 
 export interface DashboardChartData {

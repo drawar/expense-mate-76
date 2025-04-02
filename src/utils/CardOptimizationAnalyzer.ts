@@ -1,5 +1,6 @@
 
-// Import the CurrencyService instead of the non-existent currencyConversion module
+// Import the necessary types
+import { Transaction, PaymentMethod, Currency } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
 
 // Define CardSuggestion interface that was missing
