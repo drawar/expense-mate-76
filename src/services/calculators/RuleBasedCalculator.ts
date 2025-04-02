@@ -168,6 +168,11 @@ export class RuleBasedCalculator extends BaseCalculator {
       return Math.round(amount); // Always round to nearest integer for TD Aeroplan
     }
     
+    // Special handling for DBS Woman's World MasterCard - round down to nearest $5
+    if (this.cardType === 'dbs-womans-world') {
+      return Math.floor(amount / 5) * 5;
+    }
+    
     if (!rule) return Math.floor(amount); // Default to floor rounding
     
     switch (rule.rounding) {
@@ -189,6 +194,13 @@ export class RuleBasedCalculator extends BaseCalculator {
    */
   calculateBasePoints(roundedAmount: number): number {
     const rule = this.getActiveRule();
+    
+    // Special handling for DBS Woman's World MasterCard
+    if (this.cardType === 'dbs-womans-world') {
+      // 1 point per $5 spent
+      return Math.floor(roundedAmount / 5);
+    }
+    
     if (!rule) return Math.floor(roundedAmount); // Default to 1 point per dollar
     
     return Math.round(roundedAmount * rule.basePointRate);
@@ -206,6 +218,11 @@ export class RuleBasedCalculator extends BaseCalculator {
     // Special case for Citibank Rewards card
     if (this.cardType === 'citibank-rewards') {
       return this.isCitibankRewardsEligible(input);
+    }
+    
+    // Special case for DBS Woman's World MasterCard - eligible for online transactions
+    if (this.cardType === 'dbs-womans-world') {
+      return !!input.isOnline; // Only online transactions are eligible for bonus
     }
     
     // Handle UOB Platinum and Signature cards with default rules if no specific rules loaded
@@ -380,8 +397,19 @@ export class RuleBasedCalculator extends BaseCalculator {
   /**
    * Calculate bonus points according to the rule's bonus point rate
    */
-  calculateBonusPoints(roundedAmount: number): number {
+  calculateBonusPoints(roundedAmount: number, input: CalculationInput): number {
     const rule = this.getActiveRule();
+    
+    // Special handling for DBS Woman's World MasterCard
+    if (this.cardType === 'dbs-womans-world') {
+      // Check if transaction is eligible for bonus (online transaction)
+      if (input.isOnline) {
+        // 9 bonus points per $5 spent for online transactions
+        return Math.floor(roundedAmount / 5) * 9;
+      }
+      return 0; // No bonus for non-online transactions
+    }
+    
     if (!rule) return 0; // Default to no bonus points
     
     return Math.round(roundedAmount * rule.bonusPointRate);
@@ -392,6 +420,12 @@ export class RuleBasedCalculator extends BaseCalculator {
    */
   getBonusPointsCap(): BonusPointsCap {
     const rule = this.getActiveRule();
+    
+    // Special handling for DBS Woman's World MasterCard
+    if (this.cardType === 'dbs-womans-world') {
+      return new MonthlyCap(2700); // 2,700 bonus points cap per month
+    }
+    
     if (!rule) return new MonthlyCap(0); // Default to no cap
     
     return new MonthlyCap(rule.monthlyCap);
@@ -401,6 +435,11 @@ export class RuleBasedCalculator extends BaseCalculator {
    * Get the points currency from the rule
    */
   getPointsCurrency(): string {
+    // Special handling for DBS Woman's World MasterCard
+    if (this.cardType === 'dbs-womans-world') {
+      return 'DBS Points';
+    }
+    
     const rule = this.getActiveRule();
     return rule?.pointsCurrency || 'Points';
   }
