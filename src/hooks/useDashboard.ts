@@ -1,4 +1,3 @@
-
 // src/hooks/useDashboard.ts
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { filterTransactionsByTimeframe } from "@/utils/transactionProcessor";
@@ -115,12 +114,11 @@ export function useDashboard(options: DashboardOptions): {
       let hasEnoughData = false;
 
       if (calculateVelocity) {
-        // Fix: Pass appropriate numeric value for days calculation
-        const velocityResult = calculateTransactionVelocity(
+        // Fix: Pass the correct parameters - transaction count and days
+        transactionVelocity = calculateTransactionVelocity(
           filteredTransactions.length, 
           30 // Assuming 30 days as a default period
         );
-        transactionVelocity = velocityResult;
         hasEnoughData = filteredTransactions.length >= 5; // Basic check for enough data
       }
 
