@@ -117,7 +117,6 @@ export function useDashboard(options: DashboardOptions): {
         const transactionCount = filteredTransactions.length;
         const days = 30; // Assuming 30 days as a default period
         
-        // Using only the two required parameters
         transactionVelocity = calculateTransactionVelocity(transactionCount, days);
         hasEnoughData = filteredTransactions.length >= 5; // Basic check for enough data
       }
@@ -180,13 +179,12 @@ export function useDashboard(options: DashboardOptions): {
       }
 
       // Process spending trends chart data
-      // Fixed: trendData is now properly assigned without using a hook inside a callback
       const trendData = {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], // Default placeholder
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
         datasets: [
           {
             label: "Expenses",
-            data: [0, 0, 0, 0, 0, 0], // Default placeholder
+            data: [0, 0, 0, 0, 0, 0],
           }
         ]
       };
