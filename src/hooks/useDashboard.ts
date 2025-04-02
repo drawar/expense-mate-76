@@ -95,10 +95,20 @@ export function useDashboard(options: DashboardOptions): {
         displayCurrency
       );
 
-      // Calculate percentage change from previous period
+      // Calculate previous period reimbursements
+      const previousPeriodReimbursed = calculateTotalReimbursed(
+        previousPeriodTransactions,
+        displayCurrency
+      );
+
+      // Calculate net expenses for both periods
+      const netExpenses = totalExpenses - totalReimbursed;
+      const previousNetExpenses = previousPeriodExpenses - previousPeriodReimbursed;
+      
+      // Calculate percentage change from previous period based on net expenses
       const percentageChange = calculatePercentageChange(
-        totalExpenses,
-        previousPeriodExpenses
+        netExpenses,
+        previousNetExpenses
       );
 
       // Calculate average transaction amount
