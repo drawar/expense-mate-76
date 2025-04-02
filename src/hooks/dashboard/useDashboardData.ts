@@ -1,3 +1,4 @@
+
 // src/hooks/dashboard/useDashboardData.ts
 import { useState, useEffect, useCallback } from "react";
 import { Transaction, PaymentMethod, Currency } from "@/types";
@@ -47,7 +48,7 @@ export function useDashboardData(
   };
 
   // Get dashboard data
-  const dashboardData = useDashboard(dashboardOptions);
+  const { dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useDashboard(dashboardOptions);
 
   // Load dashboard data with proper error handling
   const loadData = useCallback(async () => {
@@ -118,8 +119,8 @@ export function useDashboardData(
     transactions,
     paymentMethods,
     dashboardData,
-    isLoading,
-    error,
+    isLoading: isLoading || isDashboardLoading,
+    error: error || dashboardError,
     lastUpdate,
 
     // Filter state

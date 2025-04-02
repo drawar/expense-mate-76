@@ -1,3 +1,4 @@
+
 // src/utils/dashboardCalculations.ts
 import { Transaction, Currency } from "@/types";
 import {
@@ -11,7 +12,7 @@ import {
   getTopChartItem,
   ChartDataItem,
 } from "./dashboardUtils";
-import { convertCurrency } from "./currencyConversion";
+import { CurrencyService } from "@/services/CurrencyService";
 
 /**
  * Shared color palette for visualizations

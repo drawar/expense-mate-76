@@ -11,6 +11,7 @@ export interface ChartDataItem {
   name: string;
   value: number;
   color: string;
+  highlighted?: boolean;
 }
 
 /**
@@ -114,16 +115,16 @@ export function calculateTotalRewardPoints(
 /**
  * Calculate transaction velocity (rate of transactions over time)
  *
- * @param transactions - Transactions to analyze
+ * @param transactionCount - Number of transactions in the period
  * @param days - Number of days in the period
  * @returns Average number of transactions per day
  */
 export function calculateTransactionVelocity(
-  transactions: Transaction[],
+  transactionCount: number,
   days: number
 ): number {
-  if (transactions.length === 0 || days === 0) return 0;
-  return transactions.length / days;
+  if (transactionCount === 0 || days === 0) return 0;
+  return transactionCount / days;
 }
 
 /**

@@ -1,6 +1,5 @@
-
-import { Transaction, PaymentMethod, Currency } from '@/types';
-import { convertCurrency } from './currencyConversion';
+import { Transaction, PaymentMethod, Currency } from "@/types";
+import { CurrencyService } from "@/services/CurrencyService";
 
 // Define CardSuggestion interface that was missing
 export interface CardSuggestion {
