@@ -1,4 +1,3 @@
-
 import { UOBPlatinumCardWrapper } from './UOBPlatinumCardRefactored';
 import { UOBSignatureCardWrapper } from './UOBSignatureCardRefactored';
 import { CitibankRewardsCardWrapper } from './CitibankRewardsCardRefactored';
@@ -9,6 +8,7 @@ import { AmexCobaltCardWrapper } from './AmexCobaltCard';
 import { TDAeroplanVisaInfiniteCardWrapper } from './TDAeroplanVisaInfinite';
 import { UOBLadysSolitaireCardWrapper } from './UOBLadysSolitaireCard';
 import { OCBCRewardsWorldCardWrapper } from './OCBCRewardsWorldCard';
+import { DBSWomansWorldCardWrapper } from './DBSWomansWorldCard';
 import { PaymentMethod } from '@/types';
 
 // Interface for card metadata
@@ -102,6 +102,14 @@ const cardsRegistry: CardMetadata[] = [
     pointsCurrency: 'OCBC$',
     component: OCBCRewardsWorldCardWrapper,
     description: 'Earn up to 30x OCBC$ on shopping, dining, and e-commerce.'
+  },
+  {
+    id: 'dbs-womans-world',
+    issuer: 'DBS',
+    name: 'Woman\'s World MasterCard',
+    pointsCurrency: 'DBS Points',
+    component: DBSWomansWorldCardWrapper,
+    description: 'Earn 10X DBS Points (or 20 miles) on online shopping, with 2,700 bonus points monthly cap.'
   }
 ];
 

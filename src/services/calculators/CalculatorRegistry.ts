@@ -1,4 +1,3 @@
-
 // src/services/calculators/CalculatorRegistry.ts
 import { BaseCalculator } from './BaseCalculator';
 import { RuleBasedCalculator } from './RuleBasedCalculator';
@@ -27,6 +26,7 @@ export class calculatorRegistry {
     this.addCalculator('amex-cobalt', new RuleBasedCalculator('amex-cobalt'));
     this.addCalculator('amex-platinum-canada', new RuleBasedCalculator('amex-platinum-canada'));
     this.addCalculator('td-aeroplan', new RuleBasedCalculator('td-aeroplan'));
+    this.addCalculator('dbs-womans-world', new RuleBasedCalculator('dbs-womans-world'));
   }
   
   /**
@@ -73,6 +73,9 @@ export class calculatorRegistry {
     }
     else if (issuer === 'TD' && name === 'Aeroplan Visa Infinite') {
       calculatorKey = 'td-aeroplan';
+    }
+    else if (issuer === 'DBS' && name === 'Woman\'s World MasterCard') {
+      calculatorKey = 'dbs-womans-world';
     }
     
     // Try to get the calculator for this payment method

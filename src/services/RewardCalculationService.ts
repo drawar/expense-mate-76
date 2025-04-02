@@ -1,4 +1,3 @@
-
 // src/services/RewardCalculationService.ts
 import { Transaction, PaymentMethod } from '@/types';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
@@ -192,6 +191,9 @@ export class RewardCalculationService {
       }
       else if (paymentMethod.issuer === 'OCBC') {
         return 'OCBC$';
+      }
+      else if (paymentMethod.issuer === 'DBS') {
+        return 'DBS Points';
       }
       else if (paymentMethod.issuer === 'American Express') {
         if (paymentMethod.name === 'Platinum Singapore' || paymentMethod.name === 'Platinum Credit') {

@@ -308,6 +308,21 @@ export const defaultPaymentMethods: PaymentMethod[] = [
     color: '#eb6e1f', // OCBC orange color
     rewardRules: [], // Special handling in RewardCalculationService
   },
+  // Add DBS Woman's World MasterCard
+  {
+    id: 'f1e2d3c4-b5a6-4789-8765-4321abcdef12',
+    name: 'Woman\'s World MasterCard',
+    type: 'credit_card',
+    currency: 'SGD',
+    issuer: 'DBS',
+    lastFourDigits: '1234',
+    statementStartDay: 1,
+    isMonthlyStatement: true,
+    active: true,
+    icon: 'credit-card',
+    color: '#eb008b',
+    rewardRules: [], // Special handling in rewardPoints.ts
+  },
 ];
 
 // Helper function to find cash payment method for a specific currency
