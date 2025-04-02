@@ -1,4 +1,3 @@
-
 // src/hooks/useDashboard.ts
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { filterTransactionsByTimeframe } from "@/utils/transactionProcessor";
@@ -118,7 +117,7 @@ export function useDashboard(options: DashboardOptions): {
         const transactionCount = filteredTransactions.length;
         const days = 30; // Assuming 30 days as a default period
         
-        // Looking at the implementation in dashboardUtils.ts, the function only expects 2 parameters
+        // Using only the two required parameters
         transactionVelocity = calculateTransactionVelocity(transactionCount, days);
         hasEnoughData = filteredTransactions.length >= 5; // Basic check for enough data
       }
