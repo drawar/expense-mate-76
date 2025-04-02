@@ -1,3 +1,4 @@
+
 // src/utils/transactionProcessor.ts
 import { Transaction } from '@/types';
 import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
@@ -18,13 +19,15 @@ export type TimeframeTab =
  * @param timeframe A string representing the timeframe to filter by.
  * @param useStatementMonth A boolean indicating whether to use the statement month for filtering.
  * @param statementCycleDay A number representing the day of the month when the statement cycle starts.
+ * @param previousPeriod Optional boolean to get data from the previous period instead
  * @returns An array of transactions filtered by the selected timeframe.
  */
 export const filterTransactionsByTimeframe = (
   transactions: Transaction[],
   timeframe: TimeframeTab,
   useStatementMonth: boolean,
-  statementCycleDay: number
+  statementCycleDay: number,
+  previousPeriod: boolean = false
 ): Transaction[] => {
   if (!transactions || transactions.length === 0) {
     return [];
@@ -56,18 +59,39 @@ export const filterTransactionsByTimeframe = (
     // Adjust dates based on the selected timeframe
     switch (timeframe) {
       case 'thisMonth':
-        break; // Use the calculated startDate and endDate for the current statement cycle
+        // If previousPeriod is true, shift back one month
+        if (previousPeriod) {
+          startDate = subMonths(startDate, 1);
+          endDate = subMonths(endDate, 1);
+        }
+        break;
       case 'lastMonth':
-        startDate = subMonths(startDate, 1);
-        endDate = subMonths(endDate, 1);
+        // For last month, we already shifted one month back
+        if (previousPeriod) {
+          startDate = subMonths(startDate, 1);
+          endDate = subMonths(endDate, 1);
+        } else {
+          startDate = subMonths(startDate, 1);
+          endDate = subMonths(endDate, 1);
+        }
         break;
       case 'thisYear':
-        startDate = startOfMonth(new Date(currentYear, currentMonth, statementCycleDay));
-        endDate = endOfMonth(new Date(currentYear, currentMonth + 1, statementCycleDay - 1));
+        if (previousPeriod) {
+          startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of previous year
+          endDate = new Date(currentYear - 1, 11, 31); // End of previous year
+        } else {
+          startDate = new Date(currentYear, 0, statementCycleDay); // Start of current year
+          endDate = new Date(currentYear, 11, 31); // End of current year
+        }
         break;
       case 'lastYear':
-        startDate = startOfMonth(new Date(currentYear - 1, currentMonth, statementCycleDay));
-        endDate = endOfMonth(new Date(currentYear, currentMonth, statementCycleDay - 1));
+        if (previousPeriod) {
+          startDate = new Date(currentYear - 2, 0, statementCycleDay); // Start of year before last
+          endDate = new Date(currentYear - 2, 11, 31); // End of year before last
+        } else {
+          startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of last year
+          endDate = new Date(currentYear - 1, 11, 31); // End of last year
+        }
         break;
       default:
         break;
@@ -77,33 +101,67 @@ export const filterTransactionsByTimeframe = (
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
-    const currentDay = today.getDate();
-
+    
     switch (timeframe) {
       case 'thisMonth':
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
+        
+        if (previousPeriod) {
+          startDate = startOfMonth(subMonths(today, 1));
+          endDate = endOfMonth(subMonths(today, 1));
+        }
         break;
       case 'lastMonth':
         startDate = startOfMonth(subMonths(today, 1));
         endDate = endOfMonth(subMonths(today, 1));
+        
+        if (previousPeriod) {
+          startDate = startOfMonth(subMonths(today, 2));
+          endDate = endOfMonth(subMonths(today, 2));
+        }
         break;
       case 'thisYear':
         startDate = startOfYear(today);
         endDate = endOfYear(today);
+        
+        if (previousPeriod) {
+          startDate = startOfYear(subYears(today, 1));
+          endDate = endOfYear(subYears(today, 1));
+        }
         break;
       case 'lastYear':
         startDate = startOfYear(subYears(today, 1));
         endDate = endOfYear(subYears(today, 1));
+        
+        if (previousPeriod) {
+          startDate = startOfYear(subYears(today, 2));
+          endDate = endOfYear(subYears(today, 2));
+        }
         break;
       case 'thisWeek':
         startDate = startOfWeek(today, { weekStartsOn: 0 });
         endDate = endOfWeek(today, { weekStartsOn: 0 });
+        
+        if (previousPeriod) {
+          const lastWeek = new Date(today);
+          lastWeek.setDate(lastWeek.getDate() - 7);
+          startDate = startOfWeek(lastWeek, { weekStartsOn: 0 });
+          endDate = endOfWeek(lastWeek, { weekStartsOn: 0 });
+        }
         break;
       case 'lastWeek':
-        const lastWeekStart = subMonths(startOfWeek(today, { weekStartsOn: 0 }), 1);
+        const lastWeekStart = new Date(today);
+        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
         startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
+        
+        if (previousPeriod) {
+          const twoWeeksAgo = new Date(today);
+          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+          startDate = startOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
+          endDate = endOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
+        }
         break;
       default:
         startDate = startOfMonth(today);
@@ -112,11 +170,18 @@ export const filterTransactionsByTimeframe = (
     }
   }
 
+  console.log(`Filtering for ${previousPeriod ? 'previous' : 'current'} period:`, {
+    timeframe,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0]
+  });
+
   const filtered = transactions.filter((transaction) => {
     const transactionDate = new Date(transaction.date);
     return transactionDate >= startDate && transactionDate <= endDate;
   });
 
+  console.log(`Found ${filtered.length} transactions for ${previousPeriod ? 'previous' : 'current'} period`);
   return filtered;
 };
 

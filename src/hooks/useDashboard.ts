@@ -100,7 +100,7 @@ export function useDashboard(options: DashboardOptions): {
         previousPeriodTransactions,
         displayCurrency
       );
-
+      
       // Calculate net expenses for both periods
       const netExpenses = totalExpenses - totalReimbursed;
       const previousNetExpenses = previousPeriodExpenses - previousPeriodReimbursed;
@@ -128,6 +128,7 @@ export function useDashboard(options: DashboardOptions): {
         const transactionCount = filteredTransactions.length;
         const days = 30; // Assuming 30 days as a default period
         
+        // Fixed the function call to only use the required arguments
         transactionVelocity = calculateTransactionVelocity(transactionCount, days);
         hasEnoughData = filteredTransactions.length >= 5; // Basic check for enough data
       }
