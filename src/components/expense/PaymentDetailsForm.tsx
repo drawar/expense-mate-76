@@ -17,34 +17,40 @@ import ContactlessToggle from './ContactlessToggle';
 import PointsDisplay from './PointsDisplay';
 import ConvertedAmountField from './ConvertedAmountField';
 import { useCardAnalytics } from '@/hooks/useCardAnalytics';
+import { useRewardPoints } from '@/hooks/useRewardPoints';
 
 interface PaymentDetailsFormProps {
   paymentMethods: PaymentMethod[];
   selectedPaymentMethod: PaymentMethod | undefined;
   shouldOverridePayment: boolean;
-  estimatedPoints: number | {
-    totalPoints: number;
-    basePoints?: number;
-    bonusPoints?: number;
-    remainingMonthlyBonusPoints?: number;
-  };
 }
 
 const PaymentDetailsForm = ({ 
   paymentMethods, 
   selectedPaymentMethod, 
   shouldOverridePayment,
-  estimatedPoints
 }: PaymentDetailsFormProps) => {
   const form = useFormContext();
   const isOnline = form.watch('isOnline');
   const amount = Number(form.watch('amount')) || 0;
   const currency = form.watch('currency') as Currency;
   const mcc = form.watch('mcc')?.code;
+  const merchantName = form.watch('merchant')?.name;
   const isContactless = form.watch('isContactless');
   
-  // Use our hook for card analytics
+  // Use our card analytics hook
   const { nonSgdSpendTotal, hasSgdTransactions, usedBonusPoints } = useCardAnalytics(selectedPaymentMethod);
+  
+  // Use our reward points hook
+  const { estimatedPoints } = useRewardPoints(
+    amount, 
+    currency, 
+    selectedPaymentMethod,
+    mcc,
+    merchantName,
+    isOnline,
+    isContactless
+  );
 
   return (
     <Card>
@@ -69,14 +75,6 @@ const PaymentDetailsForm = ({
         
         <PointsDisplay 
           selectedPaymentMethod={selectedPaymentMethod}
-          amount={amount}
-          currency={currency}
-          mcc={mcc}
-          isOnline={isOnline}
-          isContactless={isContactless}
-          usedBonusPoints={usedBonusPoints}
-          nonSgdSpendTotal={nonSgdSpendTotal}
-          hasSgdTransactions={hasSgdTransactions}
           estimatedPoints={estimatedPoints}
         />
       </CardContent>

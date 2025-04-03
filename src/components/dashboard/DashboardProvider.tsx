@@ -13,6 +13,7 @@ import { TimeframeTab } from "@/utils/transactionProcessor";
 import { useDashboard } from "@/hooks/useDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { rewardCalculationService } from "@/services/RewardCalculationService";
 
 interface ExtendedDashboardProviderProps extends DashboardProviderProps {
   config?: Partial<DashboardConfig>;
@@ -128,6 +129,9 @@ export function DashboardProvider({
     displayCurrency: dashboardState.displayCurrency,
     useStatementMonth: dashboardState.useStatementMonth,
     statementCycleDay: dashboardState.statementCycleDay,
+    
+    // Services
+    rewardCalculationService,
 
     // Actions
     refreshData,

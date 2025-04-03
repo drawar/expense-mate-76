@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GenericPointsCard } from './cards/GenericPointsCard';
 import { PaymentMethod } from '@/types';
@@ -5,14 +6,6 @@ import { rewardCalculationService } from '@/services/RewardCalculationService';
 
 interface PointsDisplayProps {
   selectedPaymentMethod: PaymentMethod | undefined;
-  amount: number;
-  currency: string;
-  mcc?: string;
-  isOnline: boolean;
-  isContactless: boolean;
-  usedBonusPoints?: number;
-  nonSgdSpendTotal?: number;
-  hasSgdTransactions?: boolean;
   estimatedPoints: number | {
     totalPoints: number;
     basePoints?: number;
@@ -27,7 +20,7 @@ interface PointsDisplayProps {
  * PointsDisplay component that shows reward point calculations using the
  * centralized calculation system.
  * 
- * IMPORTANT: This component is part of the reward points calculation refactoring.
+ * This component is part of the reward points calculation refactoring.
  * It now uses a single source of truth (estimatedPoints from the useRewardPoints hook)
  * instead of using individual card components for calculations.
  */

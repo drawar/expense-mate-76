@@ -4,6 +4,7 @@ import React, { createContext, useContext, ReactNode } from "react";
 import { Transaction, PaymentMethod, Currency } from "@/types";
 import { DashboardData } from "@/types/dashboard";
 import { TimeframeTab } from "@/utils/transactionProcessor";
+import { RewardCalculationService } from "@/services/RewardCalculationService";
 
 export interface DashboardContextState {
   // Data state
@@ -19,6 +20,9 @@ export interface DashboardContextState {
   displayCurrency: Currency;
   useStatementMonth: boolean;
   statementCycleDay: number;
+
+  // Services
+  rewardCalculationService: RewardCalculationService;
 
   // Action handlers
   refreshData: () => Promise<void>;
