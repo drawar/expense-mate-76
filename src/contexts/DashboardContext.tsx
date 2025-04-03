@@ -1,3 +1,4 @@
+
 // src/contexts/DashboardContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { Transaction, PaymentMethod, Currency } from "@/types";

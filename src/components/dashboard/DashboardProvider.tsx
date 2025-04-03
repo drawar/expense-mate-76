@@ -101,6 +101,16 @@ export function DashboardProvider({
     };
   }, [queryClient, dashboardState]);
 
+  // Create a wrapper function for refreshData that returns void
+  const refreshData = async (): Promise<void> => {
+    try {
+      await refetchTransactions();
+      dashboardState.refreshLastUpdate();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    }
+  };
+
   // Combine all state and data for the context
   const contextValue = {
     // Data
@@ -120,7 +130,7 @@ export function DashboardProvider({
     statementCycleDay: dashboardState.statementCycleDay,
 
     // Actions
-    refreshData: refetchTransactions,
+    refreshData,
     setActiveTab: dashboardState.setActiveTab,
     setDisplayCurrency: dashboardState.setDisplayCurrency,
     setUseStatementMonth: dashboardState.setUseStatementMonth,
