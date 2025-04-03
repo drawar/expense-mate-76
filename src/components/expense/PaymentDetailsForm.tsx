@@ -17,18 +17,26 @@ import ContactlessToggle from './ContactlessToggle';
 import PointsDisplay from './PointsDisplay';
 import ConvertedAmountField from './ConvertedAmountField';
 import { useCardAnalytics } from '@/hooks/useCardAnalytics';
-import { useRewardPoints } from '@/hooks/useRewardPoints';
 
 interface PaymentDetailsFormProps {
   paymentMethods: PaymentMethod[];
   selectedPaymentMethod: PaymentMethod | undefined;
   shouldOverridePayment: boolean;
+  estimatedPoints: number | {
+    totalPoints: number;
+    basePoints?: number;
+    bonusPoints?: number;
+    remainingMonthlyBonusPoints?: number;
+    messageText?: string;
+    pointsCurrency?: string;
+  };
 }
 
 const PaymentDetailsForm = ({ 
   paymentMethods, 
   selectedPaymentMethod, 
   shouldOverridePayment,
+  estimatedPoints
 }: PaymentDetailsFormProps) => {
   const form = useFormContext();
   const isOnline = form.watch('isOnline');
@@ -39,18 +47,7 @@ const PaymentDetailsForm = ({
   const isContactless = form.watch('isContactless');
   
   // Use our card analytics hook
-  const { nonSgdSpendTotal, hasSgdTransactions, usedBonusPoints } = useCardAnalytics(selectedPaymentMethod);
-  
-  // Use our reward points hook
-  const { estimatedPoints } = useRewardPoints(
-    amount, 
-    currency, 
-    selectedPaymentMethod,
-    mcc,
-    merchantName,
-    isOnline,
-    isContactless
-  );
+  const { nonSgdSpendTotal, hasSgdTransactions } = useCardAnalytics(selectedPaymentMethod);
 
   return (
     <Card>

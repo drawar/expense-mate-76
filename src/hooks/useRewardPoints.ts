@@ -6,6 +6,15 @@ import { useDashboardContext } from '@/contexts/DashboardContext';
 /**
  * Hook for calculating reward points based on transaction details.
  * This hook provides a unified interface to the reward calculation system.
+ * 
+ * @param amount - Transaction amount
+ * @param currency - Transaction currency code
+ * @param selectedPaymentMethod - Selected payment method
+ * @param mcc - Merchant Category Code
+ * @param merchantName - Name of the merchant
+ * @param isOnline - Whether the transaction is online
+ * @param isContactless - Whether the transaction is contactless
+ * @returns Object containing estimated points
  */
 export function useRewardPoints(
   amount: number,
