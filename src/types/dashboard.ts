@@ -10,7 +10,8 @@ export interface ChartDataItem {
   name: string;
   value: number;
   color: string;
-  highlighted?: boolean; // Added highlighted property to resolve TS errors
+  highlighted?: boolean;
+  percentage?: number;
 }
 
 /**
@@ -25,6 +26,7 @@ export interface DashboardMetrics {
   transactionVelocity?: number;
   hasEnoughData?: boolean;
   totalReimbursed?: number;
+  netExpenses?: number;
 }
 
 /**
@@ -76,6 +78,9 @@ export interface DashboardOptions {
   lastUpdate?: number;
 }
 
+/**
+ * Dashboard configuration interface
+ */
 export interface DashboardConfig {
   defaultCurrency: Currency;
   defaultTimeframe: TimeframeTab;
