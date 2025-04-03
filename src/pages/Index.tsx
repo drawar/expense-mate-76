@@ -1,8 +1,21 @@
 
-// src/pages/Index.tsx
 import React from "react";
 import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+/**
+ * Configure React Query client with optimal settings for this application
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 /**
  * Index page component that serves as the main dashboard entry point
@@ -18,9 +31,11 @@ const IndexPage: React.FC = () => {
   } as const;
 
   return (
-    <DashboardProvider config={dashboardConfig}>
-      <Dashboard />
-    </DashboardProvider>
+    <QueryClientProvider client={queryClient}>
+      <DashboardProvider config={dashboardConfig}>
+        <Dashboard />
+      </DashboardProvider>
+    </QueryClientProvider>
   );
 };
 

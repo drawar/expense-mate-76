@@ -1,5 +1,5 @@
-// src/components/dashboard/Dashboard.tsx
-import React from "react";
+
+import React, { Suspense } from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import SummarySection from "@/components/dashboard/SummarySection";
@@ -9,12 +9,17 @@ import LoadingDashboard from "@/components/dashboard/LoadingDashboard";
 import FilterBar from "@/components/dashboard/FilterBar";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { PieChartIcon } from "lucide-react";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 
+/**
+ * Main Dashboard component with improved error handling and loading states
+ */
 export function Dashboard() {
   const {
     transactions,
     dashboardData,
     isLoading,
+    error,
     activeTab,
     displayCurrency,
     useStatementMonth,
@@ -47,6 +52,26 @@ export function Dashboard() {
     handleStatementMonthToggle: setUseStatementMonth,
     handleStatementCycleDayChange: setStatementCycleDay,
   };
+
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
+          <DashboardHeader />
+          <div className="mt-10 border border-dashed rounded-xl">
+            <EmptyState
+              title="Error Loading Dashboard"
+              description={error}
+              icon={
+                <PieChartIcon className="h-16 w-16 text-muted-foreground" />
+              }
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Early return for loading state
   if (isLoading) {
@@ -88,14 +113,16 @@ export function Dashboard() {
           <FilterBar filters={filterState} />
         </div>
 
-        {/* Summary Section */}
-        <SummarySection />
+        <ErrorBoundary>
+          {/* Summary Section */}
+          <SummarySection />
 
-        {/* Insights Grid */}
-        <InsightsGrid />
+          {/* Insights Grid */}
+          <InsightsGrid />
 
-        {/* Recent Transactions */}
-        <RecentTransactions transactions={recentTransactions} />
+          {/* Recent Transactions */}
+          <RecentTransactions transactions={recentTransactions} />
+        </ErrorBoundary>
       </div>
     </div>
   );
