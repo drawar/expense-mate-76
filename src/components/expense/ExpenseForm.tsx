@@ -31,7 +31,7 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   const amount = Number(form.watch('amount')) || 0;
   const currency = form.watch('currency');
   const mcc = form.watch('mcc')?.code;
-  const merchantName = form.watch('merchant')?.name;
+  const merchantName = form.watch('merchantName'); // Fixed: Changed 'merchant' to 'merchantName'
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   

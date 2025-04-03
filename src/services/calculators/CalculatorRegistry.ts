@@ -1,92 +1,77 @@
-// src/services/calculators/CalculatorRegistry.ts
-import { BaseCalculator } from './BaseCalculator';
-import { RuleBasedCalculator } from './RuleBasedCalculator';
+
 import { PaymentMethod } from '@/types';
+import { BaseCalculator } from './BaseCalculator';
+import { GenericCardCalculator } from './GenericCardCalculator';
 
 /**
- * Registry of available calculators for different payment methods
+ * Registry for all card calculators
+ * This serves as a factory for getting the appropriate calculator for a payment method
  */
-export class calculatorRegistry {
-  private static calculators: Map<string, BaseCalculator> = new Map();
+class CalculatorRegistry {
+  private calculators: Map<string, BaseCalculator> = new Map();
+  private genericCalculator: GenericCardCalculator;
   
-  /**
-   * Initialize predefined calculators
-   */
-  private static initializeCalculators() {
-    if (this.calculators.size > 0) return;
+  constructor() {
+    // Initialize with a generic calculator as fallback
+    this.genericCalculator = new GenericCardCalculator();
     
-    // Add specific calculators for different card types
-    this.addCalculator('uob-platinum', new RuleBasedCalculator('uob-platinum'));
-    this.addCalculator('uob-signature', new RuleBasedCalculator('uob-signature'));
-    this.addCalculator('uob-ladys-solitaire', new RuleBasedCalculator('uob-ladys-solitaire'));
-    this.addCalculator('citibank-rewards', new RuleBasedCalculator('citibank-rewards'));
-    this.addCalculator('ocbc-rewards', new RuleBasedCalculator('ocbc-rewards'));
-    this.addCalculator('amex-platinum-sg', new RuleBasedCalculator('amex-platinum-sg'));
-    this.addCalculator('amex-platinum-credit', new RuleBasedCalculator('amex-platinum-credit'));
-    this.addCalculator('amex-cobalt', new RuleBasedCalculator('amex-cobalt'));
-    this.addCalculator('amex-platinum-canada', new RuleBasedCalculator('amex-platinum-canada'));
-    this.addCalculator('td-aeroplan', new RuleBasedCalculator('td-aeroplan'));
-    this.addCalculator('dbs-womans-world', new RuleBasedCalculator('dbs-womans-world'));
+    // Register additional calculators here when they're created
+    // e.g., this.register('citibank-rewards', new CitibankRewardsCalculator());
   }
   
   /**
-   * Add a calculator for a specific card type
+   * Register a calculator for a specific card type
    */
-  static addCalculator(cardType: string, calculator: BaseCalculator) {
-    this.calculators.set(cardType, calculator);
+  public register(cardType: string, calculator: BaseCalculator): void {
+    this.calculators.set(cardType.toLowerCase(), calculator);
   }
   
   /**
-   * Get a calculator by card type
+   * Get the appropriate calculator for a payment method
    */
-  static getCalculator(cardType: string): BaseCalculator | null {
-    this.initializeCalculators();
-    return this.calculators.get(cardType) || null;
+  public getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
+    if (!paymentMethod || paymentMethod.type === 'cash') {
+      return this.genericCalculator; // Cash gets generic calculator with 0 points
+    }
+    
+    // Try to find a specific calculator for this card
+    const cardTypeKey = this.getCardTypeKey(paymentMethod);
+    const calculator = this.calculators.get(cardTypeKey);
+    
+    if (calculator) {
+      return calculator;
+    }
+    
+    console.log(`No specific calculator found for ${cardTypeKey}, using generic calculator`);
+    return this.genericCalculator;
   }
   
   /**
-   * Get calculator for a payment method based on issuer and name
+   * Get the calculator for a specific card type
    */
-  static getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
-    this.initializeCalculators();
-    
-    const { issuer, name } = paymentMethod;
-    let calculatorKey = '';
-    
-    // Map the payment method to the appropriate calculator key
-    if (issuer === 'UOB') {
-      if (name === 'Preferred Visa Platinum') calculatorKey = 'uob-platinum';
-      else if (name === 'Visa Signature') calculatorKey = 'uob-signature';
-      else if (name === 'Lady\'s Solitaire') calculatorKey = 'uob-ladys-solitaire';
-    } 
-    else if (issuer === 'Citibank' && name === 'Rewards Visa Signature') {
-      calculatorKey = 'citibank-rewards';
-    }
-    else if (issuer === 'OCBC' && name === 'Rewards World Mastercard') {
-      calculatorKey = 'ocbc-rewards';
-    }
-    else if (issuer === 'American Express') {
-      if (name === 'Platinum Singapore') calculatorKey = 'amex-platinum-sg';
-      else if (name === 'Platinum Credit') calculatorKey = 'amex-platinum-credit';
-      else if (name === 'Cobalt') calculatorKey = 'amex-cobalt';
-      else if (name === 'Platinum Canada') calculatorKey = 'amex-platinum-canada';
-    }
-    else if (issuer === 'TD' && name === 'Aeroplan Visa Infinite') {
-      calculatorKey = 'td-aeroplan';
-    }
-    else if (issuer === 'DBS' && name === 'Woman\'s World MasterCard') {
-      calculatorKey = 'dbs-womans-world';
+  public getCalculatorForCard(cardType: string): BaseCalculator {
+    const calculator = this.calculators.get(cardType.toLowerCase());
+    return calculator || this.genericCalculator;
+  }
+  
+  /**
+   * Generate a standardized key for looking up calculators
+   */
+  private getCardTypeKey(paymentMethod: PaymentMethod): string {
+    if (paymentMethod.type !== 'credit_card' || !paymentMethod.issuer || !paymentMethod.name) {
+      return 'generic';
     }
     
-    // Try to get the calculator for this payment method
-    let calculator = this.getCalculator(calculatorKey);
-    
-    // Fallback to a generic calculator if no specific one is found
-    if (!calculator) {
-      calculator = new RuleBasedCalculator('generic');
-      console.log(`No specific calculator found for ${issuer} ${name}, using generic calculator`);
-    }
-    
-    return calculator;
+    return `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase().replace(/\s+/g, '-')}`;
+  }
+  
+  /**
+   * Get all registered calculators
+   */
+  public getAllCalculators(): Map<string, BaseCalculator> {
+    return this.calculators;
   }
 }
+
+// Export a singleton instance
+export const calculatorRegistry = new CalculatorRegistry();

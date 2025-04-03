@@ -1,128 +1,205 @@
-/**
- * Base interface for card calculation inputs
- * (matches closely with BaseRewardCardProps but without React dependencies)
- */
+
+import { PaymentMethod } from '@/types';
+
+// Base input interface for all calculators
 export interface CalculationInput {
   amount: number;
+  currency: string;
   mcc?: string;
+  merchantName?: string;
   isOnline?: boolean;
   isContactless?: boolean;
-  currency?: string;
-  merchantName?: string;
-  
-  // Tracking properties
   usedBonusPoints?: number;
-  nonSgdSpendTotal?: number;
-  hasSgdTransactions?: boolean;
-  monthlySpendByCategory?: Record<string, number>;
-  selectedCategories?: string[];
-  
-  // Payment method for card-specific configurations
-  paymentMethod?: {
-    id: string;
-    type: 'cash' | 'credit_card';
-    name: string;
-    currency: string;
-    issuer?: string;
-    selectedCategories?: string[];
-    [key: string]: any;
-  };
+  paymentMethod: PaymentMethod;
+  [key: string]: any; // Allow for additional properties for specialized calculators
 }
 
-/**
- * Interface for calculation results 
- */
+// Base result interface
 export interface CalculationResult {
   totalPoints: number;
   basePoints: number;
   bonusPoints: number;
   pointsCurrency?: string;
   remainingMonthlyBonusPoints?: number;
-  messageText?: string;
+  [key: string]: any; // Allow for additional properties in the result
 }
 
-/**
- * Interface for bonus point caps
- */
-export interface BonusPointsCap {
-  maxBonusPoints: number;
-  applyCap(calculatedBonus: number, usedBonusPoints: number): number;
-  getRemainingBonusPoints(usedBonusPoints: number, newBonusPoints: number): number;
+// Rounding strategy interface
+export interface RoundingStrategy {
+  round(amount: number): number;
 }
 
-/**
- * Standard monthly cap implementation
- */
-export class MonthlyCap implements BonusPointsCap {
-  constructor(public maxBonusPoints: number) {}
-
-  applyCap(calculatedBonus: number, usedBonusPoints: number): number {
-    return Math.min(calculatedBonus, this.maxBonusPoints - (usedBonusPoints || 0));
-  }
-
-  getRemainingBonusPoints(usedBonusPoints: number, newBonusPoints: number): number {
-    return Math.max(0, this.maxBonusPoints - (usedBonusPoints || 0) - newBonusPoints);
+// Rounding implementations
+export class FloorRounding implements RoundingStrategy {
+  round(amount: number): number {
+    return Math.floor(amount);
   }
 }
 
+export class CeilingRounding implements RoundingStrategy {
+  round(amount: number): number {
+    return Math.ceil(amount);
+  }
+}
+
+export class NearestRounding implements RoundingStrategy {
+  round(amount: number): number {
+    return Math.round(amount);
+  }
+}
+
+export class Nearest5Rounding implements RoundingStrategy {
+  round(amount: number): number {
+    return Math.floor(amount / 5) * 5;
+  }
+}
+
+// Factory for creating rounding strategies
+export class RoundingFactory {
+  static createStrategy(type: 'floor' | 'ceiling' | 'nearest' | 'nearest5'): RoundingStrategy {
+    switch (type) {
+      case 'floor':
+        return new FloorRounding();
+      case 'ceiling':
+        return new CeilingRounding();
+      case 'nearest5':
+        return new Nearest5Rounding();
+      case 'nearest':
+      default:
+        return new NearestRounding();
+    }
+  }
+}
+
 /**
- * Abstract base class for all reward calculators
+ * Base calculator abstract class
+ * All specific card calculators inherit from this
  */
 export abstract class BaseCalculator {
-  /**
-   * Calculate rewards for a transaction
-   */
-  calculate(input: CalculationInput): CalculationResult {
-    return this.calculateRewards(input);
+  protected roundingStrategy: RoundingStrategy;
+  
+  constructor(roundingType: 'floor' | 'ceiling' | 'nearest' | 'nearest5' = 'nearest') {
+    this.roundingStrategy = RoundingFactory.createStrategy(roundingType);
   }
-
-  /**
-   * Calculates reward points for a transaction (used by RewardCalculationService)
-   */
-  calculateRewards(input: CalculationInput): CalculationResult {
-    const { amount, usedBonusPoints = 0 } = input;
-    const roundedAmount = this.calculateRoundedAmount(amount);
-    const basePoints = this.calculateBasePoints(roundedAmount);
-    
-    const isEligible = this.getBonusPointsEligibility(input);
-    const potentialBonusPoints = isEligible ? this.calculateBonusPoints(roundedAmount, input) : 0;
-    
-    const bonusPointsCap = this.getBonusPointsCap();
-    const actualBonusPoints = bonusPointsCap.applyCap(potentialBonusPoints, usedBonusPoints);
-    
-    const remainingBonusPoints = bonusPointsCap.getRemainingBonusPoints(
-      usedBonusPoints,
-      actualBonusPoints
-    );
-
-    // Generate bonus point message if eligible but capped
-    let messageText = "";
-    if (potentialBonusPoints > 0 && actualBonusPoints === 0) {
-      messageText = "Monthly cap reached";
-    }
-
-    return {
-      basePoints,
-      bonusPoints: actualBonusPoints,
-      totalPoints: basePoints + actualBonusPoints,
-      remainingMonthlyBonusPoints: remainingBonusPoints,
-      messageText,
-      pointsCurrency: this.getPointsCurrency()
-    };
-  }
-
-  // Abstract methods that must be implemented by subclasses
-  protected abstract calculateRoundedAmount(amount: number): number;
-  protected abstract calculateBasePoints(roundedAmount: number): number;
-  protected abstract getBonusPointsEligibility(input: CalculationInput): boolean;
-  protected abstract calculateBonusPoints(roundedAmount: number, input: CalculationInput): number;
-  protected abstract getBonusPointsCap(): BonusPointsCap;
-  protected abstract getPointsCurrency(): string;
   
   /**
-   * Public accessor for the points currency
+   * Calculate reward points for a given transaction input
    */
-  public getPointsCurrencyPublic(): string {
-    return this.getPointsCurrency();
+  public calculateRewards(input: CalculationInput): CalculationResult {
+    // Round the amount first according to the strategy
+    const roundedAmount = this.roundAmount(input.amount);
+    
+    // Calculate base points
+    const basePoints = this.calculateBasePoints(roundedAmount, input);
+    
+    // Calculate bonus points
+    const bonusInfo = this.calculateBonusPoints(roundedAmount, input);
+    
+    // Get the points currency
+    const pointsCurrency = this.getPointsCurrency(input);
+    
+    // Return the calculation result
+    return {
+      totalPoints: basePoints + bonusInfo.bonusPoints,
+      basePoints,
+      bonusPoints: bonusInfo.bonusPoints,
+      remainingMonthlyBonusPoints: bonusInfo.remainingMonthlyBonusPoints,
+      pointsCurrency
+    };
   }
+  
+  /**
+   * Round the amount according to the rounding strategy
+   */
+  protected roundAmount(amount: number): number {
+    return this.roundingStrategy.round(amount);
+  }
+  
+  /**
+   * Calculate base points - can be overridden by specific calculators
+   */
+  protected calculateBasePoints(roundedAmount: number, input: CalculationInput): number {
+    // Default implementation: 1 point per dollar
+    return roundedAmount;
+  }
+  
+  /**
+   * Calculate bonus points - should be implemented by specific calculators
+   */
+  protected calculateBonusPoints(roundedAmount: number, input: CalculationInput): { 
+    bonusPoints: number; 
+    remainingMonthlyBonusPoints?: number;
+  } {
+    // Default implementation: no bonus points
+    return { 
+      bonusPoints: 0
+    };
+  }
+  
+  /**
+   * Get points currency - can be overridden by specific calculators
+   */
+  protected getPointsCurrency(input: CalculationInput): string {
+    // Default implementation: generic "Points"
+    return 'Points';
+  }
+  
+  /**
+   * Check if the transaction meets specific eligibility criteria
+   * This is a utility method that specific calculators can use
+   */
+  protected isEligibleForBonus(input: CalculationInput): boolean {
+    return true;
+  }
+  
+  /**
+   * Set the rounding strategy dynamically
+   */
+  public setRoundingStrategy(roundingType: 'floor' | 'ceiling' | 'nearest' | 'nearest5'): void {
+    this.roundingStrategy = RoundingFactory.createStrategy(roundingType);
+  }
+}
+
+/**
+ * Rule conditions interface
+ */
+export interface RuleCondition {
+  mccCodes?: string[];
+  excludedMccCodes?: string[];
+  merchantNames?: string[];
+  isOnlineOnly?: boolean;
+  isContactlessOnly?: boolean;
+  foreignCurrencyOnly?: boolean;
+  excludedCurrencies?: string[];
+  minAmount?: number;
+  maxAmount?: number;
+  customCondition?: (input: CalculationInput) => boolean;
+}
+
+/**
+ * Rule rewards interface
+ */
+export interface RuleReward {
+  basePointRate: number;
+  bonusPointRate: number;
+  monthlyCap?: number;
+}
+
+/**
+ * Rule configuration for tiered rates
+ */
+export interface TieredRateConfig {
+  threshold: number;
+  rate: number;
+  description: string;
+}
+
+/**
+ * External configurability support for rule-based calculators
+ */
+export interface ConfigurableCalculator {
+  configure(config: any): void;
+  addRule(condition: RuleCondition, reward: RuleReward): void;
+  removeRule(ruleId: string): void;
+  updateRule(ruleId: string, condition: RuleCondition, reward: RuleReward): void;
 }
