@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
 import { PaymentIcon } from 'react-svg-credit-card-payment-icons';
 import { formatCurrency } from '@/utils/currencyFormatter';
-import { useTransactionFiltering } from '@/hooks/dashboard/useTransactionFiltering';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
 
 interface PaymentCardFaceProps {
@@ -15,13 +14,14 @@ interface PaymentCardFaceProps {
 export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod }) => {
   // Get transactions for this payment method to calculate balance
   const { data: allTransactions = [] } = useTransactionsQuery();
-  const { filterTransactions } = useTransactionFiltering();
   
   // Filter transactions for this payment method in the current month
-  const currentMonthTransactions = filterTransactions(allTransactions, {
-    timeframe: 'thisMonth',
-    paymentMethodIds: [paymentMethod.id]
-  });
+  const currentMonthTransactions = allTransactions.filter(tx => 
+    tx.paymentMethodId === paymentMethod.id && 
+    !tx.is_deleted &&
+    new Date(tx.date).getMonth() === new Date().getMonth() &&
+    new Date(tx.date).getFullYear() === new Date().getFullYear()
+  );
 
   // Calculate current balance
   const currentBalance = currentMonthTransactions.reduce((total, tx) => total + tx.paymentAmount, 0);

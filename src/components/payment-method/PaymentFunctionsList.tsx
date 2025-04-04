@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { PaymentMethod } from '@/types';
+import { PaymentMethod, Transaction } from '@/types';
 import { 
   ToggleLeftIcon, 
   ToggleRightIcon, 
@@ -22,7 +21,6 @@ import {
 import RewardRulesAdmin from './RewardRulesAdmin';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Button } from '@/components/ui/button';
-import { useTransactionFiltering } from '@/hooks/dashboard/useTransactionFiltering';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -47,12 +45,11 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 }) => {
   const [isRulesDialogOpen, setIsRulesDialogOpen] = useState(false);
   const { data: allTransactions = [] } = useTransactionsQuery();
-  const { filterTransactions } = useTransactionFiltering();
   
   // Filter transactions for this payment method
-  const paymentMethodTransactions = filterTransactions(allTransactions, {
-    paymentMethodIds: [paymentMethod.id]
-  });
+  const paymentMethodTransactions = allTransactions.filter(tx => 
+    tx.paymentMethodId === paymentMethod.id && !tx.is_deleted
+  );
 
   // Calculate total spent with this payment method
   const totalSpent = paymentMethodTransactions.reduce((total, tx) => total + tx.paymentAmount, 0);

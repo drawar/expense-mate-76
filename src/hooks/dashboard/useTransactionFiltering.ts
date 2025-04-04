@@ -6,62 +6,67 @@ import { TimeframeTab } from "@/utils/transactionProcessor";
 import { filterTransactionsByTimeframe } from "@/utils/transactionProcessor";
 
 export interface FilterOptions {
-  transactions: Transaction[];
-  timeframe: TimeframeTab;
-  useStatementMonth: boolean;
-  statementCycleDay: number;
+  timeframe?: TimeframeTab;
+  useStatementMonth?: boolean;
+  statementCycleDay?: number;
+  paymentMethodIds?: string[];
+  merchantIds?: string[];
+  categories?: string[];
+  searchTerm?: string;
 }
 
 /**
- * Custom hook to filter transactions based on timeframe and statement settings
- * 
- * @param options Configuration options for transaction filtering
- * @returns Object with filtered transactions for current and previous periods
+ * Custom hook to filter transactions based on various criteria
  */
-export function useTransactionFiltering(options: FilterOptions) {
-  const { transactions, timeframe, useStatementMonth, statementCycleDay } = options;
-
-  // Filter transactions for current period
-  const filteredTransactions = useMemo(() => {
-    console.info("Filtering for current period:", {
-      timeframe,
-      startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-      endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
-    });
+export function useTransactionFiltering() {
+  // Function to filter transactions based on provided filter options
+  const filterTransactions = (transactions: Transaction[], options: FilterOptions = {}) => {
+    let filtered = [...transactions];
     
-    const filtered = filterTransactionsByTimeframe(
-      transactions,
-      timeframe,
-      useStatementMonth,
-      statementCycleDay
-    );
+    // Filter by payment method IDs if specified
+    if (options.paymentMethodIds && options.paymentMethodIds.length > 0) {
+      filtered = filtered.filter(tx => 
+        options.paymentMethodIds?.includes(tx.paymentMethodId)
+      );
+    }
     
-    console.info(`Found ${filtered.length} transactions for current period`);
+    // Filter by merchant IDs if specified
+    if (options.merchantIds && options.merchantIds.length > 0) {
+      filtered = filtered.filter(tx => 
+        options.merchantIds?.includes(tx.merchantId)
+      );
+    }
+    
+    // Filter by categories if specified
+    if (options.categories && options.categories.length > 0) {
+      filtered = filtered.filter(tx => 
+        options.categories?.includes(tx.category)
+      );
+    }
+    
+    // Filter by search term if specified
+    if (options.searchTerm && options.searchTerm.trim() !== '') {
+      const searchLower = options.searchTerm.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.description?.toLowerCase().includes(searchLower) ||
+        tx.notes?.toLowerCase().includes(searchLower) ||
+        tx.category?.toLowerCase().includes(searchLower) ||
+        tx.merchantName?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply timeframe filtering if specified
+    if (options.timeframe) {
+      filtered = filterTransactionsByTimeframe(
+        filtered,
+        options.timeframe,
+        options.useStatementMonth || false,
+        options.statementCycleDay || 1
+      );
+    }
+    
     return filtered;
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
-
-  // Filter transactions for previous period (for comparison)
-  const previousPeriodTransactions = useMemo(() => {
-    console.info("Filtering for previous period:", {
-      timeframe,
-      startDate: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().split('T')[0],
-      endDate: new Date(new Date().getFullYear(), new Date().getMonth(), 0).toISOString().split('T')[0]
-    });
-    
-    const filtered = filterTransactionsByTimeframe(
-      transactions,
-      timeframe,
-      useStatementMonth,
-      statementCycleDay,
-      true // This flag gets the previous period
-    );
-    
-    console.info(`Found ${filtered.length} transactions for previous period`);
-    return filtered;
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
-
-  return {
-    filteredTransactions,
-    previousPeriodTransactions,
   };
+  
+  return { filterTransactions };
 }
