@@ -5,13 +5,24 @@ import { cn } from '@/lib/utils';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
-import { useTransactionFiltering } from '@/hooks/dashboard/useTransactionFiltering';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 
 interface PaymentCardFaceProps {
   paymentMethod: PaymentMethod;
 }
 
-export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod }) => {
+// Create a new QueryClient for standalone usage
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
+// Inner component that uses React Query hooks
+const PaymentCardFaceContent: React.FC<PaymentCardFaceProps> = ({ paymentMethod }) => {
   // Get transactions for this payment method to calculate balance
   const { data: allTransactions = [] } = useTransactionsQuery();
   
@@ -177,5 +188,14 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
         </div>
       )}
     </div>
+  );
+};
+
+// Wrapper component that ensures React Query is available
+export const PaymentCardFace: React.FC<PaymentCardFaceProps> = (props) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <PaymentCardFaceContent {...props} />
+    </QueryClientProvider>
   );
 };
