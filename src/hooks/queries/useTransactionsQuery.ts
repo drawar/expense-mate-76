@@ -1,8 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Transaction } from "@/types";
-import { getTransactions } from "@/utils/storageUtils";
-import { USE_LOCAL_STORAGE_DEFAULT } from "@/integrations/supabase/client";
+import { getTransactions } from "@/utils/storage/transactions";
 import { toast } from "sonner";
 
 /**
@@ -13,9 +12,8 @@ export function useTransactionsQuery() {
     queryKey: ["transactions"],
     queryFn: async () => {
       try {
-        const allTransactions = await getTransactions(USE_LOCAL_STORAGE_DEFAULT);
-        // Filter out deleted transactions
-        return allTransactions.filter((tx) => !tx.is_deleted);
+        const transactions = await getTransactions();
+        return transactions.filter(tx => !tx.is_deleted);
       } catch (error) {
         console.error("Error fetching transactions:", error);
         toast.error("Failed to load transactions");
@@ -23,6 +21,5 @@ export function useTransactionsQuery() {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
   });
 }

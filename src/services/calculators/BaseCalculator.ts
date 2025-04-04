@@ -71,6 +71,24 @@ export class RoundingFactory {
   }
 }
 
+// Monthly spending cap for bonus points
+export interface MonthlyCap {
+  amount: number;
+  usedAmount: number;
+  remainingAmount: number;
+}
+
+// Bonus points cap configuration
+export interface BonusPointsCap {
+  monthly?: MonthlyCap;
+  yearly?: {
+    amount: number;
+    usedAmount: number;
+    remainingAmount: number;
+  };
+  perTransaction?: number;
+}
+
 /**
  * Base calculator abstract class
  * All specific card calculators inherit from this
@@ -106,6 +124,13 @@ export abstract class BaseCalculator {
       remainingMonthlyBonusPoints: bonusInfo.remainingMonthlyBonusPoints,
       pointsCurrency
     };
+  }
+  
+  /**
+   * Public method to get points currency without calculating rewards
+   */
+  public getPointsCurrencyPublic(input: CalculationInput): string {
+    return this.getPointsCurrency(input);
   }
   
   /**

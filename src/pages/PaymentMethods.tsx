@@ -1,45 +1,34 @@
 
 import { useState, useEffect } from 'react';
 import { PaymentMethod } from '@/types';
-import { getPaymentMethods, savePaymentMethods } from '@/utils/storageUtils';
+import { usePaymentMethodsQuery } from '@/hooks/queries/usePaymentMethodsQuery';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { savePaymentMethods, uploadCardImage } from '@/utils/storage/paymentMethods';
 import PaymentMethodForm from '@/components/payment-method/PaymentMethodForm';
-import PaymentMethodCard from '@/components/payment-method/PaymentMethodCard';
-import EmptyPaymentMethodsCard from '@/components/payment-method/EmptyPaymentMethodsCard';
 import ImageUploadDialog from '@/components/payment-method/ImageUploadDialog';
-import { uploadCardImage } from '@/utils/storage/paymentMethods'; // Using direct import path
 import { v4 as uuidv4 } from 'uuid';
+import { PaymentCarousel } from '@/components/payment-method/PaymentCarousel';
+import { PaymentFunctionsList } from '@/components/payment-method/PaymentFunctionsList';
+import { EmptyPaymentMethodState } from '@/components/payment-method/EmptyPaymentMethodState';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 const PaymentMethods = () => {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: paymentMethods = [], isLoading, refetch } = usePaymentMethodsQuery();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
   const [imageUploadMethod, setImageUploadMethod] = useState<PaymentMethod | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const { toast } = useToast();
 
+  // Set first active payment method as selected on load
   useEffect(() => {
-    const loadPaymentMethods = async () => {
-      try {
-        const methods = await getPaymentMethods();
-        setPaymentMethods(methods);
-      } catch (error) {
-        console.error('Error loading payment methods:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load payment methods',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPaymentMethods();
-  }, [toast]);
+    if (paymentMethods.length > 0 && !selectedMethod) {
+      const activeMethod = paymentMethods.find(m => m.active) || paymentMethods[0];
+      setSelectedMethod(activeMethod);
+    }
+  }, [paymentMethods, selectedMethod]);
 
   const handleAddMethod = () => {
     setEditingMethod(null);
@@ -53,7 +42,6 @@ const PaymentMethods = () => {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
     
     try {
       const formData = new FormData(event.currentTarget);
@@ -89,8 +77,6 @@ const PaymentMethods = () => {
         description: 'Failed to save payment method',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -109,7 +95,6 @@ const PaymentMethods = () => {
       }
       
       await savePaymentMethods(updatedMethods);
-      setPaymentMethods(updatedMethods);
       
       toast({
         title: 'Success',
@@ -118,6 +103,7 @@ const PaymentMethods = () => {
       
       setIsFormOpen(false);
       setEditingMethod(null);
+      refetch(); // Refresh the data
     } catch (error) {
       console.error('Error saving payment method:', error);
       toast({
@@ -137,7 +123,6 @@ const PaymentMethods = () => {
       );
       
       await savePaymentMethods(updatedMethods);
-      setPaymentMethods(updatedMethods);
       
       const method = updatedMethods.find(m => m.id === id);
       
@@ -145,6 +130,8 @@ const PaymentMethods = () => {
         title: 'Success',
         description: `${method?.name} ${method?.active ? 'activated' : 'deactivated'} successfully`,
       });
+
+      refetch(); // Refresh the data
     } catch (error) {
       console.error('Error toggling payment method active state:', error);
       toast({
@@ -176,12 +163,13 @@ const PaymentMethods = () => {
         );
         
         await savePaymentMethods(updatedMethods);
-        setPaymentMethods(updatedMethods);
         
         toast({
           title: 'Success',
           description: 'Card image uploaded successfully',
         });
+
+        refetch(); // Refresh the data
       } else {
         throw new Error('Failed to upload image');
       }
@@ -198,13 +186,10 @@ const PaymentMethods = () => {
     }
   };
 
-  const creditCards = paymentMethods.filter(method => method.type === 'credit_card');
-  const cashMethods = paymentMethods.filter(method => method.type === 'cash');
-
   return (
     <div className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-16">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 mt-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gradient">Payment Methods</h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
@@ -212,7 +197,7 @@ const PaymentMethods = () => {
             </p>
           </div>
           
-          <Button onClick={handleAddMethod} className="gap-2">
+          <Button onClick={handleAddMethod} className="gap-2 mt-4 sm:mt-0">
             <Plus className="h-4 w-4" />
             Add Method
           </Button>
@@ -222,59 +207,32 @@ const PaymentMethods = () => {
           <div className="animate-pulse text-center py-10">
             Loading payment methods...
           </div>
+        ) : paymentMethods.length === 0 ? (
+          <EmptyPaymentMethodState onAddClick={handleAddMethod} />
         ) : (
-          <div className="space-y-10">
-            {/* Credit Cards Section */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Credit Cards</h2>
-              
-              {creditCards.length === 0 ? (
-                <EmptyPaymentMethodsCard 
-                  type="credit_cards"
-                  onAddClick={handleAddMethod}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {creditCards.map((method) => (
-                    <PaymentMethodCard
-                      key={method.id}
-                      method={method}
-                      onToggleActive={handleToggleActive}
-                      onEdit={handleEditMethod}
-                      onImageUpload={handleOpenImageUpload}
-                    />
-                  ))}
-                </div>
-              )}
+          <div className="space-y-8">
+            {/* Card Carousel */}
+            <div className="mb-8 relative">
+              <PaymentCarousel 
+                paymentMethods={paymentMethods}
+                selectedMethod={selectedMethod}
+                onSelectMethod={setSelectedMethod}
+              />
             </div>
             
-            {/* Cash Section */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Cash / Debit</h2>
-              
-              {cashMethods.length === 0 ? (
-                <EmptyPaymentMethodsCard 
-                  type="cash"
-                  onAddClick={handleAddMethod}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {cashMethods.map((method) => (
-                    <PaymentMethodCard
-                      key={method.id}
-                      method={method}
-                      onToggleActive={handleToggleActive}
-                      onEdit={handleEditMethod}
-                      onImageUpload={handleOpenImageUpload}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Functions List */}
+            {selectedMethod && (
+              <PaymentFunctionsList 
+                paymentMethod={selectedMethod}
+                onToggleActive={handleToggleActive}
+                onEdit={handleEditMethod}
+                onImageUpload={handleOpenImageUpload}
+              />
+            )}
           </div>
         )}
         
-        {/* Pass isOpen prop to PaymentMethodForm */}
+        {/* Payment Method Form Modal */}
         <PaymentMethodForm
           currentMethod={editingMethod}
           isEditing={!!editingMethod}
@@ -287,6 +245,7 @@ const PaymentMethods = () => {
           onSubmit={handleFormSubmit}
         />
         
+        {/* Image Upload Dialog */}
         <ImageUploadDialog
           open={!!imageUploadMethod}
           onOpenChange={(open) => {
