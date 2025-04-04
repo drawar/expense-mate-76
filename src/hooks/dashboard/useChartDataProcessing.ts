@@ -29,7 +29,14 @@ export function useChartDataProcessing(options: ChartDataOptions) {
             paymentMethods: [],
             categories: [],
             dayOfWeekSpending: {},
-            spendingTrends: { labels: [], datasets: [] },
+            spendingTrends: { 
+              labels: [], 
+              datasets: [{ 
+                label: "Expenses", // Make sure label is always provided
+                data: [],
+                backgroundColor: CHART_COLORS[0]
+              }] 
+            },
           },
           topValues: {}
         };
@@ -88,7 +95,14 @@ export function useChartDataProcessing(options: ChartDataOptions) {
           paymentMethods: [],
           categories: [],
           dayOfWeekSpending: {},
-          spendingTrends: { labels: [], datasets: [] },
+          spendingTrends: { 
+            labels: [], 
+            datasets: [{ 
+              label: "Expenses", // Always include the label
+              data: [],
+              backgroundColor: CHART_COLORS[0]
+            }] 
+          },
         },
         topValues: {}
       };

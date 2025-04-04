@@ -91,13 +91,22 @@ export function useDashboard(options: DashboardOptions): {
             totalRewardPoints: 0,
             percentageChange: 0,
             totalReimbursed: 0,
+            netExpenses: 0, // Added missing netExpenses
+            hasEnoughData: false, // Add this to match the interface
           },
           top: {},
           charts: {
             paymentMethods: [],
             categories: [],
             dayOfWeekSpending: {},
-            spendingTrends: { labels: [], datasets: [] },
+            spendingTrends: { 
+              labels: [], 
+              datasets: [{ 
+                label: "Expenses", // Fix: Add required label property
+                data: [],
+                backgroundColor: "#8884d8" // Adding a default color for consistency
+              }] 
+            },
           },
         };
       }
