@@ -3,96 +3,112 @@ import { useState, useEffect } from 'react';
 import { PaymentMethod } from '@/types';
 import { rewardCalculationService } from '@/services/RewardCalculationService';
 
+// Define the result interface to include all possible fields
+interface PointsResult {
+  totalPoints: number;
+  basePoints?: number;
+  bonusPoints?: number;
+  remainingMonthlyBonusPoints?: number;
+  pointsCurrency?: string;
+  messageText?: string;
+}
+
 /**
- * Standalone version of useRewardPoints that doesn't depend on DashboardContext
- * Used specifically for the expense form
+ * Hook for calculating reward points outside of the Dashboard context
+ * This is a standalone version that doesn't require DashboardContext
  */
 export function useRewardPointsStandalone(
-  amount: number,
-  currency: string,
-  selectedPaymentMethod: PaymentMethod | undefined,
+  amount: number | null,
+  paymentMethodId: string | null,
+  paymentMethods: PaymentMethod[],
   mcc?: string,
   merchantName?: string,
-  isOnline = false,
-  isContactless = false
+  isOnline?: boolean,
+  isContactless?: boolean
 ) {
-  const [estimatedPoints, setEstimatedPoints] = useState<number | {
-    totalPoints: number;
-    basePoints?: number;
-    bonusPoints?: number;
-    remainingMonthlyBonusPoints?: number;
-    messageText?: string;
-    pointsCurrency?: string;
-  }>(0);
+  // State for estimated points
+  const [estimatedPoints, setEstimatedPoints] = useState<PointsResult>({
+    totalPoints: 0,
+    basePoints: 0,
+    bonusPoints: 0
+  });
   
-  // Calculate estimated points when relevant fields change
+  // Find selected payment method
+  const selectedPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId) || null;
+  
+  // Calculate estimated points when inputs change
   useEffect(() => {
-    if (!selectedPaymentMethod || amount <= 0) {
-      setEstimatedPoints(0);
+    // Reset points if no amount or payment method
+    if (!amount || amount <= 0 || !selectedPaymentMethod) {
+      setEstimatedPoints({
+        totalPoints: 0,
+        basePoints: 0,
+        bonusPoints: 0
+      });
       return;
     }
     
+    // Skip for cash payment methods
+    if (selectedPaymentMethod.type === 'cash') {
+      setEstimatedPoints({
+        totalPoints: 0,
+        basePoints: 0,
+        bonusPoints: 0
+      });
+      return;
+    }
+    
+    // Use rewardCalculationService to calculate points
+    const currency = selectedPaymentMethod.currency || 'SGD';
+    
     try {
-      // Use the rewardCalculationService directly
-      const points = rewardCalculationService.simulatePoints(
+      // Calculate points using the service
+      const result = rewardCalculationService.simulatePoints(
         amount,
         currency,
         selectedPaymentMethod,
         mcc,
         merchantName,
         isOnline,
-        isContactless,
-        0 // No used bonus points in this standalone implementation
+        isContactless
       );
       
-      // Log the points calculation for debugging
-      console.log('Points calculation result:', {
-        amount,
-        currency,
-        selectedPaymentMethod: selectedPaymentMethod.name,
-        mcc,
-        merchantName,
-        isOnline,
-        isContactless,
-        result: points
-      });
+      console.log('Reward calculation result:', result);
       
-      // Ensure the points calculation includes proper bonusPoints
-      if (typeof points === 'object') {
-        // If bonusPoints is undefined but we have basePoints and totalPoints,
-        // calculate bonusPoints as the difference
-        if (points.bonusPoints === undefined && points.basePoints !== undefined) {
-          points.bonusPoints = points.totalPoints - points.basePoints;
-        }
-        
-        // If basePoints is undefined but we have bonusPoints and totalPoints,
-        // calculate basePoints as the difference
-        if (points.basePoints === undefined && points.bonusPoints !== undefined) {
-          points.basePoints = points.totalPoints - points.bonusPoints;
-        }
-        
-        // Generate a message based on the results
-        let messageText;
-        if (points.bonusPoints === 0 && points.remainingMonthlyBonusPoints === 0) {
-          messageText = "Monthly bonus points cap reached";
-        } else if (points.bonusPoints === 0 && isOnline) {
-          messageText = "Not eligible for online bonus points";
-        } else if (points.remainingMonthlyBonusPoints !== undefined) {
-          messageText = `${points.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
-        }
-        
-        // Update the points object with the message
-        if (messageText) {
-          points.messageText = messageText;
-        }
+      // Format message text based on calculation results
+      let messageText;
+      if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
+        messageText = "Monthly bonus points cap reached";
+      } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints !== undefined && result.remainingMonthlyBonusPoints > 0) {
+        messageText = "Not eligible for bonus points";
+      } else if (result.remainingMonthlyBonusPoints !== undefined) {
+        messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
       }
       
-      setEstimatedPoints(points);
+      // Ensure we have proper values
+      setEstimatedPoints({
+        totalPoints: result.totalPoints || 0,
+        basePoints: result.basePoints || 0,
+        bonusPoints: result.bonusPoints || 0,
+        remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints,
+        pointsCurrency: result.pointsCurrency || selectedPaymentMethod.issuer ? `${selectedPaymentMethod.issuer} Points` : 'Points',
+        messageText: messageText
+      });
     } catch (error) {
       console.error('Error calculating reward points:', error);
-      setEstimatedPoints(0);
+      // Provide fallback calculation
+      const fallbackPoints = Math.round(amount);
+      setEstimatedPoints({
+        totalPoints: fallbackPoints,
+        basePoints: fallbackPoints,
+        bonusPoints: 0,
+        messageText: 'Error calculating points'
+      });
     }
-  }, [selectedPaymentMethod, amount, currency, mcc, merchantName, isOnline, isContactless]);
+  }, [amount, paymentMethodId, selectedPaymentMethod, mcc, merchantName, isOnline, isContactless, paymentMethods]);
   
-  return { estimatedPoints };
+  return {
+    estimatedPoints,
+    selectedPaymentMethod
+  };
 }

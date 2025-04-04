@@ -7,9 +7,8 @@ import { DBSWomansWorldCalculator } from './DBSWomansWorldCalculator';
  */
 export function registerCustomCalculators() {
   // Register DBS Woman's World Card calculator
-  calculatorRegistry.registerCalculator(
-    'DBS', 
-    'Woman\'s World MasterCard', 
+  calculatorRegistry.register(
+    'dbs-woman\'s-world-mastercard', 
     new DBSWomansWorldCalculator()
   );
   
