@@ -30,8 +30,9 @@ export class RuleService {
    */
   public async loadRules(): Promise<Rule[]> {
     try {
+      // Use card_rules table instead of reward_rules
       const { data, error } = await supabase
-        .from('reward_rules')
+        .from('card_rules')
         .select('*');
         
       if (error) {
@@ -42,13 +43,26 @@ export class RuleService {
       const rules: Rule[] = data.map(item => ({
         id: item.id,
         name: item.name,
-        description: item.description,
+        description: item.description || '',
         cardType: item.card_type,
         enabled: item.enabled,
-        condition: item.condition,
-        reward: item.reward,
+        condition: {
+          isOnlineOnly: item.is_online_only,
+          isContactlessOnly: item.is_contactless_only,
+          includedMCCs: item.included_mccs || [],
+          excludedMCCs: item.excluded_mccs || [],
+          minSpend: item.min_spend,
+          maxSpend: item.max_spend,
+          currencyRestrictions: item.currency_restrictions
+        } as RuleCondition,
+        reward: {
+          basePointRate: item.base_point_rate,
+          bonusPointRate: item.bonus_point_rate,
+          monthlyCap: item.monthly_cap,
+          pointsCurrency: item.custom_params?.pointsCurrency || 'Points'
+        } as RuleReward,
         createdAt: item.created_at,
-        updatedAt: item.updated_at
+        updatedAt: item.updated_at || item.created_at
       }));
       
       // Store rules in memory
@@ -78,16 +92,28 @@ export class RuleService {
         updatedAt: new Date().toISOString()
       };
       
+      // Convert rule to database format
       const { error } = await supabase
-        .from('reward_rules')
+        .from('card_rules')
         .insert({
           id: newRule.id,
           name: newRule.name,
           description: newRule.description,
           card_type: newRule.cardType,
           enabled: newRule.enabled,
-          condition: newRule.condition,
-          reward: newRule.reward,
+          is_online_only: newRule.condition.isOnlineOnly,
+          is_contactless_only: newRule.condition.isContactlessOnly,
+          included_mccs: newRule.condition.includedMCCs,
+          excluded_mccs: newRule.condition.excludedMCCs,
+          min_spend: newRule.condition.minSpend,
+          max_spend: newRule.condition.maxSpend,
+          currency_restrictions: newRule.condition.currencyRestrictions,
+          base_point_rate: newRule.reward.basePointRate,
+          bonus_point_rate: newRule.reward.bonusPointRate,
+          monthly_cap: newRule.reward.monthlyCap,
+          custom_params: {
+            pointsCurrency: newRule.reward.pointsCurrency
+          },
           created_at: newRule.createdAt,
           updated_at: newRule.updatedAt
         });
@@ -127,17 +153,38 @@ export class RuleService {
         updatedAt: new Date().toISOString()
       };
       
+      // Convert rule to database format
+      const dbUpdateData: any = {
+        name: updatedRule.name,
+        description: updatedRule.description,
+        card_type: updatedRule.cardType,
+        enabled: updatedRule.enabled,
+        updated_at: updatedRule.updatedAt
+      };
+      
+      // Only add condition and reward properties if they were provided in the update
+      if (rule.condition) {
+        dbUpdateData.is_online_only = updatedRule.condition.isOnlineOnly;
+        dbUpdateData.is_contactless_only = updatedRule.condition.isContactlessOnly;
+        dbUpdateData.included_mccs = updatedRule.condition.includedMCCs;
+        dbUpdateData.excluded_mccs = updatedRule.condition.excludedMCCs;
+        dbUpdateData.min_spend = updatedRule.condition.minSpend;
+        dbUpdateData.max_spend = updatedRule.condition.maxSpend;
+        dbUpdateData.currency_restrictions = updatedRule.condition.currencyRestrictions;
+      }
+      
+      if (rule.reward) {
+        dbUpdateData.base_point_rate = updatedRule.reward.basePointRate;
+        dbUpdateData.bonus_point_rate = updatedRule.reward.bonusPointRate;
+        dbUpdateData.monthly_cap = updatedRule.reward.monthlyCap;
+        dbUpdateData.custom_params = {
+          pointsCurrency: updatedRule.reward.pointsCurrency
+        };
+      }
+      
       const { error } = await supabase
-        .from('reward_rules')
-        .update({
-          name: updatedRule.name,
-          description: updatedRule.description,
-          card_type: updatedRule.cardType,
-          enabled: updatedRule.enabled,
-          condition: updatedRule.condition,
-          reward: updatedRule.reward,
-          updated_at: updatedRule.updatedAt
-        })
+        .from('card_rules')
+        .update(dbUpdateData)
         .eq('id', id);
         
       if (error) {
@@ -170,7 +217,7 @@ export class RuleService {
       }
       
       const { error } = await supabase
-        .from('reward_rules')
+        .from('card_rules')
         .delete()
         .eq('id', id);
         

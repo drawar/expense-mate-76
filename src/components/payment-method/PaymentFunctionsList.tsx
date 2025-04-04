@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PaymentMethod, Transaction } from '@/types';
 import { 
@@ -48,7 +49,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
   
   // Filter transactions for this payment method
   const paymentMethodTransactions = allTransactions.filter(tx => 
-    tx.paymentMethodId === paymentMethod.id && !tx.is_deleted
+    tx.paymentMethod.id === paymentMethod.id && !tx.is_deleted
   );
 
   // Calculate total spent with this payment method

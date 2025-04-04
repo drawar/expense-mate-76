@@ -1,6 +1,25 @@
-import { BaseCalculator, CalculationInput, BonusPointsCap, MonthlyCap } from './BaseCalculator';
+
+import { BaseCalculator, CalculationInput } from './BaseCalculator';
 import { cardRuleService, RuleConfiguration } from '@/components/expense/cards/CardRuleService';
 import { RewardRule, RewardRuleFactory } from '@/components/expense/cards/BaseRewardCard';
+
+// Define BonusPointsCap and MonthlyCap classes
+class BonusPointsCap {
+  constructor(public readonly limit: number) {}
+  
+  isExceeded(usedPoints: number): boolean {
+    return this.limit > 0 && usedPoints >= this.limit;
+  }
+  
+  getRemaining(usedPoints: number): number {
+    if (this.limit <= 0) return Infinity;
+    return Math.max(0, this.limit - usedPoints);
+  }
+}
+
+class MonthlyCap extends BonusPointsCap {
+  // Same as parent class, just a different name for clarity
+}
 
 /**
  * A calculator implementation that uses rules from CardRuleService
@@ -397,7 +416,7 @@ export class RuleBasedCalculator extends BaseCalculator {
   /**
    * Calculate bonus points according to the rule's bonus point rate
    */
-  calculateBonusPoints(roundedAmount: number, input: CalculationInput): number {
+  calculateBonusPoints(roundedAmount: number, input: CalculationInput): { bonusPoints: number; remainingMonthlyBonusPoints?: number } {
     const rule = this.getActiveRule();
     
     // Special handling for DBS Woman's World MasterCard
@@ -405,14 +424,16 @@ export class RuleBasedCalculator extends BaseCalculator {
       // Check if transaction is eligible for bonus (online transaction)
       if (input.isOnline) {
         // 9 bonus points per $5 spent for online transactions
-        return Math.floor(roundedAmount / 5) * 9;
+        const bonusPoints = Math.floor(roundedAmount / 5) * 9;
+        return { bonusPoints };
       }
-      return 0; // No bonus for non-online transactions
+      return { bonusPoints: 0 }; // No bonus for non-online transactions
     }
     
-    if (!rule) return 0; // Default to no bonus points
+    if (!rule) return { bonusPoints: 0 }; // Default to no bonus points
     
-    return Math.round(roundedAmount * rule.bonusPointRate);
+    const bonusPoints = Math.round(roundedAmount * rule.bonusPointRate);
+    return { bonusPoints };
   }
   
   /**

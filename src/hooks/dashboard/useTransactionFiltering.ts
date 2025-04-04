@@ -26,21 +26,21 @@ export function useTransactionFiltering() {
     // Filter by payment method IDs if specified
     if (options.paymentMethodIds && options.paymentMethodIds.length > 0) {
       filtered = filtered.filter(tx => 
-        options.paymentMethodIds?.includes(tx.paymentMethodId)
+        options.paymentMethodIds?.includes(tx.paymentMethod.id)
       );
     }
     
     // Filter by merchant IDs if specified
     if (options.merchantIds && options.merchantIds.length > 0) {
       filtered = filtered.filter(tx => 
-        options.merchantIds?.includes(tx.merchantId)
+        options.merchantIds?.includes(tx.merchant.id)
       );
     }
     
     // Filter by categories if specified
     if (options.categories && options.categories.length > 0) {
       filtered = filtered.filter(tx => 
-        options.categories?.includes(tx.category)
+        options.categories?.includes(tx.category || '')
       );
     }
     
@@ -48,10 +48,9 @@ export function useTransactionFiltering() {
     if (options.searchTerm && options.searchTerm.trim() !== '') {
       const searchLower = options.searchTerm.toLowerCase();
       filtered = filtered.filter(tx => 
-        tx.description?.toLowerCase().includes(searchLower) ||
-        tx.notes?.toLowerCase().includes(searchLower) ||
-        tx.category?.toLowerCase().includes(searchLower) ||
-        tx.merchantName?.toLowerCase().includes(searchLower)
+        (tx.notes || '').toLowerCase().includes(searchLower) ||
+        (tx.category || '').toLowerCase().includes(searchLower) ||
+        tx.merchant.name.toLowerCase().includes(searchLower)
       );
     }
     

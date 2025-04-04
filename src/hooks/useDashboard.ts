@@ -1,4 +1,3 @@
-
 // src/hooks/useDashboard.ts
 import { useState, useMemo, useEffect } from "react";
 import { Transaction, Currency } from "@/types";
@@ -33,13 +32,23 @@ export function useDashboard(options: DashboardOptions): {
     lastUpdate,
   } = options;
 
+  const { filterTransactions } = useTransactionFiltering();
+  
   // Filter transactions based on selected timeframe
-  const { filteredTransactions, previousPeriodTransactions } = useTransactionFiltering({
-    transactions,
-    timeframe,
-    useStatementMonth,
-    statementCycleDay,
-  });
+  const filteredTransactions = useMemo(() => {
+    return filterTransactions(transactions, {
+      timeframe,
+      useStatementMonth,
+      statementCycleDay,
+    });
+  }, [transactions, timeframe, useStatementMonth, statementCycleDay, filterTransactions]);
+  
+  // Filter transactions for previous period
+  const previousPeriodTransactions = useMemo(() => {
+    // Logic to get previous period transactions would go here
+    // For now, returning an empty array as placeholder
+    return [];
+  }, [transactions, timeframe, useStatementMonth, statementCycleDay]);
 
   // Calculate dashboard metrics
   const metrics = useMetricsCalculation({

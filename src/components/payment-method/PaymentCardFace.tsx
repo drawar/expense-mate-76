@@ -6,6 +6,7 @@ import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
 import { PaymentIcon } from 'react-svg-credit-card-payment-icons';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
+import { useTransactionFiltering } from '@/hooks/dashboard/useTransactionFiltering';
 
 interface PaymentCardFaceProps {
   paymentMethod: PaymentMethod;
@@ -14,10 +15,11 @@ interface PaymentCardFaceProps {
 export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod }) => {
   // Get transactions for this payment method to calculate balance
   const { data: allTransactions = [] } = useTransactionsQuery();
+  const { filterTransactions } = useTransactionFiltering();
   
   // Filter transactions for this payment method in the current month
   const currentMonthTransactions = allTransactions.filter(tx => 
-    tx.paymentMethodId === paymentMethod.id && 
+    tx.paymentMethod.id === paymentMethod.id && 
     !tx.is_deleted &&
     new Date(tx.date).getMonth() === new Date().getMonth() &&
     new Date(tx.date).getFullYear() === new Date().getFullYear()
@@ -27,9 +29,9 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
   const currentBalance = currentMonthTransactions.reduce((total, tx) => total + tx.paymentAmount, 0);
 
   // Determine card network for credit cards (simplified mapping)
-  const getCardNetwork = (): 'Mastercard' | 'Visa' | 'Amex' | 'JCB' | 'Discover' | 'DinersClub' | null => {
+  const getCardNetwork = (): string => {
     if (paymentMethod.type !== 'credit_card' || !paymentMethod.issuer) {
-      return null;
+      return '';
     }
     
     const issuerLower = paymentMethod.issuer.toLowerCase();
@@ -41,11 +43,11 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
     } else if (issuerLower.includes('amex') || issuerLower.includes('american express')) {
       return 'Amex';
     } else if (issuerLower.includes('jcb')) {
-      return 'JCB';
+      return 'Jcb'; // Fixed case to match react-svg-credit-card-payment-icons expected format
     } else if (issuerLower.includes('discover')) {
       return 'Discover';
     } else if (issuerLower.includes('diners') || issuerLower.includes('diner')) {
-      return 'DinersClub';
+      return 'Diners'; // Fixed to match react-svg-credit-card-payment-icons expected format
     }
     
     return 'Visa'; // Default fallback
@@ -94,7 +96,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
       {/* Card Network Logo */}
       {paymentMethod.type === 'credit_card' && cardNetwork && (
         <div className="absolute top-4 right-4">
-          <PaymentIcon type={cardNetwork} format="logo" width={60} />
+          <PaymentIcon type={cardNetwork as any} format="logo" width={60} />
         </div>
       )}
       

@@ -212,7 +212,7 @@ export class RewardCalculationService {
       // Try to get from calculator as a fallback
       try {
         const calculator = this.getCalculator(paymentMethod);
-        return calculator.getPointsCurrencyPublic();
+        return calculator.getPointsCurrency();
       } catch (error) {
         // Ignore and continue to further fallback options
       }
