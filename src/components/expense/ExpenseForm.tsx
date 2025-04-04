@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import MerchantDetailsForm from './MerchantDetailsForm';
 import TransactionDetailsForm from './TransactionDetailsForm';
 import PaymentDetailsForm from './PaymentDetailsForm';
-import { useRewardPoints } from '@/hooks/useRewardPoints';
+import { useRewardPointsStandalone } from '@/hooks/expense-form/useRewardPointsStandalone';
 
 interface ExpenseFormProps {
   paymentMethods: PaymentMethod[];
@@ -31,12 +31,12 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
   const amount = Number(form.watch('amount')) || 0;
   const currency = form.watch('currency');
   const mcc = form.watch('mcc')?.code;
-  const merchantName = form.watch('merchantName'); // Fixed: Changed 'merchant' to 'merchantName'
+  const merchantName = form.watch('merchantName');
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
   
-  // Use our new reward points hook
-  const { estimatedPoints } = useRewardPoints(
+  // Use the standalone reward points hook instead of the context-dependent one
+  const { estimatedPoints } = useRewardPointsStandalone(
     amount, 
     currency, 
     selectedPaymentMethod,

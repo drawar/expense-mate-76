@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FormValues, formSchema } from './expense-form/formSchema';
 import { useMerchantData } from './expense-form/useMerchantData';
 import { usePaymentMethodLogic } from './expense-form/usePaymentMethodLogic';
-import { useRewardPoints } from './expense-form/useRewardPoints';
+import { useRewardPointsStandalone } from './expense-form/useRewardPointsStandalone';
 import { useState, useEffect } from 'react';
 
 interface UseExpenseFormProps {
@@ -60,38 +60,21 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     isOnline
   );
   
-  const { simulatePoints } = useRewardPoints();
+  // Use the standalone simulatePoints from our new hook
+  const { estimatedPoints: calculatedPoints } = useRewardPointsStandalone(
+    shouldOverridePayment ? paymentAmount : amount,
+    currency,
+    selectedPaymentMethod,
+    selectedMCC?.code,
+    merchantName,
+    isOnline,
+    isContactless
+  );
   
-  // Calculate estimated points when relevant fields change
-  const calculateEstimatedPoints = async () => {
-    if (selectedPaymentMethod && amount > 0) {
-      try {
-        // Use paymentAmount when currencies differ, otherwise use amount
-        const amountToUse = shouldOverridePayment ? paymentAmount : amount;
-
-        const points = await simulatePoints(
-          amountToUse,
-          currency,
-          selectedPaymentMethod,
-          selectedMCC?.code,
-          merchantName,
-          isOnline,
-          isContactless
-        );
-        setEstimatedPoints(points);
-      } catch (error) {
-        console.error('Error calculating reward points:', error);
-        setEstimatedPoints(0);
-      }
-    } else {
-      setEstimatedPoints(0);
-    }
-  };
-  
-  // Call the calculation function when dependencies change
+  // Update the local state when the calculated points change
   useEffect(() => {
-    calculateEstimatedPoints();
-  }, [selectedPaymentMethod, amount, paymentAmount, shouldOverridePayment, currency, selectedMCC, merchantName, isOnline, isContactless]);
+    setEstimatedPoints(calculatedPoints);
+  }, [calculatedPoints]);
 
   return {
     form,
