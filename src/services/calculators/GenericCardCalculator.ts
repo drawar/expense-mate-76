@@ -15,7 +15,7 @@ export class GenericCardCalculator extends BaseCalculator {
   }> = [];
   
   private defaultBaseRate: number = 1; // Default 1 point per dollar
-  private pointsCurrency: string = 'Points';
+  private pointsCurrencyValue: string = 'Points';
   
   /**
    * Configure the calculator with custom settings
@@ -30,7 +30,7 @@ export class GenericCardCalculator extends BaseCalculator {
     }
     
     if (config.pointsCurrency) {
-      this.pointsCurrency = config.pointsCurrency;
+      this.pointsCurrencyValue = config.pointsCurrency;
     }
     
     if (config.roundingType) {
@@ -143,8 +143,8 @@ export class GenericCardCalculator extends BaseCalculator {
   /**
    * Override the points currency getter
    */
-  protected getPointsCurrency(input: CalculationInput): string {
-    return this.pointsCurrency;
+  public override getPointsCurrency(input?: CalculationInput): string {
+    return this.pointsCurrencyValue;
   }
   
   /**

@@ -213,7 +213,7 @@ export class RewardCalculationService {
       // Try to get from calculator as a fallback
       try {
         const calculator = this.getCalculator(paymentMethod);
-        // Pass a minimal input to getPointsCurrency with just the payment method
+        // Create a minimal input with just the payment method
         const input: CalculationInput = { 
           amount: 0, 
           currency: paymentMethod.currency, 

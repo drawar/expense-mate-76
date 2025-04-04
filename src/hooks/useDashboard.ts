@@ -1,5 +1,4 @@
 
-// src/hooks/useDashboard.ts
 import { useState, useMemo, useEffect } from "react";
 import { Transaction, Currency } from "@/types";
 import { DashboardData, DashboardOptions } from "@/types/dashboard";
@@ -53,15 +52,15 @@ export function useDashboard(options: DashboardOptions): {
 
   // Calculate dashboard metrics
   const metrics = useMetricsCalculation({
-    currentTransactions: filteredTransactions,
-    previousTransactions: previousPeriodTransactions,
+    filteredTransactions,
+    previousPeriodTransactions,
     displayCurrency,
     calculateVelocity,
   });
 
   // Process chart data
   const { chartData, topValues } = useChartDataProcessing({
-    transactions: filteredTransactions,
+    filteredTransactions,
     displayCurrency,
     calculateDayOfWeekMetrics,
   });

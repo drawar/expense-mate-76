@@ -70,7 +70,9 @@ export class RuleService {
             excludedMCCs: item.excluded_mccs || [],
             minSpend: item.min_spend,
             maxSpend: item.max_spend,
-            currencyRestrictions: item.currency_restrictions
+            currencyRestrictions: item.currency_restrictions,
+            mccCodes: item.included_mccs || [], // Map to the correct field
+            excludedMccCodes: item.excluded_mccs || [] // Map to the correct field
           } as RuleCondition,
           reward: {
             basePointRate: item.base_point_rate,
@@ -125,8 +127,8 @@ export class RuleService {
         rounding: 'nearest', // Default value
         is_online_only: newRule.condition.isOnlineOnly,
         is_contactless_only: newRule.condition.isContactlessOnly,
-        included_mccs: newRule.condition.includedMCCs || [],
-        excluded_mccs: newRule.condition.excludedMCCs || [],
+        included_mccs: newRule.condition.includedMCCs || newRule.condition.mccCodes || [],
+        excluded_mccs: newRule.condition.excludedMCCs || newRule.condition.excludedMccCodes || [],
         min_spend: newRule.condition.minSpend,
         max_spend: newRule.condition.maxSpend,
         currency_restrictions: newRule.condition.currencyRestrictions,
@@ -189,15 +191,16 @@ export class RuleService {
         card_type: updatedRule.cardType,
         enabled: updatedRule.enabled,
         updated_at: updatedRule.updatedAt,
-        custom_params
+        custom_params,
+        rounding: 'nearest' // Ensure we have the required field
       };
       
       // Only add condition and reward properties if they were provided in the update
       if (rule.condition) {
         dbUpdateData.is_online_only = updatedRule.condition.isOnlineOnly;
         dbUpdateData.is_contactless_only = updatedRule.condition.isContactlessOnly;
-        dbUpdateData.included_mccs = updatedRule.condition.includedMCCs;
-        dbUpdateData.excluded_mccs = updatedRule.condition.excludedMCCs;
+        dbUpdateData.included_mccs = updatedRule.condition.includedMCCs || updatedRule.condition.mccCodes || [];
+        dbUpdateData.excluded_mccs = updatedRule.condition.excludedMCCs || updatedRule.condition.excludedMccCodes || [];
         dbUpdateData.min_spend = updatedRule.condition.minSpend;
         dbUpdateData.max_spend = updatedRule.condition.maxSpend;
         dbUpdateData.currency_restrictions = updatedRule.condition.currencyRestrictions;
@@ -308,23 +311,20 @@ export class RuleService {
     // Update each calculator
     Object.entries(rulesByCardType).forEach(([cardType, cardRules]) => {
       // Get or create calculator
-      let calculator = calculatorRegistry.getCalculatorForCard(cardType) as GenericCardCalculator;
+      const calculator = calculatorRegistry.getCalculatorForCard(cardType);
       
-      if (!calculator) {
-        calculator = new GenericCardCalculator();
-        calculatorRegistry.register(cardType, calculator);
+      if (calculator instanceof GenericCardCalculator) {
+        // Clear existing rules and add new ones
+        cardRules.forEach(rule => {
+          calculator.addRule(
+            rule.id,
+            rule.condition,
+            rule.reward.basePointRate,
+            rule.reward.bonusPointRate,
+            rule.reward.monthlyCap
+          );
+        });
       }
-      
-      // Clear existing rules and add new ones
-      cardRules.forEach(rule => {
-        calculator.addRule(
-          rule.id,
-          rule.condition,
-          rule.reward.basePointRate,
-          rule.reward.bonusPointRate,
-          rule.reward.monthlyCap
-        );
-      });
     });
   }
   
@@ -334,20 +334,17 @@ export class RuleService {
   private addRuleToCalculator(rule: Rule): void {
     if (!rule.enabled) return;
     
-    let calculator = calculatorRegistry.getCalculatorForCard(rule.cardType) as GenericCardCalculator;
+    const calculator = calculatorRegistry.getCalculatorForCard(rule.cardType);
     
-    if (!calculator) {
-      calculator = new GenericCardCalculator();
-      calculatorRegistry.register(rule.cardType, calculator);
+    if (calculator instanceof GenericCardCalculator) {
+      calculator.addRule(
+        rule.id,
+        rule.condition,
+        rule.reward.basePointRate,
+        rule.reward.bonusPointRate,
+        rule.reward.monthlyCap
+      );
     }
-    
-    calculator.addRule(
-      rule.id,
-      rule.condition,
-      rule.reward.basePointRate,
-      rule.reward.bonusPointRate,
-      rule.reward.monthlyCap
-    );
   }
   
   /**
@@ -367,9 +364,9 @@ export class RuleService {
    * Remove a rule from the calculator
    */
   private removeRuleFromCalculator(rule: Rule): void {
-    const calculator = calculatorRegistry.getCalculatorForCard(rule.cardType) as GenericCardCalculator;
+    const calculator = calculatorRegistry.getCalculatorForCard(rule.cardType);
     
-    if (calculator) {
+    if (calculator instanceof GenericCardCalculator) {
       calculator.removeRule(rule.id);
     }
   }
