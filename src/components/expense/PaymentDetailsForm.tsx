@@ -40,11 +40,6 @@ const PaymentDetailsForm = ({
 }: PaymentDetailsFormProps) => {
   const form = useFormContext();
   const isOnline = form.watch('isOnline');
-  const amount = Number(form.watch('amount')) || 0;
-  const currency = form.watch('currency') as Currency;
-  const mcc = form.watch('mcc')?.code;
-  const merchantName = form.watch('merchant')?.name;
-  const isContactless = form.watch('isContactless');
   
   // Use our card analytics hook
   const { nonSgdSpendTotal, hasSgdTransactions } = useCardAnalytics(selectedPaymentMethod);

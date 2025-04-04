@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import MerchantDetailsForm from './MerchantDetailsForm';
 import TransactionDetailsForm from './TransactionDetailsForm';
 import PaymentDetailsForm from './PaymentDetailsForm';
-import { useRewardPointsStandalone } from '@/hooks/expense-form/useRewardPointsStandalone';
 
 interface ExpenseFormProps {
   paymentMethods: PaymentMethod[];
@@ -25,26 +24,8 @@ const ExpenseForm = ({ paymentMethods, onSubmit, defaultValues }: ExpenseFormPro
     setSelectedMCC,
     selectedPaymentMethod,
     shouldOverridePayment,
+    estimatedPoints,
   } = useExpenseForm({ paymentMethods, defaultValues });
-  
-  // Get form values for reward point calculation
-  const amount = Number(form.watch('amount')) || 0;
-  const currency = form.watch('currency');
-  const mcc = form.watch('mcc')?.code;
-  const merchantName = form.watch('merchantName');
-  const isOnline = form.watch('isOnline');
-  const isContactless = form.watch('isContactless');
-  
-  // Use the standalone reward points hook instead of the context-dependent one
-  const { estimatedPoints } = useRewardPointsStandalone(
-    amount, 
-    currency, 
-    selectedPaymentMethod,
-    mcc,
-    merchantName,
-    isOnline,
-    isContactless
-  );
   
   const handleFormSubmit = async (values: FormValues) => {
     try {

@@ -5,7 +5,6 @@ import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
 import ExpenseForm from '@/components/expense/ExpenseForm';
 import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
