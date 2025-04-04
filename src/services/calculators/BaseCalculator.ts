@@ -72,10 +72,15 @@ export class RoundingFactory {
 }
 
 // Monthly spending cap for bonus points
-export interface MonthlyCap {
-  amount: number;
-  usedAmount: number;
-  remainingAmount: number;
+export class MonthlyCap {
+  constructor(
+    public amount: number, 
+    public usedAmount: number = 0
+  ) {}
+
+  get remainingAmount(): number {
+    return Math.max(0, this.amount - this.usedAmount);
+  }
 }
 
 // Bonus points cap configuration
@@ -129,8 +134,9 @@ export abstract class BaseCalculator {
   /**
    * Public method to get points currency without calculating rewards
    */
-  public getPointsCurrencyPublic(input: CalculationInput): string {
-    return this.getPointsCurrency(input);
+  public getPointsCurrency(input?: CalculationInput): string {
+    // Default implementation: generic "Points"
+    return 'Points';
   }
   
   /**
@@ -162,14 +168,6 @@ export abstract class BaseCalculator {
   }
   
   /**
-   * Get points currency - can be overridden by specific calculators
-   */
-  protected getPointsCurrency(input: CalculationInput): string {
-    // Default implementation: generic "Points"
-    return 'Points';
-  }
-  
-  /**
    * Check if the transaction meets specific eligibility criteria
    * This is a utility method that specific calculators can use
    */
@@ -195,6 +193,11 @@ export interface RuleCondition {
   isOnlineOnly?: boolean;
   isContactlessOnly?: boolean;
   foreignCurrencyOnly?: boolean;
+  includedMCCs?: string[]; // Added for compatibility with existing code
+  excludedMCCs?: string[]; // Added for compatibility with existing code
+  minSpend?: number; // Added for compatibility with existing code
+  maxSpend?: number; // Added for compatibility with existing code
+  currencyRestrictions?: string[]; // Added for compatibility with existing code
   excludedCurrencies?: string[];
   minAmount?: number;
   maxAmount?: number;
@@ -208,6 +211,7 @@ export interface RuleReward {
   basePointRate: number;
   bonusPointRate: number;
   monthlyCap?: number;
+  pointsCurrency?: string; // Added field
 }
 
 /**

@@ -47,11 +47,24 @@ export function useTransactionFiltering() {
     // Filter by search term if specified
     if (options.searchTerm && options.searchTerm.trim() !== '') {
       const searchLower = options.searchTerm.toLowerCase();
-      filtered = filtered.filter(tx => 
-        (tx.notes || '').toLowerCase().includes(searchLower) ||
-        (tx.category || '').toLowerCase().includes(searchLower) ||
-        tx.merchant.name.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(tx => {
+        // Search in notes
+        if (tx.notes && tx.notes.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        
+        // Search in category
+        if (tx.category && tx.category.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        
+        // Search in merchant name
+        if (tx.merchant && tx.merchant.name.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        
+        return false;
+      });
     }
     
     // Apply timeframe filtering if specified

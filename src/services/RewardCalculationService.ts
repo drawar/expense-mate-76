@@ -1,3 +1,4 @@
+
 // src/services/RewardCalculationService.ts
 import { Transaction, PaymentMethod } from '@/types';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
@@ -212,7 +213,13 @@ export class RewardCalculationService {
       // Try to get from calculator as a fallback
       try {
         const calculator = this.getCalculator(paymentMethod);
-        return calculator.getPointsCurrency();
+        // Pass a minimal input to getPointsCurrency with just the payment method
+        const input: CalculationInput = { 
+          amount: 0, 
+          currency: paymentMethod.currency, 
+          paymentMethod 
+        };
+        return calculator.getPointsCurrency(input);
       } catch (error) {
         // Ignore and continue to further fallback options
       }
