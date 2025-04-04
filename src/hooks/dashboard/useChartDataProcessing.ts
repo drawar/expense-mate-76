@@ -134,11 +134,11 @@ function processSpendingTrends(transactions: Transaction[]) {
   // Convert to array and sort by date
   const sortedData = Object.values(dateGroups).sort((a, b) => a.date.localeCompare(b.date));
   
-  // Fix: Adding the required 'label' property to the dataset
+  // Fix: Ensure the label property is included in the dataset
   return {
     labels: sortedData.map(item => item.date),
     datasets: [{
-      label: "Expenses", // Adding the required label property
+      label: "Monthly Expenses", // Explicitly adding the required label property
       data: sortedData.map(item => item.amount),
       backgroundColor: CHART_COLORS[0],
     }],
