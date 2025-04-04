@@ -236,11 +236,11 @@ export function processTransactionsForChart(
   options: ChartProcessingOptions = {}
 ): ChartProcessingResult {
   const {
-    period = "month",
+    period = 'month',
     includeCategoryBreakdown = true,
     maxTopCategories = 3,
     includeTrend = true,
-    displayCurrency = "SGD",
+    displayCurrency = 'SGD',
     accountForReimbursements = true,
   } = options;
 
@@ -345,7 +345,7 @@ export function processTransactionsForChart(
       originalKey: key,
       name: displayDate, // For consistency with ChartDataItem
       value: total, // For consistency with ChartDataItem
-      color: "#8884d8", // Default color
+      color: '#8884d8', // Default color
       topCategories: periodTopCategories,
     };
   });
