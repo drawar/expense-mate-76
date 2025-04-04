@@ -2,6 +2,7 @@
 // Import the necessary types
 import { Transaction, PaymentMethod, Currency } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
+import { rewardCalculationService } from "@/services/RewardCalculationService";
 
 // Define CardSuggestion interface that was missing
 export interface CardSuggestion {
@@ -60,16 +61,20 @@ export class CardOptimizationAnalyzer {
     // Filter payment methods to only include active ones
     const activePaymentMethods = this.paymentMethods.filter(pm => pm.active);
     
-    // Sort payment methods by potential points in descending order
-    const sortedPaymentMethods = [...activePaymentMethods].sort((a, b) => {
-      const potentialPointsA = this.calculatePotentialPoints(transaction, a);
-      const potentialPointsB = this.calculatePotentialPoints(transaction, b);
-      return potentialPointsB - potentialPointsA;
-    });
-    
-    return sortedPaymentMethods.map(pm => {
-      const potentialPoints = this.calculatePotentialPoints(transaction, pm);
-      const actualPoints = transaction.rewardPoints;
+    const simulationResults = activePaymentMethods.map(pm => {
+      // Use the reward calculation service to simulate points accurately
+      const simulatedResult = rewardCalculationService.simulatePoints(
+        amount,
+        currency,
+        pm,
+        transaction.merchant?.mcc?.code,
+        transaction.merchant?.name,
+        transaction.merchant?.isOnline,
+        transaction.isContactless
+      );
+      
+      const potentialPoints = simulatedResult.totalPoints;
+      const actualPoints = transaction.rewardPoints || 0;
       
       const potentialSavings = this.calculateRewardValue(potentialPoints, pm);
       const actualSavings = this.calculateRewardValue(actualPoints, paymentMethod);
@@ -85,68 +90,9 @@ export class CardOptimizationAnalyzer {
         difference
       };
     });
-  }
-  
-  /**
-   * Calculate potential reward points for a transaction with a given payment method
-   */
-  private calculatePotentialPoints(transaction: Transaction, paymentMethod: PaymentMethod): number {
-    let points = 0;
-    const { amount, currency, merchant } = transaction;
     
-    // Check each reward rule for the payment method
-    paymentMethod.rewardRules.forEach(rule => {
-      let multiplier = 0;
-      
-      switch (rule.type) {
-        case 'mcc':
-          if (merchant.mcc && rule.condition === merchant.mcc.code) {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-          
-        case 'merchant':
-          if (merchant.name === rule.condition) {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-          
-        case 'currency':
-          if (currency === rule.condition) {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-          
-        case 'spend_threshold':
-          if (amount >= Number(rule.condition)) {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-          
-        case 'online':
-          if (merchant.isOnline && rule.condition === 'true') {
-            multiplier = rule.pointsMultiplier;
-          } else if (!merchant.isOnline && rule.condition === 'false') {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-          
-        case 'contactless':
-          if (transaction.isContactless && rule.condition === 'true') {
-            multiplier = rule.pointsMultiplier;
-          } else if (!transaction.isContactless && rule.condition === 'false') {
-            multiplier = rule.pointsMultiplier;
-          }
-          break;
-      }
-      
-      // Apply the multiplier
-      if (multiplier > 0) {
-        points += amount * multiplier;
-      }
-    });
-    
-    return points;
+    // Sort payment methods by potential points in descending order
+    return simulationResults.sort((a, b) => b.potentialPoints - a.potentialPoints);
   }
   
   /**

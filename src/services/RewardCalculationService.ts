@@ -4,6 +4,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
 import { calculatorRegistry } from './calculators/CalculatorRegistry';
 import { BaseCalculator, CalculationInput, CalculationResult } from './calculators/BaseCalculator';
+import { registerCustomCalculators } from './calculators/CalculatorRegistryExtensions';
 
 // Define a transaction type that has more relaxed requirements for simulation
 interface SimulatedTransaction {
@@ -39,9 +40,23 @@ interface PointsCalculation {
  */
 export class RewardCalculationService {
   private static instance: RewardCalculationService;
+  private calculatorsInitialized = false;
   
-  private constructor() {}
+  private constructor() {
+    // Initialize custom calculators on first instantiation
+    this.initializeCalculators();
+  }
   
+  /**
+   * Initialize custom calculators
+   */
+  private initializeCalculators() {
+    if (!this.calculatorsInitialized) {
+      registerCustomCalculators();
+      this.calculatorsInitialized = true;
+    }
+  }
+
   /**
    * Get the singleton instance of the RewardCalculationService
    */
@@ -76,8 +91,8 @@ export class RewardCalculationService {
       currency: transaction.paymentCurrency, // Use payment currency for calculation
       mcc: transaction.merchant?.mcc?.code,
       merchantName: transaction.merchant?.name,
-      isOnline: transaction.merchant?.isOnline,
-      isContactless: transaction.isContactless,
+      isOnline: transaction.merchant?.isOnline ?? false,
+      isContactless: transaction.isContactless ?? false,
       usedBonusPoints,
       paymentMethod: transaction.paymentMethod, // Include full paymentMethod for selectedCategories
       // Additional fields could be added here for specialized card calculators
@@ -109,10 +124,14 @@ export class RewardCalculationService {
       // Use the calculator to calculate rewards
       const result = calculator.calculateRewards(input);
       
+      // Ensure we always have valid values for basePoints and bonusPoints
+      const basePoints = result.basePoints ?? 0;
+      const bonusPoints = result.bonusPoints ?? 0;
+      
       return {
-        totalPoints: result.totalPoints,
-        basePoints: result.basePoints,
-        bonusPoints: result.bonusPoints,
+        totalPoints: result.totalPoints ?? basePoints + bonusPoints,
+        basePoints: basePoints,
+        bonusPoints: bonusPoints,
         pointsCurrency: result.pointsCurrency,
         remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints
       };
@@ -155,8 +174,8 @@ export class RewardCalculationService {
           mcc: mcc ? { code: mcc, description: '' } : undefined,
           isOnline: !!isOnline
         },
-        amount: isCurrencyDifferent ? amount : amount, // Original amount
-        currency: isCurrencyDifferent ? currency : currency, // Original currency
+        amount: amount, // Original amount
+        currency: currency, // Original currency
         paymentMethod,
         paymentAmount: amount, // For consistency, this is the amount in payment currency
         paymentCurrency: isCurrencyDifferent ? paymentMethod.currency : currency, // Payment currency
@@ -164,7 +183,18 @@ export class RewardCalculationService {
       };
       
       // Use the main calculation method with the simulated transaction
-      return this.calculatePoints(simulatedTransaction, usedBonusPoints);
+      const calculationResult = this.calculatePoints(simulatedTransaction, usedBonusPoints);
+      
+      // Ensure we have proper values for base and bonus points
+      if (calculationResult.bonusPoints === undefined && calculationResult.basePoints !== undefined) {
+        calculationResult.bonusPoints = calculationResult.totalPoints - calculationResult.basePoints;
+      }
+      
+      if (calculationResult.basePoints === undefined) {
+        calculationResult.basePoints = calculationResult.totalPoints - (calculationResult.bonusPoints || 0);
+      }
+      
+      return calculationResult;
     } catch (error) {
       console.error('Error in simulatePoints:', error);
       // Fallback to basic calculation - using Math.round for proper rounding

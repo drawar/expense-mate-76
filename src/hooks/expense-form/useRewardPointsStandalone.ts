@@ -33,7 +33,7 @@ export function useRewardPointsStandalone(
     }
     
     try {
-      // Use the rewardCalculationService directly rather than through the context
+      // Use the rewardCalculationService directly
       const points = rewardCalculationService.simulatePoints(
         amount,
         currency,
@@ -45,9 +45,46 @@ export function useRewardPointsStandalone(
         0 // No used bonus points in this standalone implementation
       );
       
+      // Log the points calculation for debugging
+      console.log('Points calculation result:', {
+        amount,
+        currency,
+        selectedPaymentMethod: selectedPaymentMethod.name,
+        mcc,
+        merchantName,
+        isOnline,
+        isContactless,
+        result: points
+      });
+      
       // Ensure the points calculation includes proper bonusPoints
-      if (typeof points === 'object' && points.bonusPoints === undefined && points.basePoints !== undefined) {
-        points.bonusPoints = points.totalPoints - points.basePoints;
+      if (typeof points === 'object') {
+        // If bonusPoints is undefined but we have basePoints and totalPoints,
+        // calculate bonusPoints as the difference
+        if (points.bonusPoints === undefined && points.basePoints !== undefined) {
+          points.bonusPoints = points.totalPoints - points.basePoints;
+        }
+        
+        // If basePoints is undefined but we have bonusPoints and totalPoints,
+        // calculate basePoints as the difference
+        if (points.basePoints === undefined && points.bonusPoints !== undefined) {
+          points.basePoints = points.totalPoints - points.bonusPoints;
+        }
+        
+        // Generate a message based on the results
+        let messageText;
+        if (points.bonusPoints === 0 && points.remainingMonthlyBonusPoints === 0) {
+          messageText = "Monthly bonus points cap reached";
+        } else if (points.bonusPoints === 0 && isOnline) {
+          messageText = "Not eligible for online bonus points";
+        } else if (points.remainingMonthlyBonusPoints !== undefined) {
+          messageText = `${points.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
+        }
+        
+        // Update the points object with the message
+        if (messageText) {
+          points.messageText = messageText;
+        }
       }
       
       setEstimatedPoints(points);

@@ -5,8 +5,9 @@ import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
 import ExpenseForm from '@/components/expense/ExpenseForm';
 import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { registerCustomCalculators } from '@/services/calculators/CalculatorRegistryExtensions';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -14,6 +15,13 @@ const AddExpense = () => {
   const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage);
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("expense");
+  
+  // Initialize custom calculators when the page loads
+  useEffect(() => {
+    // Register custom calculators to ensure they're available
+    registerCustomCalculators();
+    console.log('Custom calculators registered');
+  }, []);
   
   return (
     <div className="min-h-screen">

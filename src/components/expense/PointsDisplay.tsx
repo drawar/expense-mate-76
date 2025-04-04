@@ -56,7 +56,18 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     ...pointsInfo,
     bonusPoints: pointsInfo.bonusPoints ?? 0,
     basePoints: pointsInfo.basePoints ?? pointsInfo.totalPoints ?? 0,
+    // Add a debug message to help troubleshoot
+    messageText: pointsInfo.messageText || (
+      pointsInfo.bonusPoints ? `Earning ${pointsInfo.bonusPoints} bonus points` : undefined
+    )
   };
+
+  // Log for debugging
+  console.log('PointsDisplay rendering with:', {
+    selectedPaymentMethod: selectedPaymentMethod.name,
+    originalPoints: estimatedPoints,
+    finalPointsInfo
+  });
 
   // Use the GenericPointsCard for all card types
   // This ensures a single source of truth for all reward calculations
