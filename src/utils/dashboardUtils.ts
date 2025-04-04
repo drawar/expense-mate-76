@@ -1,3 +1,4 @@
+
 // src/utils/dashboardUtils.ts
 import { Transaction, Currency, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
@@ -63,6 +64,7 @@ export function calculateTotalReimbursed(
 
 /**
  * Calculate percentage change between two values
+ * Fixed to handle special cases properly
  *
  * @param current - Current value
  * @param previous - Previous value to compare against
@@ -72,7 +74,16 @@ export function calculatePercentageChange(
   current: number,
   previous: number
 ): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
+  // If both values are zero, there's no change (0%)
+  if (current === 0 && previous === 0) return 0;
+  
+  // If previous value is zero but current is not, we need special handling
+  if (previous === 0) {
+    // Instead of infinity or 100%, return a large but reasonable number
+    return current > 0 ? 100 : -100;
+  }
+  
+  // Normal case: calculate percent change
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 

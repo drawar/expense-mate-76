@@ -5,7 +5,7 @@ import { TagIcon } from 'lucide-react';
 import { Currency } from '@/types';
 import { CurrencyService } from '@/services/CurrencyService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ChartDataItem } from '@/components/dashboard/charts/PieChart';
+import { ChartDataItem } from '@/types/dashboard';
 
 interface SpendingCategoryCardProps {
   title?: string;
@@ -25,9 +25,19 @@ const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
   className = '',
   maxCategories = 10
 }) => {
+  // Log data coming into the component
+  React.useEffect(() => {
+    console.log(`SpendingCategoryCard data:`, data?.length || 0, 'items');
+  }, [data]);
+  
   // Process data to show only the top categories and group others
   const processedData = React.useMemo(() => {
-    if (!data || data.length <= maxCategories) return data;
+    if (!data || data.length === 0) {
+      console.log('No category data available');
+      return [];
+    }
+    
+    if (data.length <= maxCategories) return data;
     
     // Sort by value descending
     const sortedData = [...data].sort((a, b) => b.value - a.value);

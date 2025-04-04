@@ -25,9 +25,19 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   className = '',
   highlightTopMethod = true
 }) => {
+  // Log data coming into the component
+  React.useEffect(() => {
+    console.log(`PaymentMethodCard data:`, data?.length || 0, 'items');
+  }, [data]);
+
   // Process data to highlight the top payment method if requested
   const processedData = React.useMemo(() => {
-    if (!data || !highlightTopMethod) return data;
+    if (!data || data.length === 0) {
+      console.log('No payment method data available');
+      return [];
+    }
+    
+    if (!highlightTopMethod) return data;
     
     // Sort by value descending to find top method
     const sortedData = [...data].sort((a, b) => b.value - a.value);

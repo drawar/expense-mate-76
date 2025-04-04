@@ -1,7 +1,14 @@
+
 // src/hooks/dashboard/useChartDataProcessing.ts
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { ChartDataItem } from "@/types/dashboard";
+import { 
+  generatePaymentMethodChartData, 
+  generateCategoryChartData,
+  CHART_COLORS 
+} from "@/utils/dashboardCalculations";
+import { calculateAverageByDayOfWeek } from "@/utils/dashboardUtils";
 
 export interface ChartDataOptions {
   filteredTransactions: Transaction[];
@@ -29,18 +36,31 @@ export function useChartDataProcessing(options: ChartDataOptions) {
         };
       }
       
-      // Process payment method distribution
-      const paymentMethodData = processPaymentMethodDistribution(filteredTransactions);
+      // Process payment method distribution - ensure data is being generated
+      const paymentMethodData = generatePaymentMethodChartData(
+        filteredTransactions,
+        displayCurrency,
+        true // Account for reimbursements
+      );
       
-      // Process category distribution
-      const categoryData = processCategoryDistribution(filteredTransactions);
+      // Process category distribution - ensure data is being generated
+      const categoryData = generateCategoryChartData(
+        filteredTransactions, 
+        displayCurrency,
+        true // Account for reimbursements
+      );
+      
+      console.log('Generated chart data:', {
+        paymentMethods: paymentMethodData.length,
+        categories: categoryData.length
+      });
       
       // Process day of week spending if enabled
       const dayOfWeekSpending = calculateDayOfWeekMetrics 
-        ? processDayOfWeekSpending(filteredTransactions) 
+        ? calculateAverageByDayOfWeek(filteredTransactions, displayCurrency)
         : {};
       
-      // Process spending trends
+      // Process spending trends (simplified, can be expanded later)
       const spendingTrends = processSpendingTrends(filteredTransactions);
       
       // Find top values
@@ -65,33 +85,47 @@ export function useChartDataProcessing(options: ChartDataOptions) {
     } catch (error) {
       console.error("Error processing chart data:", error);
       return { 
-        chartData: null,
+        chartData: {
+          paymentMethods: [],
+          categories: [],
+          dayOfWeekSpending: {},
+          spendingTrends: { labels: [], datasets: [] },
+        },
         topValues: {}
       };
     }
   }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics]);
 }
 
-// Helper functions for processing data
-function processPaymentMethodDistribution(transactions: Transaction[]): ChartDataItem[] {
-  // Placeholder implementation
-  return [];
-}
-
-function processCategoryDistribution(transactions: Transaction[]): ChartDataItem[] {
-  // Placeholder implementation
-  return [];
-}
-
-function processDayOfWeekSpending(transactions: Transaction[]): Record<string, number> {
-  // Placeholder implementation
-  return {};
-}
-
+// Helper function for processing spending trends data
 function processSpendingTrends(transactions: Transaction[]) {
-  // Placeholder implementation
-  return { 
-    labels: [],
-    datasets: []
+  // This is a placeholder implementation
+  // You could implement more sophisticated trend analysis here
+  
+  // Group transactions by date and sum amounts
+  const dateGroups = transactions.reduce((groups, tx) => {
+    const date = new Date(tx.date);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (!groups[key]) {
+      groups[key] = {
+        date: key,
+        amount: 0,
+      };
+    }
+    
+    groups[key].amount += tx.amount;
+    return groups;
+  }, {} as Record<string, {date: string, amount: number}>);
+  
+  // Convert to array and sort by date
+  const sortedData = Object.values(dateGroups).sort((a, b) => a.date.localeCompare(b.date));
+  
+  return {
+    labels: sortedData.map(item => item.date),
+    datasets: [{
+      data: sortedData.map(item => item.amount),
+      backgroundColor: CHART_COLORS[0],
+    }],
   };
 }
