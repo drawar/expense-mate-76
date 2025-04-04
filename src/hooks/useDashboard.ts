@@ -91,8 +91,8 @@ export function useDashboard(options: DashboardOptions): {
             totalRewardPoints: 0,
             percentageChange: 0,
             totalReimbursed: 0,
-            netExpenses: 0, // Added missing netExpenses
-            hasEnoughData: false, // Add this to match the interface
+            netExpenses: 0,
+            hasEnoughData: false,
           },
           top: {},
           charts: {
@@ -102,9 +102,9 @@ export function useDashboard(options: DashboardOptions): {
             spendingTrends: { 
               labels: [], 
               datasets: [{ 
-                label: "Expenses", // Fix: Add required label property
+                label: "Expenses", // Ensuring label is always provided
                 data: [],
-                backgroundColor: "#8884d8" // Adding a default color for consistency
+                backgroundColor: "#8884d8"
               }] 
             },
           },
