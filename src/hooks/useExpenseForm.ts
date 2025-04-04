@@ -60,7 +60,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     isOnline
   );
   
-  // Use the standalone simulatePoints from our new hook
+  // Use the standalone simulatePoints from our hook
   const { estimatedPoints: calculatedPoints } = useRewardPointsStandalone(
     shouldOverridePayment ? paymentAmount : amount,
     currency,

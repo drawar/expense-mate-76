@@ -21,6 +21,7 @@ export function useRewardPointsStandalone(
     basePoints?: number;
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
+    messageText?: string;
     pointsCurrency?: string;
   }>(0);
   
@@ -43,6 +44,12 @@ export function useRewardPointsStandalone(
         isContactless,
         0 // No used bonus points in this standalone implementation
       );
+      
+      // Ensure the points calculation includes proper bonusPoints
+      if (typeof points === 'object' && points.bonusPoints === undefined && points.basePoints !== undefined) {
+        points.bonusPoints = points.totalPoints - points.basePoints;
+      }
+      
       setEstimatedPoints(points);
     } catch (error) {
       console.error('Error calculating reward points:', error);

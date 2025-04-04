@@ -37,15 +37,30 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   const pointsInfo = typeof estimatedPoints === 'number' 
     ? { 
         totalPoints: estimatedPoints,
+        basePoints: estimatedPoints,
+        bonusPoints: 0,
         pointsCurrency: selectedPaymentMethod ? 
           rewardCalculationService.getPointsCurrency(selectedPaymentMethod) : 
           'Points'
       } 
     : estimatedPoints;
 
+  // Ensure bonusPoints is properly defined
+  if (typeof pointsInfo === 'object' && pointsInfo.bonusPoints === undefined && 
+      pointsInfo.basePoints !== undefined && pointsInfo.totalPoints !== undefined) {
+    pointsInfo.bonusPoints = pointsInfo.totalPoints - pointsInfo.basePoints;
+  }
+
+  // Ensure we never pass undefined bonus points to the card
+  const finalPointsInfo = {
+    ...pointsInfo,
+    bonusPoints: pointsInfo.bonusPoints ?? 0,
+    basePoints: pointsInfo.basePoints ?? pointsInfo.totalPoints ?? 0,
+  };
+
   // Use the GenericPointsCard for all card types
   // This ensures a single source of truth for all reward calculations
-  return <GenericPointsCard pointsInfo={pointsInfo} />;
+  return <GenericPointsCard pointsInfo={finalPointsInfo} />;
 };
 
 export default PointsDisplay;
