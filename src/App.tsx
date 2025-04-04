@@ -17,6 +17,7 @@ import RewardPoints from '@/pages/RewardPoints';
 import NotFound from '@/pages/NotFound';
 
 // Configure React Query client with optimal settings
+// Use a singleton pattern for QueryClient to ensure it's consistent throughout the app
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
