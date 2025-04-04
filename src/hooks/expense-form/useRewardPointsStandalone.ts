@@ -20,7 +20,7 @@ interface PointsResult {
 export function useRewardPointsStandalone(
   amount: number | null,
   paymentMethodId: string | null,
-  paymentMethods: PaymentMethod[],
+  paymentMethods: PaymentMethod[] | undefined,
   mcc?: string,
   merchantName?: string,
   isOnline?: boolean,
@@ -33,8 +33,9 @@ export function useRewardPointsStandalone(
     bonusPoints: 0
   });
   
-  // Find selected payment method
-  const selectedPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId) || null;
+  // Find selected payment method, with null check for paymentMethods
+  const selectedPaymentMethod = paymentMethods && paymentMethodId ? 
+    paymentMethods.find(pm => pm.id === paymentMethodId) || null : null;
   
   // Calculate estimated points when inputs change
   useEffect(() => {

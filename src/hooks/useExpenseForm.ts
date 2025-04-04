@@ -25,6 +25,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     bonusPoints?: number;
     remainingMonthlyBonusPoints?: number;
     pointsCurrency?: string;
+    messageText?: string;
   }>(0);
   
   const form = useForm<FormValues>({
@@ -49,6 +50,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   const paymentAmount = Number(form.watch('paymentAmount')) || 0;
   const isOnline = form.watch('isOnline');
   const isContactless = form.watch('isContactless');
+  const paymentMethodId = form.watch('paymentMethodId');
   
   const { selectedMCC, setSelectedMCC } = useMerchantData(form, merchantName);
   
@@ -60,11 +62,11 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     isOnline
   );
   
-  // Use the standalone simulatePoints from our hook
+  // Use the standalone simulatePoints from our hook - passing the full array of paymentMethods
   const { estimatedPoints: calculatedPoints } = useRewardPointsStandalone(
     shouldOverridePayment ? paymentAmount : amount,
-    currency,
-    selectedPaymentMethod,
+    paymentMethodId,
+    paymentMethods,
     selectedMCC?.code,
     merchantName,
     isOnline,
