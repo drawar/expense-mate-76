@@ -3,7 +3,6 @@ import React from 'react';
 import { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
-import { PaymentIcon } from 'react-svg-credit-card-payment-icons';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
 import { useTransactionFiltering } from '@/hooks/dashboard/useTransactionFiltering';
@@ -15,7 +14,6 @@ interface PaymentCardFaceProps {
 export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod }) => {
   // Get transactions for this payment method to calculate balance
   const { data: allTransactions = [] } = useTransactionsQuery();
-  const { filterTransactions } = useTransactionFiltering();
   
   // Filter transactions for this payment method in the current month
   const currentMonthTransactions = allTransactions.filter(tx => 
@@ -28,35 +26,8 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
   // Calculate current balance
   const currentBalance = currentMonthTransactions.reduce((total, tx) => total + tx.paymentAmount, 0);
 
-  // Determine card network for credit cards (simplified mapping)
-  const getCardNetwork = (): string => {
-    if (paymentMethod.type !== 'credit_card' || !paymentMethod.issuer) {
-      return '';
-    }
-    
-    const issuerLower = paymentMethod.issuer.toLowerCase();
-    
-    if (issuerLower.includes('mastercard') || issuerLower.includes('master')) {
-      return 'Mastercard';
-    } else if (issuerLower.includes('visa')) {
-      return 'Visa';
-    } else if (issuerLower.includes('amex') || issuerLower.includes('american express')) {
-      return 'Amex';
-    } else if (issuerLower.includes('jcb')) {
-      return 'Jcb'; // Fixed case to match react-svg-credit-card-payment-icons expected format
-    } else if (issuerLower.includes('discover')) {
-      return 'Discover';
-    } else if (issuerLower.includes('diners') || issuerLower.includes('diner')) {
-      return 'Diners'; // Fixed to match react-svg-credit-card-payment-icons expected format
-    }
-    
-    return 'Visa'; // Default fallback
-  };
-
-  const cardNetwork = getCardNetwork();
-  
   // Generate a background gradient based on the payment method
-  const getCardBackground = () => {
+  const getCardBackground = (): string => {
     if (paymentMethod.type === 'cash') {
       return 'bg-gradient-to-br from-emerald-500 to-teal-700';
     }
@@ -88,15 +59,50 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
     return 'bg-gradient-to-br from-purple-500 to-purple-800';
   };
 
+  // Custom card badge component instead of using the problematic package
+  const CardNetworkBadge = () => {
+    if (paymentMethod.type !== 'credit_card' || !paymentMethod.issuer) {
+      return null;
+    }
+
+    const issuerLower = paymentMethod.issuer.toLowerCase();
+    let badgeClasses = "h-10 w-10 p-2 rounded-full bg-white/90 text-black font-bold flex items-center justify-center";
+    let networkName = "";
+    
+    if (issuerLower.includes('visa')) {
+      networkName = "VISA";
+      badgeClasses += " text-blue-700";
+    } else if (issuerLower.includes('mastercard') || issuerLower.includes('master')) {
+      networkName = "MC";
+      badgeClasses += " text-red-600";
+    } else if (issuerLower.includes('amex') || issuerLower.includes('american express')) {
+      networkName = "AMEX";
+      badgeClasses += " text-blue-800";
+    } else if (issuerLower.includes('discover')) {
+      networkName = "DISC";
+      badgeClasses += " text-orange-600";
+    } else if (issuerLower.includes('diners') || issuerLower.includes('diner')) {
+      networkName = "DC";
+      badgeClasses += " text-slate-700";
+    } else if (issuerLower.includes('jcb')) {
+      networkName = "JCB";
+      badgeClasses += " text-green-700";
+    } else {
+      return <CreditCardIcon className="h-10 w-10 text-white opacity-80" />;
+    }
+
+    return <div className={badgeClasses}>{networkName}</div>;
+  };
+
   return (
     <div className={cn(
       "rounded-xl w-full h-[200px] p-6 text-white relative overflow-hidden shadow-lg",
       getCardBackground()
     )}>
       {/* Card Network Logo */}
-      {paymentMethod.type === 'credit_card' && cardNetwork && (
+      {paymentMethod.type === 'credit_card' && (
         <div className="absolute top-4 right-4">
-          <PaymentIcon type={cardNetwork as any} format="logo" width={60} />
+          <CardNetworkBadge />
         </div>
       )}
       
