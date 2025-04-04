@@ -54,11 +54,13 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
   // Ensure we never pass undefined bonus points to the card
   const finalPointsInfo = {
     ...pointsInfo,
-    bonusPoints: pointsInfo.bonusPoints ?? 0,
+    bonusPoints: typeof pointsInfo.bonusPoints === 'number' ? pointsInfo.bonusPoints : 0,
     basePoints: pointsInfo.basePoints ?? pointsInfo.totalPoints ?? 0,
     // Add a debug message to help troubleshoot
     messageText: pointsInfo.messageText || (
-      pointsInfo.bonusPoints ? `Earning ${pointsInfo.bonusPoints} bonus points` : undefined
+      (pointsInfo.bonusPoints && pointsInfo.bonusPoints > 0) ? 
+        `Earning ${pointsInfo.bonusPoints} bonus points` : 
+        undefined
     )
   };
 

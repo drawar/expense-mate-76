@@ -8,6 +8,7 @@ import ErrorAlert from '@/components/expense/ErrorAlert';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { registerCustomCalculators } from '@/services/calculators/CalculatorRegistryExtensions';
+import { rewardCalculationService } from '@/services/RewardCalculationService';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -18,9 +19,14 @@ const AddExpense = () => {
   
   // Initialize custom calculators when the page loads
   useEffect(() => {
-    // Register custom calculators to ensure they're available
+    console.log('AddExpense: Initializing calculators');
+    // Register custom calculators directly to ensure they're available
     registerCustomCalculators();
-    console.log('Custom calculators registered');
+    
+    // Force initialize the reward calculation service
+    rewardCalculationService.getPointsCurrency({ id: '', name: '', type: 'credit_card', currency: 'SGD', rewardRules: [], active: true });
+    
+    console.log('Custom calculators registered in AddExpense');
   }, []);
   
   return (

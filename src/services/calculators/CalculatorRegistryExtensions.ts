@@ -13,6 +13,7 @@ export function registerCustomCalculators() {
   );
   
   // More calculators can be registered here
+  console.log('Custom calculators registered successfully');
 }
 
 // Export for use in application initialization

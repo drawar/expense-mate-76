@@ -1,4 +1,3 @@
-
 // src/services/RewardCalculationService.ts
 import { Transaction, PaymentMethod } from '@/types';
 import { CardRegistry } from '@/components/expense/cards/CardRegistry';
@@ -52,8 +51,10 @@ export class RewardCalculationService {
    */
   private initializeCalculators() {
     if (!this.calculatorsInitialized) {
+      console.log('RewardCalculationService: Initializing custom calculators');
       registerCustomCalculators();
       this.calculatorsInitialized = true;
+      console.log('RewardCalculationService: Custom calculators initialized');
     }
   }
 
@@ -71,6 +72,7 @@ export class RewardCalculationService {
    * Get the appropriate calculator for a payment method
    */
   private getCalculator(paymentMethod: PaymentMethod): BaseCalculator {
+    console.log(`RewardCalculationService: Getting calculator for ${paymentMethod.name}`);
     return calculatorRegistry.getCalculatorForPaymentMethod(paymentMethod);
   }
   
@@ -115,26 +117,38 @@ export class RewardCalculationService {
     }
     
     try {
+      console.log('RewardCalculationService.calculatePoints: Starting calculation for', {
+        paymentMethod: paymentMethod.name,
+        isOnline: transactionInput.merchant?.isOnline,
+        mcc: transactionInput.merchant?.mcc?.code,
+      });
+      
       // Get the appropriate calculator for this payment method
       const calculator = this.getCalculator(paymentMethod);
+      console.log(`RewardCalculationService: Using calculator: ${calculator.constructor.name}`);
       
       // Convert transaction to calculator input
       const input = this.transactionToCalculationInput(transactionInput, usedBonusPoints);
+      console.log('RewardCalculationService: Calculator input:', input);
       
       // Use the calculator to calculate rewards
       const result = calculator.calculateRewards(input);
+      console.log('RewardCalculationService: Raw calculation result:', result);
       
       // Ensure we always have valid values for basePoints and bonusPoints
       const basePoints = result.basePoints ?? 0;
       const bonusPoints = result.bonusPoints ?? 0;
       
-      return {
+      const finalResult = {
         totalPoints: result.totalPoints ?? basePoints + bonusPoints,
         basePoints: basePoints,
         bonusPoints: bonusPoints,
         pointsCurrency: result.pointsCurrency,
         remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints
       };
+      
+      console.log('RewardCalculationService: Final result:', finalResult);
+      return finalResult;
     } catch (error) {
       console.error('Error calculating rewards:', error);
       // Fallback to basic calculation - using Math.round for proper rounding
@@ -161,6 +175,16 @@ export class RewardCalculationService {
     usedBonusPoints: number = 0
   ): PointsCalculation {
     try {
+      console.log('RewardCalculationService.simulatePoints: Starting point simulation', {
+        paymentMethod: paymentMethod.name,
+        amount,
+        currency,
+        mcc,
+        merchantName,
+        isOnline,
+        isContactless
+      });
+      
       // Determine if currency conversion is needed
       const isCurrencyDifferent = currency !== paymentMethod.currency;
       
@@ -182,8 +206,12 @@ export class RewardCalculationService {
         isContactless: !!isContactless
       };
       
+      console.log('RewardCalculationService: Created simulated transaction', simulatedTransaction);
+      
       // Use the main calculation method with the simulated transaction
       const calculationResult = this.calculatePoints(simulatedTransaction, usedBonusPoints);
+      
+      console.log('RewardCalculationService: Calculation result', calculationResult);
       
       // Ensure we have proper values for base and bonus points
       if (calculationResult.bonusPoints === undefined && calculationResult.basePoints !== undefined) {

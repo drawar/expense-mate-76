@@ -1,75 +1,102 @@
 
-import { PaymentMethod } from '@/types';
 import { BaseCalculator } from './BaseCalculator';
 import { GenericCardCalculator } from './GenericCardCalculator';
+import { PaymentMethod } from '@/types';
 
 /**
- * Registry for all card calculators
- * This serves as a factory for getting the appropriate calculator for a payment method
+ * Registry for card reward calculators
+ * This is a registry pattern implementation that maps card types to their respective calculators
  */
 class CalculatorRegistry {
   private calculators: Map<string, BaseCalculator> = new Map();
-  private genericCalculator: GenericCardCalculator;
+  private defaultCalculator: BaseCalculator;
   
   constructor() {
-    // Initialize with a generic calculator as fallback
-    this.genericCalculator = new GenericCardCalculator();
+    // Initialize with a default generic calculator
+    this.defaultCalculator = new GenericCardCalculator();
     
-    // Register additional calculators here when they're created
-    // e.g., this.register('citibank-rewards', new CitibankRewardsCalculator());
+    // Configure the default calculator with standard settings
+    if (this.defaultCalculator instanceof GenericCardCalculator) {
+      this.defaultCalculator.configure({
+        defaultBaseRate: 1,
+        pointsCurrency: 'Points',
+        roundingType: 'floor'
+      });
+    }
+    
+    console.log('Calculator registry initialized');
   }
   
   /**
    * Register a calculator for a specific card type
    */
   public register(cardType: string, calculator: BaseCalculator): void {
+    console.log(`Registering calculator for card type: ${cardType}`);
     this.calculators.set(cardType.toLowerCase(), calculator);
   }
   
   /**
-   * Get the appropriate calculator for a payment method
+   * Get calculator for a specific card type
    */
-  public getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
-    if (!paymentMethod || paymentMethod.type === 'cash') {
-      return this.genericCalculator; // Cash gets generic calculator with 0 points
-    }
-    
-    // Try to find a specific calculator for this card
-    const cardTypeKey = this.getCardTypeKey(paymentMethod);
-    const calculator = this.calculators.get(cardTypeKey);
+  public getCalculatorForCard(cardType: string): BaseCalculator {
+    console.log(`Looking for calculator for card type: ${cardType}`);
+    const calculator = this.calculators.get(cardType.toLowerCase());
     
     if (calculator) {
+      console.log(`Found specialized calculator for ${cardType}`);
       return calculator;
     }
     
-    console.log(`No specific calculator found for ${cardTypeKey}, using generic calculator`);
-    return this.genericCalculator;
+    console.log(`No specialized calculator found for ${cardType}, using default`);
+    return this.defaultCalculator;
   }
   
   /**
-   * Get the calculator for a specific card type
+   * Get calculator for a payment method
    */
-  public getCalculatorForCard(cardType: string): BaseCalculator {
-    const calculator = this.calculators.get(cardType.toLowerCase());
-    return calculator || this.genericCalculator;
-  }
-  
-  /**
-   * Generate a standardized key for looking up calculators
-   */
-  private getCardTypeKey(paymentMethod: PaymentMethod): string {
-    if (paymentMethod.type !== 'credit_card' || !paymentMethod.issuer || !paymentMethod.name) {
-      return 'generic';
+  public getCalculatorForPaymentMethod(paymentMethod: PaymentMethod): BaseCalculator {
+    if (!paymentMethod) {
+      console.log('No payment method provided, using default calculator');
+      return this.defaultCalculator;
     }
     
-    return `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase().replace(/\s+/g, '-')}`;
+    // Convert payment method name to a standardized format for lookup
+    // e.g. "DBS Woman's World Mastercard" -> "dbs-woman's-world-mastercard"
+    const cardKey = this.createCardTypeKey(paymentMethod);
+    console.log(`Looking for calculator using key: ${cardKey}`);
+    
+    return this.getCalculatorForCard(cardKey);
   }
   
   /**
-   * Get all registered calculators
+   * Create a standardized key for the payment method
    */
-  public getAllCalculators(): Map<string, BaseCalculator> {
-    return this.calculators;
+  private createCardTypeKey(paymentMethod: PaymentMethod): string {
+    if (!paymentMethod || !paymentMethod.name) {
+      return 'unknown';
+    }
+    
+    // For specific issuers, create a more specific key
+    if (paymentMethod.issuer) {
+      return `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase()}`.replace(/\s+/g, '-');
+    }
+    
+    // General fallback - just use the name
+    return paymentMethod.name.toLowerCase().replace(/\s+/g, '-');
+  }
+  
+  /**
+   * Check if a specialized calculator exists for a card type
+   */
+  public hasCalculatorForCard(cardType: string): boolean {
+    return this.calculators.has(cardType.toLowerCase());
+  }
+  
+  /**
+   * Get all registered calculator types
+   */
+  public getRegisteredCardTypes(): string[] {
+    return Array.from(this.calculators.keys());
   }
 }
 

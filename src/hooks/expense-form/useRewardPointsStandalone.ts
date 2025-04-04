@@ -63,6 +63,16 @@ export function useRewardPointsStandalone(
     const currency = selectedPaymentMethod.currency || 'SGD';
     
     try {
+      console.log('useRewardPointsStandalone: Calculating points with parameters:', {
+        amount,
+        currency, 
+        selectedPaymentMethod: selectedPaymentMethod.name,
+        mcc,
+        merchantName,
+        isOnline,
+        isContactless
+      });
+      
       // Calculate points using the service
       const result = rewardCalculationService.simulatePoints(
         amount,
@@ -82,6 +92,8 @@ export function useRewardPointsStandalone(
         messageText = "Monthly bonus points cap reached";
       } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints !== undefined && result.remainingMonthlyBonusPoints > 0) {
         messageText = "Not eligible for bonus points";
+      } else if (result.bonusPoints > 0) {
+        messageText = `Earning ${result.bonusPoints} bonus points`;
       } else if (result.remainingMonthlyBonusPoints !== undefined) {
         messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
       }
