@@ -32,7 +32,7 @@ export function useChartDataProcessing(options: ChartDataOptions) {
             spendingTrends: { 
               labels: [], 
               datasets: [{ 
-                label: "Expenses", // Make sure label is always provided
+                label: "Expenses", // Ensuring label is always provided
                 data: [],
                 backgroundColor: CHART_COLORS[0]
               }] 
@@ -137,7 +137,7 @@ function processSpendingTrends(transactions: Transaction[]) {
   return {
     labels: sortedData.map(item => item.date),
     datasets: [{
-      label: "Monthly Expenses", // Ensure label property is explicitly defined
+      label: "Monthly Expenses", // Always include the required label property
       data: sortedData.map(item => item.amount),
       backgroundColor: CHART_COLORS[0],
     }],

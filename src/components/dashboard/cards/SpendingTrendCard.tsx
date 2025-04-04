@@ -81,7 +81,12 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   // Process transactions for spending trends analysis with optimized memoization
   const { chartData, trend, average, topCategories } = useMemo(() => {
     if (!hasTransactions) {
-      return { chartData: [], trend: 0, average: 0, topCategories: [] };
+      return { 
+        chartData: [], 
+        trend: 0, 
+        average: 0, 
+        topCategories: [] 
+      };
     }
 
     // Group transactions by date
