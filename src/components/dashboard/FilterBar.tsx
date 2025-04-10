@@ -1,4 +1,4 @@
-// src/components/dashboard/FilterBar.tsx
+// components/dashboard/FilterBar.tsx
 import React from "react";
 import { Filter } from "lucide-react";
 import {
@@ -32,7 +32,7 @@ interface FilterBarProps {
 }
 
 /**
- * Global filter bar component for dashboard
+ * Global filter bar component for dashboard that unifies all filter controls
  */
 const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
   const {

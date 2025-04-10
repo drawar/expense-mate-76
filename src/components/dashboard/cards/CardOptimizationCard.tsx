@@ -1,31 +1,44 @@
-// src/components/dashboard/cards/CardOptimizationCard.tsx
+// components/dashboard/cards/CardOptimizationCard.tsx
 import React from "react";
 import { CreditCardIcon, RefreshCwIcon, ArrowRightIcon } from "lucide-react";
-import { Transaction, PaymentMethod, Currency } from "@/types";
+import { Currency, Transaction, PaymentMethod } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyService } from "@/services/CurrencyService";
 import { Button } from "@/components/ui/button";
 import { usePaymentMethodOptimization } from "@/hooks/useChartData";
+import { useDashboardContext } from "@/contexts/DashboardContext";
 
 interface CardOptimizationCardProps {
   title: string;
-  transactions: Transaction[];
-  paymentMethods: PaymentMethod[];
+  transactions?: Transaction[];
+  paymentMethods?: PaymentMethod[];
   currency?: Currency;
   className?: string;
 }
 
 /**
  * Card component that analyzes transactions and suggests optimal payment methods
- * Now uses the usePaymentMethodOptimization hook for data processing
+ * Uses context for data where applicable
  */
 const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
   title,
-  transactions,
-  paymentMethods,
-  currency = "SGD",
+  transactions: propTransactions,
+  paymentMethods: propPaymentMethods,
+  currency: propCurrency,
   className = "",
 }) => {
+  // Use dashboard context for data when not provided via props
+  const { 
+    dashboardData, 
+    paymentMethods: contextPaymentMethods, 
+    displayCurrency
+  } = useDashboardContext();
+  
+  // Prioritize props over context data
+  const transactions = propTransactions || dashboardData?.filteredTransactions || [];
+  const paymentMethods = propPaymentMethods || contextPaymentMethods || [];
+  const currency = propCurrency || displayCurrency;
+
   // Use the payment method optimization hook
   const suggestions = usePaymentMethodOptimization(
     transactions,

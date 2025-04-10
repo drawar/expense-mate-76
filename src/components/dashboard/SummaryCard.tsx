@@ -91,7 +91,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         <div className="mt-2">
           <div 
             className={`text-2xl font-bold truncate ${valueColor}`}
-            title={value} // Add title for tooltip on hover
+            title={value}
           >
             {value}
           </div>

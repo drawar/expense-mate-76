@@ -1,6 +1,6 @@
 // src/utils/storage/transactions/calculations.ts
 import { Transaction } from '@/types';
-import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 
 interface PointsBreakdown {
   basePoints: number;

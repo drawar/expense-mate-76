@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { ChartDataItem } from "@/types/dashboard";
@@ -32,7 +31,7 @@ export function useChartDataProcessing(options: ChartDataOptions) {
             spendingTrends: { 
               labels: [], 
               datasets: [{ 
-                label: "Expenses", // Ensuring label is always provided
+                label: "Expenses",
                 data: [],
                 backgroundColor: CHART_COLORS[0]
               }] 
@@ -42,34 +41,36 @@ export function useChartDataProcessing(options: ChartDataOptions) {
         };
       }
       
-      // Process payment method distribution - ensure data is being generated
+      // Process payment method distribution with reimbursements
       const paymentMethodData = generatePaymentMethodChartData(
         filteredTransactions,
         displayCurrency,
         true // Account for reimbursements
       );
       
-      // Process category distribution - ensure data is being generated
+      // Process category distribution with reimbursements
       const categoryData = generateCategoryChartData(
         filteredTransactions, 
         displayCurrency,
         true // Account for reimbursements
       );
       
-      console.log('Generated chart data:', {
-        paymentMethods: paymentMethodData.length,
-        categories: categoryData.length
-      });
-      
       // Process day of week spending if enabled
       const dayOfWeekSpending = calculateDayOfWeekMetrics 
         ? calculateAverageByDayOfWeek(filteredTransactions, displayCurrency)
         : {};
       
-      // Process spending trends (simplified, can be expanded later)
-      const spendingTrends = processSpendingTrends(filteredTransactions);
+      // Prepare spending trends data
+      const spendingTrends = {
+        labels: [],
+        datasets: [{ 
+          label: "Expenses",
+          data: [],
+          backgroundColor: CHART_COLORS[0]
+        }]
+      };
       
-      // Find top values
+      // Find top values for summary
       const topValues = {
         paymentMethod: paymentMethodData.length > 0 
           ? { name: paymentMethodData[0].name, value: paymentMethodData[0].value } 
@@ -98,7 +99,7 @@ export function useChartDataProcessing(options: ChartDataOptions) {
           spendingTrends: { 
             labels: [], 
             datasets: [{ 
-              label: "Expenses", // Always include the label
+              label: "Expenses",
               data: [],
               backgroundColor: CHART_COLORS[0]
             }] 
@@ -108,38 +109,4 @@ export function useChartDataProcessing(options: ChartDataOptions) {
       };
     }
   }, [filteredTransactions, displayCurrency, calculateDayOfWeekMetrics]);
-}
-
-// Helper function for processing spending trends data
-function processSpendingTrends(transactions: Transaction[]) {
-  // This is a placeholder implementation
-  // You could implement more sophisticated trend analysis here
-  
-  // Group transactions by date and sum amounts
-  const dateGroups = transactions.reduce((groups, tx) => {
-    const date = new Date(tx.date);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    if (!groups[key]) {
-      groups[key] = {
-        date: key,
-        amount: 0,
-      };
-    }
-    
-    groups[key].amount += tx.amount;
-    return groups;
-  }, {} as Record<string, {date: string, amount: number}>);
-  
-  // Convert to array and sort by date
-  const sortedData = Object.values(dateGroups).sort((a, b) => a.date.localeCompare(b.date));
-  
-  return {
-    labels: sortedData.map(item => item.date),
-    datasets: [{
-      label: "Monthly Expenses", // Always include the required label property
-      data: sortedData.map(item => item.amount),
-      backgroundColor: CHART_COLORS[0],
-    }],
-  };
 }

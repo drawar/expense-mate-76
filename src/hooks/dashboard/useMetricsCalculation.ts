@@ -1,4 +1,3 @@
-
 // src/hooks/dashboard/useMetricsCalculation.ts
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";

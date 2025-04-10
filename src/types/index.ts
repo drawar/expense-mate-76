@@ -59,8 +59,9 @@ export interface Transaction {
   paymentMethod: PaymentMethod;
   paymentAmount: number;
   paymentCurrency: Currency;
-  rewardPoints: number;
-  basePoints?: number; 
+  rewardPoints: number;  // Total reward points
+  basePoints?: number;   // Base reward points
+  bonusPoints?: number;  // Bonus points (promotional or category-specific)
   notes?: string;
   category?: string;
   tags?: string[];

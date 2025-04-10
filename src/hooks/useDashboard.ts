@@ -1,144 +1,139 @@
-
-// src/hooks/useDashboard.ts
+// hooks/useDashboard.ts
 import { useState, useMemo, useEffect } from "react";
 import { Transaction, Currency } from "@/types";
 import { DashboardData, DashboardOptions } from "@/types/dashboard";
-import { useTransactionFiltering } from "@/hooks/dashboard/useTransactionFiltering";
-import { useMetricsCalculation } from "@/hooks/dashboard/useMetricsCalculation";
-import { useChartDataProcessing } from "@/hooks/dashboard/useChartDataProcessing";
-import { getPreviousTimeframe } from "@/utils/dashboardUtils";
+import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
+import { usePaymentMethodsQuery } from "@/hooks/queries/usePaymentMethodsQuery";
+import { useFilteredTransactions } from "@/hooks/useFilteredTransactions";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { supabase } from "@/integrations/supabase/client";
+import { TimeframeTab } from "@/utils/transactionProcessor";
+import { useQueryClient } from "@tanstack/react-query";
 
-/**
- * Custom hook that processes transaction data to build dashboard visualizations and metrics
- *
- * @param options Configuration options for dashboard data
- * @returns Processed dashboard data including metrics, charts, and filtered transactions
- */
-export function useDashboard(options: DashboardOptions): {
-  dashboardData: DashboardData | null;
-  isLoading: boolean;
-  error: string | null;
-} {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Extract configuration from options
+export function useDashboard(options: {
+  defaultTimeframe?: TimeframeTab;
+  defaultCurrency?: Currency;
+  defaultUseStatementMonth?: boolean;
+  defaultStatementCycleDay?: number;
+}) {
   const {
-    transactions,
-    displayCurrency,
-    timeframe,
-    useStatementMonth,
-    statementCycleDay,
-    calculateDayOfWeekMetrics = false,
-    calculateVelocity = true,
-    lastUpdate,
+    defaultTimeframe = "thisMonth",
+    defaultCurrency = "SGD",
+    defaultUseStatementMonth = false,
+    defaultStatementCycleDay = 15,
   } = options;
 
-  const { filterTransactions } = useTransactionFiltering();
-  
-  // Filter transactions based on selected timeframe
-  const filteredTransactions = useMemo(() => {
-    const filtered = filterTransactions(transactions, {
-      timeframe,
-      useStatementMonth,
-      statementCycleDay,
-    });
-    console.log(`Filtered transactions for ${timeframe}:`, filtered.length);
-    return filtered;
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay, filterTransactions]);
-  
-  // Filter transactions for previous period
-  const previousPeriodTransactions = useMemo(() => {
-    // Get the appropriate previous timeframe for comparison
-    const previousTimeframe = getPreviousTimeframe(timeframe);
-    
-    const previousFiltered = filterTransactions(transactions, {
-      timeframe: previousTimeframe,
-      useStatementMonth,
-      statementCycleDay,
-    });
-    
-    console.log(`Previous period transactions (${previousTimeframe}):`, previousFiltered.length);
-    return previousFiltered;
-  }, [transactions, timeframe, useStatementMonth, statementCycleDay, filterTransactions]);
+  // State for filters
+  const [activeTab, setActiveTab] = useState<TimeframeTab>(defaultTimeframe);
+  const [displayCurrency, setDisplayCurrency] = useState<Currency>(defaultCurrency);
+  const [useStatementMonth, setUseStatementMonth] = useState<boolean>(defaultUseStatementMonth);
+  const [statementCycleDay, setStatementCycleDay] = useState<number>(defaultStatementCycleDay);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
+  // React Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  // Data queries
+  const {
+    data: transactions = [],
+    isLoading: isTransactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useTransactionsQuery();
+
+  const {
+    data: paymentMethods = [],
+    isLoading: isPaymentMethodsLoading,
+    error: paymentMethodsError,
+  } = usePaymentMethodsQuery();
+
+  // Get filtered transactions based on current filters
+  const { 
+    filteredTransactions,
+    previousPeriodTransactions
+  } = useFilteredTransactions(
+    transactions,
+    activeTab,
+    useStatementMonth,
+    statementCycleDay,
+    lastUpdate
+  );
 
   // Calculate dashboard metrics
-  const metrics = useMetricsCalculation({
+  const { 
+    dashboardData,
+    isLoading: isMetricsLoading,
+    error: metricsError
+  } = useDashboardMetrics({
     filteredTransactions,
     previousPeriodTransactions,
     displayCurrency,
-    calculateVelocity,
+    calculateDayOfWeekMetrics: transactions.length > 0,
   });
 
-  // Process chart data
-  const { chartData, topValues } = useChartDataProcessing({
-    filteredTransactions,
-    displayCurrency,
-    calculateDayOfWeekMetrics,
-  });
+  // Combined loading and error states
+  const isLoading = isTransactionsLoading || isPaymentMethodsLoading || isMetricsLoading;
+  const error = transactionsError || paymentMethodsError || metricsError
+    ? "Failed to load dashboard data"
+    : null;
 
-  // Generate complete dashboard data
-  const dashboardData = useMemo<DashboardData | null>(() => {
+  // Refresh function
+  const refreshData = async (): Promise<void> => {
     try {
-      if (transactions.length === 0) {
-        // Return a valid object with empty/zero values for empty state
-        return {
-          filteredTransactions: [],
-          metrics: {
-            totalExpenses: 0,
-            transactionCount: 0,
-            averageAmount: 0,
-            totalRewardPoints: 0,
-            percentageChange: 0,
-            totalReimbursed: 0,
-            netExpenses: 0,
-            hasEnoughData: false,
-          },
-          top: {},
-          charts: {
-            paymentMethods: [],
-            categories: [],
-            dayOfWeekSpending: {},
-            spendingTrends: { 
-              labels: [], 
-              datasets: [{ 
-                label: "Expenses", // Ensuring label is always provided
-                data: [],
-                backgroundColor: "#8884d8"
-              }] 
-            },
-          },
-        };
-      }
-
-      if (!metrics) {
-        throw new Error("Failed to calculate dashboard metrics");
-      }
-
-      // Log chart data for debugging
-      console.log("Chart data summary:", {
-        paymentMethodsCount: chartData?.paymentMethods?.length || 0,
-        categoriesCount: chartData?.categories?.length || 0
-      });
-
-      return {
-        filteredTransactions,
-        metrics,
-        top: topValues,
-        charts: chartData,
-      };
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Error generating dashboard data";
-      setError(errorMessage);
-      console.error("Error generating dashboard data:", e);
-      return null;
+      await refetchTransactions();
+      setLastUpdate(Date.now());
+    } catch (error) {
+      console.error("Error refreshing data:", error);
     }
-  }, [filteredTransactions, metrics, chartData, topValues, transactions.length]);
+  };
 
-  // Update loading state when data processing is complete
+  // Set up Supabase realtime subscription for data updates
   useEffect(() => {
-    setIsLoading(false);
-  }, [dashboardData]);
+    const channel = supabase
+      .channel("dashboard_transactions")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+        },
+        () => {
+          // Invalidate the transactions query to trigger refetch
+          queryClient.invalidateQueries({ queryKey: ["transactions"] });
+          setLastUpdate(Date.now());
+        }
+      )
+      .subscribe();
 
-  return { dashboardData, isLoading, error };
+    // Cleanup: unsubscribe on component unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return {
+    // Data
+    transactions,
+    paymentMethods,
+    dashboardData,
+    
+    // Status
+    isLoading,
+    error,
+    lastUpdate,
+
+    // Filter state
+    activeTab,
+    displayCurrency,
+    useStatementMonth,
+    statementCycleDay,
+    
+    // Actions
+    refreshData,
+    setActiveTab,
+    setDisplayCurrency,
+    setUseStatementMonth,
+    setStatementCycleDay,
+  };
 }

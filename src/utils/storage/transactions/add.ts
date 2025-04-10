@@ -6,7 +6,7 @@ import { saveTransactionToLocalStorage } from './local-storage';
 import { getTransactions } from './get';
 import { addOrUpdateMerchant } from '../merchants';
 import { incrementMerchantOccurrence } from '../merchantTracking';
-import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 export const addTransaction = async (

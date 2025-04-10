@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PaymentMethod, Transaction } from '@/types';
 import { 
@@ -19,7 +18,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import RewardRulesAdmin from './RewardRulesAdmin';
+import { RewardRuleManager } from '@/components/rewards/RewardRuleManager';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { Button } from '@/components/ui/button';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
@@ -57,6 +56,15 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
   
   // Calculate total reward points earned
   const totalRewardPoints = paymentMethodTransactions.reduce((total, tx) => total + (tx.rewardPoints || 0), 0);
+
+  // Determine card type ID based on payment method
+  const getCardTypeId = (): string => {
+    if (paymentMethod.issuer && paymentMethod.name) {
+      // Create a normalized ID format similar to that used in CardRegistry
+      return `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase().replace(/\s+/g, '-')}`;
+    }
+    return paymentMethod.id;
+  };
 
   return (
     <div className="space-y-6">
@@ -242,7 +250,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             </DialogTitle>
           </DialogHeader>
           
-          <RewardRulesAdmin paymentMethod={paymentMethod} />
+          <RewardRuleManager cardTypeId={getCardTypeId()} />
         </DialogContent>
       </Dialog>
     </div>

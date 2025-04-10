@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PaymentMethod } from '@/types';
 import { ToggleLeftIcon, ToggleRightIcon, EditIcon, ImageIcon, ShieldIcon } from 'lucide-react';
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import PaymentCardDisplay from '../expense/PaymentCardDisplay';
-import RewardRulesAdmin from './RewardRulesAdmin';
+import { RewardRuleManager } from '@/components/rewards/RewardRuleManager';
 import RewardRuleBadge from './RewardRuleBadge';
 
 interface PaymentMethodCardProps {
@@ -34,6 +33,15 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   const icon = method.type === 'credit_card' ? 
     <CreditCardIcon className="h-5 w-5" style={{ color: method.color }} /> : 
     <BanknoteIcon className="h-5 w-5" style={{ color: method.color }} />;
+
+  // Determine card type ID based on payment method
+  const getCardTypeId = (): string => {
+    if (method.issuer && method.name) {
+      // Create a normalized ID format similar to that used in CardRegistry
+      return `${method.issuer.toLowerCase()}-${method.name.toLowerCase().replace(/\s+/g, '-')}`;
+    }
+    return method.id;
+  };
 
   return (
     <Card className={cn(
@@ -156,7 +164,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                 </DialogTitle>
               </DialogHeader>
               
-              <RewardRulesAdmin paymentMethod={method} />
+              <RewardRuleManager cardTypeId={getCardTypeId()} />
             </DialogContent>
           </Dialog>
         </CardFooter>

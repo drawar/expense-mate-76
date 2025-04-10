@@ -45,8 +45,8 @@ const LoadingDashboard: React.FC = () => {
         </div>
         
         {/* Summary Cards Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {Array(4).fill(0).map((_, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {Array(2).fill(0).map((_, index) => (
             <SummaryCardSkeleton key={`summary-${index}`} />
           ))}
         </div>

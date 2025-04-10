@@ -1,9 +1,14 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { PaymentMethod, Currency } from '@/types';
 import { FormValues } from './formSchema';
 import { findCashPaymentMethodForCurrency } from '@/utils/defaults/paymentMethods';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
+
+// Initialize the reward calculator service
+rewardCalculatorService.initialize().catch(error => {
+  console.error('Failed to initialize reward calculator service:', error);
+});
 
 export const usePaymentMethodLogic = (
   form: UseFormReturn<FormValues>,

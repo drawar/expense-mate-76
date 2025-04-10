@@ -1,4 +1,4 @@
-
+// pages/Index.tsx
 import React from "react";
 import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
 import { Dashboard } from "@/components/dashboard/Dashboard";

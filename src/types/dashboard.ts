@@ -1,4 +1,3 @@
-
 // src/types/dashboard.ts
 import { Transaction, Currency } from "@/types";
 import { TimeframeTab } from "@/utils/transactionProcessor";
@@ -39,9 +38,9 @@ export interface DashboardChartData {
   spendingTrends: {
     labels: string[];
     datasets: {
-      label: string;  // This ensures the label property is required
+      label: string;
       data: number[];
-      backgroundColor?: string; // Make this optional to be more flexible
+      backgroundColor?: string;
     }[];
   };
 }

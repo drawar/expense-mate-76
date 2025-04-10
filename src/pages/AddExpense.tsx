@@ -1,4 +1,3 @@
-
 import { useSupabaseConnectionCheck } from '@/hooks/useSupabaseConnectionCheck';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
@@ -7,8 +6,9 @@ import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { registerCustomCalculators } from '@/services/calculators/CalculatorRegistryExtensions';
-import { rewardCalculationService } from '@/services/RewardCalculationService';
+// Import from the new reward system
+import { CardRegistry } from '@/services/rewards/CardRegistry';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -20,13 +20,29 @@ const AddExpense = () => {
   // Initialize custom calculators when the page loads
   useEffect(() => {
     console.log('AddExpense: Initializing calculators');
-    // Register custom calculators directly to ensure they're available
-    registerCustomCalculators();
+    
+    // Initialize the card registry to ensure all card types are loaded
+    const cardRegistry = CardRegistry.getInstance();
     
     // Force initialize the reward calculation service
-    rewardCalculationService.getPointsCurrency({ id: '', name: '', type: 'credit_card', currency: 'SGD', rewardRules: [], active: true });
+    rewardCalculatorService.initialize().then(() => {
+      console.log('RewardCalculatorService initialized successfully');
+      
+      // Test the service with a dummy call
+      rewardCalculatorService.getPointsCurrency({
+        id: '',
+        name: '',
+        type: 'credit_card',
+        currency: 'SGD',
+        rewardRules: [],
+        active: true
+      });
+      
+      console.log('Reward calculation system ready');
+    }).catch(error => {
+      console.error('Failed to initialize RewardCalculatorService:', error);
+    });
     
-    console.log('Custom calculators registered in AddExpense');
   }, []);
   
   return (

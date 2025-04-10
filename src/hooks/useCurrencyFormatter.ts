@@ -16,16 +16,6 @@ export function useCurrencyFormatter(defaultCurrency: Currency = "SGD") {
     [defaultCurrency]
   );
 
-  // Create a formatting function that accepts an array of amounts
-  // This is useful for components that need to format multiple values
-  const formatCurrencyBatch = useCallback(
-    (amounts: number[], currency: Currency = defaultCurrency): string[] => {
-      console.log(`Batch formatting ${amounts.length} currency values`);
-      return amounts.map((amount) => CurrencyService.format(amount, currency));
-    },
-    [defaultCurrency]
-  );
-
   // Create formatter cache for repeated values in a single render cycle
   const cachedFormatters = useMemo(() => {
     const cache = new Map<string, string>();
@@ -49,7 +39,6 @@ export function useCurrencyFormatter(defaultCurrency: Currency = "SGD") {
 
   return {
     formatCurrency,
-    formatCurrencyBatch,
     cachedFormat: cachedFormatters.format,
     clearCache: cachedFormatters.clear,
   };

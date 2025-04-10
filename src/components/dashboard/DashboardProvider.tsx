@@ -1,19 +1,12 @@
-
+// components/dashboard/DashboardProvider.tsx
 import React from "react";
 import {
   DashboardContext,
   DashboardProviderProps,
+  DashboardConfig
 } from "@/contexts/DashboardContext";
-import { useDashboardState } from "@/hooks/dashboard/useDashboardState";
-import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
-import { usePaymentMethodsQuery } from "@/hooks/queries/usePaymentMethodsQuery";
-import { DashboardConfig } from "@/types/dashboard";
-import { Currency } from "@/types";
-import { TimeframeTab } from "@/utils/transactionProcessor";
 import { useDashboard } from "@/hooks/useDashboard";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { rewardCalculationService } from "@/services/RewardCalculationService";
+import { rewardCalculatorService } from "@/services/rewards/RewardCalculatorService";
 
 interface ExtendedDashboardProviderProps extends DashboardProviderProps {
   config?: Partial<DashboardConfig>;
@@ -25,8 +18,8 @@ export function DashboardProvider({
 }: ExtendedDashboardProviderProps) {
   // Default configuration values
   const defaultConfig: DashboardConfig = {
-    defaultCurrency: "SGD" as Currency,
-    defaultTimeframe: "thisMonth" as TimeframeTab,
+    defaultCurrency: "SGD",
+    defaultTimeframe: "thisMonth",
     defaultStatementDay: 15,
     defaultUseStatementMonth: false,
   };
@@ -34,112 +27,70 @@ export function DashboardProvider({
   // Merge provided config with defaults
   const mergedConfig = { ...defaultConfig, ...config };
 
-  // React Query client for cache invalidation
-  const queryClient = useQueryClient();
-
-  // Dashboard state hooks
-  const dashboardState = useDashboardState(
-    mergedConfig.defaultTimeframe,
-    mergedConfig.defaultCurrency,
-    mergedConfig.defaultUseStatementMonth,
-    mergedConfig.defaultStatementDay
-  );
-
-  // Data query hooks
+  // Use the enhanced useDashboard hook
   const {
-    data: transactions = [],
-    isLoading: isTransactionsLoading,
-    error: transactionsError,
-    refetch: refetchTransactions,
-  } = useTransactionsQuery();
-
-  const {
-    data: paymentMethods = [],
-    isLoading: isPaymentMethodsLoading,
-    error: paymentMethodsError,
-  } = usePaymentMethodsQuery();
-
-  // Combined loading and error states
-  const isLoading = isTransactionsLoading || isPaymentMethodsLoading;
-  const error = transactionsError || paymentMethodsError
-    ? "Failed to load dashboard data"
-    : null;
-
-  // Process dashboard data with the filtered transactions
-  const { dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useDashboard({
     transactions,
-    displayCurrency: dashboardState.displayCurrency,
-    timeframe: dashboardState.activeTab,
-    useStatementMonth: dashboardState.useStatementMonth,
-    statementCycleDay: dashboardState.statementCycleDay,
-    calculateDayOfWeekMetrics: transactions.length > 0,
-    lastUpdate: dashboardState.lastUpdate,
+    paymentMethods,
+    dashboardData,
+    isLoading,
+    error,
+    lastUpdate,
+    activeTab,
+    displayCurrency,
+    useStatementMonth,
+    statementCycleDay,
+    refreshData,
+    setActiveTab,
+    setDisplayCurrency,
+    setUseStatementMonth,
+    setStatementCycleDay,
+  } = useDashboard({
+    defaultTimeframe: mergedConfig.defaultTimeframe,
+    defaultCurrency: mergedConfig.defaultCurrency,
+    defaultUseStatementMonth: mergedConfig.defaultUseStatementMonth,
+    defaultStatementCycleDay: mergedConfig.defaultStatementDay,
   });
 
-  // Set up Supabase realtime subscription for data updates
-  React.useEffect(() => {
-    // Set up real-time subscriptions
-    const channel = supabase
-      .channel("dashboard_transactions")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions",
-        },
-        () => {
-          // Invalidate the transactions query to trigger refetch
-          queryClient.invalidateQueries({ queryKey: ["transactions"] });
-          dashboardState.refreshLastUpdate();
-        }
-      )
-      .subscribe();
-
-    // Cleanup: unsubscribe on component unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient, dashboardState]);
-
-  // Create a wrapper function for refreshData that returns void
-  const refreshData = async (): Promise<void> => {
-    try {
-      await refetchTransactions();
-      dashboardState.refreshLastUpdate();
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    }
-  };
-
-  // Combine all state and data for the context
-  const contextValue = {
+  // Create the context value
+  const contextValue = React.useMemo(() => ({
     // Data
     transactions,
     paymentMethods,
     dashboardData,
     
     // Status
-    isLoading: isLoading || isDashboardLoading,
-    error: error || dashboardError,
-    lastUpdate: dashboardState.lastUpdate,
+    isLoading,
+    error,
+    lastUpdate,
 
     // Filter state
-    activeTab: dashboardState.activeTab,
-    displayCurrency: dashboardState.displayCurrency,
-    useStatementMonth: dashboardState.useStatementMonth,
-    statementCycleDay: dashboardState.statementCycleDay,
+    activeTab,
+    displayCurrency,
+    useStatementMonth,
+    statementCycleDay,
     
     // Services
-    rewardCalculationService,
+    rewardCalculatorService,
 
     // Actions
     refreshData,
-    setActiveTab: dashboardState.setActiveTab,
-    setDisplayCurrency: dashboardState.setDisplayCurrency,
-    setUseStatementMonth: dashboardState.setUseStatementMonth,
-    setStatementCycleDay: dashboardState.setStatementCycleDay,
-  };
+    setActiveTab,
+    setDisplayCurrency,
+    setUseStatementMonth,
+    setStatementCycleDay,
+  }), [
+    transactions, 
+    paymentMethods, 
+    dashboardData, 
+    isLoading, 
+    error, 
+    lastUpdate,
+    activeTab,
+    displayCurrency,
+    useStatementMonth,
+    statementCycleDay,
+    refreshData
+  ]);
 
   return (
     <DashboardContext.Provider value={contextValue}>

@@ -1,5 +1,4 @@
-
-// src/components/dashboard/InsightsGrid.tsx
+// components/dashboard/InsightsGrid.tsx (continued)
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import SpendingTrendCard from "@/components/dashboard/cards/SpendingTrendCard";
@@ -11,10 +10,6 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { EmptyState } from "./EmptyState";
 import { BarChartIcon } from "lucide-react";
 
-/**
- * Grid component that displays financial insights using domain-specific cards
- * Uses the Dashboard context instead of props
- */
 const InsightsGrid: React.FC = () => {
   const { dashboardData, paymentMethods, displayCurrency } =
     useDashboardContext();
@@ -32,7 +27,7 @@ const InsightsGrid: React.FC = () => {
   // Use media query hook
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Memoize common class to prevent recreation on every render
+  // Memoize common card class for consistency
   const commonCardClass = React.useMemo(
     () =>
       "rounded-xl border border-border/50 bg-card hover:shadow-md transition-all",

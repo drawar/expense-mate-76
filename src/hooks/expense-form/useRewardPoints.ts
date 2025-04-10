@@ -1,9 +1,9 @@
-// src/hooks/expense-form/useRewardPoints.ts
+// hooks/expense-form/useRewardPoints.ts
 import { useState } from 'react';
 import { PaymentMethod } from '@/types';
-import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
-import { simulateRewardPoints } from '@/utils/rewards/rewardCalculationAdapter';
+import { TransactionType } from '@/services/rewards/types';
 
 // Define return type for clearer API
 export interface PointsSimulationResult {
@@ -38,8 +38,23 @@ export const useRewardPoints = () => {
     setError(undefined);
     
     try {
-      // Use the adapter function which handles both calculation and error handling
-      const result = await simulateRewardPoints(
+      // Determine transaction type from isOnline and isContactless
+      let transactionType: TransactionType;
+      if (isOnline) {
+        transactionType = TransactionType.ONLINE;
+      } else if (isContactless) {
+        transactionType = TransactionType.CONTACTLESS;
+      } else {
+        transactionType = TransactionType.IN_STORE;
+      }
+      
+      // Get monthly used bonus points from service
+      const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+        paymentMethod.id
+      );
+      
+      // Use the reward calculation service for simulation
+      const result = await rewardCalculatorService.simulatePoints(
         amount,
         currency,
         paymentMethod,
@@ -47,11 +62,24 @@ export const useRewardPoints = () => {
         merchantName,
         isOnline,
         isContactless,
-        new Date() // Use current date
+        usedBonusPoints
       );
+      
+      // Format a message based on calculation results
+      let messageText;
+      if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
+        messageText = "Monthly bonus points cap reached";
+      } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints !== undefined && result.remainingMonthlyBonusPoints > 0) {
+        messageText = "Not eligible for bonus points";
+      } else if (result.bonusPoints > 0) {
+        messageText = `Earning ${result.bonusPoints} bonus points`;
+      } else if (result.remainingMonthlyBonusPoints !== undefined) {
+        messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
+      }
       
       return {
         ...result,
+        messageText,
         isLoading: false
       };
     } catch (err) {
@@ -67,61 +95,15 @@ export const useRewardPoints = () => {
         bonusPoints: 0,
         error: errorMessage,
         isLoading: false,
-        pointsCurrency: rewardCalculationService.getPointsCurrency(paymentMethod)
+        pointsCurrency: rewardCalculatorService.getPointsCurrency(paymentMethod)
       };
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Synchronous version for immediate UI feedback
-   * Less accurate (doesn't account for used bonus points) but faster
-   */
-  const estimatePointsSync = (
-    amount: number,
-    currency: string,
-    paymentMethod: PaymentMethod,
-    mcc?: string,
-    merchantName?: string,
-    isOnline?: boolean,
-    isContactless?: boolean
-  ): PointsSimulationResult => {
-    if (paymentMethod.type === 'cash') {
-      return { totalPoints: 0 };
-    }
-    
-    try {
-      // Use synchronous calculation (doesn't account for used bonus points)
-      const result = rewardCalculationService.simulatePoints(
-        amount,
-        currency,
-        paymentMethod,
-        mcc,
-        merchantName,
-        isOnline,
-        isContactless,
-        0 // Assume 0 used bonus points for synchronous calculation
-      );
-      
-      return {
-        ...result,
-        pointsCurrency: rewardCalculationService.getPointsCurrency(paymentMethod)
-      };
-    } catch (err) {
-      // Return fallback result for sync calculation - using Math.round for proper rounding
-      return {
-        totalPoints: Math.round(amount),
-        basePoints: Math.round(amount),
-        bonusPoints: 0,
-        pointsCurrency: rewardCalculationService.getPointsCurrency(paymentMethod)
-      };
-    }
-  };
-
   return { 
     simulatePoints,
-    estimatePointsSync,
     isLoading,
     error
   };

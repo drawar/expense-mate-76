@@ -1,5 +1,5 @@
-
-import React, { Suspense } from "react";
+// components/dashboard/Dashboard.tsx
+import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import SummarySection from "@/components/dashboard/SummarySection";
@@ -11,13 +11,9 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { PieChartIcon } from "lucide-react";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 
-/**
- * Main Dashboard component with improved error handling and loading states
- */
 export function Dashboard() {
   const {
     transactions,
-    dashboardData,
     isLoading,
     error,
     activeTab,
@@ -30,8 +26,7 @@ export function Dashboard() {
     setStatementCycleDay,
   } = useDashboardContext();
 
-  // Always declare Hooks unconditionally at the top level
-  // This memo will return an empty array if there are no transactions
+  // Get the 5 most recent transactions for display
   const recentTransactions = React.useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
 
@@ -41,7 +36,7 @@ export function Dashboard() {
       .slice(0, 5);
   }, [transactions]);
 
-  // Filter state grouped for FilterBar
+  // Combine filter state for FilterBar
   const filterState = {
     activeTab,
     displayCurrency,
@@ -73,7 +68,7 @@ export function Dashboard() {
     );
   }
 
-  // Early return for loading state
+  // Loading state
   if (isLoading) {
     return <LoadingDashboard />;
   }

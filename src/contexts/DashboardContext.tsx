@@ -1,16 +1,17 @@
-
-// src/contexts/DashboardContext.tsx
+// contexts/DashboardContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { Transaction, PaymentMethod, Currency } from "@/types";
 import { DashboardData } from "@/types/dashboard";
 import { TimeframeTab } from "@/utils/transactionProcessor";
-import { RewardCalculationService } from "@/services/RewardCalculationService";
+import { rewardCalculatorService } from "@/services/rewards/RewardCalculatorService";
 
-export interface DashboardContextState {
+interface DashboardContextProps {
   // Data state
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
   dashboardData: DashboardData | null;
+  
+  // Status
   isLoading: boolean;
   error: string | null;
   lastUpdate: number;
@@ -20,11 +21,11 @@ export interface DashboardContextState {
   displayCurrency: Currency;
   useStatementMonth: boolean;
   statementCycleDay: number;
-
+  
   // Services
-  rewardCalculationService: RewardCalculationService;
+  rewardCalculatorService: typeof rewardCalculatorService;
 
-  // Action handlers
+  // Actions
   refreshData: () => Promise<void>;
   setActiveTab: (tab: TimeframeTab) => void;
   setDisplayCurrency: (currency: Currency) => void;
@@ -32,28 +33,31 @@ export interface DashboardContextState {
   setStatementCycleDay: (day: number) => void;
 }
 
-// Create context with a default undefined value
-const DashboardContext = createContext<DashboardContextState | undefined>(
-  undefined
-);
+// Create context with undefined default value
+const DashboardContext = createContext<DashboardContextProps | undefined>(undefined);
 
 // Custom hook to use the dashboard context
 export function useDashboardContext() {
   const context = useContext(DashboardContext);
   if (context === undefined) {
-    throw new Error(
-      "useDashboardContext must be used within a DashboardProvider"
-    );
+    throw new Error("useDashboardContext must be used within a DashboardProvider");
   }
   return context;
 }
 
-// Provider props type
-interface DashboardProviderProps {
-  children: ReactNode;
+// Dashboard configuration interface
+export interface DashboardConfig {
+  defaultCurrency: Currency;
+  defaultTimeframe: TimeframeTab;
+  defaultStatementDay: number;
+  defaultUseStatementMonth: boolean;
 }
 
-// The actual Provider component will be implemented in DashboardProvider.tsx
+// Provider props type
+export interface DashboardProviderProps {
+  children: ReactNode;
+  config?: Partial<DashboardConfig>;
+}
 
+// Export context for provider implementation
 export { DashboardContext };
-export type { DashboardProviderProps };

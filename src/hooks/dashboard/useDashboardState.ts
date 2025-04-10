@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Currency } from "@/types";
 import { TimeframeTab } from "@/utils/transactionProcessor";
 
@@ -15,18 +14,29 @@ export function useDashboardState(
 ) {
   // Filter state
   const [activeTab, setActiveTab] = useState<TimeframeTab>(defaultTimeframe);
-  const [displayCurrency, setDisplayCurrency] =
-    useState<Currency>(defaultCurrency);
-  const [useStatementMonth, setUseStatementMonth] = useState<boolean>(
-    defaultUseStatementMonth
-  );
-  const [statementCycleDay, setStatementCycleDay] = useState<number>(
-    defaultStatementCycleDay
-  );
+  const [displayCurrency, setDisplayCurrency] = useState<Currency>(defaultCurrency);
+  const [useStatementMonth, setUseStatementMonth] = useState<boolean>(defaultUseStatementMonth);
+  const [statementCycleDay, setStatementCycleDay] = useState<number>(defaultStatementCycleDay);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
-  // Refresh lastUpdate timestamp
-  const refreshLastUpdate = () => setLastUpdate(Date.now());
+  // Memoized handler functions for better performance
+  const refreshLastUpdate = useCallback(() => setLastUpdate(Date.now()), []);
+  
+  const handleActiveTabChange = useCallback((tab: TimeframeTab) => {
+    setActiveTab(tab);
+  }, []);
+  
+  const handleCurrencyChange = useCallback((currency: Currency) => {
+    setDisplayCurrency(currency);
+  }, []);
+  
+  const handleStatementMonthToggle = useCallback((value: boolean) => {
+    setUseStatementMonth(value);
+  }, []);
+  
+  const handleStatementCycleDayChange = useCallback((day: number) => {
+    setStatementCycleDay(day);
+  }, []);
 
   return {
     // Filter state
@@ -38,9 +48,9 @@ export function useDashboardState(
 
     // Action handlers
     refreshLastUpdate,
-    setActiveTab,
-    setDisplayCurrency,
-    setUseStatementMonth,
-    setStatementCycleDay,
+    setActiveTab: handleActiveTabChange,
+    setDisplayCurrency: handleCurrencyChange,
+    setUseStatementMonth: handleStatementMonthToggle,
+    setStatementCycleDay: handleStatementCycleDayChange,
   };
 }

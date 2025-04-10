@@ -1,8 +1,8 @@
-
 import React from 'react';
-import { GenericPointsCard } from './cards/GenericPointsCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { CoinsIcon } from 'lucide-react';
 import { PaymentMethod } from '@/types';
-import { rewardCalculationService } from '@/services/RewardCalculationService';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 
 interface PointsDisplayProps {
   selectedPaymentMethod: PaymentMethod | undefined;
@@ -40,7 +40,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
         basePoints: estimatedPoints,
         bonusPoints: 0,
         pointsCurrency: selectedPaymentMethod ? 
-          rewardCalculationService.getPointsCurrency(selectedPaymentMethod) : 
+          rewardCalculatorService.getPointsCurrency(selectedPaymentMethod) : 
           'Points'
       } 
     : estimatedPoints;
@@ -71,9 +71,39 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
     finalPointsInfo
   });
 
-  // Use the GenericPointsCard for all card types
-  // This ensures a single source of truth for all reward calculations
-  return <GenericPointsCard pointsInfo={finalPointsInfo} />;
+  // Render a generic card with the points information
+  return (
+    <Card className="border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+      <CardContent className="pt-6 pb-4">
+        <div className="flex items-start space-x-4">
+          <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full">
+            <CoinsIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold">
+              {finalPointsInfo.totalPoints.toLocaleString()} {finalPointsInfo.pointsCurrency || 'Points'}
+            </h3>
+            {finalPointsInfo.basePoints !== undefined && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Base: {finalPointsInfo.basePoints.toLocaleString()} {finalPointsInfo.bonusPoints > 0 && 
+                  `+ Bonus: ${finalPointsInfo.bonusPoints.toLocaleString()}`}
+              </p>
+            )}
+            {finalPointsInfo.messageText && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                {finalPointsInfo.messageText}
+              </p>
+            )}
+            {finalPointsInfo.remainingMonthlyBonusPoints !== undefined && finalPointsInfo.remainingMonthlyBonusPoints > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                {finalPointsInfo.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month
+              </p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default PointsDisplay;
