@@ -40,21 +40,25 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {paymentMethods.map((method) => (
-                <SelectItem key={method.id} value={method.id}>
-                  <div className="flex items-center gap-2">
-                    {method.type === 'credit_card' ? (
-                      <CreditCardIcon className="h-4 w-4" style={{ color: method.color }} />
-                    ) : (
-                      <BanknoteIcon className="h-4 w-4" style={{ color: method.color }} />
-                    )}
-                    <span>{method.name}</span>
-                    {method.type === 'credit_card' && method.lastFourDigits && (
-                      <span className="text-gray-500 text-xs">...{method.lastFourDigits}</span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
+              {paymentMethods && paymentMethods.length > 0 ? (
+                paymentMethods.map((method) => (
+                  <SelectItem key={method.id} value={method.id}>
+                    <div className="flex items-center gap-2">
+                      {method.type === 'credit_card' ? (
+                        <CreditCardIcon className="h-4 w-4" style={{ color: method.color || '#333' }} />
+                      ) : (
+                        <BanknoteIcon className="h-4 w-4" style={{ color: method.color || '#333' }} />
+                      )}
+                      <span>{method.name}</span>
+                      {method.type === 'credit_card' && method.lastFourDigits && (
+                        <span className="text-gray-500 text-xs">...{method.lastFourDigits}</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-methods" disabled>No payment methods available</SelectItem>
+              )}
             </SelectContent>
           </Select>
           <FormMessage />

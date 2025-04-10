@@ -260,7 +260,7 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
                   <PencilIcon className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
-                <Button variant="outline" size="sm" variant="destructive" onClick={() => handleDeleteRule(rule.id)}>
+                <Button size="sm" variant="destructive" onClick={() => handleDeleteRule(rule.id)}>
                   <TrashIcon className="h-4 w-4 mr-1" />
                   Delete
                 </Button>

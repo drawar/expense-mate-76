@@ -19,10 +19,6 @@ interface PointsDisplayProps {
 /**
  * PointsDisplay component that shows reward point calculations using the
  * centralized calculation system.
- * 
- * This component is part of the reward points calculation refactoring.
- * It now uses a single source of truth (estimatedPoints from the useRewardPoints hook)
- * instead of using individual card components for calculations.
  */
 const PointsDisplay: React.FC<PointsDisplayProps> = ({
   selectedPaymentMethod,
@@ -63,13 +59,6 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({
         undefined
     )
   };
-
-  // Log for debugging
-  console.log('PointsDisplay rendering with:', {
-    selectedPaymentMethod: selectedPaymentMethod.name,
-    originalPoints: estimatedPoints,
-    finalPointsInfo
-  });
 
   // Render a generic card with the points information
   return (

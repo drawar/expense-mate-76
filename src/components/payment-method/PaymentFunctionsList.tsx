@@ -29,9 +29,11 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
+import { RewardRule } from '@/services/rewards/types';
 
 interface PaymentFunctionsListProps {
   paymentMethod: PaymentMethod;
+  rewardRules: RewardRule[]; // Rules from Supabase reward_rules table
   onToggleActive: (id: string) => void;
   onEdit: (method: PaymentMethod) => void;
   onImageUpload: (method: PaymentMethod) => void;
@@ -39,6 +41,7 @@ interface PaymentFunctionsListProps {
 
 export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
   paymentMethod,
+  rewardRules,
   onToggleActive,
   onEdit,
   onImageUpload
@@ -191,8 +194,8 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                   <div>
                     <h3 className="font-medium">Manage Reward Rules</h3>
                     <p className="text-sm text-muted-foreground">
-                      {paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0
-                        ? `${paymentMethod.rewardRules.length} rules configured` 
+                      {rewardRules && rewardRules.length > 0
+                        ? `${rewardRules.length} rules configured` 
                         : 'No reward rules configured'}
                     </p>
                   </div>
@@ -205,7 +208,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       </div>
       
       {/* Reward rules section */}
-      {paymentMethod.type === 'credit_card' && paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0 && (
+      {paymentMethod.type === 'credit_card' && rewardRules && rewardRules.length > 0 && (
         <Accordion type="single" collapsible className="bg-card rounded-lg shadow-sm border">
           <AccordionItem value="reward-rules">
             <AccordionTrigger className="px-4 py-3">
@@ -216,20 +219,20 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <div className="space-y-3">
-                {paymentMethod.rewardRules.map((rule) => (
+                {rewardRules.map((rule) => (
                   <div key={rule.id} className="bg-muted/50 p-3 rounded-md">
                     <h4 className="font-medium">{rule.name}</h4>
                     <p className="text-sm text-muted-foreground">{rule.description}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-                        {rule.pointsMultiplier}x Points
+                        {rule.reward.bonusMultiplier + rule.reward.baseMultiplier}x Points
                       </span>
                       <span className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
-                        {typeof rule.condition === 'string' ? rule.condition : rule.type}
+                        {typeof rule.conditions[0]?.type === 'string' ? rule.conditions[0]?.type : 'Multiple conditions'}
                       </span>
-                      {rule.maxSpend && (
+                      {rule.reward.monthlyCap && (
                         <span className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
-                          Cap: {formatCurrency(rule.maxSpend, paymentMethod.currency)}
+                          Cap: {rule.reward.monthlyCap.toLocaleString()} points
                         </span>
                       )}
                     </div>

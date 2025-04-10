@@ -345,6 +345,83 @@ export type Database = {
           },
         ]
       }
+      reward_rules: {
+        Row: {
+          id: string
+          card_type_id: string
+          name: string
+          description: string | null
+          enabled: boolean
+          priority: number
+          conditions: Json | null
+          calculation_method: string
+          base_multiplier: number
+          bonus_multiplier: number
+          points_rounding_strategy: string
+          amount_rounding_strategy: string
+          block_size: number
+          bonus_tiers: Json | null
+          monthly_cap: number | null
+          monthly_min_spend: number | null
+          monthly_spend_period_type: string | null
+          points_currency: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          card_type_id: string
+          name: string
+          description?: string | null
+          enabled?: boolean
+          priority?: number
+          conditions?: Json | null
+          calculation_method?: string
+          base_multiplier?: number
+          bonus_multiplier?: number
+          points_rounding_strategy?: string
+          amount_rounding_strategy?: string
+          block_size?: number
+          bonus_tiers?: Json | null
+          monthly_cap?: number | null
+          monthly_min_spend?: number | null
+          monthly_spend_period_type?: string | null
+          points_currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          card_type_id?: string
+          name?: string
+          description?: string | null
+          enabled?: boolean
+          priority?: number
+          conditions?: Json | null
+          calculation_method?: string
+          base_multiplier?: number
+          bonus_multiplier?: number
+          points_rounding_strategy?: string
+          amount_rounding_strategy?: string
+          block_size?: number
+          bonus_tiers?: Json | null
+          monthly_cap?: number | null
+          monthly_min_spend?: number | null
+          monthly_spend_period_type?: string | null
+          points_currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_rules_card_type_id_fkey"
+            columns: ["card_type_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

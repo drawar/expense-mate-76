@@ -1,3 +1,4 @@
+import { RewardRule } from "@/services/rewards/types";
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'TWD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
@@ -8,17 +9,17 @@ export type MerchantCategoryCode = {
 
 export type PaymentMethodType = 'cash' | 'credit_card';
 
-export interface RewardRule {
-  id: string;
-  name: string;
-  description: string;
-  type: 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic';
-  condition: string | string[]; // MCC code, merchant name, currency, threshold, or special conditions
-  pointsMultiplier: number;
-  minSpend?: number;
-  maxSpend?: number;
-  pointsCurrency?: string; // Added this property to fix the TypeScript error
-}
+// export interface RewardRule {
+//   id: string;
+//   name: string;
+//   description: string;
+//   type: 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic';
+//   condition: string | string[]; // MCC code, merchant name, currency, threshold, or special conditions
+//   pointsMultiplier: number;
+//   minSpend?: number;
+//   maxSpend?: number;
+//   pointsCurrency?: string; // Added this property to fix the TypeScript error
+// }
 
 export interface PaymentMethod {
   id: string;

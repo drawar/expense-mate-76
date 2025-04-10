@@ -1,4 +1,4 @@
-
+// components/expense/merchant/OnlineMerchantToggle.tsx
 import { useFormContext } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -22,7 +22,13 @@ const OnlineMerchantToggle = () => {
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  // When toggled to online, also disable contactless (they're mutually exclusive)
+                  if (checked) {
+                    form.setValue('isContactless', false);
+                  }
+                  field.onChange(checked);
+                }}
               />
             </FormControl>
           </FormItem>

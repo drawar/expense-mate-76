@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PaymentMethod } from '@/types';
 import { usePaymentMethodsQuery } from '@/hooks/queries/usePaymentMethodsQuery';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +11,8 @@ import { PaymentFunctionsList } from '@/components/payment-method/PaymentFunctio
 import { EmptyPaymentMethodState } from '@/components/payment-method/EmptyPaymentMethodState';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { RuleRepository } from '@/services/rewards/RuleRepository';
+import { RewardRule } from '@/services/rewards/types';
 
 const PaymentMethods = () => {
   const { data: paymentMethods = [], isLoading, refetch } = usePaymentMethodsQuery();
@@ -20,6 +21,8 @@ const PaymentMethods = () => {
   const [imageUploadMethod, setImageUploadMethod] = useState<PaymentMethod | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [paymentMethodRules, setPaymentMethodRules] = useState<Record<string, RewardRule[]>>({});
+  const ruleRepository = useMemo(() => RuleRepository.getInstance(), []);
   const { toast } = useToast();
 
   // Set first active payment method as selected on load
@@ -30,6 +33,32 @@ const PaymentMethods = () => {
     }
   }, [paymentMethods, selectedMethod]);
 
+  // Load rules for each payment method from the reward_rules table
+  useEffect(() => {
+    const fetchRulesForPaymentMethods = async () => {
+      if (!paymentMethods.length) return;
+      
+      const rulesMap: Record<string, RewardRule[]> = {};
+      
+      // For each payment method, fetch its rules from the reward_rules table
+      for (const method of paymentMethods) {
+        // Construct a cardTypeId similar to what's done in RewardCalculatorService
+        let cardTypeId = method.id;
+        if (method.issuer && method.name) {
+          cardTypeId = `${method.issuer.toLowerCase()}-${method.name.toLowerCase().replace(/\s+/g, '-')}`;
+        }
+        
+        // Use RuleRepository to get rules from Supabase reward_rules table
+        const rules = await ruleRepository.getRulesForCardType(cardTypeId);
+        rulesMap[method.id] = rules;
+      }
+      
+      setPaymentMethodRules(rulesMap);
+    };
+    
+    fetchRulesForPaymentMethods();
+  }, [paymentMethods, ruleRepository]);
+    
   const handleAddMethod = () => {
     setEditingMethod(null);
     setIsFormOpen(true);
@@ -51,7 +80,8 @@ const PaymentMethods = () => {
         name: formData.get('name') as string,
         type: formData.get('type') as 'cash' | 'credit_card',
         currency: formData.get('currency') as any,
-        rewardRules: editingMethod?.rewardRules || [],
+        // Add rewardRules property with an empty array as default
+        rewardRules: [], // This is now just a placeholder, as actual rules are stored in the reward_rules table
         active: formData.get('active') === 'on',
         imageUrl: editingMethod?.imageUrl,
       };
@@ -224,6 +254,7 @@ const PaymentMethods = () => {
             {selectedMethod && (
               <PaymentFunctionsList 
                 paymentMethod={selectedMethod}
+                rewardRules={selectedMethod ? paymentMethodRules[selectedMethod.id] || [] : []}
                 onToggleActive={handleToggleActive}
                 onEdit={handleEditMethod}
                 onImageUpload={handleOpenImageUpload}

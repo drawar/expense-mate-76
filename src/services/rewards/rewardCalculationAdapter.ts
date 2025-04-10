@@ -1,19 +1,58 @@
 // services/rewards/rewardCalculationAdapter.ts
-
 import { Transaction, PaymentMethod } from '@/types';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { TransactionType } from '@/services/rewards/types';
 import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 /**
- * Adapter function for calculating points
- * This replaces the old calculator logic and reconnects it to the new system
+ * Determine transaction type from transaction properties
+ */
+/**
+ * Determine transaction type from transaction properties
+ * 
+ * Note: When merchant is online, TransactionType is ONLINE regardless of contactless status
+ */
+export function determineTransactionType(
+  isOnline?: boolean,
+  isContactless?: boolean
+): TransactionType {
+  if (isOnline) {
+    return TransactionType.ONLINE;
+  } else if (isContactless) {
+    return TransactionType.CONTACTLESS;
+  } else {
+    return TransactionType.IN_STORE;
+  }
+}
+
+/**
+ * Format message text based on calculation results
+ */
+export function formatPointsMessage(
+  bonusPoints: number = 0,
+  remainingMonthlyBonusPoints?: number
+): string | undefined {
+  if (bonusPoints === 0 && remainingMonthlyBonusPoints === 0) {
+    return "Monthly bonus points cap reached";
+  } else if (bonusPoints === 0) {
+    return "Not eligible for bonus points";
+  } else if (bonusPoints > 0) {
+    return `Earning ${bonusPoints} bonus points`;
+  } else if (remainingMonthlyBonusPoints !== undefined) {
+    return `${remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
+  }
+  return undefined;
+}
+
+/**
+ * Calculate points for a transaction
  */
 export async function calculateRewardPoints(transaction: Transaction): Promise<{
   basePoints: number;
   bonusPoints: number;
   totalPoints: number;
   pointsCurrency?: string;
+  messageText?: string;
 }> {
   // Skip calculation for cash payments
   if (transaction.paymentMethod.type === 'cash') {
@@ -30,7 +69,7 @@ export async function calculateRewardPoints(transaction: Transaction): Promise<{
       transaction.paymentMethod.id
     );
     
-    // Use the new reward calculator service
+    // Use the reward calculator service
     const result = await rewardCalculatorService.calculatePoints(
       transaction,
       usedBonusPoints
@@ -45,11 +84,15 @@ export async function calculateRewardPoints(transaction: Transaction): Promise<{
       );
     }
     
+    // Format message
+    const messageText = formatPointsMessage(result.bonusPoints, result.remainingMonthlyBonusPoints);
+    
     return {
       basePoints: result.basePoints,
       bonusPoints: result.bonusPoints,
       totalPoints: result.totalPoints,
-      pointsCurrency: result.pointsCurrency
+      pointsCurrency: result.pointsCurrency,
+      messageText
     };
   } catch (error) {
     console.error('Error calculating reward points:', error);
@@ -58,14 +101,14 @@ export async function calculateRewardPoints(transaction: Transaction): Promise<{
     return {
       basePoints: Math.round(transaction.amount),
       bonusPoints: 0,
-      totalPoints: Math.round(transaction.amount)
+      totalPoints: Math.round(transaction.amount),
+      messageText: 'Error calculating points'
     };
   }
 }
 
 /**
- * Adapter function for simulating points
- * This replaces the old simulator logic
+ * Simulate points for a hypothetical transaction
  */
 export async function simulateRewardPoints(
   amount: number,
@@ -89,21 +132,14 @@ export async function simulateRewardPoints(
   
   try {
     // Determine transaction type
-    let transactionType: TransactionType;
-    if (isOnline) {
-      transactionType = TransactionType.ONLINE;
-    } else if (isContactless) {
-      transactionType = TransactionType.CONTACTLESS;
-    } else {
-      transactionType = TransactionType.IN_STORE;
-    }
+    const transactionType = determineTransactionType(isOnline, isContactless);
     
     // Get monthly used bonus points
     const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
       paymentMethod.id
     );
     
-    // Use the new reward calculator service
+    // Use the reward calculator service
     const result = await rewardCalculatorService.simulatePoints(
       amount,
       currency,
@@ -115,19 +151,8 @@ export async function simulateRewardPoints(
       usedBonusPoints
     );
     
-    // Format message text based on calculation results
-    let messageText;
-    if (result.messages.length > 0) {
-      messageText = result.messages.join('. ');
-    } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
-      messageText = "Monthly bonus points cap reached";
-    } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints !== undefined && result.remainingMonthlyBonusPoints > 0) {
-      messageText = "Not eligible for bonus points";
-    } else if (result.bonusPoints > 0) {
-      messageText = `Earning ${result.bonusPoints} bonus points`;
-    } else if (result.remainingMonthlyBonusPoints !== undefined) {
-      messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
-    }
+    // Format message
+    const messageText = formatPointsMessage(result.bonusPoints, result.remainingMonthlyBonusPoints);
     
     return {
       totalPoints: result.totalPoints,

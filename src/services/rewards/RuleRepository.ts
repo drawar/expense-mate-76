@@ -61,39 +61,47 @@ export class RuleRepository {
     }
   }
   
-  /**
-   * Get rules for a specific card type
-   */
-  public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
-    // Check cache first
-    if (this.rulesByCardType.has(cardTypeId)) {
-      return this.rulesByCardType.get(cardTypeId) || [];
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('reward_rules')
-        .select('*')
-        .eq('card_type_id', cardTypeId)
-        .eq('enabled', true);
-        
-      if (error) {
-        console.error('Error loading rules for card type:', error);
-        return [];
-      }
+/**
+ * Get rules for a specific card type
+ */
+public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
+  // Check cache first
+  if (this.rulesByCardType.has(cardTypeId)) {
+    return this.rulesByCardType.get(cardTypeId) || [];
+  }
+  
+  try {
+    // Query Supabase reward_rules table
+    const { data, error } = await supabase
+      .from('reward_rules')
+      .select('*')
+      .eq('card_type_id', cardTypeId)
+      .eq('enabled', true);
       
-      const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
-      
-      // Cache results
-      this.rulesByCardType.set(cardTypeId, rules);
-      rules.forEach(rule => this.rules.set(rule.id, rule));
-      
-      return rules;
-    } catch (error) {
+    if (error) {
       console.error('Error loading rules for card type:', error);
       return [];
     }
+    
+    if (!data || data.length === 0) {
+      console.log(`No rules found in Supabase for card type ${cardTypeId}`);
+      return [];
+    }
+    
+    console.log(`Loaded ${data.length} rules from Supabase for card type ${cardTypeId}`);
+    
+    const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
+    
+    // Cache results
+    this.rulesByCardType.set(cardTypeId, rules);
+    rules.forEach(rule => this.rules.set(rule.id, rule));
+    
+    return rules;
+  } catch (error) {
+    console.error('Error loading rules for card type:', error);
+    return [];
   }
+}
   
   /**
    * Get a rule by ID

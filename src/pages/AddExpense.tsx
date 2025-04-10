@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Import from the new reward system
 import { CardRegistry } from '@/services/rewards/CardRegistry';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
+import { RuleRepository } from '@/services/rewards/RuleRepository';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -16,34 +17,41 @@ const AddExpense = () => {
   const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage);
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("expense");
+  const [initializationStatus, setInitializationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   
-  // Initialize custom calculators when the page loads
+  // Initialize the reward calculation system when the page loads
   useEffect(() => {
-    console.log('AddExpense: Initializing calculators');
-    
-    // Initialize the card registry to ensure all card types are loaded
-    const cardRegistry = CardRegistry.getInstance();
-    
-    // Force initialize the reward calculation service
-    rewardCalculatorService.initialize().then(() => {
-      console.log('RewardCalculatorService initialized successfully');
+    const initializeRewardSystem = async () => {
+      console.log('AddExpense: Initializing reward system...');
+      setInitializationStatus('loading');
       
-      // Test the service with a dummy call
-      rewardCalculatorService.getPointsCurrency({
-        id: '',
-        name: '',
-        type: 'credit_card',
-        currency: 'SGD',
-        rewardRules: [],
-        active: true
-      });
-      
-      console.log('Reward calculation system ready');
-    }).catch(error => {
-      console.error('Failed to initialize RewardCalculatorService:', error);
-    });
+      try {
+        // Initialize the rule repository to load rules from Supabase reward_rules table
+        const ruleRepository = RuleRepository.getInstance();
+        await ruleRepository.loadRules();
+        
+        // Initialize the card registry to ensure all card types are loaded
+        const cardRegistry = CardRegistry.getInstance();
+        
+        // Force initialize the reward calculation service
+        await rewardCalculatorService.initialize();
+        console.log('RewardCalculatorService initialized successfully');
+        
+        // Update status
+        setInitializationStatus('success');
+        console.log('Reward calculation system ready');
+      } catch (error) {
+        console.error('Failed to initialize reward system:', error);
+        setInitializationStatus('error');
+      }
+    };
     
+    initializeRewardSystem();
   }, []);
+
+  useEffect(() => {
+    console.log('Payment methods in AddExpense:', paymentMethods);
+  }, [paymentMethods]);
   
   return (
     <div className="min-h-screen">
@@ -60,8 +68,12 @@ const AddExpense = () => {
         <StorageModeAlert useLocalStorage={useLocalStorage} />
         <ErrorAlert error={saveError} />
         
-        {isLoading && paymentMethods.length === 0 ? (
+        {(isLoading && paymentMethods.length === 0) || initializationStatus === 'loading' ? (
           <div className="animate-pulse text-center py-10">Loading...</div>
+        ) : initializationStatus === 'error' ? (
+          <div className="text-center py-10 text-red-500">
+            Error initializing reward system. Please try refreshing the page.
+          </div>
         ) : (
           <ExpenseForm
             paymentMethods={paymentMethods}

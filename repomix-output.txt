@@ -36,7 +36,7 @@ Notes:
 ------
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Only files matching these patterns are included: components/dashboard/, contexts/, utils/, types/, hooks/, pages/, services/
+- Only files matching these patterns are included: services/, hooks/expense-form/, components/rewards/, components/expense/, components/payment-method/, pages/AddExpense.tsx, pages/PaymentMethods.tsx
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)

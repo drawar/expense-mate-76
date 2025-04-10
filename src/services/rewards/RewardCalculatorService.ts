@@ -52,6 +52,13 @@ export class RewardCalculatorService {
       console.log('RewardCalculatorService initialized');
     }
   }
+
+  /**
+   * Check if the service is initialized
+   */
+  public isInitialized(): boolean {
+    return this.initialized;
+  }
   
   /**
    * Calculate reward points for a transaction
@@ -221,16 +228,10 @@ export class RewardCalculatorService {
       cardTypeId = paymentMethod.id;
     }
     
-    // Get rules for this card type
+    // Get rules for this card type from reward_rules table
     let rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
     
-    // If no rules found, check if this paymentMethod has custom rules
-    if (rules.length === 0 && paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0) {
-      // Convert payment method reward rules to our format
-      rules = paymentMethod.rewardRules.map(customRule => this.convertCustomRule(customRule, cardTypeId!));
-    }
-    
-    // If still no rules, get default rules from card registry
+    // If no rules found, get default rules from card registry as fallback
     if (rules.length === 0) {
       const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
         paymentMethod.issuer || '',
@@ -239,6 +240,14 @@ export class RewardCalculatorService {
       
       if (cardType) {
         rules = cardType.defaultRules;
+        
+        // Save default rules to Supabase if they don't exist yet
+        for (const rule of cardType.defaultRules) {
+          await this.ruleRepository.saveRule({ 
+            ...rule,
+            cardTypeId: cardTypeId 
+          });
+        }
       }
     }
     

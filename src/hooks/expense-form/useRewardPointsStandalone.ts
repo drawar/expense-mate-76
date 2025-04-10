@@ -1,8 +1,7 @@
+// hooks/expense-form/useRewardPointsStandalone.ts
 import { useState, useEffect } from 'react';
 import { PaymentMethod } from '@/types';
-import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
-import { TransactionType } from '@/services/rewards/types';
-import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
+import { simulateRewardPoints } from '@/services/rewards/rewardCalculationAdapter';
 
 // Define the result interface to include all possible fields
 interface PointsResult {
@@ -16,7 +15,6 @@ interface PointsResult {
 
 /**
  * Hook for calculating reward points outside of the Dashboard context
- * This is a standalone version that doesn't require DashboardContext
  */
 export function useRewardPointsStandalone(
   amount: number | null,
@@ -75,56 +73,18 @@ export function useRewardPointsStandalone(
           isContactless
         });
         
-        // Determine transaction type
-        let transactionType: TransactionType;
-        if (isOnline) {
-          transactionType = TransactionType.ONLINE;
-        } else if (isContactless) {
-          transactionType = TransactionType.CONTACTLESS;
-        } else {
-          transactionType = TransactionType.IN_STORE;
-        }
-        
-        // Get monthly used bonus points
-        const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
-          selectedPaymentMethod.id
-        );
-        
-        // Calculate points using the service
-        const result = await rewardCalculatorService.simulatePoints(
+        // Use the shared adapter function
+        const result = await simulateRewardPoints(
           amount,
           currency,
           selectedPaymentMethod,
           mcc,
           merchantName,
           isOnline,
-          isContactless,
-          usedBonusPoints
+          isContactless
         );
         
-        console.log('Reward calculation result:', result);
-        
-        // Format message text based on calculation results
-        let messageText;
-        if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
-          messageText = "Monthly bonus points cap reached";
-        } else if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints !== undefined && result.remainingMonthlyBonusPoints > 0) {
-          messageText = "Not eligible for bonus points";
-        } else if (result.bonusPoints > 0) {
-          messageText = `Earning ${result.bonusPoints} bonus points`;
-        } else if (result.remainingMonthlyBonusPoints !== undefined) {
-          messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
-        }
-        
-        // Ensure we have proper values
-        setEstimatedPoints({
-          totalPoints: result.totalPoints || 0,
-          basePoints: result.basePoints || 0,
-          bonusPoints: result.bonusPoints || 0,
-          remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints,
-          pointsCurrency: result.pointsCurrency || (selectedPaymentMethod.issuer ? `${selectedPaymentMethod.issuer} Points` : 'Points'),
-          messageText: messageText
-        });
+        setEstimatedPoints(result);
       } catch (error) {
         console.error('Error calculating reward points:', error);
         // Provide fallback calculation

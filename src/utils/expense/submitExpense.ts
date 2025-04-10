@@ -8,19 +8,13 @@ import { format } from 'date-fns';
 export const prepareTransactionData = async (
   values: FormValues,
   paymentMethods: PaymentMethod[],
-  selectedMCC: MerchantCategoryCode | undefined,
-  estimatedPoints: number | {
-    totalPoints: number;
-    basePoints?: number;
-    bonusPoints?: number;
-    remainingMonthlyBonusPoints?: number;
-    messageText?: string;
-  }
+  selectedMCC?: MerchantCategoryCode,
+  estimatedPoints?: any
 ): Promise<Omit<Transaction, 'id'>> => {
   // Find the selected payment method
   const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
   if (!paymentMethod) {
-    throw new Error('Selected payment method not found');
+    throw new Error('Payment method not found');
   }
   
   // Prepare merchant data
@@ -58,7 +52,7 @@ export const prepareTransactionData = async (
       ? estimatedPoints.totalPoints 
       : (typeof estimatedPoints === 'number' ? estimatedPoints : 0),
     notes: values.notes,
-    isContactless: !values.isOnline ? values.isContactless : false,
+    isContactless: !values.isOnline && values.isContactless,
     category,
     // Add reimbursement amount to the transaction
     reimbursementAmount: values.reimbursementAmount ? Number(values.reimbursementAmount) : 0,
