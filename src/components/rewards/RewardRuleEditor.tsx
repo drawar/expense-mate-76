@@ -55,6 +55,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
       conditions: [],
       reward: {
         calculationMethod: 'standard',
+        baseMultiplier: 0.2,
         bonusMultiplier: 1.8,
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor5',

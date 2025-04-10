@@ -1,20 +1,14 @@
 // components/rewards/ConditionEditor.tsx
 import React, { useState } from 'react';
 import { 
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
+  Card, CardContent, CardHeader, CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+  Select, SelectContent, SelectItem, 
+  SelectTrigger, SelectValue 
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PlusCircle, Trash, ChevronDown, ChevronRight } from 'lucide-react';
@@ -35,11 +29,9 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(!isNested);
   const [newValue, setNewValue] = useState('');
-  
-  // Handle condition type change
+
   const handleTypeChange = (type: string) => {
     let newCondition: RuleCondition;
-    
     if (type === 'compound') {
       newCondition = {
         type: 'compound',
@@ -53,111 +45,129 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         values: []
       };
     }
-    
     onChange(newCondition);
   };
-  
-  // Handle operation change
+
   const handleOperationChange = (operation: string) => {
     onChange({
       ...condition,
       operation: operation as any
     });
   };
-  
-  // Handle value addition
+
   const handleAddValue = () => {
     if (!newValue.trim()) return;
-    
-    // Create a copy of values or initialize if undefined
-    const newValues = [...(condition.values || [])];
-    
-    // Convert value based on condition type
-    let valueToAdd: any = newValue;
-    
-    if (condition.type === 'mcc' || condition.type === 'currency' || 
-        condition.type === 'merchant' || condition.type === 'category') {
-      // String values
-      valueToAdd = newValue;
-    } else if (condition.type === 'amount' || condition.type === 'spend_threshold') {
-      // Number values
-      valueToAdd = parseFloat(newValue);
-      if (isNaN(valueToAdd)) return;
-    } else if (condition.type === 'transaction_type') {
-      // Enum values
-      valueToAdd = newValue as TransactionType;
-    }
-    
-    // Add new value
-    newValues.push(valueToAdd);
-    
-    // Update condition
-    onChange({
-      ...condition,
-      values: newValues
-    });
-    
-    // Clear input
-    setNewValue('');
-  };
   
-  // Handle value removal
+    if (
+      condition.type === 'mcc' || 
+      condition.type === 'currency' || 
+      condition.type === 'merchant' || 
+      condition.type === 'category'
+    ) {
+      const newValues = [...(condition.values as string[] || [])];
+      newValues.push(newValue);
+      onChange({
+        ...condition,
+        values: newValues
+      });
+  
+    } else if (
+      condition.type === 'amount' || 
+      condition.type === 'spend_threshold'
+    ) {
+      const parsed = parseFloat(newValue);
+      if (isNaN(parsed)) return;
+      const newValues = [...(condition.values as number[] || [])];
+      newValues.push(parsed);
+      onChange({
+        ...condition,
+        values: newValues
+      });
+  
+    } else if (condition.type === 'transaction_type') {
+      const newValues = [...(condition.values as TransactionType[] || [])];
+      newValues.push(newValue as TransactionType);
+      onChange({
+        ...condition,
+        values: newValues
+      });
+    }
+  
+    setNewValue('');
+  };  
+
   const handleRemoveValue = (index: number) => {
     if (!condition.values) return;
-    
-    const newValues = [...condition.values];
+  
+    let newValues;
+  
+    if (
+      condition.type === 'mcc' || 
+      condition.type === 'currency' || 
+      condition.type === 'merchant' || 
+      condition.type === 'category'
+    ) {
+      newValues = [...(condition.values as string[])];
+    } else if (
+      condition.type === 'amount' || 
+      condition.type === 'spend_threshold'
+    ) {
+      newValues = [...(condition.values as number[])];
+    } else if (condition.type === 'transaction_type') {
+      newValues = [...(condition.values as TransactionType[])];
+    } else {
+      return; // unexpected type
+    }
+  
     newValues.splice(index, 1);
-    
+  
     onChange({
       ...condition,
       values: newValues
     });
   };
   
-  // Handle subCondition change
   const handleSubConditionChange = (index: number, subCondition: RuleCondition) => {
     if (!condition.subConditions) return;
-    
+
     const newSubConditions = [...condition.subConditions];
     newSubConditions[index] = subCondition;
-    
+
     onChange({
       ...condition,
       subConditions: newSubConditions
     });
   };
-  
-  // Handle adding a subCondition
+
   const handleAddSubCondition = () => {
     if (condition.type !== 'compound') return;
-    
+
     const newSubConditions = [...(condition.subConditions || [])];
-    
+
     newSubConditions.push({
       type: 'mcc',
       operation: 'include',
       values: []
     });
-    
+
     onChange({
       ...condition,
       subConditions: newSubConditions
     });
   };
-  
-  // Handle removing a subCondition
+
   const handleRemoveSubCondition = (index: number) => {
     if (!condition.subConditions) return;
-    
+
     const newSubConditions = [...condition.subConditions];
     newSubConditions.splice(index, 1);
-    
+
     onChange({
       ...condition,
       subConditions: newSubConditions
     });
   };
-  
+
   return (
     <Card className={isNested ? "border-dashed border-gray-300 mt-2" : ""}>
       <CardHeader className="p-3 flex flex-row items-center justify-between">

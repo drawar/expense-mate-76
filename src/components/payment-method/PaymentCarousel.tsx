@@ -1,12 +1,17 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PaymentMethod } from '@/types';
-import Flicking from "@egjs/react-flicking";
-import "@egjs/react-flicking/dist/flicking.css";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { PaymentCardFace } from './PaymentCardFace';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi
+} from '@/components/ui/carousel';
 
 interface PaymentCarouselProps {
   paymentMethods: PaymentMethod[];
@@ -19,87 +24,78 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
   selectedMethod,
   onSelectMethod
 }) => {
-  const flickingRef = React.useRef<Flicking | null>(null);
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const [showLeftArrow, setShowLeftArrow] = React.useState(false);
-  const [showRightArrow, setShowRightArrow] = React.useState(true);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
 
-  React.useEffect(() => {
-    if (selectedMethod && flickingRef.current) {
-      const index = paymentMethods.findIndex(m => m.id === selectedMethod.id);
-      if (index >= 0 && index !== activeIndex) {
-        flickingRef.current.moveTo(index);
-      }
-    }
-  }, [selectedMethod, paymentMethods, activeIndex]);
-
-  const handlePrev = () => {
-    flickingRef.current?.prev();
-  };
-
-  const handleNext = () => {
-    flickingRef.current?.next();
-  };
-
-  const handleChange = (e: any) => {
-    const index = e.index;
-    setActiveIndex(index);
-    onSelectMethod(paymentMethods[index]);
+  useEffect(() => {
+    if (!api) return;
     
-    // Update arrow visibility
-    if (flickingRef.current) {
-      setShowLeftArrow(index > 0);
-      setShowRightArrow(index < paymentMethods.length - 1);
+    // Set up event listeners for the carousel
+    const onSelect = () => {
+      setCurrent(api.selectedScrollSnap());
+      if (paymentMethods[api.selectedScrollSnap()]) {
+        onSelectMethod(paymentMethods[api.selectedScrollSnap()]);
+      }
+    };
+
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+
+    // Set the initial counts
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api, paymentMethods, onSelectMethod]);
+
+  // When selectedMethod changes externally, update the carousel position
+  useEffect(() => {
+    if (!api || !selectedMethod) return;
+    
+    const index = paymentMethods.findIndex(m => m.id === selectedMethod.id);
+    if (index >= 0 && index !== current) {
+      api.scrollTo(index);
     }
-  };
+  }, [selectedMethod, paymentMethods, current, api]);
 
   return (
     <div className="relative py-4">
-      {showLeftArrow && (
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-background/80 backdrop-blur-sm"
-          onClick={handlePrev}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-      )}
-      
-      <Flicking
-        ref={flickingRef}
-        className="overflow-visible"
-        align="prev"
-        onChanged={handleChange}
-        circular={false}
-        gap={20}
-        bound={true}
+      <Carousel
+        setApi={setApi}
+        className="w-full max-w-[90%] mx-auto"
+        opts={{
+          align: "center",
+          loop: false,
+        }}
       >
-        {paymentMethods.map((method) => (
-          <div 
-            key={method.id}
-            className={cn(
-              "min-w-[300px] sm:min-w-[340px] transition-all duration-300",
-              method.id === selectedMethod?.id ? "scale-105" : "scale-95 opacity-70",
-              !method.active && "opacity-50"
-            )}
-            onClick={() => onSelectMethod(method)}
-          >
-            <PaymentCardFace paymentMethod={method} />
-          </div>
-        ))}
-      </Flicking>
-
-      {showRightArrow && (
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-background/80 backdrop-blur-sm"
-          onClick={handleNext}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      )}
+        <CarouselContent>
+          {paymentMethods.map((method, index) => (
+            <CarouselItem key={method.id} className="md:basis-1/2 lg:basis-1/3">
+              <div 
+                className={cn(
+                  "transition-all duration-300 px-2",
+                  index === current ? "scale-105" : "scale-95 opacity-70",
+                  !method.active && "opacity-50"
+                )}
+                onClick={() => onSelectMethod(method)}
+              >
+                <PaymentCardFace paymentMethod={method} />
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        
+        <CarouselPrevious 
+          className="absolute -left-12 sm:-left-6 md:left-0 lg:left-4"
+        />
+        <CarouselNext 
+          className="absolute -right-12 sm:-right-6 md:right-0 lg:right-4"
+        />
+      </Carousel>
     </div>
   );
 };
