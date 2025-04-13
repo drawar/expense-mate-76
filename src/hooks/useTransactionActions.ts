@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction } from '@/types';
+import { Transaction, MerchantCategoryCode } from '@/types';
 import { 
   createTransaction, 
   updateTransaction as updateTransactionStorage, 
@@ -50,18 +50,23 @@ export function useTransactionActions() {
       // Call incrementMerchantOccurrence with both required arguments
       if (transaction.merchant?.name) {
         // Fix for the first error: Check if mcc is a string or an object with a code property
-        let mccCode: string | undefined = undefined;
+        let mcc: MerchantCategoryCode | undefined = undefined;
         
         if (transaction.merchant.mcc) {
           if (typeof transaction.merchant.mcc === 'string') {
-            mccCode = transaction.merchant.mcc;
-          } else if (transaction.merchant.mcc.code) {
-            mccCode = transaction.merchant.mcc.code;
+            // Create a proper MerchantCategoryCode object if we have a string
+            mcc = {
+              code: transaction.merchant.mcc,
+              description: ''
+            };
+          } else {
+            // Use the existing MerchantCategoryCode object
+            mcc = transaction.merchant.mcc;
           }
         }
         
         // Now pass both arguments to incrementMerchantOccurrence
-        await incrementMerchantOccurrence(transaction.merchant.name, mccCode);
+        await incrementMerchantOccurrence(transaction.merchant.name, mcc);
       }
       
       const success = await updateTransactionStorage(transaction);
@@ -120,9 +125,23 @@ export function useTransactionActions() {
 
   const handleUpdateMerchantTracking = async (merchantName: string, mcc?: string | any) => {
     try {
-      // Fix for the second error: Make sure we pass both required arguments
-      // If mcc is undefined, explicitly pass undefined as the second argument
-      await incrementMerchantOccurrence(merchantName, mcc);
+      // Fix for the second error: Convert string mcc to MerchantCategoryCode object if needed
+      let mccObject: MerchantCategoryCode | undefined = undefined;
+      
+      if (mcc) {
+        if (typeof mcc === 'string') {
+          mccObject = {
+            code: mcc,
+            description: ''
+          };
+        } else if (typeof mcc === 'object' && mcc.code) {
+          // Use as is if it's already a proper object with code property
+          mccObject = mcc;
+        }
+      }
+      
+      // Pass both required arguments
+      await incrementMerchantOccurrence(merchantName, mccObject);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
     }
