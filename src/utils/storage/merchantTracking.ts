@@ -1,4 +1,3 @@
-
 import { MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -61,115 +60,161 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
   }
 };
 
-// Make mcc parameter optional for backwards compatibility
+// Fix the incrementMerchantOccurrence function to handle JSON conversion
 export const incrementMerchantOccurrence = async (
   merchantName: string, 
   mcc?: MerchantCategoryCode
-): Promise<void> => {
+): Promise<boolean> => {
   try {
-    // Check if mapping exists
-    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    if (!merchantName) return false;
     
-    if (mapping) {
-      const updateData: any = {
-        occurrence_count: mapping.occurrenceCount + 1,
-        updated_at: new Date().toISOString(),
-        is_deleted: false // Ensure the entry is marked as not deleted
-      };
-      
-      // Only update MCC if provided
-      if (mcc) {
-        updateData.most_common_mcc = mcc;
-      }
-      
-      // Update existing mapping
-      const { error } = await supabase
-        .from('merchant_category_mappings')
-        .update(updateData)
-        .eq('merchant_name', merchantName);
-        
-      if (error) {
-        console.error('Error updating merchant mapping:', error);
-      }
-    } else {
-      // Create new mapping
-      const { error } = await supabase
+    // Normalize merchant name
+    const normalizedName = merchantName.trim().toLowerCase();
+    if (!normalizedName) return false;
+    
+    // Check if we already have a mapping for this merchant
+    const { data: existingMapping, error: fetchError } = await supabase
+      .from('merchant_category_mappings')
+      .select('*')
+      .eq('merchant_name', normalizedName)
+      .single();
+    
+    if (fetchError) {
+      // No existing mapping, create a new one
+      console.log('Creating new merchant mapping for:', normalizedName);
+      const { error: insertError } = await supabase
         .from('merchant_category_mappings')
         .insert({
-          merchant_name: merchantName,
+          merchant_name: normalizedName,
           occurrence_count: 1,
-          most_common_mcc: mcc || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_deleted: false
+          most_common_mcc: mcc ? JSON.stringify(mcc) : null
         });
-        
-      if (error) {
-        console.error('Error creating merchant mapping:', error);
+      
+      if (insertError) {
+        console.error('Error creating merchant mapping:', insertError);
+        return false;
       }
+      
+      return true;
+    } else {
+      // Update existing mapping
+      console.log('Updating existing mapping for:', normalizedName);
+      const newCount = (existingMapping.occurrence_count || 0) + 1;
+      
+      // Update MCC if provided
+      let mccToUpdate = existingMapping.most_common_mcc;
+      if (mcc) {
+        mccToUpdate = JSON.stringify(mcc);
+      }
+      
+      const { error: updateError } = await supabase
+        .from('merchant_category_mappings')
+        .update({
+          occurrence_count: newCount,
+          most_common_mcc: mccToUpdate,
+          modified_at: new Date().toISOString()
+        })
+        .eq('merchant_name', normalizedName);
+      
+      if (updateError) {
+        console.error('Error updating merchant mapping:', updateError);
+        return false;
+      }
+      
+      return true;
     }
   } catch (error) {
-    console.error('Exception in incrementMerchantOccurrence:', error);
+    console.error('Error in incrementMerchantOccurrence:', error);
+    return false;
   }
 };
 
-// Add the decrementMerchantOccurrence function
-export const decrementMerchantOccurrence = async (merchantName: string): Promise<void> => {
+// Implement decrementMerchantOccurrence to fix missing export
+export const decrementMerchantOccurrence = async (merchantName: string): Promise<boolean> => {
   try {
-    // Check if mapping exists
-    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    if (!merchantName) return false;
     
-    if (mapping && mapping.occurrenceCount > 0) {
-      const newCount = mapping.occurrenceCount - 1;
-      
-      const updateData = {
-        occurrence_count: newCount,
-        updated_at: new Date().toISOString(),
-        // Mark as deleted if count reaches zero
-        is_deleted: newCount === 0
-      };
-      
-      // Update existing mapping
-      const { error } = await supabase
-        .from('merchant_category_mappings')
-        .update(updateData)
-        .eq('merchant_name', merchantName);
-        
-      if (error) {
-        console.error('Error updating merchant mapping for decrement:', error);
-      }
+    // Normalize merchant name
+    const normalizedName = merchantName.trim().toLowerCase();
+    if (!normalizedName) return false;
+    
+    // Check if we have a mapping for this merchant
+    const { data: existingMapping, error: fetchError } = await supabase
+      .from('merchant_category_mappings')
+      .select('*')
+      .eq('merchant_name', normalizedName)
+      .single();
+    
+    if (fetchError) {
+      console.log('No merchant mapping found for:', normalizedName);
+      return false;
     }
+    
+    // Decrement occurrence count, but never below 0
+    const newCount = Math.max(0, (existingMapping.occurrence_count || 1) - 1);
+    
+    const { error: updateError } = await supabase
+      .from('merchant_category_mappings')
+      .update({
+        occurrence_count: newCount,
+        modified_at: new Date().toISOString()
+      })
+      .eq('merchant_name', normalizedName);
+    
+    if (updateError) {
+      console.error('Error updating merchant mapping:', updateError);
+      return false;
+    }
+    
+    return true;
   } catch (error) {
-    console.error('Exception in decrementMerchantOccurrence:', error);
+    console.error('Error in decrementMerchantOccurrence:', error);
+    return false;
   }
 };
 
 // Add missing function to check if there are suggestions for a merchant
 export const hasMerchantCategorySuggestions = async (merchantName: string): Promise<boolean> => {
   try {
-    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    if (!merchantName) return false;
     
-    // Return true if we have a mapping with a most common MCC and it's not deleted
-    return !!(mapping && mapping.mostCommonMCC && !mapping.isDeleted);
+    const normalizedName = merchantName.trim().toLowerCase();
+    if (!normalizedName) return false;
+    
+    const { data, error } = await supabase
+      .from('merchant_category_mappings')
+      .select('most_common_mcc')
+      .eq('merchant_name', normalizedName)
+      .single();
+    
+    if (error || !data || !data.most_common_mcc) return false;
+    
+    return true;
   } catch (error) {
-    console.error('Error checking merchant category suggestions:', error);
+    console.error('Error checking for merchant category suggestions:', error);
     return false;
   }
 };
 
 // Add missing function to get suggested category for a merchant
-export const getSuggestedMerchantCategory = async (merchantName: string): Promise<MerchantCategoryCode | undefined> => {
+export const getSuggestedMerchantCategory = async (merchantName: string): Promise<MerchantCategoryCode | null> => {
   try {
-    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    if (!merchantName) return null;
     
-    // Return the most common MCC if available and the mapping is not deleted
-    if (mapping && mapping.mostCommonMCC && !mapping.isDeleted) {
-      return mapping.mostCommonMCC;
-    }
+    const normalizedName = merchantName.trim().toLowerCase();
+    if (!normalizedName) return null;
     
-    return undefined;
+    const { data, error } = await supabase
+      .from('merchant_category_mappings')
+      .select('most_common_mcc')
+      .eq('merchant_name', normalizedName)
+      .single();
+    
+    if (error || !data || !data.most_common_mcc) return null;
+    
+    return JSON.parse(data.most_common_mcc);
   } catch (error) {
     console.error('Error getting suggested merchant category:', error);
-    return undefined;
+    return null;
   }
 };

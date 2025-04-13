@@ -51,7 +51,7 @@ export function useTransactionActions() {
       if (transaction.merchant?.name) {
         await incrementMerchantOccurrence(
           transaction.merchant.name, 
-          transaction.merchant.mcc
+          transaction.merchant.mcc || undefined
         );
       }
       

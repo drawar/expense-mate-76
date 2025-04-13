@@ -53,8 +53,8 @@ export interface Transaction {
   rewardPoints?: number;
   basePoints?: number;
   bonusPoints?: number;
-  reimbursementAmount?: number; // Added missing property
-  is_deleted?: boolean; // Added missing property
+  reimbursementAmount?: number;
+  is_deleted?: boolean;
 }
 
 export interface FilterOption {
@@ -63,8 +63,8 @@ export interface FilterOption {
   checked: boolean;
 }
 
-// Export RewardRule from services/rewards/types to make it accessible through @/types
-export type { 
+// Import and re-export RewardRule and related types
+import type { 
   RewardRule,
   RuleCondition,
   CalculationMethod,
@@ -75,3 +75,16 @@ export type {
   CalculationResult,
   TransactionType
 } from '@/services/rewards/types';
+
+// Re-export the types
+export type {
+  RewardRule,
+  RuleCondition,
+  CalculationMethod,
+  RoundingStrategy,
+  SpendingPeriodType,
+  BonusTier,
+  CalculationInput,
+  CalculationResult,
+  TransactionType
+};

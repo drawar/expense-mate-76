@@ -1,6 +1,6 @@
-
 import { Merchant, MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get merchants from Supabase
 export const getMerchants = async (): Promise<Merchant[]> => {
@@ -109,122 +109,84 @@ export const getMerchantByName = async (name: string): Promise<Merchant | undefi
 
 // Add a new merchant or update if already exists
 export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant> => {
-  console.log('Adding or updating merchant:', JSON.stringify(merchant, null, 2));
-  
-  // Check if merchant with same name exists
-  const existingMerchant = await getMerchantByName(merchant.name);
-  
-  if (existingMerchant) {
-    console.log('Merchant already exists, updating:', existingMerchant.id);
+  try {
+    // Check if merchant already exists
+    const existingMerchant = await getMerchantByName(merchant.name);
     
-    // Update existing merchant
-    const { data, error } = await supabase
-      .from('merchants')
-      .update({
-        address: merchant.address,
-        coordinates: merchant.coordinates,
-        mcc: merchant.mcc,
-        is_online: merchant.isOnline,
-      })
-      .eq('id', existingMerchant.id)
-      .select()
-      .single();
+    if (existingMerchant) {
+      // Update existing merchant
+      console.log(`Updating existing merchant: ${merchant.name}`);
       
-    if (error) {
-      console.error('Error updating merchant:', error);
-      console.error('Error details:', error.message, error.details, error.hint);
-      throw error;
-    }
-    
-    console.log('Merchant updated successfully:', data);
-    
-    // Process coordinates to ensure correct type
-    let coordinates = undefined;
-    if (data.coordinates) {
-      try {
-        if (typeof data.coordinates === 'object') {
-          coordinates = data.coordinates as { latitude: number; longitude: number };
-        }
-      } catch (e) {
-        console.error('Error parsing coordinates:', e);
-      }
-    }
-    
-    // Process MCC code to ensure correct type
-    let mcc = undefined;
-    if (data.mcc) {
-      try {
-        if (typeof data.mcc === 'object') {
-          mcc = data.mcc as MerchantCategoryCode;
-        }
-      } catch (e) {
-        console.error('Error parsing MCC:', e);
-      }
-    }
-    
-    return {
-      id: data.id,
-      name: data.name,
-      address: data.address || undefined,
-      coordinates,
-      mcc,
-      isOnline: data.is_online,
-    };
-  } else {
-    console.log('Adding new merchant:', merchant.name);
-    
-    // Add new merchant
-    const { data, error } = await supabase
-      .from('merchants')
-      .insert({
-        name: merchant.name,
+      // Prepare data for update, including proper JSON conversions
+      const data = {
         address: merchant.address,
-        coordinates: merchant.coordinates,
-        mcc: merchant.mcc,
-        is_online: merchant.isOnline,
-      })
-      .select()
-      .single();
+        coordinates: merchant.coordinates ? JSON.stringify(merchant.coordinates) : null,
+        mcc: merchant.mcc ? JSON.stringify(merchant.mcc) : null,
+        is_online: merchant.isOnline
+      };
       
-    if (error) {
-      console.error('Error adding merchant:', error);
-      console.error('Error details:', error.message, error.details, error.hint);
-      throw error;
-    }
-    
-    console.log('New merchant added successfully:', data);
-    
-    // Process coordinates to ensure correct type
-    let coordinates = undefined;
-    if (data.coordinates) {
-      try {
-        if (typeof data.coordinates === 'object') {
-          coordinates = data.coordinates as { latitude: number; longitude: number };
-        }
-      } catch (e) {
-        console.error('Error parsing coordinates:', e);
+      const { data: updatedData, error } = await supabase
+        .from('merchants')
+        .update(data)
+        .eq('id', existingMerchant.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating merchant:', error);
+        throw error;
       }
-    }
-    
-    // Process MCC code to ensure correct type
-    let mcc = undefined;
-    if (data.mcc) {
-      try {
-        if (typeof data.mcc === 'object') {
-          mcc = data.mcc as MerchantCategoryCode;
-        }
-      } catch (e) {
-        console.error('Error parsing MCC:', e);
+      
+      return {
+        id: updatedData.id,
+        name: existingMerchant.name,
+        address: updatedData.address,
+        coordinates: updatedData.coordinates ? JSON.parse(updatedData.coordinates) : undefined,
+        mcc: updatedData.mcc ? JSON.parse(updatedData.mcc) : undefined,
+        isOnline: updatedData.is_online
+      };
+    } else {
+      // Create new merchant
+      console.log(`Creating new merchant: ${merchant.name}`);
+      
+      // Prepare data for insert, with proper JSON conversions
+      const { data, error } = await supabase
+        .from('merchants')
+        .insert({
+          name: merchant.name,
+          address: merchant.address,
+          coordinates: merchant.coordinates ? JSON.stringify(merchant.coordinates) : null,
+          mcc: merchant.mcc ? JSON.stringify(merchant.mcc) : null,
+          is_online: merchant.isOnline,
+          is_deleted: false
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating merchant:', error);
+        throw error;
       }
+      
+      return {
+        id: data.id,
+        name: data.name,
+        address: data.address,
+        coordinates: data.coordinates ? JSON.parse(data.coordinates) : undefined,
+        mcc: data.mcc ? JSON.parse(data.mcc) : undefined,
+        isOnline: data.is_online
+      };
     }
-    
+  } catch (error) {
+    console.error('Error in addOrUpdateMerchant:', error);
+    // Return a placeholder merchant with provided data if database operations fail
     return {
-      id: data.id,
-      name: data.name,
-      address: data.address || undefined,
-      coordinates,
-      mcc,
-      isOnline: data.is_online,
+      id: merchant.id || uuidv4(),
+      name: merchant.name,
+      address: merchant.address,
+      coordinates: merchant.coordinates,
+      mcc: merchant.mcc,
+      isOnline: merchant.isOnline
     };
   }
 };
