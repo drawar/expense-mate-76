@@ -4,7 +4,7 @@ import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 import { Link } from "react-router-dom";
 import { 
   useUnusualSpending, 

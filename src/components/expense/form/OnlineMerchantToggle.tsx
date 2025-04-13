@@ -1,4 +1,4 @@
-// components/expense/merchant/OnlineMerchantToggle.tsx
+// components/expense/form/OnlineMerchantToggle.tsx
 import { useFormContext } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';

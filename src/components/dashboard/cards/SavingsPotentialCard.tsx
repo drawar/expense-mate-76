@@ -3,7 +3,7 @@ import React from "react";
 import { PiggyBankIcon, TrendingDownIcon, BarChart3Icon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 import { Progress } from "@/components/ui/progress";
 import { useSavingsPotential } from "@/hooks/dashboard/useChartData";
 

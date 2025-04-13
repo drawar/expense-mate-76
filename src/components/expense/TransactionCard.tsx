@@ -1,6 +1,6 @@
 
 import { Transaction } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 import { formatDate } from "@/utils/dateUtils";
 import {
   CreditCardIcon,

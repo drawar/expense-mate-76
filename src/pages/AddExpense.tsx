@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 // Import from the new reward system
 import { CardRegistry } from '@/services/rewards/CardRegistry';
-import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
+import { rewardService } from '@/services/rewards/index';
 import { RuleRepository } from '@/services/rewards/RuleRepository';
 
 const AddExpense = () => {
@@ -34,7 +34,7 @@ const AddExpense = () => {
         const cardRegistry = CardRegistry.getInstance();
         
         // Force initialize the reward calculation service
-        await rewardCalculatorService.initialize();
+        await  rewardService.initialize();
         console.log('RewardCalculatorService initialized successfully');
         
         // Update status

@@ -1,5 +1,5 @@
 import { Transaction } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 
 import { CreditCardIcon, CoinsIcon } from "lucide-react";
 

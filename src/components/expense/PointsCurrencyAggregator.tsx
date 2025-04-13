@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { Transaction } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
-import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
+import { rewardCalculatorService } from '@/services/rewards';
 
 interface PointsCurrencyAggregatorProps {
   transactions: Transaction[];
@@ -19,7 +19,7 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ tra
       if (!transaction.paymentMethod || !transaction.rewardPoints) return acc;
       
       // Get points currency from the central reward calculation service
-      const pointsCurrency = rewardCalculatorService.getPointsCurrency(transaction.paymentMethod);
+      const pointsCurrency =  rewardService.getPointsCurrency(transaction.paymentMethod);
       
       acc[pointsCurrency] = (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);
       return acc;

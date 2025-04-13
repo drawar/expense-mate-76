@@ -1,6 +1,5 @@
-
+// components/expense/form/MerchantCategorySelect.tsx
 import { useState, useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
 import { MCC_CODES } from '@/utils/constants/mcc';
 import { Label } from '@/components/ui/label';
@@ -26,7 +25,10 @@ interface MerchantCategorySelectProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
 }
 
-const MerchantCategorySelect = ({ selectedMCC, onSelectMCC }: MerchantCategorySelectProps) => {
+const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({ 
+  selectedMCC, 
+  onSelectMCC 
+}) => {
   const [showMCCDialog, setShowMCCDialog] = useState(false);
   const [mccSearchQuery, setMccSearchQuery] = useState('');
   const [filteredMCC, setFilteredMCC] = useState<MerchantCategoryCode[]>([]);

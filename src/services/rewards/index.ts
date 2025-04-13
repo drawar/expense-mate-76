@@ -1,24 +1,23 @@
-// services/rewards/RewardCalculatorService.ts
-
-import { Transaction, PaymentMethod } from '@/types';
-import { 
-  CalculationInput, 
-  CalculationResult, 
+// services/rewards/index.ts
+import { Transaction, PaymentMethod, Currency } from '@/types';
+import {
+  CalculationInput,
+  CalculationResult,
   RewardRule,
-  RuleCondition,
   TransactionType
 } from './types';
-import { v4 as uuidv4 } from 'uuid';
 import { RuleEngine } from './RuleEngine';
 import { RuleRepository } from './RuleRepository';
 import { CardRegistry } from './CardRegistry';
 import { MonthlySpendingTracker } from './MonthlySpendingTracker';
 
 /**
- * Central service for all reward calculations
+ * Central service for all reward calculations.
+ * This is a singleton that handles all reward point calculations
+ * and serves as the single source of truth for point calculations.
  */
-export class RewardCalculatorService {
-  private static instance: RewardCalculatorService;
+class RewardService {
+  private static instance: RewardService;
   private ruleEngine: RuleEngine;
   private ruleRepository: RuleRepository;
   private cardRegistry: CardRegistry;
@@ -35,29 +34,36 @@ export class RewardCalculatorService {
   /**
    * Get singleton instance
    */
-  public static getInstance(): RewardCalculatorService {
-    if (! rewardService.instance) {
-       rewardService.instance = new RewardCalculatorService();
+  public static getInstance(): RewardService {
+    if (!RewardService.instance) {
+      RewardService.instance = new RewardService();
     }
-    return  rewardService.instance;
+    return RewardService.instance;
   }
   
   /**
    * Initialize service by loading all rules
    */
   public async initialize(): Promise<void> {
-    if (!this.initialized) {
+    if (this.initialized) return;
+    
+    try {
       await this.ruleRepository.loadRules();
       this.initialized = true;
-      console.log('RewardCalculatorService initialized');
+      console.log('RewardService initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize RewardService:', error);
+      throw error;
     }
   }
 
   /**
-   * Check if the service is initialized
+   * Ensures the service is initialized before performing operations
    */
-  public isInitialized(): boolean {
-    return this.initialized;
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
   }
   
   /**
@@ -67,10 +73,7 @@ export class RewardCalculatorService {
     transaction: Transaction,
     usedBonusPoints: number = 0
   ): Promise<CalculationResult> {
-    // Ensure the service is initialized
-    if (!this.initialized) {
-      await this.initialize();
-    }
+    await this.ensureInitialized();
     
     // Create calculation input from transaction
     const input = await this.createCalculationInput(
@@ -87,6 +90,7 @@ export class RewardCalculatorService {
   
   /**
    * Simulate reward points for a hypothetical transaction
+   * Used by the expense form to preview points
    */
   public async simulatePoints(
     amount: number,
@@ -98,20 +102,10 @@ export class RewardCalculatorService {
     isContactless?: boolean,
     usedBonusPoints: number = 0
   ): Promise<CalculationResult> {
-    // Ensure the service is initialized
-    if (!this.initialized) {
-      await this.initialize();
-    }
+    await this.ensureInitialized();
     
-    // Determine transaction type from isOnline and isContactless
-    let transactionType: TransactionType;
-    if (isOnline) {
-      transactionType = TransactionType.ONLINE;
-    } else if (isContactless) {
-      transactionType = TransactionType.CONTACTLESS;
-    } else {
-      transactionType = TransactionType.IN_STORE;
-    }
+    // Determine transaction type from flags
+    const transactionType = this.determineTransactionType(isOnline, isContactless);
     
     // Get monthly spending for minimum spend threshold
     const monthlySpend = await this.monthlySpendingTracker.getMonthlySpending(
@@ -143,6 +137,25 @@ export class RewardCalculatorService {
   }
   
   /**
+   * Format the points result into a user-friendly message
+   */
+  public formatPointsMessage(
+    bonusPoints: number = 0,
+    remainingMonthlyBonusPoints?: number
+  ): string | undefined {
+    if (bonusPoints === 0 && remainingMonthlyBonusPoints === 0) {
+      return "Monthly bonus points cap reached";
+    } else if (bonusPoints === 0) {
+      return "Not eligible for bonus points";
+    } else if (bonusPoints > 0) {
+      return `Earning ${bonusPoints} bonus points`;
+    } else if (remainingMonthlyBonusPoints !== undefined) {
+      return `${remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
+    }
+    return undefined;
+  }
+  
+  /**
    * Get point currency for a payment method
    */
   public getPointsCurrency(paymentMethod: PaymentMethod): string {
@@ -165,6 +178,22 @@ export class RewardCalculatorService {
   }
   
   /**
+   * Helper method to determine transaction type from flags
+   */
+  private determineTransactionType(
+    isOnline?: boolean,
+    isContactless?: boolean
+  ): TransactionType {
+    if (isOnline) {
+      return TransactionType.ONLINE;
+    } else if (isContactless) {
+      return TransactionType.CONTACTLESS;
+    } else {
+      return TransactionType.IN_STORE;
+    }
+  }
+  
+  /**
    * Create calculation input from transaction
    */
   private async createCalculationInput(
@@ -172,14 +201,10 @@ export class RewardCalculatorService {
     usedBonusPoints: number
   ): Promise<CalculationInput> {
     // Determine transaction type
-    let transactionType: TransactionType;
-    if (transaction.merchant?.isOnline) {
-      transactionType = TransactionType.ONLINE;
-    } else if (transaction.isContactless) {
-      transactionType = TransactionType.CONTACTLESS;
-    } else {
-      transactionType = TransactionType.IN_STORE;
-    }
+    const transactionType = this.determineTransactionType(
+      transaction.merchant?.isOnline,
+      transaction.isContactless
+    );
     
     // Get monthly spending for minimum spend threshold
     const monthlySpend = await this.monthlySpendingTracker.getMonthlySpending(
@@ -205,7 +230,8 @@ export class RewardCalculatorService {
   }
   
   /**
-   * Get rules for a payment method
+   * Get rules for a payment method - this is the critical function
+   * that resolves the discrepancy between the old and new reward calculation systems
    */
   private async getRulesForPaymentMethod(paymentMethod: PaymentMethod): Promise<RewardRule[]> {
     // Try to get card type ID
@@ -228,10 +254,22 @@ export class RewardCalculatorService {
       cardTypeId = paymentMethod.id;
     }
     
-    // Get rules for this card type from reward_rules table
+    // First, try to get rules from the new reward_rules table
     let rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
     
-    // If no rules found, get default rules from card registry as fallback
+    // If no rules found in the new system, fall back to the legacy system
+    if (rules.length === 0 && paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0) {
+      console.log(`No rules found in reward_rules table for card ${cardTypeId}, using legacy rules from payment_method`);
+      // Convert legacy rules to the new format
+      rules = paymentMethod.rewardRules.map(legacyRule => this.convertLegacyRule(legacyRule, cardTypeId));
+      
+      // Save the converted rules to the new system for future use
+      for (const rule of rules) {
+        await this.ruleRepository.saveRule(rule);
+      }
+    }
+    
+    // If still no rules, try to get default rules from card registry
     if (rules.length === 0) {
       const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
         paymentMethod.issuer || '',
@@ -241,7 +279,7 @@ export class RewardCalculatorService {
       if (cardType) {
         rules = cardType.defaultRules;
         
-        // Save default rules to Supabase if they don't exist yet
+        // Save default rules to repository if they don't exist yet
         for (const rule of cardType.defaultRules) {
           await this.ruleRepository.saveRule({ 
             ...rule,
@@ -260,105 +298,55 @@ export class RewardCalculatorService {
   }
   
   /**
-   * Convert a custom reward rule to our standard format
+   * Convert a legacy reward rule to the new format
    */
-  private convertCustomRule(customRule: any, cardTypeId: string): RewardRule {
-    // Implementation depends on your custom rule format
-    // This is a simplified example
+  private convertLegacyRule(legacyRule: any, cardTypeId: string): RewardRule {
+    // Implementation depends on the structure of your legacy rules
+    const now = new Date();
+    
     return {
-      id: customRule.id || uuidv4(),
+      id: legacyRule.id || crypto.randomUUID(),
       cardTypeId,
-      name: customRule.name || 'Custom Rule',
-      description: customRule.description || '',
+      name: legacyRule.name || 'Legacy Rule',
+      description: legacyRule.description || '',
       enabled: true,
-      priority: customRule.priority || 10,
-      conditions: this.convertCustomConditions(customRule),
+      priority: legacyRule.priority || 10,
+      conditions: this.convertLegacyConditions(legacyRule),
       reward: {
         calculationMethod: 'standard',
-        baseMultiplier: 1,
-        bonusMultiplier: customRule.pointsMultiplier ? customRule.pointsMultiplier - 1 : 0,
+        baseMultiplier: legacyRule.baseMultiplier || 1,
+        bonusMultiplier: legacyRule.bonusMultiplier || 0,
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor',
-        blockSize: 1,
-        monthlyCap: customRule.maxSpend,
-        pointsCurrency: customRule.pointsCurrency || 'Points'
+        blockSize: legacyRule.blockSize || 1,
+        monthlyCap: legacyRule.monthlyCap,
+        pointsCurrency: legacyRule.pointsCurrency || 'Points'
       },
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: now,
+      updatedAt: now
     };
   }
   
   /**
-   * Convert custom conditions to our format
+   * Convert legacy conditions to the new format
    */
-  private convertCustomConditions(customRule: any): RuleCondition[] {
-    const conditions: RuleCondition[] = [];
+  private convertLegacyConditions(legacyRule: any): any[] {
+    // Implementation depends on your legacy condition structure
+    const conditions: any[] = [];
     
-    // Check rule type and create appropriate condition
-    switch (customRule.type) {
-      case 'online':
-        conditions.push({
-          type: 'transaction_type',
-          operation: 'equals',
-          values: [TransactionType.ONLINE]
-        });
-        break;
-        
-      case 'contactless':
-        conditions.push({
-          type: 'transaction_type',
-          operation: 'equals',
-          values: [TransactionType.CONTACTLESS]
-        });
-        break;
-        
-      case 'mcc':
-        if (Array.isArray(customRule.condition)) {
-          conditions.push({
-            type: 'mcc',
-            operation: 'include',
-            values: customRule.condition
-          });
-        }
-        break;
-        
-      case 'merchant':
-        if (typeof customRule.condition === 'string' || Array.isArray(customRule.condition)) {
-          conditions.push({
-            type: 'merchant',
-            operation: 'include',
-            values: Array.isArray(customRule.condition) ? 
-              customRule.condition : [customRule.condition]
-          });
-        }
-        break;
-        
-      case 'currency':
-        if (Array.isArray(customRule.condition)) {
-          const excludedCurrencies = customRule.condition
-            .filter((curr: string) => curr.startsWith('!'))
-            .map((curr: string) => curr.substring(1));
-          
-          const includedCurrencies = customRule.condition
-            .filter((curr: string) => !curr.startsWith('!'));
-          
-          if (excludedCurrencies.length > 0) {
-            conditions.push({
-              type: 'currency',
-              operation: 'exclude',
-              values: excludedCurrencies
-            });
-          }
-          
-          if (includedCurrencies.length > 0) {
-            conditions.push({
-              type: 'currency',
-              operation: 'include',
-              values: includedCurrencies
-            });
-          }
-        }
-        break;
+    // Example conversion logic
+    if (legacyRule.conditionType === 'online') {
+      conditions.push({
+        type: 'transaction_type',
+        operation: 'equals',
+        values: [TransactionType.ONLINE]
+      });
+    } else if (legacyRule.conditionType === 'mcc') {
+      conditions.push({
+        type: 'mcc',
+        operation: 'include',
+        values: Array.isArray(legacyRule.mccCodes) ? legacyRule.mccCodes : []
+      });
     }
     
     return conditions;
@@ -373,7 +361,7 @@ export class RewardCalculatorService {
       const updatedRule = JSON.parse(JSON.stringify(rule));
       
       // Update conditions that have a category type
-      updatedRule.conditions = rule.conditions.map((condition: RuleCondition) => {
+      updatedRule.conditions = rule.conditions.map((condition: any) => {
         if (condition.type === 'category') {
           return {
             ...condition,
@@ -389,4 +377,33 @@ export class RewardCalculatorService {
 }
 
 // Export a singleton instance
-export const rewardCalculatorService =  rewardService.getInstance();
+export const rewardService = RewardService.getInstance();
+
+// Export a wrapper function for easier testing & mocking
+export async function calculateRewardPoints(transaction: Transaction): Promise<CalculationResult> {
+  return rewardService.calculatePoints(transaction, 0);
+}
+
+// Export a wrapper function for simulating points in the expense form
+export async function simulateRewardPoints(
+  amount: number,
+  currency: string,
+  paymentMethod: PaymentMethod,
+  mcc?: string,
+  merchantName?: string,
+  isOnline?: boolean,
+  isContactless?: boolean
+): Promise<CalculationResult> {
+  return rewardService.simulatePoints(
+    amount,
+    currency,
+    paymentMethod,
+    mcc,
+    merchantName,
+    isOnline,
+    isContactless
+  );
+}
+
+// Re-export the types for easier access
+export * from './types';

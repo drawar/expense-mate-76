@@ -1,21 +1,29 @@
-
+// hooks/useTransactionSubmit.ts
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Transaction } from '@/types';
-import { addTransaction } from '@/utils/storage/transactions';
+import { addTransaction, storageService } from '@/services/storage';
 import { useToast } from '@/hooks/use-toast';
 
-export const useTransactionSubmit = (useLocalStorage: boolean) => {
+/**
+ * Hook for submitting transaction data with proper error handling and navigation
+ */
+export const useTransactionSubmit = (useLocalStorage: boolean = false) => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Set storage mode for the service
+  storageService.setLocalStorageMode(useLocalStorage);
+
+  /**
+   * Submit a transaction
+   */
   const handleSubmit = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
       console.log('Starting transaction save process...');
       console.log('Initial transaction data:', JSON.stringify(transactionData, null, 2));
-      console.log('Using local storage flag:', useLocalStorage);
       
       setSaveError(null);
       setIsLoading(true);
@@ -48,14 +56,14 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         date: transactionData.date
       });
       
-      // Save the transaction, with explicit useLocalStorage parameter
-      const result = await addTransaction(transactionData, useLocalStorage);
+      // Save the transaction
+      const result = await addTransaction(transactionData);
       
       console.log('Transaction saved successfully:', result);
       
       toast({
         title: 'Success',
-        description: 'Transaction saved successfully to ' + (useLocalStorage ? 'local storage' : 'Supabase'),
+        description: 'Transaction saved successfully',
       });
       
       // Navigate back to the dashboard to see updated metrics

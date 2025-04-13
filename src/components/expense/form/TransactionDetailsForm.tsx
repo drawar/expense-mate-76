@@ -1,9 +1,8 @@
+// components/expense/form/TransactionDetailsForm.tsx
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import {
   FormControl,
@@ -26,15 +25,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
-const currencyOptions = CurrencyService.getCurrencyOptions();
+// Import from our centralized currency service
+import { CurrencyService } from "@/services/currency";
 
 const TransactionDetailsForm = () => {
   const form = useFormContext();
   const currency = form.watch("currency");
+  
+  // Get currency options from our service
+  const currencyOptions = CurrencyService.getCurrencyOptions();
 
   return (
     <Card>
@@ -62,8 +66,7 @@ const TransactionDetailsForm = () => {
                     onChange={(e) => {
                       field.onChange(e);
                       // Update payment amount automatically when transaction amount changes
-                      const currentPaymentMethod =
-                        form.getValues("paymentMethodId");
+                      const currentPaymentMethod = form.getValues("paymentMethodId");
                       if (currentPaymentMethod) {
                         form.setValue("paymentAmount", e.target.value);
                       }
@@ -106,7 +109,7 @@ const TransactionDetailsForm = () => {
           />
         </div>
 
-        {/* New Reimbursement Amount Field */}
+        {/* Reimbursement Amount Field */}
         <FormField
           control={form.control}
           name="reimbursementAmount"

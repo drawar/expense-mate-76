@@ -1,9 +1,16 @@
-
+// components/expense/form/ConvertedAmountField.tsx
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { PaymentMethod } from '@/types';
-import { FormControl, FormField, FormItem, FormLabel, FormDescription, FormMessage } from '@/components/ui/form';
+import { 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormDescription, 
+  FormMessage 
+} from '@/components/ui/form';
 
 interface ConvertedAmountFieldProps {
   shouldOverridePayment: boolean;
@@ -16,6 +23,7 @@ const ConvertedAmountField: React.FC<ConvertedAmountFieldProps> = ({
 }) => {
   const form = useFormContext();
   
+  // Only show this field if we need currency conversion
   if (!shouldOverridePayment || !selectedPaymentMethod) {
     return null;
   }

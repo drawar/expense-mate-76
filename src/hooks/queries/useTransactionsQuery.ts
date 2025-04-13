@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Transaction } from "@/types";
-import { getTransactions } from "@/utils/storage/transactions";
+import { getTransactions } from "@/services/storage";
 import { toast } from "sonner";
 
 /**

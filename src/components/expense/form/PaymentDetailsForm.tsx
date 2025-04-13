@@ -1,4 +1,5 @@
-
+// components/expense/form/PaymentDetailsForm.tsx
+import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod, Currency } from '@/types';
 import { CreditCardIcon } from 'lucide-react';
@@ -11,39 +12,32 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Import our components
-import PaymentMethodSelect from './PaymentCardRender';
+// Import sub-components
+import PaymentMethodSelect from './PaymentMethodSelect';
 import ContactlessToggle from './ContactlessToggle';
 import PointsDisplay from './PointsDisplay';
 import ConvertedAmountField from './ConvertedAmountField';
-import { useCardAnalytics } from '@/hooks/useCardAnalytics';
+import { PointsCalculationResult } from '@/hooks/expense/useExpenseForm';
 
 interface PaymentDetailsFormProps {
   paymentMethods: PaymentMethod[];
   selectedPaymentMethod: PaymentMethod | undefined;
   shouldOverridePayment: boolean;
-  estimatedPoints: number | {
-    totalPoints: number;
-    basePoints?: number;
-    bonusPoints?: number;
-    remainingMonthlyBonusPoints?: number;
-    messageText?: string;
-    pointsCurrency?: string;
-  };
+  pointsCalculation: PointsCalculationResult;
 }
 
-const PaymentDetailsForm = ({ 
+/**
+ * Payment details section of the expense form
+ */
+const PaymentDetailsForm: React.FC<PaymentDetailsFormProps> = ({ 
   paymentMethods, 
   selectedPaymentMethod, 
   shouldOverridePayment,
-  estimatedPoints
-}: PaymentDetailsFormProps) => {
+  pointsCalculation
+}) => {
   const form = useFormContext();
   const isOnline = form.watch('isOnline');
   
-  // Use our card analytics hook
-  const { nonSgdSpendTotal, hasSgdTransactions } = useCardAnalytics(selectedPaymentMethod);
-
   return (
     <Card>
       <CardHeader>
@@ -67,7 +61,7 @@ const PaymentDetailsForm = ({
         
         <PointsDisplay 
           selectedPaymentMethod={selectedPaymentMethod}
-          estimatedPoints={estimatedPoints}
+          pointsCalculation={pointsCalculation}
         />
       </CardContent>
       <CardFooter className="flex justify-end space-x-2">

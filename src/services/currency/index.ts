@@ -1,8 +1,9 @@
+// services/currency/index.ts
 import { Currency, PaymentMethod } from "@/types";
 
 /**
- * Service for handling all currency-related operations including
- * formatting, conversion, and currency information.
+ * Centralized Currency Service for handling all currency-related operations
+ * including formatting, conversion, and currency information.
  */
 export class CurrencyService {
   /**
@@ -293,7 +294,7 @@ export class CurrencyService {
    * @param currency - Currency code
    * @returns Formatted currency string (e.g., "$123.45")
    */
-  static format(amount: number, currency: Currency): string {
+  public static format(amount: number, currency: Currency): string {
     // Handle edge cases where currency might be undefined or invalid
     if (!currency || !Object.keys(this.CURRENCY_SYMBOLS).includes(currency)) {
       console.warn(
@@ -328,7 +329,7 @@ export class CurrencyService {
    * @param paymentMethod - Optional payment method with custom conversion rates
    * @returns Converted amount in the target currency
    */
-  static convert(
+  public static convert(
     amount: number,
     fromCurrency: Currency,
     toCurrency: Currency,
@@ -367,7 +368,7 @@ export class CurrencyService {
    * @param currency - Currency code
    * @returns Currency symbol (e.g., "$" for USD)
    */
-  static getSymbol(currency: Currency): string {
+  public static getSymbol(currency: Currency): string {
     return this.CURRENCY_SYMBOLS[currency] || currency;
   }
 
@@ -376,7 +377,7 @@ export class CurrencyService {
    *
    * @returns Array of currency options with value and label
    */
-  static getCurrencyOptions(): { value: Currency; label: string }[] {
+  public static getCurrencyOptions(): { value: Currency; label: string }[] {
     return [...this.CURRENCY_OPTIONS];
   }
 
@@ -387,7 +388,7 @@ export class CurrencyService {
    * @param toCurrency - Target currency code
    * @returns Exchange rate or 1 if conversion not possible
    */
-  static getExchangeRate(fromCurrency: Currency, toCurrency: Currency): number {
+  public static getExchangeRate(fromCurrency: Currency, toCurrency: Currency): number {
     if (fromCurrency === toCurrency) return 1;
 
     if (

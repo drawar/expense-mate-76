@@ -1,12 +1,10 @@
-
+// components/expense/form/MerchantDetailsForm.tsx
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
-import { getMerchantByName } from '@/utils/storageUtils';
 import { Input } from '@/components/ui/input';
 import { StoreIcon } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { supabase } from '@/integrations/supabase/client';
 import {
   FormControl,
   FormField,
@@ -21,34 +19,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import MerchantCategorySelect from './merchant/MerchantCategorySelect';
-import MerchantAddressSelect from './merchant/MerchantAddressSelect';
-import OnlineMerchantToggle from './merchant/OnlineMerchantToggle';
-import { getSuggestedMerchantCategory, hasMerchantCategorySuggestions } from '@/utils/storage/merchantTracking';
-
-interface Place {
-  name: string;
-  address: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-}
+import { 
+  hasMerchantCategorySuggestions, 
+  getSuggestedMerchantCategory 
+} from '@/services/storage';
+import MerchantCategorySelect from './MerchantCategorySelect';
+import OnlineMerchantToggle from './OnlineMerchantToggle';
 
 interface MerchantDetailsFormProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
   selectedMCC?: MerchantCategoryCode;
 }
 
-const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormProps) => {
+const MerchantDetailsForm: React.FC<MerchantDetailsFormProps> = ({ 
+  onSelectMCC, 
+  selectedMCC 
+}) => {
   const form = useFormContext();
-  const [isAddressLoading, setIsAddressLoading] = useState(false);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [showPlacesDialog, setShowPlacesDialog] = useState(false);
   const { toast } = useToast();
   const [suggestionsChecked, setSuggestionsChecked] = useState(false);
   
-  // When merchant name changes, check for existing merchant data
+  // Get merchant name from form and debounce to reduce API calls
   const merchantName = form.watch('merchantName');
   const debouncedMerchantName = useDebounce(merchantName, 500);
   const isOnline = form.watch('isOnline');
@@ -61,7 +52,7 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
           // Mark that we've checked suggestions for this merchant name
           setSuggestionsChecked(true);
           
-          // Check if we have a suggestion for this merchant name that isn't deleted
+          // Check if we have a suggestion for this merchant name
           const hasSuggestions = await hasMerchantCategorySuggestions(debouncedMerchantName);
           
           if (hasSuggestions) {
@@ -95,43 +86,6 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
     }
   }, [merchantName]);
 
-  // Fetch address suggestions when merchant name changes and it's not an online purchase
-  useEffect(() => {
-    const fetchAddressSuggestions = async () => {
-      if (debouncedMerchantName.trim().length < 3 || isOnline) {
-        setPlaces([]);
-        return;
-      }
-
-      try {
-        setIsAddressLoading(true);
-        const { data, error } = await supabase.functions.invoke('search-places', {
-          body: { query: debouncedMerchantName }
-        });
-
-        if (error) {
-          console.error('Error fetching places:', error);
-          return;
-        }
-
-        if (data.places && data.places.length > 0) {
-          setPlaces(data.places);
-          setShowPlacesDialog(true);
-        } else {
-          setPlaces([]);
-        }
-      } catch (error) {
-        console.error('Error fetching places:', error);
-      } finally {
-        setIsAddressLoading(false);
-      }
-    };
-
-    if (!isOnline) {
-      fetchAddressSuggestions();
-    }
-  }, [debouncedMerchantName, isOnline]);
-
   return (
     <Card>
       <CardHeader>
@@ -157,12 +111,19 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
         
         <OnlineMerchantToggle />
         
-        {!form.watch('isOnline') && (
-          <MerchantAddressSelect 
-            places={places}
-            isLoading={isAddressLoading}
-            showDialog={showPlacesDialog}
-            setShowDialog={setShowPlacesDialog}
+        {!isOnline && (
+          <FormField
+            control={form.control}
+            name="merchantAddress"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Merchant Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter merchant address (optional)" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         )}
         

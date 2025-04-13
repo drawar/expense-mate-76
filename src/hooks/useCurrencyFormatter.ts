@@ -1,7 +1,7 @@
 // src/hooks/useCurrencyFormatter.ts
 import { useMemo, useCallback } from "react";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 
 /**
  * Custom hook that provides memoized currency formatting functions

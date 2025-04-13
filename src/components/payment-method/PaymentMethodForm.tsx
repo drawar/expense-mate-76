@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PaymentMethod, Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { CurrencyService } from "@/services/currency";
 import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
