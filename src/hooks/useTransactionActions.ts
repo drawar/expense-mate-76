@@ -69,7 +69,8 @@ export function useTransactionActions() {
         await incrementMerchantOccurrence(transaction.merchant.name, mcc);
       }
       
-      const success = await updateTransactionStorage(transaction);
+      // Fix for current error: updateTransactionStorage expects the id and transaction separately
+      const success = await updateTransactionStorage(transaction.id, transaction);
       if (success) {
         toast({
           title: "Success",
