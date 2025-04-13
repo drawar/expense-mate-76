@@ -1,3 +1,4 @@
+
 // src/utils/storage/transactions/add.ts
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction } from '@/types';
@@ -27,7 +28,7 @@ export const addTransaction = async (
     );
     
     // Calculate reward points using our centralized service
-    const pointsBreakdown = rewardCalculationService.calculatePoints(
+    const pointsBreakdown = rewardCalculatorService.calculatePoints(
       transaction as Transaction, 
       usedBonusPoints
     );

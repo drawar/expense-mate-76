@@ -11,14 +11,20 @@ import {
   saveTransactionsToLocalStorage 
 } from './transactions/local-storage';
 
-// Export all transaction-related functions
+// Export all transaction-related functions with aliases for backward compatibility
 export {
   getTransactions,
   saveTransactions,
-  addTransaction,
-  editTransaction,
+  addTransaction as createTransaction, // Alias addTransaction as createTransaction
+  editTransaction as updateTransaction, // Alias editTransaction as updateTransaction
   deleteTransaction,
   exportTransactionsToCSV,
   getTransactionsFromLocalStorage,
   saveTransactionsToLocalStorage
+};
+
+// Re-export the original function names too
+export {
+  addTransaction,
+  editTransaction
 };

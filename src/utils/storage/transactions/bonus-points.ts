@@ -2,6 +2,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
+// Define the interface for bonus points movement parameters
+interface BonusPointsMovementParams {
+  transactionId: string;
+  paymentMethodId: string;
+  bonusPoints: number;
+}
+
 /**
  * Gets all bonus points movements for a transaction
  */
@@ -29,12 +36,29 @@ export async function getBonusPointsMovements(transactionId: string) {
  * Adds a bonus points movement for a transaction
  */
 export async function addBonusPointsMovement(
-  transactionId: string,
-  paymentMethodId: string,
-  bonusPoints: number
-) {
+  params: BonusPointsMovementParams | string, 
+  paymentMethodId?: string, 
+  bonusPoints?: number
+): Promise<boolean> {
   try {
-    if (!transactionId || !bonusPoints) {
+    let transactionId: string;
+    let actualPaymentMethodId: string;
+    let actualBonusPoints: number;
+
+    // Handle both object parameter and individual parameters
+    if (typeof params === 'object') {
+      // Object parameter format
+      transactionId = params.transactionId;
+      actualPaymentMethodId = params.paymentMethodId;
+      actualBonusPoints = params.bonusPoints;
+    } else {
+      // Individual parameters format (legacy)
+      transactionId = params;
+      actualPaymentMethodId = paymentMethodId || '';
+      actualBonusPoints = bonusPoints || 0;
+    }
+
+    if (!transactionId || !actualBonusPoints) {
       console.error('Invalid parameters for addBonusPointsMovement');
       return false;
     }
@@ -57,8 +81,8 @@ export async function addBonusPointsMovement(
       .insert({
         id: uuidv4(),
         transaction_id: transactionId,
-        payment_method_id: paymentMethodId,
-        bonus_points: bonusPoints,
+        payment_method_id: actualPaymentMethodId,
+        bonus_points: actualBonusPoints,
         created_at: new Date().toISOString()
       });
       
@@ -109,7 +133,11 @@ export async function updateBonusPointsForTransaction(
   
   // Add new bonus points movement
   if (bonusPoints > 0) {
-    return await addBonusPointsMovement(transactionId, paymentMethodId, bonusPoints);
+    return await addBonusPointsMovement({
+      transactionId,
+      paymentMethodId,
+      bonusPoints
+    });
   }
   
   return true;

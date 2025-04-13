@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction } from '@/types';
@@ -6,8 +7,8 @@ import {
   updateTransaction as updateTransactionStorage, 
   deleteTransaction as deleteTransactionStorage 
 } from '@/utils/storage/transactions';
-import { updateMerchantTracking } from '@/utils/storage/merchantTracking';
-import { addBonusPointsMovement, deleteBonusPointsMovements } from '@/utils/storage/transactions/bonus-points';
+import { incrementMerchantOccurrence } from '@/utils/storage/merchantTracking';
+import { addBonusPointsMovement } from '@/utils/storage/transactions/bonus-points';
 
 export function useTransactionActions() {
   const { toast } = useToast();
@@ -103,7 +104,7 @@ export function useTransactionActions() {
 
   const handleUpdateMerchantTracking = async (merchantName: string) => {
     try {
-      await updateMerchantTracking(merchantName);
+      await incrementMerchantOccurrence(merchantName);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
     }
