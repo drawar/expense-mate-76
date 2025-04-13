@@ -47,11 +47,11 @@ export function useTransactionActions() {
   const handleUpdateTransaction = async (transaction: Transaction) => {
     setIsUpdating(true);
     try {
-      // Call incrementMerchantOccurrence with MCC if available
+      // Call incrementMerchantOccurrence with both required arguments
       if (transaction.merchant?.name) {
         await incrementMerchantOccurrence(
           transaction.merchant.name, 
-          transaction.merchant.mcc || undefined
+          transaction.merchant.mcc?.code || transaction.merchant.mcc || undefined
         );
       }
       
@@ -109,9 +109,9 @@ export function useTransactionActions() {
     }
   };
 
-  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: any) => {
+  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: string | any) => {
     try {
-      // Fix: Providing both required arguments to incrementMerchantOccurrence
+      // Properly provide both arguments to incrementMerchantOccurrence
       await incrementMerchantOccurrence(merchantName, mcc);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
@@ -128,3 +128,4 @@ export function useTransactionActions() {
     updateMerchantTracking: handleUpdateMerchantTracking,
   };
 }
+
