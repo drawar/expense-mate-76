@@ -26,6 +26,8 @@ const Transactions = () => {
     isLoading
   } = useTransactionList();
 
+  const transactionManagement = useTransactionManagement(transactions, setTransactions);
+  
   const {
     selectedTransaction,
     isTransactionDialogOpen,
@@ -39,7 +41,7 @@ const Transactions = () => {
     handleDeleteTransaction,
     confirmDeleteTransaction,
     handleSaveEdit
-  } = useTransactionManagement(transactions, setTransactions);
+  } = transactionManagement;
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
@@ -73,7 +75,7 @@ const Transactions = () => {
           onResetFilters={resetFilters}
           onViewTransaction={handleViewTransaction}
           onEditTransaction={handleEditTransaction}
-          onDeleteTransaction={handleDeleteTransaction}
+          onDeleteTransaction={(transaction) => handleDeleteTransaction(transaction.id)}
         />
       </div>
       
@@ -83,10 +85,10 @@ const Transactions = () => {
           paymentMethods={paymentMethods}
           allTransactions={transactions}
           isOpen={isTransactionDialogOpen}
-          mode={dialogMode}
+          mode={dialogMode === 'delete' ? 'view' : dialogMode}
           onClose={() => setIsTransactionDialogOpen(false)}
           onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
+          onDelete={(transaction) => handleDeleteTransaction(transaction.id)}
           onSave={handleSaveEdit}
         />
       )}

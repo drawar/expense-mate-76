@@ -17,7 +17,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
   // Filter transactions for this payment method in the current month
   const currentMonthTransactions = allTransactions.filter(tx => 
     tx.paymentMethod.id === paymentMethod.id && 
-    !tx.is_deleted &&
+    tx.is_deleted !== true &&
     new Date(tx.date).getMonth() === new Date().getMonth() &&
     new Date(tx.date).getFullYear() === new Date().getFullYear()
   );

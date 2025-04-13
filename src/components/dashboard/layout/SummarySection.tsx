@@ -1,3 +1,4 @@
+
 // components/dashboard/layout/SummarySection.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
@@ -32,7 +33,7 @@ const SummarySection: React.FC = () => {
     if (!filteredTransactions.length) return 0;
 
     return filteredTransactions.reduce(
-      (count, tx) => ((tx.reimbursementAmount || 0) > 0 ? count + 1 : count),
+      (count, tx) => (tx.reimbursementAmount ? count + 1 : count),
       0
     );
   }, [dashboardData]);

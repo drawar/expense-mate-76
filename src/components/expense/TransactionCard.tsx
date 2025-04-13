@@ -1,3 +1,4 @@
+
 import { Transaction } from "@/types";
 import { CurrencyService } from "@/services/CurrencyService";
 import { formatDate } from "@/utils/dateUtils";
@@ -50,7 +51,7 @@ const TransactionCard = ({
             {merchant.name}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {formatDate(date)}
+            {formatDate(date.toString())}
           </p>
         </div>
         <div className="text-right flex-shrink-0">

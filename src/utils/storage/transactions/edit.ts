@@ -34,8 +34,9 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
   try {
     const savedMerchant = await addOrUpdateMerchant(updatedTransaction.merchant);
     
-    // Log the reimbursement amount to debug
-    console.log('Updating transaction with reimbursement amount:', updatedTransaction.reimbursementAmount);
+    // Handle reimbursement amount with safe access, default to 0
+    const reimbursementAmount = updatedTransaction.reimbursementAmount ?? 0;
+    console.log('Updating transaction with reimbursement amount:', reimbursementAmount);
     
     const { data, error } = await supabase
       .from('transactions')
@@ -51,7 +52,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
         notes: updatedTransaction.notes,
         category: updatedTransaction.category || getCategoryFromMCC(updatedTransaction.merchant.mcc?.code),
         is_contactless: updatedTransaction.isContactless,
-        reimbursement_amount: updatedTransaction.reimbursementAmount || 0, // Add this field to ensure it's saved
+        reimbursement_amount: reimbursementAmount,
       })
       .eq('id', id)
       .select()
@@ -62,7 +63,8 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
       return null;
     }
     
-    return {
+    // Construct the return object with proper types
+    const returnTransaction: Transaction = {
       id: data.id,
       date: data.date,
       merchant: savedMerchant,
@@ -75,8 +77,11 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
       notes: data.notes,
       category: data.category,
       isContactless: data.is_contactless,
-      reimbursementAmount: Number(data.reimbursement_amount) || 0, // Make sure to include this in the returned data
+      reimbursementAmount: Number(data.reimbursement_amount) || 0,
+      is_deleted: data.is_deleted || false
     };
+    
+    return returnTransaction;
   } catch (error) {
     console.error('Error in editTransaction:', error);
     return null;

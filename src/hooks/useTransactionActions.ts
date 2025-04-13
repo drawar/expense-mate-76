@@ -47,6 +47,14 @@ export function useTransactionActions() {
   const handleUpdateTransaction = async (transaction: Transaction) => {
     setIsUpdating(true);
     try {
+      // Call incrementMerchantOccurrence with MCC if available
+      if (transaction.merchant?.name) {
+        await incrementMerchantOccurrence(
+          transaction.merchant.name, 
+          transaction.merchant.mcc
+        );
+      }
+      
       const success = await updateTransactionStorage(transaction);
       if (success) {
         toast({
@@ -72,7 +80,6 @@ export function useTransactionActions() {
     }
   };
 
-  // Fixed function where the parameter count was causing errors
   const handleDeleteTransaction = async (transactionId: string) => {
     setIsDeleting(true);
     try {

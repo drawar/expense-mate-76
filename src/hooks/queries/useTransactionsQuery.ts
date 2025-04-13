@@ -13,7 +13,7 @@ export function useTransactionsQuery() {
     queryFn: async () => {
       try {
         const transactions = await getTransactions();
-        return transactions.filter(tx => !tx.is_deleted);
+        return transactions.filter(tx => tx.is_deleted !== true);
       } catch (error) {
         console.error("Error fetching transactions:", error);
         toast.error("Failed to load transactions");

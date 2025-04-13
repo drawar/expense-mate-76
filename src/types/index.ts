@@ -1,3 +1,4 @@
+
 export interface MerchantCategoryCode {
   code: string;
   description: string;
@@ -45,13 +46,15 @@ export interface Transaction {
   paymentMethod: PaymentMethod;
   paymentAmount: number;
   paymentCurrency: Currency;
-  date: Date;
+  date: string; // Changed from Date to string for compatibility
   category?: string;
   notes?: string;
   isContactless: boolean;
   rewardPoints?: number;
   basePoints?: number;
   bonusPoints?: number;
+  reimbursementAmount?: number; // Added missing property
+  is_deleted?: boolean; // Added missing property
 }
 
 export interface FilterOption {

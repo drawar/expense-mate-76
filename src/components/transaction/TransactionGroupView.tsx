@@ -22,11 +22,11 @@ const TransactionGroupView = ({
     
     // Single pass through transactions to create groups
     for (const transaction of transactions) {
-      const date = transaction.date;
-      if (!groups[date]) {
-        groups[date] = [];
+      const dateStr = transaction.date.toString(); // Convert date to string for indexing
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
       }
-      groups[date].push(transaction);
+      groups[dateStr].push(transaction);
     }
 
     // Sort the grouped transactions by date

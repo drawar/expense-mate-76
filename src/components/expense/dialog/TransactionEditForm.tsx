@@ -24,7 +24,10 @@ const TransactionEditForm = ({
 }: TransactionEditFormProps) => {
   // Log transaction to debug
   console.log('Editing transaction with data:', transaction);
-  console.log('Reimbursement amount:', transaction.reimbursementAmount);
+  
+  // Safely access reimbursementAmount or default to 0
+  const reimbursementAmount = transaction.reimbursementAmount || 0;
+  console.log('Reimbursement amount:', reimbursementAmount);
   
   return (
     <>
@@ -47,7 +50,7 @@ const TransactionEditForm = ({
           currency: transaction.currency,
           paymentMethodId: transaction.paymentMethod.id,
           paymentAmount: transaction.paymentAmount.toString(),
-          reimbursementAmount: transaction.reimbursementAmount ? transaction.reimbursementAmount.toString() : '0',
+          reimbursementAmount: reimbursementAmount ? reimbursementAmount.toString() : '0',
           date: new Date(transaction.date),
           notes: transaction.notes,
           mcc: transaction.merchant.mcc,
