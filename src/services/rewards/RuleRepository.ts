@@ -1,3 +1,4 @@
+
 // services/rewards/RuleRepository.ts
 
 import { RewardRule, BonusTier } from './types';
@@ -10,6 +11,8 @@ export class RuleRepository {
   private static instance: RuleRepository;
   private rules: Map<string, RewardRule> = new Map();
   private rulesByCardType: Map<string, RewardRule[]> = new Map();
+  private lastRuleLoadTime: number = 0;
+  private CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
   
   private constructor() {}
   
@@ -28,6 +31,7 @@ export class RuleRepository {
    */
   public async loadRules(): Promise<RewardRule[]> {
     try {
+      console.log('RuleRepository: Loading all rules from database...');
       const { data, error } = await supabase
         .from('reward_rules')
         .select('*');
@@ -37,11 +41,14 @@ export class RuleRepository {
         return [];
       }
       
+      console.log(`RuleRepository: Loaded ${data.length} rules from database`);
+      
       const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
       
       // Store rules in memory
       this.rules.clear();
       this.rulesByCardType.clear();
+      this.lastRuleLoadTime = Date.now();
       
       rules.forEach(rule => {
         this.rules.set(rule.id, rule);
@@ -61,50 +68,61 @@ export class RuleRepository {
     }
   }
   
-/**
- * Get rules for a specific card type
- */
-public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
-  // Check cache first
-  if (this.rulesByCardType.has(cardTypeId)) {
-    return this.rulesByCardType.get(cardTypeId) || [];
-  }
-  
-  try {
-    // Query Supabase reward_rules table
-    const { data, error } = await supabase
-      .from('reward_rules')
-      .select('*')
-      .eq('card_type_id', cardTypeId)
-      .eq('enabled', true);
+  /**
+   * Get rules for a specific card type - READ ONLY operation
+   * This is used during expense submission to calculate points
+   */
+  public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
+    // Check if cache is expired
+    const isCacheExpired = Date.now() - this.lastRuleLoadTime > this.CACHE_TTL;
+    
+    // If cache is expired or we don't have rules for this card type, reload from database
+    if (isCacheExpired || !this.rulesByCardType.has(cardTypeId)) {
+      console.log('RuleRepository: Cache expired or no rules for card type, reloading...');
+      await this.loadRules();
+    }
+    
+    // Check cache first
+    if (this.rulesByCardType.has(cardTypeId)) {
+      return this.rulesByCardType.get(cardTypeId) || [];
+    }
+    
+    try {
+      // Query Supabase reward_rules table
+      console.log(`RuleRepository: Querying database for rules with card_type_id=${cardTypeId}`);
+      const { data, error } = await supabase
+        .from('reward_rules')
+        .select('*')
+        .eq('card_type_id', cardTypeId)
+        .eq('enabled', true);
+        
+      if (error) {
+        console.error('Error loading rules for card type:', error);
+        return [];
+      }
       
-    if (error) {
+      if (!data || data.length === 0) {
+        console.log(`No rules found in Supabase for card type ${cardTypeId}`);
+        return [];
+      }
+      
+      console.log(`Loaded ${data.length} rules from Supabase for card type ${cardTypeId}`);
+      
+      const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
+      
+      // Cache results
+      this.rulesByCardType.set(cardTypeId, rules);
+      rules.forEach(rule => this.rules.set(rule.id, rule));
+      
+      return rules;
+    } catch (error) {
       console.error('Error loading rules for card type:', error);
       return [];
     }
-    
-    if (!data || data.length === 0) {
-      console.log(`No rules found in Supabase for card type ${cardTypeId}`);
-      return [];
-    }
-    
-    console.log(`Loaded ${data.length} rules from Supabase for card type ${cardTypeId}`);
-    
-    const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
-    
-    // Cache results
-    this.rulesByCardType.set(cardTypeId, rules);
-    rules.forEach(rule => this.rules.set(rule.id, rule));
-    
-    return rules;
-  } catch (error) {
-    console.error('Error loading rules for card type:', error);
-    return [];
   }
-}
   
   /**
-   * Get a rule by ID
+   * Get a rule by ID - READ ONLY operation
    */
   public async getRule(id: string): Promise<RewardRule | null> {
     // Check cache first
@@ -113,6 +131,7 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
     }
     
     try {
+      console.log(`RuleRepository: Fetching rule with id=${id}`);
       const { data, error } = await supabase
         .from('reward_rules')
         .select('*')
@@ -143,10 +162,12 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
   }
   
   /**
-   * Save a rule
+   * Save a rule - ADMIN OPERATION
+   * This should only be used in the reward rule editor, not during expense submission
    */
   public async saveRule(rule: RewardRule): Promise<RewardRule | null> {
     try {
+      console.log('RuleRepository: Saving rule...', rule.id);
       const dbRule = this.mapRewardRuleToDbRule(rule);
       
       const { data, error } = await supabase
@@ -189,10 +210,12 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
   }
   
   /**
-   * Delete a rule
+   * Delete a rule - ADMIN OPERATION
+   * This should only be used in the reward rule editor, not during expense submission
    */
   public async deleteRule(id: string): Promise<boolean> {
     try {
+      console.log(`RuleRepository: Deleting rule with id=${id}`);
       const { error } = await supabase
         .from('reward_rules')
         .delete()

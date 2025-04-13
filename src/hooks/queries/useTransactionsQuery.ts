@@ -12,7 +12,9 @@ export function useTransactionsQuery() {
     queryKey: ["transactions"],
     queryFn: async () => {
       try {
+        console.log("Fetching transactions...");
         const transactions = await getTransactions();
+        console.log(`Retrieved ${transactions.length} transactions, filtering deleted`);
         return transactions.filter(tx => tx.is_deleted !== true);
       } catch (error) {
         console.error("Error fetching transactions:", error);
@@ -21,5 +23,6 @@ export function useTransactionsQuery() {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2, // Retry failed requests up to 2 times
   });
 }

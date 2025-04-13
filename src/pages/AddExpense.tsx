@@ -1,3 +1,4 @@
+
 import { useSupabaseConnectionCheck } from '@/hooks/useSupabaseConnectionCheck';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
@@ -6,8 +7,7 @@ import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-// Import from the new reward system
-import { CardRegistry } from '@/services/rewards/CardRegistry';
+// Import from the reward system
 import { rewardService } from '@/services/rewards/index';
 import { RuleRepository } from '@/services/rewards/RuleRepository';
 
@@ -16,10 +16,9 @@ const AddExpense = () => {
   const { paymentMethods, isLoading } = usePaymentMethods();
   const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage);
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("expense");
   const [initializationStatus, setInitializationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   
-  // Initialize the reward calculation system when the page loads
+  // Initialize the reward calculation system when the page loads - READ ONLY
   useEffect(() => {
     const initializeRewardSystem = async () => {
       console.log('AddExpense: Initializing reward system...');
@@ -30,11 +29,8 @@ const AddExpense = () => {
         const ruleRepository = RuleRepository.getInstance();
         await ruleRepository.loadRules();
         
-        // Initialize the card registry to ensure all card types are loaded
-        const cardRegistry = CardRegistry.getInstance();
-        
-        // Force initialize the reward calculation service
-        await  rewardService.initialize();
+        // Initialize the reward calculation service - READ ONLY
+        await rewardService.initialize();
         console.log('RewardCalculatorService initialized successfully');
         
         // Update status
