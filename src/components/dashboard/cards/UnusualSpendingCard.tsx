@@ -1,15 +1,15 @@
-// src/components/dashboard/cards/UnusualSpendingCard.tsx
+// components/dashboard/cards/UnusualSpendingCard.tsx
 import React from "react";
 import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CurrencyService } from "@/services/CurrencyService";
-import {
-  SpendingAnomaly,
-  useUnusualSpending,
-} from "@/utils/unusualSpendingDetection";
 import { Link } from "react-router-dom";
+import { 
+  useUnusualSpending, 
+  type SpendingAnomaly 
+} from "@/hooks/dashboard/useUnusualSpending";
 
 interface UnusualSpendingCardProps {
   title?: string;

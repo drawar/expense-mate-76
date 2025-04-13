@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
 import PointsCurrencyAggregator from '@/components/expense/PointsCurrencyAggregator';
 import { Transaction } from '@/types';
-import StatementCycleFilter from '@/components/dashboard/StatementCycleFilter';
+import StatementCycleFilter from '@/components/dashboard/filters/StatementCycleFilter';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 
 // Helper component for displaying points by payment method

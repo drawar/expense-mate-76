@@ -2,12 +2,14 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { Transaction, PaymentMethod, Currency } from "@/types";
 import { DashboardData } from "@/types/dashboard";
-import { TimeframeTab } from "@/utils/transactionProcessor";
-import { rewardCalculatorService } from "@/services/rewards/RewardCalculatorService";
+import { TimeframeTab } from "@/utils/dashboard";
 
-interface DashboardContextProps {
+// Define the context interface
+export interface DashboardContextProps {
   // Data state
   transactions: Transaction[];
+  filteredTransactions: Transaction[];
+  previousPeriodTransactions: Transaction[];
   paymentMethods: PaymentMethod[];
   dashboardData: DashboardData | null;
   
@@ -21,9 +23,6 @@ interface DashboardContextProps {
   displayCurrency: Currency;
   useStatementMonth: boolean;
   statementCycleDay: number;
-  
-  // Services
-  rewardCalculatorService: typeof rewardCalculatorService;
 
   // Actions
   refreshData: () => Promise<void>;
@@ -31,6 +30,20 @@ interface DashboardContextProps {
   setDisplayCurrency: (currency: Currency) => void;
   setUseStatementMonth: (use: boolean) => void;
   setStatementCycleDay: (day: number) => void;
+}
+
+// Configuration interface
+export interface DashboardConfig {
+  defaultCurrency: Currency;
+  defaultTimeframe: TimeframeTab;
+  defaultStatementDay: number;
+  defaultUseStatementMonth: boolean;
+}
+
+// Provider props type
+export interface DashboardProviderProps {
+  children: ReactNode;
+  config?: Partial<DashboardConfig>;
 }
 
 // Create context with undefined default value
@@ -45,19 +58,5 @@ export function useDashboardContext() {
   return context;
 }
 
-// Dashboard configuration interface
-export interface DashboardConfig {
-  defaultCurrency: Currency;
-  defaultTimeframe: TimeframeTab;
-  defaultStatementDay: number;
-  defaultUseStatementMonth: boolean;
-}
-
-// Provider props type
-export interface DashboardProviderProps {
-  children: ReactNode;
-  config?: Partial<DashboardConfig>;
-}
-
-// Export context for provider implementation
+// Export context
 export { DashboardContext };

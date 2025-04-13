@@ -5,7 +5,7 @@ import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyService } from "@/services/CurrencyService";
 import { Progress } from "@/components/ui/progress";
-import { useSavingsPotential } from "@/hooks/useChartData";
+import { useSavingsPotential } from "@/hooks/dashboard/useChartData";
 
 interface SavingsPotentialCardProps {
   title: string;

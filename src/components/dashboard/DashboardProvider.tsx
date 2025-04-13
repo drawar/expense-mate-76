@@ -5,17 +5,12 @@ import {
   DashboardProviderProps,
   DashboardConfig
 } from "@/contexts/DashboardContext";
-import { useDashboard } from "@/hooks/useDashboard";
-import { rewardCalculatorService } from "@/services/rewards/RewardCalculatorService";
+import { useDashboard } from "@/hooks/dashboard";
 
-interface ExtendedDashboardProviderProps extends DashboardProviderProps {
-  config?: Partial<DashboardConfig>;
-}
-
-export function DashboardProvider({
-  children,
-  config,
-}: ExtendedDashboardProviderProps) {
+/**
+ * Provider component that makes dashboard data available to all components
+ */
+export function DashboardProvider({ children, config }: DashboardProviderProps) {
   // Default configuration values
   const defaultConfig: DashboardConfig = {
     defaultCurrency: "SGD",
@@ -26,75 +21,20 @@ export function DashboardProvider({
 
   // Merge provided config with defaults
   const mergedConfig = { ...defaultConfig, ...config };
-
-  // Use the enhanced useDashboard hook
-  const {
-    transactions,
-    paymentMethods,
-    dashboardData,
-    isLoading,
-    error,
-    lastUpdate,
-    activeTab,
-    displayCurrency,
-    useStatementMonth,
-    statementCycleDay,
-    refreshData,
-    setActiveTab,
-    setDisplayCurrency,
-    setUseStatementMonth,
-    setStatementCycleDay,
-  } = useDashboard({
+  
+  // Use the dashboard hook to manage all data and state
+  const dashboardState = useDashboard({
     defaultTimeframe: mergedConfig.defaultTimeframe,
     defaultCurrency: mergedConfig.defaultCurrency,
-    defaultUseStatementMonth: mergedConfig.defaultUseStatementMonth,
     defaultStatementCycleDay: mergedConfig.defaultStatementDay,
+    defaultUseStatementMonth: mergedConfig.defaultUseStatementMonth,
   });
 
-  // Create the context value
-  const contextValue = React.useMemo(() => ({
-    // Data
-    transactions,
-    paymentMethods,
-    dashboardData,
-    
-    // Status
-    isLoading,
-    error,
-    lastUpdate,
-
-    // Filter state
-    activeTab,
-    displayCurrency,
-    useStatementMonth,
-    statementCycleDay,
-    
-    // Services
-    rewardCalculatorService,
-
-    // Actions
-    refreshData,
-    setActiveTab,
-    setDisplayCurrency,
-    setUseStatementMonth,
-    setStatementCycleDay,
-  }), [
-    transactions, 
-    paymentMethods, 
-    dashboardData, 
-    isLoading, 
-    error, 
-    lastUpdate,
-    activeTab,
-    displayCurrency,
-    useStatementMonth,
-    statementCycleDay,
-    refreshData
-  ]);
-
   return (
-    <DashboardContext.Provider value={contextValue}>
+    <DashboardContext.Provider value={dashboardState}>
       {children}
     </DashboardContext.Provider>
   );
 }
+
+export default DashboardProvider;

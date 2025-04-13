@@ -5,7 +5,7 @@ import { Currency, Transaction, PaymentMethod } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyService } from "@/services/CurrencyService";
 import { Button } from "@/components/ui/button";
-import { usePaymentMethodOptimization } from "@/hooks/useChartData";
+import { usePaymentMethodOptimization } from "@/hooks/dashboard/useChartData";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 
 interface CardOptimizationCardProps {

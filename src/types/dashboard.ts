@@ -1,6 +1,6 @@
 // src/types/dashboard.ts
 import { Transaction, Currency } from "@/types";
-import { TimeframeTab } from "@/utils/transactionProcessor";
+import { TimeframeTab } from "@/utils/dashboard/index";
 
 /**
  * Chart data structure
