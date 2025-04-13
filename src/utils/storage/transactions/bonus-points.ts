@@ -1,96 +1,116 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
-interface BonusPointsMovement {
-  transactionId: string;
-  paymentMethodId: string;
-  bonusPoints: number;
-}
-
-export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
+/**
+ * Gets all bonus points movements for a transaction
+ */
+export async function getBonusPointsMovements(transactionId: string) {
   try {
-    console.log('Recording bonus points movement:', JSON.stringify(movement, null, 2));
-    
-    const bonusData = {
-      transaction_id: movement.transactionId,
-      payment_method_id: movement.paymentMethodId,
-      bonus_points: movement.bonusPoints
-    };
-    
-    // Only try to save to Supabase if we have a valid transaction ID format
-    // (local storage transactions might use a different ID format than Supabase UUIDs)
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movement.transactionId);
-    
-    if (!isValidUUID) {
-      console.log('Skipping bonus points recording for local storage transaction (non-UUID format)');
-      return null;
-    }
-    
-    console.log('Sending bonus points data to Supabase:', JSON.stringify(bonusData, null, 2));
-    
+    // Query from bonus_points_movements table
     const { data, error } = await supabase
       .from('bonus_points_movements')
-      .insert(bonusData)
-      .select();
-      
-    if (error) {
-      console.error('Error recording bonus points movement:', error);
-      console.error('Error details:', error.message, error.details, error.hint);
-      // Don't throw here, we'll still consider the transaction a success
-      // even if bonus points recording fails
-      return null;
-    }
-    
-    console.log('Bonus points movement recorded successfully:', data);
-    
-    // Trigger background task to update monthly totals
-    // Using setTimeout as a background task since we're in browser context
-    setTimeout(() => {
-      updateMonthlyBonusPointsTotals(movement.paymentMethodId)
-        .catch(err => console.error('Error in background task:', err));
-    }, 0);
-    
-    return data ? data[0] : null;
-  } catch (error) {
-    console.error('Exception in addBonusPointsMovement:', error);
-    // Don't throw here, we'll still consider the transaction a success
-    // even if bonus points recording fails
-    return null;
-  }
-};
-
-const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
-  try {
-    console.log('Updating monthly bonus points totals for payment method:', paymentMethodId);
-    
-    const currentDate = new Date();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    
-    console.log('Fetching bonus points movements since:', firstDayOfMonth.toISOString());
-    
-    const { data: movements, error } = await supabase
-      .from('bonus_points_movements')
-      .select('bonus_points')
-      .eq('payment_method_id', paymentMethodId)
-      .gte('created_at', firstDayOfMonth.toISOString());
+      .select('*')
+      .eq('transaction_id', transactionId);
       
     if (error) {
       console.error('Error fetching bonus points movements:', error);
-      console.error('Error details:', error.message, error.details, error.hint);
-      return;
+      return [];
     }
     
-    console.log('Fetched bonus points movements:', movements);
-    
-    const totalBonusPoints = movements.reduce((sum, movement) => sum + movement.bonus_points, 0);
-    const remainingPoints = Math.max(0, 4000 - totalBonusPoints);
-    
-    console.log('Total bonus points used this month:', totalBonusPoints);
-    console.log('Remaining bonus points available:', remainingPoints);
-    
-    // We don't use the toast hook here as it's a non-component context
-    // Information about remaining points will be logged for debugging
+    return data || [];
   } catch (error) {
-    console.error('Error in background task:', error);
+    console.error('Error fetching bonus points movements:', error);
+    return [];
   }
-};
+}
+
+/**
+ * Adds a bonus points movement for a transaction
+ */
+export async function addBonusPointsMovement(
+  transactionId: string,
+  paymentMethodId: string,
+  bonusPoints: number
+) {
+  try {
+    if (!transactionId || !bonusPoints) {
+      console.error('Invalid parameters for addBonusPointsMovement');
+      return false;
+    }
+    
+    // Check if transaction exists
+    const { data: transaction, error: txError } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('id', transactionId)
+      .single();
+      
+    if (txError || !transaction) {
+      console.error('Transaction not found:', txError);
+      return false;
+    }
+    
+    // Create bonus points movement
+    const { error } = await supabase
+      .from('bonus_points_movements')
+      .insert({
+        id: uuidv4(),
+        transaction_id: transactionId,
+        payment_method_id: paymentMethodId,
+        bonus_points: bonusPoints,
+        created_at: new Date().toISOString()
+      });
+      
+    if (error) {
+      console.error('Error adding bonus points movement:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding bonus points movement:', error);
+    return false;
+  }
+}
+
+/**
+ * Deletes bonus points movements for a transaction
+ */
+export async function deleteBonusPointsMovements(transactionId: string) {
+  try {
+    const { error } = await supabase
+      .from('bonus_points_movements')
+      .delete()
+      .eq('transaction_id', transactionId);
+      
+    if (error) {
+      console.error('Error deleting bonus points movements:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting bonus points movements:', error);
+    return false;
+  }
+}
+
+/**
+ * Updates the storage/export utility to include the function
+ */
+export async function updateBonusPointsForTransaction(
+  transactionId: string, 
+  paymentMethodId: string,
+  bonusPoints: number
+) {
+  // Delete existing bonus points movements for this transaction
+  await deleteBonusPointsMovements(transactionId);
+  
+  // Add new bonus points movement
+  if (bonusPoints > 0) {
+    return await addBonusPointsMovement(transactionId, paymentMethodId, bonusPoints);
+  }
+  
+  return true;
+}

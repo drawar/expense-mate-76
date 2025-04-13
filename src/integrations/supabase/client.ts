@@ -6,10 +6,57 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://fnaohzlumveyjkxctsft.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYW9oemx1bXZleWpreGN0c2Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3MzQxODMsImV4cCI6MjA1ODMxMDE4M30.rJhVIke_Zb123pOpDLfPgYNQT9G3qbdu4H_YqpChqYY";
 
+// Interface defining the expected methods and return types for Supabase queries
+// This helps TypeScript understand the chaining pattern used in Supabase
+interface SupabaseSingleResult<T> {
+  data: T | null;
+  error: Error | null;
+}
+
+interface SupabaseQueryResult<T> {
+  data: T[];
+  error: Error | null;
+}
+
+// Augment the PostgrestFilterBuilder type to avoid TypeScript errors
+declare module '@supabase/postgrest-js' {
+  interface PostgrestFilterBuilder<T> {
+    eq(column: string, value: any): PostgrestFilterBuilder<T>;
+    neq(column: string, value: any): PostgrestFilterBuilder<T>;
+    gt(column: string, value: any): PostgrestFilterBuilder<T>;
+    gte(column: string, value: any): PostgrestFilterBuilder<T>;
+    lt(column: string, value: any): PostgrestFilterBuilder<T>;
+    lte(column: string, value: any): PostgrestFilterBuilder<T>;
+    like(column: string, pattern: string): PostgrestFilterBuilder<T>;
+    ilike(column: string, pattern: string): PostgrestFilterBuilder<T>;
+    is(column: string, value: any): PostgrestFilterBuilder<T>;
+    in(column: string, values: any[]): PostgrestFilterBuilder<T>;
+    contains(column: string, value: any): PostgrestFilterBuilder<T>;
+    containedBy(column: string, value: any): PostgrestFilterBuilder<T>;
+    rangeLt(column: string, range: any): PostgrestFilterBuilder<T>;
+    rangeGt(column: string, range: any): PostgrestFilterBuilder<T>;
+    rangeGte(column: string, range: any): PostgrestFilterBuilder<T>;
+    rangeLte(column: string, range: any): PostgrestFilterBuilder<T>;
+    rangeAdjacent(column: string, range: any): PostgrestFilterBuilder<T>;
+    overlaps(column: string, value: any): PostgrestFilterBuilder<T>;
+    textSearch(column: string, query: string, options?: { config?: string }): PostgrestFilterBuilder<T>;
+    filter(column: string, operator: string, value: any): PostgrestFilterBuilder<T>;
+    or(condition: string, options?: { foreignTable?: string }): PostgrestFilterBuilder<T>;
+    limit(count: number): PostgrestFilterBuilder<T>;
+    order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean; foreignTable?: string }): PostgrestFilterBuilder<T>;
+    select(columns?: string): PostgrestFilterBuilder<T>;
+    single(): Promise<SupabaseSingleResult<T>>;
+    maybeSingle(): Promise<SupabaseSingleResult<T>>;
+  }
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Export the interface for use throughout the app
+export type { SupabaseSingleResult, SupabaseQueryResult };
 
 // Flag to indicate we should use local storage by default
 export const USE_LOCAL_STORAGE_DEFAULT = false;

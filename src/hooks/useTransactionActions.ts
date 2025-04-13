@@ -1,132 +1,121 @@
-
 import { useState } from 'react';
-import { Transaction } from '@/types';
-import { deleteTransaction, editTransaction } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
+import { Transaction } from '@/types';
+import { 
+  createTransaction, 
+  updateTransaction as updateTransactionStorage, 
+  deleteTransaction as deleteTransactionStorage 
+} from '@/utils/storage/transactions';
+import { updateMerchantTracking } from '@/utils/storage/merchantTracking';
+import { addBonusPointsMovement, deleteBonusPointsMovements } from '@/utils/storage/transactions/bonus-points';
 
-export const useTransactionActions = (transactions: Transaction[], setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>) => {
+export function useTransactionActions() {
   const { toast } = useToast();
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('view');
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleViewTransaction = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setDialogMode('view');
-    setIsTransactionDialogOpen(true);
-  };
-  
-  const handleEditTransaction = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setDialogMode('edit');
-    setIsTransactionDialogOpen(true);
-  };
-  
-  const handleDeleteTransaction = (transaction: Transaction) => {
-    setTransactionToDelete(transaction);
-    setDeleteConfirmOpen(true);
-  };
-  
-  const confirmDeleteTransaction = async () => {
-    if (!transactionToDelete) return;
-    
+  const handleCreateTransaction = async (transaction: Transaction) => {
+    setIsCreating(true);
     try {
-      setIsLoading(true);
-      
-      // Optimistically update the UI first for better user experience
-      setTransactions(prev => prev.filter(tx => tx.id !== transactionToDelete.id));
-      
-      const success = await deleteTransaction(transactionToDelete.id);
-      
+      const success = await createTransaction(transaction);
       if (success) {
         toast({
-          title: "Transaction deleted",
-          description: "The transaction has been successfully deleted.",
+          title: "Success",
+          description: "Transaction created successfully.",
         });
-      } else {
-        // If there was a problem, revert the optimistic update
-        toast({
-          title: "Warning",
-          description: "Delete operation may not have synced with remote database.",
-        });
-        // No need to revert transactions state since we're already assuming it was deleted locally
-      }
-      
-      setDeleteConfirmOpen(false);
-      setIsTransactionDialogOpen(false);
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-      
-      // Revert the optimistic update if there was an exception
-      const originalTransaction = transactionToDelete;
-      if (originalTransaction) {
-        setTransactions(prev => [...prev, originalTransaction]);
-      }
-      
-      toast({
-        title: "Error",
-        description: "Failed to delete the transaction. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleSaveEdit = async (updatedTransaction: Omit<Transaction, 'id'>) => {
-    if (!selectedTransaction) return;
-    
-    try {
-      setIsLoading(true);
-      const result = await editTransaction(selectedTransaction.id, updatedTransaction);
-      
-      if (result) {
-        // Update local state immediately for better UX
-        setTransactions(prev => 
-          prev.map(tx => tx.id === selectedTransaction.id ? result : tx)
-        );
-        
-        toast({
-          title: "Transaction updated",
-          description: "The transaction has been successfully updated.",
-        });
-        
-        setIsTransactionDialogOpen(false);
       } else {
         toast({
           title: "Error",
-          description: "Failed to update the transaction.",
+          description: "Failed to create transaction.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error updating transaction:', error);
+      console.error("Error creating transaction:", error);
       toast({
         title: "Error",
-        description: "Failed to update the transaction.",
+        description: "Failed to create transaction.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
-  return {
-    selectedTransaction,
-    isTransactionDialogOpen,
-    setIsTransactionDialogOpen,
-    dialogMode,
-    deleteConfirmOpen,
-    setDeleteConfirmOpen,
-    transactionToDelete,
-    isLoading,
-    handleViewTransaction,
-    handleEditTransaction,
-    handleDeleteTransaction,
-    confirmDeleteTransaction,
-    handleSaveEdit
+  const handleUpdateTransaction = async (transaction: Transaction) => {
+    setIsUpdating(true);
+    try {
+      const success = await updateTransactionStorage(transaction);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Transaction updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update transaction.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update transaction.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
-};
+
+  // Fixed function where the parameter count was causing errors
+  const handleDeleteTransaction = async (transactionId: string) => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteTransactionStorage(transactionId);
+      
+      if (result) {
+        toast({
+          title: "Success",
+          description: "Transaction deleted successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete transaction.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUpdateMerchantTracking = async (merchantName: string) => {
+    try {
+      await updateMerchantTracking(merchantName);
+    } catch (error) {
+      console.error("Error updating merchant tracking:", error);
+    }
+  };
+  
+  return {
+    isCreating,
+    isUpdating,
+    isDeleting,
+    createTransaction: handleCreateTransaction,
+    updateTransaction: handleUpdateTransaction,
+    deleteTransaction: handleDeleteTransaction,
+    updateMerchantTracking: handleUpdateMerchantTracking,
+  };
+}
