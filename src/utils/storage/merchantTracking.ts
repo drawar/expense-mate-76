@@ -112,3 +112,64 @@ export const incrementMerchantOccurrence = async (
     console.error('Exception in incrementMerchantOccurrence:', error);
   }
 };
+
+// Add the decrementMerchantOccurrence function
+export const decrementMerchantOccurrence = async (merchantName: string): Promise<void> => {
+  try {
+    // Check if mapping exists
+    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    
+    if (mapping && mapping.occurrenceCount > 0) {
+      const newCount = mapping.occurrenceCount - 1;
+      
+      const updateData = {
+        occurrence_count: newCount,
+        updated_at: new Date().toISOString(),
+        // Mark as deleted if count reaches zero
+        is_deleted: newCount === 0
+      };
+      
+      // Update existing mapping
+      const { error } = await supabase
+        .from('merchant_category_mappings')
+        .update(updateData)
+        .eq('merchant_name', merchantName);
+        
+      if (error) {
+        console.error('Error updating merchant mapping for decrement:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Exception in decrementMerchantOccurrence:', error);
+  }
+};
+
+// Add missing function to check if there are suggestions for a merchant
+export const hasMerchantCategorySuggestions = async (merchantName: string): Promise<boolean> => {
+  try {
+    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    
+    // Return true if we have a mapping with a most common MCC and it's not deleted
+    return !!(mapping && mapping.mostCommonMCC && !mapping.isDeleted);
+  } catch (error) {
+    console.error('Error checking merchant category suggestions:', error);
+    return false;
+  }
+};
+
+// Add missing function to get suggested category for a merchant
+export const getSuggestedMerchantCategory = async (merchantName: string): Promise<MerchantCategoryCode | undefined> => {
+  try {
+    const mapping = await getMerchantCategoryMappingByName(merchantName);
+    
+    // Return the most common MCC if available and the mapping is not deleted
+    if (mapping && mapping.mostCommonMCC && !mapping.isDeleted) {
+      return mapping.mostCommonMCC;
+    }
+    
+    return undefined;
+  } catch (error) {
+    console.error('Error getting suggested merchant category:', error);
+    return undefined;
+  }
+};

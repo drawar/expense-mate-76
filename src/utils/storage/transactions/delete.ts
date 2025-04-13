@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { addBonusPointsMovement } from './bonus-points';
 import { getTransactionsFromLocalStorage, saveTransactionsToLocalStorage } from './local-storage';
+import { decrementMerchantOccurrence } from '../merchantTracking';
 
 export const deleteTransaction = async (id: string): Promise<boolean> => {
   try {
@@ -71,7 +72,6 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
     // Update merchant occurrence count
     if (transaction.merchant) {
       try {
-        const { decrementMerchantOccurrence } = await import('../merchantTracking');
         await decrementMerchantOccurrence(transaction.merchant.name);
       } catch (error) {
         console.error('Error updating merchant mapping after delete:', error);
