@@ -46,7 +46,7 @@ export interface Transaction {
   paymentMethod: PaymentMethod;
   paymentAmount: number;
   paymentCurrency: Currency;
-  date: string; // Changed from Date to string for compatibility
+  date: string; // Using string format for dates
   category?: string;
   notes?: string;
   isContactless: boolean;

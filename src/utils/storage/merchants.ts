@@ -1,3 +1,4 @@
+
 import { Merchant, MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,8 +20,12 @@ export const getMerchants = async (): Promise<Merchant[]> => {
     let coordinates = undefined;
     if (merchant.coordinates) {
       try {
-        if (typeof merchant.coordinates === 'object') {
-          coordinates = merchant.coordinates as { latitude: number; longitude: number };
+        const parsedCoordinates = typeof merchant.coordinates === 'string' 
+          ? JSON.parse(merchant.coordinates)
+          : merchant.coordinates;
+        
+        if (typeof parsedCoordinates === 'object') {
+          coordinates = parsedCoordinates;
         }
       } catch (e) {
         console.error('Error parsing coordinates:', e);
@@ -31,8 +36,12 @@ export const getMerchants = async (): Promise<Merchant[]> => {
     let mcc = undefined;
     if (merchant.mcc) {
       try {
-        if (typeof merchant.mcc === 'object') {
-          mcc = merchant.mcc as MerchantCategoryCode;
+        const parsedMcc = typeof merchant.mcc === 'string'
+          ? JSON.parse(merchant.mcc)
+          : merchant.mcc;
+          
+        if (typeof parsedMcc === 'object') {
+          mcc = parsedMcc as MerchantCategoryCode;
         }
       } catch (e) {
         console.error('Error parsing MCC:', e);
@@ -76,8 +85,12 @@ export const getMerchantByName = async (name: string): Promise<Merchant | undefi
   let coordinates = undefined;
   if (data.coordinates) {
     try {
-      if (typeof data.coordinates === 'object') {
-        coordinates = data.coordinates as { latitude: number; longitude: number };
+      const parsedCoordinates = typeof data.coordinates === 'string'
+        ? JSON.parse(data.coordinates)
+        : data.coordinates;
+        
+      if (typeof parsedCoordinates === 'object') {
+        coordinates = parsedCoordinates;
       }
     } catch (e) {
       console.error('Error parsing coordinates:', e);
@@ -88,8 +101,12 @@ export const getMerchantByName = async (name: string): Promise<Merchant | undefi
   let mcc = undefined;
   if (data.mcc) {
     try {
-      if (typeof data.mcc === 'object') {
-        mcc = data.mcc as MerchantCategoryCode;
+      const parsedMcc = typeof data.mcc === 'string'
+        ? JSON.parse(data.mcc)
+        : data.mcc;
+        
+      if (typeof parsedMcc === 'object') {
+        mcc = parsedMcc as MerchantCategoryCode;
       }
     } catch (e) {
       console.error('Error parsing MCC:', e);
@@ -137,12 +154,34 @@ export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant>
         throw error;
       }
       
+      // Parse JSON data from response
+      let coordinatesObj;
+      let mccObj;
+      
+      try {
+        coordinatesObj = updatedData.coordinates ? 
+          (typeof updatedData.coordinates === 'string' ? 
+            JSON.parse(updatedData.coordinates) : updatedData.coordinates) 
+          : undefined;
+      } catch (e) {
+        console.error('Error parsing coordinates after update:', e);
+      }
+      
+      try {
+        mccObj = updatedData.mcc ? 
+          (typeof updatedData.mcc === 'string' ? 
+            JSON.parse(updatedData.mcc) : updatedData.mcc) 
+          : undefined;
+      } catch (e) {
+        console.error('Error parsing MCC after update:', e);
+      }
+      
       return {
         id: updatedData.id,
         name: existingMerchant.name,
         address: updatedData.address,
-        coordinates: updatedData.coordinates ? JSON.parse(updatedData.coordinates) : undefined,
-        mcc: updatedData.mcc ? JSON.parse(updatedData.mcc) : undefined,
+        coordinates: coordinatesObj,
+        mcc: mccObj as MerchantCategoryCode | undefined,
         isOnline: updatedData.is_online
       };
     } else {
@@ -168,12 +207,34 @@ export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant>
         throw error;
       }
       
+      // Parse JSON data from response
+      let coordinatesObj;
+      let mccObj;
+      
+      try {
+        coordinatesObj = data.coordinates ? 
+          (typeof data.coordinates === 'string' ? 
+            JSON.parse(data.coordinates) : data.coordinates) 
+          : undefined;
+      } catch (e) {
+        console.error('Error parsing coordinates after insert:', e);
+      }
+      
+      try {
+        mccObj = data.mcc ? 
+          (typeof data.mcc === 'string' ? 
+            JSON.parse(data.mcc) : data.mcc) 
+          : undefined;
+      } catch (e) {
+        console.error('Error parsing MCC after insert:', e);
+      }
+      
       return {
         id: data.id,
         name: data.name,
         address: data.address,
-        coordinates: data.coordinates ? JSON.parse(data.coordinates) : undefined,
-        mcc: data.mcc ? JSON.parse(data.mcc) : undefined,
+        coordinates: coordinatesObj,
+        mcc: mccObj as MerchantCategoryCode | undefined,
         isOnline: data.is_online
       };
     }

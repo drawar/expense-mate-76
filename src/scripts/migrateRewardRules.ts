@@ -1,7 +1,8 @@
+
 // scripts/migrateRewardRules.ts
 
 import { supabase } from '@/integrations/supabase/client';
-import { cardRuleService } from '@/components/expense/cards/CardRuleService';
+import { CardRuleService } from '@/components/expense/cards/CardRuleService';
 import { 
   TransactionType, 
   RewardRule, 
@@ -18,8 +19,9 @@ async function migrateRewardRules() {
   
   try {
     // Step 1: Load existing rules
-    await cardRuleService.loadRules();
-    const oldRules = cardRuleService.getAllRules();
+    const cardRuleService = CardRuleService;
+    await cardRuleService.migrateRules();
+    const oldRules = await cardRuleService.getDefaultRules();
     
     console.log(`Found ${oldRules.length} old rules to migrate`);
     

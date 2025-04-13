@@ -1,3 +1,4 @@
+
 import { MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,7 +26,7 @@ export const getMerchantCategoryMappings = async (): Promise<MerchantCategoryMap
     return data.map(item => ({
       merchantName: item.merchant_name,
       occurrenceCount: item.occurrence_count,
-      mostCommonMCC: item.most_common_mcc ? item.most_common_mcc as MerchantCategoryCode : undefined,
+      mostCommonMCC: item.most_common_mcc ? JSON.parse(item.most_common_mcc as string) as MerchantCategoryCode : undefined,
       isDeleted: item.is_deleted
     }));
   } catch (error) {
@@ -51,7 +52,7 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
     return {
       merchantName: data.merchant_name,
       occurrenceCount: data.occurrence_count,
-      mostCommonMCC: data.most_common_mcc ? data.most_common_mcc as MerchantCategoryCode : undefined,
+      mostCommonMCC: data.most_common_mcc ? JSON.parse(data.most_common_mcc as string) as MerchantCategoryCode : undefined,
       isDeleted: data.is_deleted
     };
   } catch (error) {
@@ -212,7 +213,7 @@ export const getSuggestedMerchantCategory = async (merchantName: string): Promis
     
     if (error || !data || !data.most_common_mcc) return null;
     
-    return JSON.parse(data.most_common_mcc);
+    return JSON.parse(data.most_common_mcc as string) as MerchantCategoryCode;
   } catch (error) {
     console.error('Error getting suggested merchant category:', error);
     return null;

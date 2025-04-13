@@ -81,26 +81,74 @@ export const defaultPaymentMethods: PaymentMethod[] = [
         id: 'b5ea3301-a599-47b9-9943-13410d48cdd7',
         name: 'Grocery Bonus',
         description: '6% back at U.S. supermarkets',
-        type: 'mcc',
-        condition: '5411',
-        pointsMultiplier: 6,
-        maxSpend: 6000,
+        cardTypeId: 'amex_blue_cash_preferred',
+        enabled: true,
+        priority: 10,
+        conditions: [{
+          type: 'mcc',
+          operation: 'include',
+          values: ['5411']
+        }],
+        reward: {
+          calculationMethod: 'standard',
+          baseMultiplier: 0.4,
+          bonusMultiplier: 5.6,
+          pointsRoundingStrategy: 'floor',
+          amountRoundingStrategy: 'floor',
+          blockSize: 1,
+          monthlyCap: 6000,
+          pointsCurrency: 'Cashback'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         id: 'b5ea3301-a599-47b9-9943-13410d48cdd8',
         name: 'Streaming Bonus',
         description: '6% back on select U.S. streaming',
-        type: 'merchant',
-        condition: ['Netflix', 'Spotify', 'Disney', 'Hulu', 'HBO'],
-        pointsMultiplier: 6,
+        cardTypeId: 'amex_blue_cash_preferred',
+        enabled: true,
+        priority: 10,
+        conditions: [{
+          type: 'merchant',
+          operation: 'include',
+          values: ['Netflix', 'Spotify', 'Disney', 'Hulu', 'HBO']
+        }],
+        reward: {
+          calculationMethod: 'standard',
+          baseMultiplier: 0.4,
+          bonusMultiplier: 5.6,
+          pointsRoundingStrategy: 'floor',
+          amountRoundingStrategy: 'floor',
+          blockSize: 1,
+          pointsCurrency: 'Cashback'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         id: 'b5ea3301-a599-47b9-9943-13410d48cdd9',
         name: 'Gas Bonus',
         description: '3% back at U.S. gas stations',
-        type: 'mcc',
-        condition: '5541',
-        pointsMultiplier: 3,
+        cardTypeId: 'amex_blue_cash_preferred',
+        enabled: true,
+        priority: 10,
+        conditions: [{
+          type: 'mcc',
+          operation: 'include',
+          values: ['5541']
+        }],
+        reward: {
+          calculationMethod: 'standard',
+          baseMultiplier: 0.4,
+          bonusMultiplier: 2.6,
+          pointsRoundingStrategy: 'floor',
+          amountRoundingStrategy: 'floor',
+          blockSize: 1,
+          pointsCurrency: 'Cashback'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     ],
   },
@@ -121,17 +169,49 @@ export const defaultPaymentMethods: PaymentMethod[] = [
         id: '2f6b1a24-7e3c-40b4-8582-97357f384613',
         name: 'Travel Bonus',
         description: '3x points on travel',
-        type: 'mcc',
-        condition: '3000',
-        pointsMultiplier: 3,
+        cardTypeId: 'chase_sapphire_reserve',
+        enabled: true,
+        priority: 10,
+        conditions: [{
+          type: 'mcc',
+          operation: 'include',
+          values: ['3000']
+        }],
+        reward: {
+          calculationMethod: 'standard',
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: 'floor',
+          amountRoundingStrategy: 'floor',
+          blockSize: 1,
+          pointsCurrency: 'Ultimate Rewards'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       {
         id: '2f6b1a24-7e3c-40b4-8582-97357f384614',
         name: 'Dining Bonus',
         description: '3x points on dining',
-        type: 'mcc',
-        condition: '5812',
-        pointsMultiplier: 3,
+        cardTypeId: 'chase_sapphire_reserve',
+        enabled: true,
+        priority: 10,
+        conditions: [{
+          type: 'mcc',
+          operation: 'include',
+          values: ['5812']
+        }],
+        reward: {
+          calculationMethod: 'standard',
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: 'floor',
+          amountRoundingStrategy: 'floor',
+          blockSize: 1,
+          pointsCurrency: 'Ultimate Rewards'
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     ],
   },
