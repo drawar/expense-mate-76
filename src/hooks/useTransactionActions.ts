@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, MerchantCategoryCode } from '@/types';
@@ -123,9 +122,9 @@ export function useTransactionActions() {
     }
   };
 
-  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: string | any) => {
+  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: string | MerchantCategoryCode) => {
     try {
-      // Fix for the second error: Convert string mcc to MerchantCategoryCode object if needed
+      // Fix for the error: Ensure we pass both required arguments
       let mccObject: MerchantCategoryCode | undefined = undefined;
       
       if (mcc) {
@@ -134,13 +133,13 @@ export function useTransactionActions() {
             code: mcc,
             description: ''
           };
-        } else if (typeof mcc === 'object' && mcc.code) {
-          // Use as is if it's already a proper object with code property
+        } else if (typeof mcc === 'object' && 'code' in mcc) {
+          // Use as is if it's already a proper MerchantCategoryCode object
           mccObject = mcc;
         }
       }
       
-      // Pass both required arguments
+      // Always pass both merchant name and MCC object (which can be undefined)
       await incrementMerchantOccurrence(merchantName, mccObject);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
