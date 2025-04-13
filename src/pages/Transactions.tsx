@@ -4,7 +4,7 @@ import { ViewMode } from '@/components/transaction/TransactionSortAndView';
 import TransactionDialog from '@/components/expense/TransactionDialog';
 import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
 import { useTransactionList } from '@/hooks/useTransactionList';
-import { useTransactionActions } from '@/hooks/useTransactionActions';
+import { useTransactionManagement } from '@/hooks/useTransactionManagement';
 import TransactionHeader from '@/components/transaction/TransactionHeader';
 import TransactionFilterControls from '@/components/transaction/TransactionFilterControls';
 import TransactionContent from '@/components/transaction/TransactionContent';
@@ -39,7 +39,7 @@ const Transactions = () => {
     handleDeleteTransaction,
     confirmDeleteTransaction,
     handleSaveEdit
-  } = useTransactionActions(transactions, setTransactions);
+  } = useTransactionManagement(transactions, setTransactions);
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 

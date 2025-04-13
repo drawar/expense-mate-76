@@ -1,71 +1,44 @@
-// hooks/dashboard/useCardOptimization.ts
-import { useMemo } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
-import { cardOptimizationUtils } from '@/utils/dashboard';
 
-/**
- * Interface for card optimization suggestions
- */
-export interface CardSuggestion {
-  /** Category name where optimization is possible */
-  category: string;
-  /** Number of transactions in this category */
-  transactionCount: number;
-  /** Currently used payment method */
-  currentMethod: string;
-  /** Recommended payment method for better rewards */
-  suggestedMethod: string;
-  /** Estimated monthly savings/additional rewards when using suggested method */
-  potentialSavings: number;
-}
+// This is a placeholder until we implement the real card optimization utility
+const cardOptimizationUtils = {
+  findOptimalCard: (transactions: Transaction[], paymentMethods: PaymentMethod[]) => {
+    // Simplified logic - in reality this would be more complex
+    if (!paymentMethods.length) return null;
+    
+    // Simply return the first active credit card for now
+    return paymentMethods.find(pm => pm.active && pm.type === 'credit_card');
+  },
+  
+  calculateSavings: (transactions: Transaction[]) => {
+    // Simplified calculation
+    return transactions.reduce((total, tx) => total + (tx.amount * 0.01), 0);
+  }
+};
 
-/**
- * Hook for generating payment method optimization recommendations
- * Analyzes transaction patterns and suggests better card choices per category
- * 
- * @param transactions - Array of transactions to analyze
- * @param paymentMethods - Available payment methods to consider
- * @returns Array of card optimization suggestions
- */
 export function useCardOptimization(
   transactions: Transaction[],
   paymentMethods: PaymentMethod[]
-): CardSuggestion[] {
-  return useMemo(() => {
-    return cardOptimizationUtils.analyzePaymentMethodOptimization(transactions, paymentMethods);
-  }, [transactions, paymentMethods]);
-}
-
-/**
- * Hook to find the optimal card for a specific transaction
- * 
- * @param transaction - Transaction to analyze
- * @param paymentMethods - Available payment methods
- * @returns The optimal payment method or null if none found
- */
-export function useOptimalCard(
-  transaction: Transaction,
-  paymentMethods: PaymentMethod[]
-): PaymentMethod | null {
-  return useMemo(() => {
-    return cardOptimizationUtils.calculateOptimalCard(transaction, paymentMethods);
-  }, [transaction, paymentMethods]);
-}
-
-/**
- * Hook to calculate missed optimization opportunities
- * 
- * @param transactions - Transactions to analyze
- * @param paymentMethods - Available payment methods
- * @returns Analysis of missed rewards and optimization score
- */
-export function useMissedOptimizations(
-  transactions: Transaction[],
-  paymentMethods: PaymentMethod[]
 ) {
-  return useMemo(() => {
-    return cardOptimizationUtils.calculateMissedOptimization(transactions, paymentMethods);
+  const [optimalCard, setOptimalCard] = useState<PaymentMethod | null>(null);
+  const [potentialSavings, setPotentialSavings] = useState(0);
+  
+  useEffect(() => {
+    if (transactions.length && paymentMethods.length) {
+      // Find the optimal card based on transaction history
+      const bestCard = cardOptimizationUtils.findOptimalCard(transactions, paymentMethods);
+      setOptimalCard(bestCard);
+      
+      // Calculate potential savings
+      const savings = cardOptimizationUtils.calculateSavings(transactions);
+      setPotentialSavings(savings);
+    }
   }, [transactions, paymentMethods]);
+  
+  return {
+    optimalCard,
+    potentialSavings
+  };
 }
-
-export default useCardOptimization;

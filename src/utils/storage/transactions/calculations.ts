@@ -1,27 +1,50 @@
-// src/utils/storage/transactions/calculations.ts
+
 import { Transaction } from '@/types';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 
-interface PointsBreakdown {
-  basePoints: number;
-  bonusPoints: number;
-  totalPoints: number;
+/**
+ * Calculate points for a transaction 
+ * This is a wrapper function for the central reward calculation service
+ */
+export async function calculateRewardPoints(transaction: Transaction) {
+  // Use the service to calculate points
+  const result = await rewardCalculatorService.calculatePoints(transaction, 0);
+  
+  return {
+    totalPoints: result.totalPoints,
+    basePoints: result.basePoints,
+    bonusPoints: result.bonusPoints
+  };
 }
 
-export const calculatePoints = (transaction: Omit<Transaction, 'id'>): PointsBreakdown => {
-  if (transaction.paymentMethod.type === 'cash') {
-    return {
-      basePoints: 0,
-      bonusPoints: 0,
-      totalPoints: 0
-    };
+/**
+ * Simulate points for a transaction
+ * This is a wrapper function for the central reward calculation service
+ */
+export async function simulateRewardPoints(
+  amount: number,
+  currency: string,
+  paymentMethodId: string,
+  paymentMethods: any[],
+  mcc?: string,
+  merchantName?: string,
+  isOnline?: boolean,
+  isContactless?: boolean
+) {
+  // Find the payment method
+  const paymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
+  if (!paymentMethod) {
+    return { totalPoints: 0 };
   }
   
-  // This function is now a thin wrapper around the RewardCalculationService
-  // Note: In a real implementation, we would fetch the used bonus points for the month
-  // For now, we'll assume 0 used points
-  const usedBonusPoints = 0; // Replace with actual bonus points tracking
-  
-  // Use the centralized service to calculate points
-  return rewardCalculationService.calculatePoints(transaction as Transaction, usedBonusPoints);
-};
+  // Use the service to simulate points
+  return rewardCalculatorService.simulatePoints(
+    amount,
+    currency,
+    paymentMethod,
+    mcc,
+    merchantName,
+    isOnline,
+    isContactless
+  );
+}

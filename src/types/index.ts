@@ -1,80 +1,74 @@
-import { RewardRule } from "@/services/rewards/types";
-
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CNY' | 'INR' | 'TWD' | 'SGD' | 'VND' | 'IDR' | 'THB' | 'MYR';
-
-export type MerchantCategoryCode = {
+export interface MerchantCategoryCode {
   code: string;
   description: string;
-};
+}
 
-export type PaymentMethodType = 'cash' | 'credit_card';
-
-// export interface RewardRule {
-//   id: string;
-//   name: string;
-//   description: string;
-//   type: 'mcc' | 'merchant' | 'currency' | 'spend_threshold' | 'online' | 'contactless' | 'generic';
-//   condition: string | string[]; // MCC code, merchant name, currency, threshold, or special conditions
-//   pointsMultiplier: number;
-//   minSpend?: number;
-//   maxSpend?: number;
-//   pointsCurrency?: string; // Added this property to fix the TypeScript error
-// }
-
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  type: PaymentMethodType;
-  currency: Currency;
-  rewardRules: RewardRule[];
-  statementStartDay?: number; // 1-31, day of month when statement begins
-  isMonthlyStatement?: boolean; // true = statement month, false = calendar month
-  active: boolean;
-  lastFourDigits?: string; // For credit cards
-  issuer?: string; // For credit cards
-  icon?: string; // Icon identifier
-  color?: string; // Color for the card
-  imageUrl?: string; // URL to custom card image
-  conversionRate?: Record<Currency, number>; // Exchange rates for currency conversion
-  selectedCategories?: string[]; // Selected categories for category-based cards like UOB Lady's
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
 }
 
 export interface Merchant {
   id: string;
   name: string;
   address?: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
+  coordinates?: Coordinates;
   mcc?: MerchantCategoryCode;
-  isOnline: boolean;
+  isOnline?: boolean;
 }
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: 'cash' | 'credit_card';
+  currency: Currency;
+  rewardRules: RewardRule[];
+  statementStartDay?: number;
+  isMonthlyStatement?: boolean;
+  active: boolean;
+  lastFourDigits?: string;
+  issuer?: string;
+  icon?: string;
+  color?: string;
+  imageUrl?: string;
+  conversionRate?: Record<Currency, number>;
+  selectedCategories?: string[];
+}
+
+export type Currency = 'SGD' | 'USD' | 'EUR' | 'GBP' | string;
 
 export interface Transaction {
   id: string;
-  date: string;
-  merchant: Merchant;
   amount: number;
   currency: Currency;
+  merchant: Merchant;
   paymentMethod: PaymentMethod;
   paymentAmount: number;
   paymentCurrency: Currency;
-  rewardPoints: number;  // Total reward points
-  basePoints?: number;   // Base reward points
-  bonusPoints?: number;  // Bonus points (promotional or category-specific)
-  notes?: string;
+  date: Date;
   category?: string;
-  tags?: string[];
-  isContactless?: boolean;
-  is_deleted?: boolean; // Add this field to match the backend schema
-  reimbursementAmount?: number; // Add reimbursement amount to track expense reimbursements
+  notes?: string;
+  isContactless: boolean;
+  rewardPoints?: number;
+  basePoints?: number;
+  bonusPoints?: number;
 }
 
-export interface ExpenseSummary {
-  totalExpenses: number;
-  byCategory: Record<string, number>;
-  byPaymentMethod: Record<string, number>;
-  byCurrency: Record<Currency, number>;
-  rewardPointsEarned: number;
+export interface FilterOption {
+  label: string;
+  value: string;
+  checked: boolean;
 }
+
+// Export RewardRule from services/rewards/types to make it accessible through @/types
+export type { 
+  RewardRule,
+  RuleCondition,
+  CalculationMethod,
+  RoundingStrategy,
+  SpendingPeriodType,
+  BonusTier,
+  CalculationInput,
+  CalculationResult,
+  TransactionType
+} from '@/services/rewards/types';

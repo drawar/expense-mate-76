@@ -19,7 +19,7 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ tra
       if (!transaction.paymentMethod || !transaction.rewardPoints) return acc;
       
       // Get points currency from the central reward calculation service
-      const pointsCurrency = rewardCalculationService.getPointsCurrency(transaction.paymentMethod);
+      const pointsCurrency = rewardCalculatorService.getPointsCurrency(transaction.paymentMethod);
       
       acc[pointsCurrency] = (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);
       return acc;

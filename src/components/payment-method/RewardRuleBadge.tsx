@@ -1,6 +1,6 @@
 
-import { RewardRule } from '@/types';
 import { cn } from '@/lib/utils';
+import { RewardRule } from '@/services/rewards/types';
 
 interface RewardRuleBadgeProps {
   rule: RewardRule;
@@ -41,14 +41,12 @@ const RewardRuleBadge = ({ rule, variant = 'default', className }: RewardRuleBad
       <div className={cn("space-y-1 p-3 rounded-md bg-blue-50 dark:bg-blue-900/20", className)}>
         <div className="font-medium text-sm text-blue-700 dark:text-blue-300">{rule.name}</div>
         <div className="text-xs text-blue-600/80 dark:text-blue-400/80">{rule.description}</div>
-        {rule.pointsMultiplier && (
-          <div className="text-xs font-medium text-green-600 dark:text-green-400">
-            {rule.pointsMultiplier}x multiplier
-          </div>
-        )}
-        {rule.maxSpend && (
+        <div className="text-xs font-medium text-green-600 dark:text-green-400">
+          {rule.reward?.bonusMultiplier ? `${rule.reward.bonusMultiplier + rule.reward.baseMultiplier}x multiplier` : ''}
+        </div>
+        {rule.reward?.monthlyCap && (
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            Monthly cap: {rule.maxSpend} points
+            Monthly cap: {rule.reward.monthlyCap} points
           </div>
         )}
       </div>
@@ -65,9 +63,9 @@ const RewardRuleBadge = ({ rule, variant = 'default', className }: RewardRuleBad
       title={rule.description}
     >
       {rule.name}
-      {rule.pointsMultiplier && (
+      {rule.reward?.bonusMultiplier && (
         <span className="ml-1 font-medium text-green-600 dark:text-green-400">
-          {rule.pointsMultiplier}x
+          {rule.reward.baseMultiplier + rule.reward.bonusMultiplier}x
         </span>
       )}
     </div>

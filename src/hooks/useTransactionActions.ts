@@ -102,9 +102,9 @@ export function useTransactionActions() {
     }
   };
 
-  const handleUpdateMerchantTracking = async (merchantName: string) => {
+  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: any) => {
     try {
-      await incrementMerchantOccurrence(merchantName);
+      await incrementMerchantOccurrence(merchantName, mcc);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
     }
