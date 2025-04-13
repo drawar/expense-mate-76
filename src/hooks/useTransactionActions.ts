@@ -49,10 +49,19 @@ export function useTransactionActions() {
     try {
       // Call incrementMerchantOccurrence with both required arguments
       if (transaction.merchant?.name) {
-        await incrementMerchantOccurrence(
-          transaction.merchant.name, 
-          transaction.merchant.mcc?.code || transaction.merchant.mcc || undefined
-        );
+        // Fix for the first error: Check if mcc is a string or an object with a code property
+        let mccCode: string | undefined = undefined;
+        
+        if (transaction.merchant.mcc) {
+          if (typeof transaction.merchant.mcc === 'string') {
+            mccCode = transaction.merchant.mcc;
+          } else if (transaction.merchant.mcc.code) {
+            mccCode = transaction.merchant.mcc.code;
+          }
+        }
+        
+        // Now pass both arguments to incrementMerchantOccurrence
+        await incrementMerchantOccurrence(transaction.merchant.name, mccCode);
       }
       
       const success = await updateTransactionStorage(transaction);
@@ -111,7 +120,8 @@ export function useTransactionActions() {
 
   const handleUpdateMerchantTracking = async (merchantName: string, mcc?: string | any) => {
     try {
-      // Properly provide both arguments to incrementMerchantOccurrence
+      // Fix for the second error: Make sure we pass both required arguments
+      // If mcc is undefined, explicitly pass undefined as the second argument
       await incrementMerchantOccurrence(merchantName, mcc);
     } catch (error) {
       console.error("Error updating merchant tracking:", error);
@@ -128,4 +138,3 @@ export function useTransactionActions() {
     updateMerchantTracking: handleUpdateMerchantTracking,
   };
 }
-
