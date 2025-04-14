@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTransactionList } from '@/hooks/useTransactionList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,16 +5,14 @@ import { CoinsIcon } from 'lucide-react';
 import PointsCurrencyAggregator from '@/components/expense/PointsCurrencyAggregator';
 import { Transaction } from '@/types';
 import StatementCycleFilter from '@/components/dashboard/filters/StatementCycleFilter';
-import { rewardCalculatorService } from '@/services/rewards';
+import { rewardService } from '@/services/rewards';
 
-// Helper component for displaying points by payment method
 const PointsByPaymentMethod = ({ transactions }: { transactions: Transaction[] }) => {
   const pointsByMethod = transactions.reduce<Record<string, { points: number, currency: string }>>((acc, transaction) => {
     if (!transaction.paymentMethod || !transaction.rewardPoints) return acc;
     
     const methodName = transaction.paymentMethod.name;
-    // Get the correct points currency for this payment method
-    const pointsCurrency =  rewardService.getPointsCurrency(transaction.paymentMethod);
+    const pointsCurrency = rewardService.getPointsCurrency(transaction.paymentMethod);
     
     if (!acc[methodName]) {
       acc[methodName] = { points: 0, currency: pointsCurrency };
@@ -43,7 +40,6 @@ const RewardPoints = () => {
     filteredTransactions,
   } = useTransactionList();
 
-  // Local state for statement cycle filtering
   const [useStatementMonth, setUseStatementMonth] = useState(false);
   const [statementCycleDay, setStatementCycleDay] = useState(1);
   

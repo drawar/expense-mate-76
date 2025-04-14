@@ -1,4 +1,3 @@
-
 // services/rewards/RewardCalculatorService.ts
 
 import { Transaction, PaymentMethod } from '@/types';
@@ -246,10 +245,19 @@ export class RewardCalculatorService {
     console.log(`RewardCalculatorService: Getting rules for card type ${cardTypeId}`);
     
     // Get rules for this card type from reward_rules table - READ ONLY
-    let rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
+    const rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
     console.log(`RewardCalculatorService: Found ${rules.length} rules in database for ${cardTypeId}`);
     
-    // If no rules found, get default rules from card registry as fallback
+    // If no rules found, but we have legacy rules, do NOT save them to database from here
+    // This is a READ-ONLY operation
+    if (rules.length === 0 && paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0) {
+      console.log(`RewardCalculatorService: Using ${paymentMethod.rewardRules.length} legacy rules from payment method`);
+      return paymentMethod.rewardRules.map(legacyRule => 
+        this.convertLegacyRule(legacyRule, cardTypeId || 'unknown')
+      );
+    }
+    
+    // If no rules found, use default rules from card registry as fallback
     if (rules.length === 0) {
       console.log(`RewardCalculatorService: No rules found in database, trying card registry`);
       const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
@@ -259,7 +267,7 @@ export class RewardCalculatorService {
       
       if (cardType && cardType.defaultRules && cardType.defaultRules.length > 0) {
         console.log(`RewardCalculatorService: Using ${cardType.defaultRules.length} default rules from card registry`);
-        rules = cardType.defaultRules;
+        return cardType.defaultRules;
       } else {
         console.log('RewardCalculatorService: No default rules found in card registry');
       }
@@ -267,7 +275,7 @@ export class RewardCalculatorService {
     
     // Handle category selection for cards with selectable categories
     if (paymentMethod.selectedCategories && paymentMethod.selectedCategories.length > 0) {
-      rules = this.applySelectedCategories(rules, paymentMethod.selectedCategories);
+      return this.applySelectedCategories(rules, paymentMethod.selectedCategories);
     }
     
     return rules;

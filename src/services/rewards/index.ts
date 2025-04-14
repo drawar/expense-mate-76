@@ -232,6 +232,7 @@ class RewardService {
   /**
    * Get rules for a payment method - this is the critical function
    * that resolves the discrepancy between the old and new reward calculation systems
+   * This is READ-ONLY during expense submission!
    */
   private async getRulesForPaymentMethod(paymentMethod: PaymentMethod): Promise<RewardRule[]> {
     // Try to get card type ID
@@ -260,13 +261,8 @@ class RewardService {
     // If no rules found in the new system, fall back to the legacy system
     if (rules.length === 0 && paymentMethod.rewardRules && paymentMethod.rewardRules.length > 0) {
       console.log(`No rules found in reward_rules table for card ${cardTypeId}, using legacy rules from payment_method`);
-      // Convert legacy rules to the new format
+      // Convert legacy rules to the new format, but DON'T save to the database during expense submission
       rules = paymentMethod.rewardRules.map(legacyRule => this.convertLegacyRule(legacyRule, cardTypeId));
-      
-      // Save the converted rules to the new system for future use
-      for (const rule of rules) {
-        await this.ruleRepository.saveRule(rule);
-      }
     }
     
     // If still no rules, try to get default rules from card registry
@@ -278,14 +274,6 @@ class RewardService {
       
       if (cardType) {
         rules = cardType.defaultRules;
-        
-        // Save default rules to repository if they don't exist yet
-        for (const rule of cardType.defaultRules) {
-          await this.ruleRepository.saveRule({ 
-            ...rule,
-            cardTypeId: cardTypeId 
-          });
-        }
       }
     }
     

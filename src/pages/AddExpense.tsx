@@ -27,6 +27,10 @@ const AddExpense = () => {
       try {
         // Initialize the rule repository to load rules from Supabase reward_rules table
         const ruleRepository = RuleRepository.getInstance();
+        
+        // Set repository to read-only mode to prevent any modifications during expense submission
+        ruleRepository.setReadOnly(true);
+        
         await ruleRepository.loadRules();
         
         // Initialize the reward calculation service - READ ONLY
@@ -43,6 +47,12 @@ const AddExpense = () => {
     };
     
     initializeRewardSystem();
+    
+    // Clean up - disable read-only mode when component unmounts
+    return () => {
+      const ruleRepository = RuleRepository.getInstance();
+      ruleRepository.setReadOnly(false);
+    };
   }, []);
 
   useEffect(() => {

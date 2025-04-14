@@ -13,6 +13,7 @@ export class RuleRepository {
   private rulesByCardType: Map<string, RewardRule[]> = new Map();
   private lastRuleLoadTime: number = 0;
   private CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+  private readonly = false; // Flag to control write operations
   
   private constructor() {}
   
@@ -24,6 +25,15 @@ export class RuleRepository {
       RuleRepository.instance = new RuleRepository();
     }
     return RuleRepository.instance;
+  }
+
+  /**
+   * Set repository to read-only mode
+   * This should be called when starting expense submission
+   */
+  public setReadOnly(readOnly: boolean): void {
+    this.readonly = readOnly;
+    console.log(`RuleRepository: Read-only mode ${readOnly ? 'enabled' : 'disabled'}`);
   }
   
   /**
@@ -166,6 +176,12 @@ export class RuleRepository {
    * This should only be used in the reward rule editor, not during expense submission
    */
   public async saveRule(rule: RewardRule): Promise<RewardRule | null> {
+    // Prevent modifications if in read-only mode
+    if (this.readonly) {
+      console.warn('RuleRepository: Cannot save rule in read-only mode');
+      return null;
+    }
+    
     try {
       console.log('RuleRepository: Saving rule...', rule.id);
       const dbRule = this.mapRewardRuleToDbRule(rule);
@@ -214,6 +230,12 @@ export class RuleRepository {
    * This should only be used in the reward rule editor, not during expense submission
    */
   public async deleteRule(id: string): Promise<boolean> {
+    // Prevent modifications if in read-only mode
+    if (this.readonly) {
+      console.warn('RuleRepository: Cannot delete rule in read-only mode');
+      return false;
+    }
+    
     try {
       console.log(`RuleRepository: Deleting rule with id=${id}`);
       const { error } = await supabase
