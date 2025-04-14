@@ -1,43 +1,32 @@
-// hooks/usePaymentMethods.ts (new consolidated version)
-import { useQuery } from "@tanstack/react-query";
-import { PaymentMethod, Currency } from "@/types";
-import { getPaymentMethods } from "@/utils/storageUtils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+// hooks/usePaymentMethods.ts - NEW FILE
+import { useState, useEffect } from 'react';
+import { PaymentMethod } from '@/types';
+import { storageService } from '@/core/storage/StorageService';
 
-/**
- * Custom hook to fetch payment methods using React Query
- * @param options Additional options for fetching payment methods
- */
-export function usePaymentMethods(options?: {
-  skipQueryCache?: boolean;
-  localFallback?: boolean;
-}) {
-  const { skipQueryCache = false, localFallback = true } = options || {};
-  
-  const query = useQuery({
-    queryKey: ["paymentMethods"],
-    queryFn: async () => {
+export function usePaymentMethods() {
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
       try {
-        return await getPaymentMethods();
-      } catch (error) {
-        console.error("Error fetching payment methods:", error);
-        toast.error("Failed to load payment methods");
-        return [] as PaymentMethod[];
+        setIsLoading(true);
+        const methods = await storageService.getPaymentMethods();
+        setPaymentMethods(methods);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching payment methods:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch payment methods'));
+        // Fallback to any default methods or empty array
+        setPaymentMethods([]);
+      } finally {
+        setIsLoading(false);
       }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    };
 
-  // Provide a manual refetch function for compatibility with the old hook
-  const refetch = async () => {
-    return query.refetch();
-  };
+    fetchPaymentMethods();
+  }, []);
 
-  return {
-    paymentMethods: query.data || [],
-    isLoading: query.isLoading,
-    error: query.error ? "Failed to load payment methods" : null,
-    refetch,
-  };
+  return { paymentMethods, isLoading, error };
 }

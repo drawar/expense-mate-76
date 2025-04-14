@@ -8,7 +8,7 @@ import {
   RewardRule, 
   RuleCondition,
   CalculationMethod
-} from '@/services/rewards/types';
+} from '@/core/rewards/types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

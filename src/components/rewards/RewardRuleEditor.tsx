@@ -17,7 +17,7 @@ import {
   CalculationMethod,
   RoundingStrategy,
   SpendingPeriodType
-} from '@/services/rewards/types';
+} from '@/core/rewards/types';
 import { ConditionEditor } from './ConditionEditor';
 import { BonusTierEditor } from './BonusTierEditor';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';

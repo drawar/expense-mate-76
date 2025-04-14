@@ -19,7 +19,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { RewardRuleManager } from '@/components/rewards/RewardRuleManager';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { CurrencyService } from '@/core/currency/CurrencyService';
 import { Button } from '@/components/ui/button';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
 import { Separator } from '@/components/ui/separator';
@@ -29,7 +29,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
-import { RewardRule } from '@/services/rewards/types';
+import { RewardRule } from '@/core/rewards/types';
 
 interface PaymentFunctionsListProps {
   paymentMethod: PaymentMethod;
@@ -105,7 +105,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-muted/40 rounded-lg p-4">
           <h3 className="text-sm text-muted-foreground mb-1">Total Spent</h3>
-          <p className="text-xl font-semibold">{formatCurrency(totalSpent, paymentMethod.currency)}</p>
+          <p className="text-xl font-semibold">{CurrencyService.format(totalSpent, paymentMethod.currency)}</p>
           <p className="text-xs text-muted-foreground mt-1">{paymentMethodTransactions.length} transactions</p>
         </div>
         

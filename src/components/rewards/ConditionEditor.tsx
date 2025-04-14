@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PlusCircle, Trash, ChevronDown, ChevronRight } from 'lucide-react';
-import { RuleCondition, TransactionType } from '@/services/rewards/types';
+import { RuleCondition, TransactionType } from '@/core/rewards/types';
 
 interface ConditionEditorProps {
   condition: RuleCondition;

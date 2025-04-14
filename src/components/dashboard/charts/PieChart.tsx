@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 
 /**
  * Common data structure for pie chart data

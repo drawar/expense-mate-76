@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { PaymentMethod, Currency } from "@/types";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 
 export type FilterOptions = {
   merchantName: string;

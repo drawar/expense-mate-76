@@ -3,7 +3,7 @@ import React from 'react';
 import { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { CurrencyService } from '@/core/currency/CurrencyService';
 import { useTransactionsQuery } from '@/hooks/queries/useTransactionsQuery';
 
 interface PaymentCardFaceProps {
@@ -117,7 +117,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
       
       {/* Balance Amount */}
       <div className="text-2xl font-bold mt-1">
-        {formatCurrency(currentBalance, paymentMethod.currency)}
+        {CurrencyService.format(currentBalance, paymentMethod.currency)}
       </div>
       
       {/* Card Details */}

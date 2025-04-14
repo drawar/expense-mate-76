@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useTransactionList } from '@/hooks/useTransactionList';
+import { useTransactionList } from '@/hooks/expense/useTransactionList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
 import PointsCurrencyAggregator from '@/components/expense/PointsCurrencyAggregator';
 import { Transaction } from '@/types';
 import StatementCycleFilter from '@/components/dashboard/filters/StatementCycleFilter';
-import { rewardService } from '@/services/rewards';
+import { rewardService } from '@/core/rewards/RewardService';
 
 const PointsByPaymentMethod = ({ transactions }: { transactions: Transaction[] }) => {
   const pointsByMethod = transactions.reduce<Record<string, { points: number, currency: string }>>((acc, transaction) => {

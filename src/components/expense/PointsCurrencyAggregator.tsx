@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { Transaction } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
-import { rewardService } from '@/services/rewards';
+import { rewardService } from '@/core/rewards';
 
 interface PointsCurrencyAggregatorProps {
   transactions: Transaction[];

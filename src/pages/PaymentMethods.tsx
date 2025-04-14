@@ -1,8 +1,9 @@
+// pages/PaymentMethods.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { PaymentMethod } from '@/types';
 import { usePaymentMethodsQuery } from '@/hooks/queries/usePaymentMethodsQuery';
 import { useToast } from '@/hooks/use-toast';
-import { savePaymentMethods, uploadCardImage } from '@/utils/storage/paymentMethods';
+import { storageService } from '@/core/storage/StorageService'; // Updated import
 import PaymentMethodForm from '@/components/payment-method/PaymentMethodForm';
 import ImageUploadDialog from '@/components/payment-method/ImageUploadDialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,8 +12,8 @@ import { PaymentFunctionsList } from '@/components/payment-method/PaymentFunctio
 import { EmptyPaymentMethodState } from '@/components/payment-method/EmptyPaymentMethodState';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { RuleRepository } from '@/services/rewards/RuleRepository';
-import { RewardRule } from '@/services/rewards/types';
+import { RuleRepository } from '@/core/rewards/RuleRepository';
+import { RewardRule } from '@/core/rewards/types';
 
 const PaymentMethods = () => {
   const { data: paymentMethods = [], isLoading, refetch } = usePaymentMethodsQuery();
@@ -124,7 +125,8 @@ const PaymentMethods = () => {
         updatedMethods = [...paymentMethods, method];
       }
       
-      await savePaymentMethods(updatedMethods);
+      // Use the updated StorageService instead
+      await storageService.savePaymentMethods(updatedMethods);
       
       toast({
         title: 'Success',
@@ -152,7 +154,8 @@ const PaymentMethods = () => {
           : method
       );
       
-      await savePaymentMethods(updatedMethods);
+      // Use the updated StorageService instead
+      await storageService.savePaymentMethods(updatedMethods);
       
       const method = updatedMethods.find(m => m.id === id);
       
@@ -182,7 +185,8 @@ const PaymentMethods = () => {
     setIsUploading(true);
     
     try {
-      const imageUrl = await uploadCardImage(file, imageUploadMethod.id);
+      // Use the updated StorageService instead
+      const imageUrl = await storageService.uploadCardImage(file, imageUploadMethod.id);
       
       if (imageUrl) {
         // Update the payment method with the image URL
@@ -192,7 +196,8 @@ const PaymentMethods = () => {
             : method
         );
         
-        await savePaymentMethods(updatedMethods);
+        // Use the updated StorageService instead
+        await storageService.savePaymentMethods(updatedMethods);
         
         toast({
           title: 'Success',

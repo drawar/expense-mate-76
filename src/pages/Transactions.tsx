@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
 import { ViewMode } from '@/components/transaction/TransactionSortAndView';
-import TransactionDialog from '@/components/expense/TransactionDialog';
+import { TransactionDialog } from '@/components/expense/transaction/TransactionDialog';
 import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
-import { useTransactionList } from '@/hooks/useTransactionList';
+import { useTransactionList } from '@/hooks/expense/useTransactionList';
 import { useTransactionManagement } from '@/hooks/useTransactionManagement';
 import TransactionHeader from '@/components/transaction/TransactionHeader';
 import TransactionFilterControls from '@/components/transaction/TransactionFilterControls';

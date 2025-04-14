@@ -74,7 +74,7 @@ import type {
   CalculationInput,
   CalculationResult,
   TransactionType
-} from '@/services/rewards/types';
+} from '@/core/rewards/types';
 
 // Re-export the types
 export type {

@@ -1,7 +1,7 @@
 
 import { Transaction } from "@/types";
-import { CurrencyService } from "@/services/currency";
-import { formatDate } from "@/utils/dateUtils";
+import { CurrencyService } from "@/core/currency";
+import { formatDate } from '@/utils/dates/formatters';
 import {
   CreditCardIcon,
   BanknoteIcon,

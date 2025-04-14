@@ -1,7 +1,8 @@
-
+// hooks/useSupabaseConnectionCheck.ts - UPDATED FILE
 import { useState, useEffect } from 'react';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { storageService } from '@/core/storage/StorageService';
 
 export const useSupabaseConnectionCheck = () => {
   const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);
@@ -19,6 +20,7 @@ export const useSupabaseConnectionCheck = () => {
             console.error('Supabase connection error:', error);
             setSupabaseConnected(false);
             setUseLocalStorage(true);
+            storageService.setLocalStorageMode(true);
             toast({
               title: 'Warning',
               description: 'Supabase connection failed. Using local storage fallback.',
@@ -28,11 +30,13 @@ export const useSupabaseConnectionCheck = () => {
             console.log('Supabase connection successful');
             setSupabaseConnected(true);
             setUseLocalStorage(false);
+            storageService.setLocalStorageMode(false);
           }
         } catch (error) {
           console.error('Error checking Supabase connection:', error);
           setSupabaseConnected(false);
           setUseLocalStorage(true);
+          storageService.setLocalStorageMode(true);
           toast({
             title: 'Warning',
             description: 'Supabase connection failed. Using local storage fallback.',
@@ -46,6 +50,7 @@ export const useSupabaseConnectionCheck = () => {
       // Default to local storage without checking Supabase
       setSupabaseConnected(false);
       setUseLocalStorage(true);
+      storageService.setLocalStorageMode(true);
       console.log('Using local storage by default.');
     }
   }, [toast]);

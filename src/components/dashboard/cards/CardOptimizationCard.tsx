@@ -3,7 +3,7 @@ import React from "react";
 import { CreditCardIcon, RefreshCwIcon, ArrowRightIcon } from "lucide-react";
 import { Currency, Transaction, PaymentMethod } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 import { Button } from "@/components/ui/button";
 import { usePaymentMethodOptimization } from "@/hooks/dashboard/useChartData";
 import { useDashboardContext } from "@/contexts/DashboardContext";

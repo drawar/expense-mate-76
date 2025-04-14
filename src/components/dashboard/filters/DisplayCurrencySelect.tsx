@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 import { Currency } from "@/types";
 import { DollarSign } from "lucide-react";
 

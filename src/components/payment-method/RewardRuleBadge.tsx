@@ -1,6 +1,6 @@
 
 import { cn } from '@/lib/utils';
-import { RewardRule } from '@/services/rewards/types';
+import { RewardRule } from '@/core/rewards/types';
 
 interface RewardRuleBadgeProps {
   rule: RewardRule;
