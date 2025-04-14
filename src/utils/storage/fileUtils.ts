@@ -1,28 +1,17 @@
 
 /**
- * Helper function to safely convert a Promise<string> to a Blob for use in file operations
- * @param stringPromise Promise that resolves to a string
- * @returns Promise that resolves to a Blob
- */
-export async function stringPromiseToBlob(stringPromise: Promise<string>): Promise<Blob> {
-  try {
-    const content = await stringPromise;
-    return new Blob([content], { type: 'text/plain' });
-  } catch (error) {
-    console.error('Error converting string promise to blob:', error);
-    return new Blob([''], { type: 'text/plain' }); // Return empty blob on error
-  }
-}
-
-/**
- * Helper to safely wait for a string promise and use it in a context requiring BlobPart
- * @param asyncOperation Function that returns the operation result when string is ready
+ * Utility function to safely handle string promises in file operations
+ * @param callback Function to be executed with the resolved string
  * @param stringPromise Promise that resolves to a string
  */
-export async function withResolvedStringPromise<T>(
-  asyncOperation: (content: BlobPart) => Promise<T>,
+export async function withResolvedStringPromise(
+  callback: (resolvedString: string) => Promise<void>,
   stringPromise: Promise<string>
-): Promise<T> {
-  const blob = await stringPromiseToBlob(stringPromise);
-  return asyncOperation(blob);
+): Promise<void> {
+  try {
+    const resolvedString = await stringPromise;
+    await callback(resolvedString);
+  } catch (error) {
+    console.error('Error resolving string promise:', error);
+  }
 }
