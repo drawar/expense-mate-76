@@ -14,5 +14,6 @@ export * from './transactions/save';
 export * from './transactions/export';
 export * from './transactions/local-storage';
 export * from './transactions/bonus-points';
+export * from './fileUtils';
 
 // Add additional exports as needed
