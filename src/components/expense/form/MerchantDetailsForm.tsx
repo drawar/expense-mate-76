@@ -1,3 +1,4 @@
+
 // components/expense/form/MerchantDetailsForm.tsx
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -22,13 +23,13 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   hasMerchantCategorySuggestions, 
   getSuggestedMerchantCategory 
-} from '@/services/storage';
+} from '@/utils/storage/merchants';
 import MerchantCategorySelect from './MerchantCategorySelect';
 import OnlineMerchantToggle from './OnlineMerchantToggle';
 
 interface MerchantDetailsFormProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
-  selectedMCC?: MerchantCategoryCode;
+  selectedMCC?: MerchantCategoryCode | null;
 }
 
 const MerchantDetailsForm: React.FC<MerchantDetailsFormProps> = ({ 

@@ -1,3 +1,4 @@
+
 // components/expense/form/MerchantCategorySelect.tsx
 import { useState, useEffect } from 'react';
 import { MerchantCategoryCode } from '@/types';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/popover';
 
 interface MerchantCategorySelectProps {
-  selectedMCC?: MerchantCategoryCode;
+  selectedMCC?: MerchantCategoryCode | null | undefined;
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
 }
 
@@ -59,6 +60,12 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
     }
   }, [mccSearchQuery]);
 
+  // Determine if the selectedMCC is a valid MerchantCategoryCode object
+  const isValidMCC = selectedMCC && 
+    typeof selectedMCC === 'object' && 
+    'code' in selectedMCC && 
+    'description' in selectedMCC;
+
   const handleSelectMCC = (mcc: MerchantCategoryCode) => {
     onSelectMCC(mcc);
     setShowMCCDialog(false);
@@ -80,7 +87,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
             aria-expanded={showMCCDialog}
             className="w-full justify-between mt-1"
           >
-            {selectedMCC ? `${selectedMCC.description} (${selectedMCC.code})` : "Select merchant category"}
+            {isValidMCC ? `${selectedMCC.description} (${selectedMCC.code})` : "Select merchant category"}
             <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -110,7 +117,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
         </PopoverContent>
       </Popover>
       <p className="text-sm text-muted-foreground mt-1">
-        {selectedMCC ? (
+        {isValidMCC ? (
           <span className="flex items-center">
             <TagIcon className="h-3.5 w-3.5 mr-1.5" />
             {selectedMCC.description} ({selectedMCC.code})

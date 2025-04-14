@@ -7,13 +7,13 @@ export const useMerchantData = (
   form: UseFormReturn<any>, 
   merchantName: string
 ) => {
-  const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | undefined>();
+  const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | null>(null);
   
   // This is a simplified version - the full implementation would have database lookups
   useEffect(() => {
     // Reset MCC when merchant name changes significantly
     if (merchantName.trim().length < 3) {
-      setSelectedMCC(undefined);
+      setSelectedMCC(null);
     }
   }, [merchantName]);
   

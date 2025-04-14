@@ -1,7 +1,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PaymentMethod } from '@/types';
+import { PaymentMethod, MerchantCategoryCode } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { FormValues, formSchema } from '@/hooks/expense/expense-form/formSchema';
 import { useMerchantData } from '@/hooks/expense/expense-form/useMerchantData';
@@ -41,6 +41,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
       paymentAmount: defaultValues?.paymentAmount || '',
       date: defaultValues?.date || new Date(),
       notes: defaultValues?.notes || '',
+      mcc: defaultValues?.mcc || null,
     },
   });
   
@@ -52,7 +53,15 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
   const isContactless = form.watch('isContactless');
   const paymentMethodId = form.watch('paymentMethodId');
   
-  const { selectedMCC, setSelectedMCC } = useMerchantData(form, merchantName);
+  // Updated to properly handle null MCC
+  const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | null>(null);
+  
+  // Initialize selectedMCC from form default values if available
+  useEffect(() => {
+    if (defaultValues?.mcc) {
+      setSelectedMCC(defaultValues.mcc);
+    }
+  }, [defaultValues?.mcc]);
   
   const { selectedPaymentMethod, shouldOverridePayment } = usePaymentMethodLogic(
     form,
