@@ -1,4 +1,3 @@
-
 // src/components/dashboard/cards/SpendingDistributionCard.tsx
 import React, { useState } from 'react';
 import { Currency } from '@/types';
@@ -6,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CreditCardIcon, TagIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
-import { CurrencyService } from '@/services/CurrencyService';
+import { CurrencyService } from '@/services/currency';
 
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];

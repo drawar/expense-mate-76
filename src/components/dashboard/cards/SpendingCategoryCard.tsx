@@ -3,7 +3,7 @@
 import React from 'react';
 import { TagIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { CurrencyService } from '@/services/CurrencyService';
+import { CurrencyService } from '@/services/currency';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
 

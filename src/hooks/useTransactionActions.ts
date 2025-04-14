@@ -1,3 +1,4 @@
+
 // hooks/useTransactionActions.ts
 import { useState } from 'react';
 import { Transaction } from '@/types';
@@ -19,6 +20,9 @@ const deleteTransactionStorage = deleteTransaction;
  */
 export function useTransactionActions() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   /**
@@ -26,6 +30,7 @@ export function useTransactionActions() {
    */
   const handleCreateTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
     setIsLoading(true);
+    setIsCreating(true);
     try {
       const result = await createTransaction(transaction);
       
@@ -53,6 +58,7 @@ export function useTransactionActions() {
       return null;
     } finally {
       setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
@@ -61,6 +67,7 @@ export function useTransactionActions() {
    */
   const handleUpdateTransaction = async (id: string, transactionData: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
     setIsLoading(true);
+    setIsUpdating(true);
     try {
       const result = await updateTransactionStorage(id, transactionData);
       
@@ -88,6 +95,7 @@ export function useTransactionActions() {
       return null;
     } finally {
       setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -96,6 +104,7 @@ export function useTransactionActions() {
    */
   const handleDeleteTransaction = async (id: string): Promise<boolean> => {
     setIsLoading(true);
+    setIsDeleting(true);
     try {
       const result = await deleteTransactionStorage(id);
       
@@ -123,6 +132,7 @@ export function useTransactionActions() {
       return false;
     } finally {
       setIsLoading(false);
+      setIsDeleting(false);
     }
   };
 
@@ -150,13 +160,23 @@ export function useTransactionActions() {
     }
   };
 
+  /**
+   * Update merchant tracking
+   */
+  const handleUpdateMerchantTracking = async (merchantName: string, mcc?: any): Promise<boolean> => {
+    return handleRecordMerchantOccurrence(merchantName, mcc);
+  };
+
   return {
     isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
     createTransaction: handleCreateTransaction,
     updateTransaction: handleUpdateTransaction,
     deleteTransaction: handleDeleteTransaction,
     recordMerchantOccurrence: handleRecordMerchantOccurrence,
-    recordBonusPoints: handleRecordBonusPoints
+    recordBonusPoints: handleRecordBonusPoints,
+    updateMerchantTracking: handleUpdateMerchantTracking
   };
 }
-

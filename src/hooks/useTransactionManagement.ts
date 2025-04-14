@@ -59,7 +59,8 @@ export function useTransactionManagement(
   };
 
   const handleSaveEdit = async (updatedTransaction: Transaction) => {
-    await updateTransaction(updatedTransaction);
+    const { id, ...transactionData } = updatedTransaction;
+    await updateTransaction(id, transactionData);
     
     // Update local state
     setTransactions(prev => 
