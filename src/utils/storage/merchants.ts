@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { MerchantCategoryCode } from '@/types';
 import { storageService } from '@/services/storage';
@@ -118,14 +117,24 @@ export const getSuggestedMerchantCategory = async (name: string): Promise<Mercha
         return null;
       }
       
-      // Fix: Validate and cast the most_common_mcc Json value to MerchantCategoryCode
+      // Fix: Properly validate and convert the JSON data to the MerchantCategoryCode type
       const jsonMcc = data[0].most_common_mcc;
+      
+      // Validate JSON shape before casting
       if (jsonMcc && 
           typeof jsonMcc === 'object' && 
           'code' in jsonMcc && 
-          'description' in jsonMcc) {
-        return jsonMcc as MerchantCategoryCode;
+          'description' in jsonMcc &&
+          typeof jsonMcc.code === 'string' && 
+          typeof jsonMcc.description === 'string') {
+        
+        // Create a new properly typed object rather than casting directly
+        return {
+          code: jsonMcc.code as string,
+          description: jsonMcc.description as string
+        };
       }
+      
       return null;
     }
   } catch (error) {
