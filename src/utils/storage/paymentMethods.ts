@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { storageService } from '@/services/storage';
 
-export const getPaymentMethods = async (): Promise<PaymentMethod[]> {
+export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
   try {
     const useLocalStorage = storageService.isLocalStorageMode();
     console.log(`Getting payment methods with localStorage mode: ${useLocalStorage}`);
