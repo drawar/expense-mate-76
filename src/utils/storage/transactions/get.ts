@@ -54,46 +54,43 @@ export async function getTransactions(useLocalStorage?: boolean): Promise<Transa
 
       // Map data to Transaction type
       const transactions = data.map(item => {
-        const paymentMethod = paymentMethods?.find(pm => pm.id === item.payment_method_id) || {
-          id: item.payment_method_id,
-          name: 'Unknown',
-          type: 'credit_card' as const,
-          currency: item.payment_currency || 'SGD'
+        // Find the associated payment method
+        const paymentMethod = paymentMethods?.find(pm => pm.id === item.payment_method_id);
+        
+        // Create a default payment method if none is found
+        const processedPaymentMethod = {
+          id: paymentMethod?.id || item.payment_method_id,
+          name: paymentMethod?.name || 'Unknown',
+          type: (paymentMethod?.type as 'credit_card' | 'cash') || 'credit_card',
+          currency: paymentMethod?.currency || item.payment_currency || 'SGD',
+          active: paymentMethod?.active !== false,
+          issuer: paymentMethod?.issuer,
+          lastFourDigits: paymentMethod?.last_four_digits,
+          rewardRules: (paymentMethod?.reward_rules || []) as any[]
         };
 
-        const merchant = merchants?.find(m => m.id === item.merchant_id) || {
-          id: item.merchant_id,
-          name: 'Unknown Merchant'
-        };
-
-        // Properly cast merchant data types
+        // Find the associated merchant
+        const merchant = merchants?.find(m => m.id === item.merchant_id);
+        
+        // Process merchant data safely with optional chaining and nullish coalescing
         const processedMerchant = {
-          id: merchant.id,
-          name: merchant.name,
-          address: merchant.address || undefined,
-          isOnline: merchant.is_online || false,
-          coordinates: merchant.coordinates ? 
+          id: merchant?.id || item.merchant_id,
+          name: merchant?.name || 'Unknown Merchant',
+          // Use optional properties with safe fallbacks
+          address: merchant?.address || undefined,
+          isOnline: merchant?.is_online || false,
+          // Safely handle coordinates
+          coordinates: merchant?.coordinates ? 
             (typeof merchant.coordinates === 'object' ? 
               merchant.coordinates as any : 
               undefined) : 
             undefined,
-          mcc: merchant.mcc ? 
+          // Safely handle MCC
+          mcc: merchant?.mcc ? 
             (typeof merchant.mcc === 'object' ? 
               merchant.mcc as any : 
               undefined) : 
-            undefined,
-        };
-
-        // Process payment method
-        const processedPaymentMethod = {
-          id: paymentMethod.id,
-          name: paymentMethod.name,
-          type: paymentMethod.type as 'credit_card' | 'cash',
-          currency: paymentMethod.currency,
-          active: paymentMethod.active !== false,
-          issuer: paymentMethod.issuer,
-          lastFourDigits: paymentMethod.last_four_digits,
-          rewardRules: (paymentMethod.reward_rules || []) as any[]
+            undefined
         };
 
         return {
