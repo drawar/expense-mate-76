@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -14,6 +15,7 @@ import { CurrencyService } from "@/services/currency";
 import { formatDate } from "@/utils/dateUtils";
 import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from "lucide-react";
 import { exportTransactionsToCSV } from "@/services/storage";
+import { withResolvedStringPromise } from "@/utils/storage/fileUtils";
 import {
   getCategoryFromMCC,
   getCategoryFromMerchantName,
@@ -36,24 +38,27 @@ const TransactionTable = ({
 }: TransactionTableProps) => {
   // Memoize CSV export to prevent recalculation on every render
   const handleExportCSV = useMemo(
-    () => () => {
-      const csvContent = exportTransactionsToCSV(transactions);
+    () => async () => {
+      const csvPromise = exportTransactionsToCSV(transactions);
+      
+      // Use the utility function to handle the string promise safely
+      await withResolvedStringPromise(async (csvContent) => {
+        // Create a blob and download link
+        const url = URL.createObjectURL(new Blob([csvContent], { type: "text/csv;charset=utf-8;" }));
+        const link = document.createElement("a");
 
-      // Create a blob and download link
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `transactions_export_${new Date().toISOString().slice(0, 10)}.csv`
+        );
+        link.style.visibility = "hidden";
 
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `transactions_export_${new Date().toISOString().slice(0, 10)}.csv`
-      );
-      link.style.visibility = "hidden";
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url); // Clean up
+      }, csvPromise);
     },
     [transactions]
   );
