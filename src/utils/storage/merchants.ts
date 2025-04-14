@@ -68,7 +68,7 @@ export const hasMerchantCategorySuggestions = async (name: string) => {
         .from('merchant_category_mappings')
         .select('id')
         .ilike('merchant_name', `%${normalizedName}%`)
-        .is('most_common_mcc', 'not.null')
+        .not('most_common_mcc', 'is', null) // Fix: Use not is null instead of not.null
         .limit(1);
       
       if (error) {
@@ -118,7 +118,9 @@ export const getSuggestedMerchantCategory = async (name: string): Promise<Mercha
         return null;
       }
       
-      return data[0].most_common_mcc as MerchantCategoryCode;
+      // Fix: Type casting the most_common_mcc Json value to MerchantCategoryCode
+      const mcc = data[0].most_common_mcc as unknown as MerchantCategoryCode;
+      return mcc;
     }
   } catch (error) {
     console.error('Error getting suggested merchant category:', error);

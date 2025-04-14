@@ -53,11 +53,11 @@ export async function getTransactions(useLocalStorage?: boolean): Promise<Transa
       const { data: merchants } = await supabase.from('merchants').select('*');
 
       // Map data to Transaction type
-      const transactions: Transaction[] = data.map(item => {
+      const transactions = data.map(item => {
         const paymentMethod = paymentMethods?.find(pm => pm.id === item.payment_method_id) || {
           id: item.payment_method_id,
           name: 'Unknown',
-          type: 'credit_card',
+          type: 'credit_card' as const,
           currency: item.payment_currency || 'SGD'
         };
 
@@ -66,13 +66,43 @@ export async function getTransactions(useLocalStorage?: boolean): Promise<Transa
           name: 'Unknown Merchant'
         };
 
+        // Properly cast merchant data types
+        const processedMerchant = {
+          id: merchant.id,
+          name: merchant.name,
+          address: merchant.address || undefined,
+          isOnline: merchant.is_online || false,
+          coordinates: merchant.coordinates ? 
+            (typeof merchant.coordinates === 'object' ? 
+              merchant.coordinates as any : 
+              undefined) : 
+            undefined,
+          mcc: merchant.mcc ? 
+            (typeof merchant.mcc === 'object' ? 
+              merchant.mcc as any : 
+              undefined) : 
+            undefined,
+        };
+
+        // Process payment method
+        const processedPaymentMethod = {
+          id: paymentMethod.id,
+          name: paymentMethod.name,
+          type: paymentMethod.type as 'credit_card' | 'cash',
+          currency: paymentMethod.currency,
+          active: paymentMethod.active !== false,
+          issuer: paymentMethod.issuer,
+          lastFourDigits: paymentMethod.last_four_digits,
+          rewardRules: (paymentMethod.reward_rules || []) as any[]
+        };
+
         return {
           id: item.id,
           date: item.date,
-          merchant: merchant,
+          merchant: processedMerchant,
           amount: Number(item.amount),
           currency: item.currency,
-          paymentMethod: paymentMethod,
+          paymentMethod: processedPaymentMethod,
           paymentAmount: Number(item.payment_amount || item.amount),
           paymentCurrency: item.payment_currency || item.currency,
           rewardPoints: item.reward_points || 0,
@@ -82,7 +112,7 @@ export async function getTransactions(useLocalStorage?: boolean): Promise<Transa
           notes: item.notes || '',
           reimbursementAmount: item.reimbursement_amount ? Number(item.reimbursement_amount) : 0,
           category: item.category
-        };
+        } as Transaction;
       });
 
       console.log(`Retrieved ${transactions.length} transactions from Supabase`);

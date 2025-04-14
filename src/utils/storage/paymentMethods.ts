@@ -37,7 +37,7 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
       }
       
       // Transform to our PaymentMethod type
-      const paymentMethods: PaymentMethod[] = data.map(item => ({
+      const paymentMethods = data.map(item => ({
         id: item.id,
         name: item.name,
         type: item.type as 'credit_card' | 'cash',
@@ -49,8 +49,8 @@ export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
         color: item.color,
         isMonthlyStatement: item.is_monthly_statement,
         statementStartDay: item.statement_start_day,
-        rewardRules: item.reward_rules || []
-      }));
+        rewardRules: (item.reward_rules || []) as any[]
+      })) as PaymentMethod[];
       
       console.log(`Retrieved ${paymentMethods.length} payment methods from Supabase`);
       return paymentMethods;
@@ -117,7 +117,7 @@ export const addPaymentMethod = async (paymentMethod: Omit<PaymentMethod, 'id'>)
         color: newMethod.color,
         is_monthly_statement: newMethod.isMonthlyStatement,
         statement_start_day: newMethod.statementStartDay,
-        reward_rules: newMethod.rewardRules
+        reward_rules: newMethod.rewardRules as any
       });
       
       if (error) throw new Error(`Failed to add payment method: ${error.message}`);
@@ -152,7 +152,7 @@ export const updatePaymentMethod = async (id: string, data: Partial<PaymentMetho
         color: data.color,
         is_monthly_statement: data.isMonthlyStatement,
         statement_start_day: data.statementStartDay,
-        reward_rules: data.rewardRules
+        reward_rules: data.rewardRules as any
       };
       
       // Remove undefined values
@@ -166,16 +166,20 @@ export const updatePaymentMethod = async (id: string, data: Partial<PaymentMetho
       if (error) throw new Error(`Failed to update payment method: ${error.message}`);
       
       // Get updated method
-      const { data: updated } = await supabase
+      const { data: updated, error: fetchError } = await supabase
         .from('payment_methods')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
+      
+      if (fetchError || !updated) {
+        throw new Error(`Failed to fetch updated payment method: ${fetchError?.message || 'Not found'}`);
+      }
       
       return {
         id: updated.id,
         name: updated.name,
-        type: updated.type,
+        type: updated.type as 'credit_card' | 'cash',
         currency: updated.currency,
         active: updated.active !== false,
         issuer: updated.issuer,
@@ -184,8 +188,8 @@ export const updatePaymentMethod = async (id: string, data: Partial<PaymentMetho
         color: updated.color,
         isMonthlyStatement: updated.is_monthly_statement,
         statementStartDay: updated.statement_start_day,
-        rewardRules: updated.reward_rules || []
-      };
+        rewardRules: (updated.reward_rules || []) as any[]
+      } as PaymentMethod;
     }
   } catch (error) {
     console.error('Error updating payment method:', error);
@@ -249,7 +253,7 @@ export const savePaymentMethods = async (paymentMethods: PaymentMethod[]): Promi
           color: method.color,
           is_monthly_statement: method.isMonthlyStatement,
           statement_start_day: method.statementStartDay,
-          reward_rules: method.rewardRules
+          reward_rules: method.rewardRules as any
         };
         
         if (data) {
