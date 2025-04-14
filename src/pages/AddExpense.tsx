@@ -7,9 +7,8 @@ import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-// Import from the reward system
-import { rewardService } from '@/services/rewards/index';
-import { RuleRepository } from '@/services/rewards/RuleRepository';
+// Import the initialization function from rewards service
+import { initializeRewardSystem } from '@/services/rewards';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -20,38 +19,30 @@ const AddExpense = () => {
   
   // Initialize the reward calculation system when the page loads - READ ONLY
   useEffect(() => {
-    const initializeRewardSystem = async () => {
-      console.log('AddExpense: Initializing reward system...');
+    const initializeRewardSystemWithReadOnly = async () => {
+      console.log('AddExpense: Initializing reward system in READ-ONLY mode...');
       setInitializationStatus('loading');
       
       try {
-        // Initialize the rule repository to load rules from Supabase reward_rules table
-        const ruleRepository = RuleRepository.getInstance();
-        
-        // Set repository to read-only mode to prevent any modifications during expense submission
-        ruleRepository.setReadOnly(true);
-        
-        await ruleRepository.loadRules();
-        
-        // Initialize the reward calculation service - READ ONLY
-        await rewardService.initialize();
-        console.log('RewardCalculatorService initialized successfully');
+        // Initialize the reward calculation service with READ-ONLY mode
+        await initializeRewardSystem(true);
         
         // Update status
         setInitializationStatus('success');
-        console.log('Reward calculation system ready');
+        console.log('Reward calculation system ready in READ-ONLY mode');
       } catch (error) {
         console.error('Failed to initialize reward system:', error);
         setInitializationStatus('error');
       }
     };
     
-    initializeRewardSystem();
+    initializeRewardSystemWithReadOnly();
     
     // Clean up - disable read-only mode when component unmounts
     return () => {
-      const ruleRepository = RuleRepository.getInstance();
-      ruleRepository.setReadOnly(false);
+      initializeRewardSystem(false).catch(err => {
+        console.error('Error disabling read-only mode:', err);
+      });
     };
   }, []);
 

@@ -1,9 +1,10 @@
+
 // components/expense/form/PointsDisplay.tsx
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CoinsIcon } from 'lucide-react';
 import { PaymentMethod } from '@/types';
-import { PointsCalculationResult } from '@/hooks/expense/useExpenseForm';
+import { PointsCalculationResult } from '@/hooks/expense/expense-form/useRewardPointsStandalone';
 import { rewardService } from '@/services/rewards';
 
 interface PointsDisplayProps {

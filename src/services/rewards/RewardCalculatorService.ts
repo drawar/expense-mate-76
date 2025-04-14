@@ -1,3 +1,4 @@
+
 // services/rewards/RewardCalculatorService.ts
 
 import { Transaction, PaymentMethod } from '@/types';
@@ -279,6 +280,58 @@ export class RewardCalculatorService {
     }
     
     return rules;
+  }
+  
+  /**
+   * Convert a legacy rule to the new format
+   * This is used when no rules are found in the database but legacy rules exist
+   */
+  private convertLegacyRule(legacyRule: any, cardTypeId: string): RewardRule {
+    const now = new Date();
+    return {
+      id: legacyRule.id || crypto.randomUUID(),
+      cardTypeId,
+      name: legacyRule.name || 'Legacy Rule',
+      description: legacyRule.description || '',
+      enabled: true,
+      priority: legacyRule.priority || 10,
+      conditions: this.convertLegacyConditions(legacyRule),
+      reward: {
+        calculationMethod: 'standard',
+        baseMultiplier: legacyRule.baseMultiplier || 1,
+        bonusMultiplier: legacyRule.bonusMultiplier || 0,
+        pointsRoundingStrategy: 'floor',
+        amountRoundingStrategy: 'floor',
+        blockSize: legacyRule.blockSize || 1,
+        monthlyCap: legacyRule.monthlyCap,
+        pointsCurrency: legacyRule.pointsCurrency || 'Points'
+      },
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+  
+  /**
+   * Convert legacy conditions to the new format
+   */
+  private convertLegacyConditions(legacyRule: any): any[] {
+    const conditions: any[] = [];
+    
+    if (legacyRule.conditionType === 'online') {
+      conditions.push({
+        type: 'transaction_type',
+        operation: 'equals',
+        values: [TransactionType.ONLINE]
+      });
+    } else if (legacyRule.conditionType === 'mcc') {
+      conditions.push({
+        type: 'mcc',
+        operation: 'include',
+        values: Array.isArray(legacyRule.mccCodes) ? legacyRule.mccCodes : []
+      });
+    }
+    
+    return conditions;
   }
   
   /**

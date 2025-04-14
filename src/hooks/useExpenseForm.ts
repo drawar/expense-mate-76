@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PaymentMethod } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { FormValues, formSchema } from './expense-form/formSchema';
-import { useMerchantData } from './expense-form/useMerchantData';
-import { usePaymentMethodLogic } from './expense-form/usePaymentMethodLogic';
-import { useRewardPointsStandalone } from './expense-form/useRewardPointsStandalone';
+import { FormValues, formSchema } from '@/hooks/expense/expense-form/formSchema';
+import { useMerchantData } from '@/hooks/expense/expense-form/useMerchantData';
+import { usePaymentMethodLogic } from '@/hooks/expense/expense-form/usePaymentMethodLogic';
+import { useRewardPointsStandalone } from '@/hooks/expense/expense-form/useRewardPointsStandalone';
 import { useState, useEffect } from 'react';
 
 interface UseExpenseFormProps {
@@ -15,7 +15,7 @@ interface UseExpenseFormProps {
 }
 
 // Change regular export to type export
-export type { FormValues } from './expense-form/formSchema';
+export type { FormValues } from '@/hooks/expense/expense-form/formSchema';
 
 export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseFormProps) => {
   const { toast } = useToast();
