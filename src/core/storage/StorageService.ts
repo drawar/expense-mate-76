@@ -1,4 +1,3 @@
-// core/storage/StorageService.ts
 import { Transaction, PaymentMethod, Merchant, MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -139,163 +138,135 @@ export class StorageService {
   
   public async addTransaction(transactionData: Omit<Transaction, 'id'>): Promise<Transaction> {
     try {
-      // Generate a client-side ID for both implementations
-      const clientId = uuidv4();
-      
       if (this.useLocalStorage) {
-        // For local storage, use the client-generated ID
+        // Local storage implementation unchanged
+        const id = uuidv4();
         const newTransaction: Transaction = {
-          id: clientId,
+          id,
           ...transactionData
         };
         
-        // Save to local storage
         const transactions = await this.getTransactions();
         const updatedTransactions = [...transactions, newTransaction];
         localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
         
         return newTransaction;
       } else {
-        // For Supabase, explicitly specify the ID in the insert
-        // First, save the merchant if needed
+        // For Supabase:
+        // First, handle the merchant - check if it exists
         const merchant = transactionData.merchant;
         let merchantId = merchant.id;
         
         if (!merchantId || merchantId === '') {
-          // Create new merchant
-          const { data: newMerchant, error: merchantError } = await supabase
+          // Try to find an existing merchant with the same name
+          const { data: existingMerchant, error: findError } = await supabase
             .from('merchants')
-            .insert({
-              name: merchant.name,
-              address: merchant.address,
-              is_online: merchant.isOnline,
-              coordinates: merchant.coordinates,
-              mcc: merchant.mcc
-            })
-            .select()
-            .single();
-            
-          if (merchantError) {
-            console.error('Error creating merchant:', merchantError);
-            throw new Error(`Failed to create merchant: ${merchantError.message}`);
+            .select('id')
+            .ilike('name', merchant.name.trim())
+            .limit(1);
+          
+          if (findError) {
+            console.error('Error finding merchant:', findError);
+            throw new Error(`Failed to find merchant: ${findError.message}`);
           }
           
-          merchantId = newMerchant.id;
+          if (existingMerchant && existingMerchant.length > 0) {
+            // Use the existing merchant ID
+            merchantId = existingMerchant[0].id;
+            console.log('Using existing merchant with ID:', merchantId);
+          } else {
+            // Create new merchant only if it doesn't exist
+            const { data: newMerchant, error: merchantError } = await supabase
+              .from('merchants')
+              .insert({
+                name: merchant.name.trim(),
+                address: merchant.address,
+                is_online: merchant.isOnline,
+                coordinates: merchant.coordinates,
+                mcc: merchant.mcc
+              })
+              .select()
+              .single();
+                
+            if (merchantError) {
+              console.error('Error creating merchant:', merchantError);
+              throw new Error(`Failed to create merchant: ${merchantError.message}`);
+            }
+              
+            merchantId = newMerchant.id;
+            console.log('Created new merchant with ID:', merchantId);
+          }
         }
         
-        // Check if transaction with this ID already exists
-        const { data: existingTransaction } = await supabase
+        // CRITICAL CHANGE: Remove 'id' completely from the insert operation
+        const { data: insertedTransaction, error: txError } = await supabase
           .from('transactions')
-          .select('id')
-          .eq('id', clientId)
-          .maybeSingle();
-        
-        if (existingTransaction) {
-          // In the rare case of a collision, generate a new ID
-          const alternateId = uuidv4();
-          
-          // Then save the transaction with the alternate ID
-          const { data, error: txError } = await supabase
-            .from('transactions')
-            .insert({
-              id: alternateId,
-              date: transactionData.date,
-              amount: transactionData.amount,
-              currency: transactionData.currency,
-              payment_amount: transactionData.paymentAmount,
-              payment_currency: transactionData.paymentCurrency,
-              reward_points: transactionData.rewardPoints,
-              base_points: transactionData.basePoints,
-              bonus_points: transactionData.bonusPoints,
-              is_contactless: transactionData.isContactless,
-              notes: transactionData.notes,
-              reimbursement_amount: transactionData.reimbursementAmount,
-              merchant_id: merchantId,
-              payment_method_id: transactionData.paymentMethod.id
-            })
-            .select()
-            .single();
+          .insert({
+            date: transactionData.date,
+            amount: transactionData.amount,
+            currency: transactionData.currency,
+            payment_amount: transactionData.paymentAmount,
+            payment_currency: transactionData.paymentCurrency,
+            reward_points: transactionData.rewardPoints,
+            base_points: transactionData.basePoints,
+            bonus_points: transactionData.bonusPoints,
+            is_contactless: transactionData.isContactless,
+            notes: transactionData.notes,
+            reimbursement_amount: transactionData.reimbursementAmount,
+            merchant_id: merchantId,
+            payment_method_id: transactionData.paymentMethod.id
+          })
+          .select()  // This will return the inserted record
+          .single();  // Get just one record
             
-          if (txError) {
-            console.error('Error creating transaction:', txError);
-            throw new Error(`Failed to save transaction: ${txError.message}`);
-          }
-          
-          const newTransaction: Transaction = {
-            id: alternateId,
-            ...transactionData
-          };
-          
-          // Update merchant occurrence tracking
-          if (transactionData.merchant.mcc) {
-            await this.incrementMerchantOccurrence(
-              transactionData.merchant.name,
-              transactionData.merchant.mcc
-            );
-          }
-          
-          // Record bonus points if any
-          if (newTransaction.bonusPoints && newTransaction.bonusPoints > 0) {
-            await this.recordBonusPointsMovement(
-              newTransaction.id,
-              newTransaction.paymentMethod.id,
-              newTransaction.bonusPoints
-            );
-          }
-          
-          return newTransaction;
-        } else {
-          // No collision, use the original client ID
-          const { data, error: txError } = await supabase
-            .from('transactions')
-            .insert({
-              id: clientId,
-              date: transactionData.date,
-              amount: transactionData.amount,
-              currency: transactionData.currency,
-              payment_amount: transactionData.paymentAmount,
-              payment_currency: transactionData.paymentCurrency,
-              reward_points: transactionData.rewardPoints,
-              base_points: transactionData.basePoints,
-              bonus_points: transactionData.bonusPoints,
-              is_contactless: transactionData.isContactless,
-              notes: transactionData.notes,
-              reimbursement_amount: transactionData.reimbursementAmount,
-              merchant_id: merchantId,
-              payment_method_id: transactionData.paymentMethod.id
-            })
-            .select()
-            .single();
-            
-          if (txError) {
-            console.error('Error creating transaction:', txError);
-            throw new Error(`Failed to save transaction: ${txError.message}`);
-          }
-          
-          const newTransaction: Transaction = {
-            id: clientId,
-            ...transactionData
-          };
-          
-          // Update merchant occurrence tracking
-          if (transactionData.merchant.mcc) {
-            await this.incrementMerchantOccurrence(
-              transactionData.merchant.name,
-              transactionData.merchant.mcc
-            );
-          }
-          
-          // Record bonus points if any
-          if (newTransaction.bonusPoints && newTransaction.bonusPoints > 0) {
-            await this.recordBonusPointsMovement(
-              newTransaction.id,
-              newTransaction.paymentMethod.id,
-              newTransaction.bonusPoints
-            );
-          }
-          
-          return newTransaction;
+        if (txError) {
+          console.error('Error creating transaction:', txError);
+          throw new Error(`Failed to save transaction: ${txError.message}`);
         }
+        
+        if (!insertedTransaction) {
+          throw new Error('Failed to retrieve the created transaction');
+        }
+        
+        // Create the full transaction object using the ID from the database
+        const newTransaction: Transaction = {
+          id: insertedTransaction.id,
+          date: transactionData.date,
+          merchant: {
+            ...transactionData.merchant,
+            id: merchantId // Use the correct merchant ID
+          },
+          amount: transactionData.amount,
+          currency: transactionData.currency,
+          paymentMethod: transactionData.paymentMethod,
+          paymentAmount: transactionData.paymentAmount,
+          paymentCurrency: transactionData.paymentCurrency,
+          rewardPoints: transactionData.rewardPoints,
+          basePoints: transactionData.basePoints,
+          bonusPoints: transactionData.bonusPoints,
+          isContactless: transactionData.isContactless,
+          notes: transactionData.notes,
+          reimbursementAmount: transactionData.reimbursementAmount,
+        };
+          
+        // Update merchant occurrence tracking
+        if (transactionData.merchant.mcc) {
+          await this.incrementMerchantOccurrence(
+            transactionData.merchant.name,
+            transactionData.merchant.mcc
+          );
+        }
+        
+        // Record bonus points if any
+        if (newTransaction.bonusPoints && newTransaction.bonusPoints > 0) {
+          await this.recordBonusPointsMovement(
+            newTransaction.id,
+            newTransaction.paymentMethod.id,
+            newTransaction.bonusPoints
+          );
+        }
+        
+        return newTransaction;
       }
     } catch (error) {
       console.error('Error saving transaction to Supabase:', error);
@@ -353,19 +324,17 @@ export class StorageService {
           
           if (!merchantId || merchantId === '') {
             // Create new merchant
-            const merchantData = {
-              name: merchant.name,
-              address: merchant.address || null,
-              is_online: merchant.isOnline || false,
-              coordinates: merchant.coordinates || null,
-              mcc: merchant.mcc || null
-            };
-            
             const { data: newMerchant, error: merchantError } = await supabase
-              .from('merchants')
-              .insert(merchantData) // Fixed: passing a single object instead of an array
-              .select()
-              .single();
+            .from('merchants')
+            .insert([{
+              name: merchant.name,
+              address: merchant.address,
+              is_online: merchant.isOnline,
+              coordinates: merchant.coordinates ? JSON.stringify(merchant.coordinates) : null,
+              mcc: merchant.mcc ? JSON.stringify(merchant.mcc) : null
+            }])
+            .select('id')
+            .single();
               
             if (merchantError) {
               console.error('Error creating merchant:', merchantError);
@@ -375,18 +344,16 @@ export class StorageService {
             merchantId = newMerchant.id;
           } else {
             // Update existing merchant
-            const merchantUpdateData = {
-              name: merchant.name,
-              address: merchant.address || null,
-              is_online: merchant.isOnline || false,
-              coordinates: merchant.coordinates || null,
-              mcc: merchant.mcc || null
-            };
-            
             const { error: merchantError } = await supabase
-              .from('merchants')
-              .update(merchantUpdateData)
-              .eq('id', merchantId);
+            .from('merchants')
+            .update({  // Pass a single object, not wrapped in array brackets
+              name: merchant.name,
+              address: merchant.address,
+              is_online: merchant.isOnline,
+              coordinates: merchant.coordinates ? JSON.stringify(merchant.coordinates) : null,
+              mcc: merchant.mcc ? JSON.stringify(merchant.mcc) : null
+            })
+            .eq('id', merchantId);
               
             if (merchantError) {
               console.error('Error updating merchant:', merchantError);
@@ -605,6 +572,162 @@ export class StorageService {
         rewardRules: []
       }
     ];
+  }
+
+  public async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<boolean> {
+    try {
+      if (this.useLocalStorage) {
+        localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+      } else {
+        // For Supabase, we need to handle each method individually
+        for (const method of paymentMethods) {
+          // Check if method exists
+          const { data, error: checkError } = await supabase
+            .from('payment_methods')
+            .select('id')
+            .eq('id', method.id)
+            .maybeSingle();
+          
+          if (checkError) {
+            console.error('Error checking payment method:', checkError);
+            continue;
+          }
+          
+          const dbData = {
+            id: method.id,
+            name: method.name,
+            type: method.type,
+            currency: method.currency,
+            active: method.active,
+            issuer: method.issuer,
+            last_four_digits: method.lastFourDigits,
+            image_url: method.imageUrl,
+            color: method.color,
+            is_monthly_statement: method.isMonthlyStatement,
+            statement_start_day: method.statementStartDay,
+            reward_rules: method.rewardRules as any
+          };
+          
+          if (data) {
+            // Update existing
+            const { error } = await supabase
+              .from('payment_methods')
+              .update(dbData)
+              .eq('id', method.id);
+            
+            if (error) console.error('Error updating payment method:', error);
+          } else {
+            // Insert new
+            const { error } = await supabase
+              .from('payment_methods')
+              .insert(dbData);
+            
+            if (error) console.error('Error inserting payment method:', error);
+          }
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error saving payment methods:', error);
+      return false;
+    }
+  }
+  
+  public async uploadCardImage(file: File, paymentMethodId: string): Promise<string | null> {
+    try {
+      if (this.useLocalStorage) {
+        // For local storage, just create a data URL
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // For Supabase, upload to storage
+        const fileName = `${paymentMethodId}-${new Date().getTime()}`;
+        const fileExt = file.name.split('.').pop();
+        const filePath = `card-images/${fileName}.${fileExt}`;
+        
+        // Create storage bucket if it doesn't exist
+        // Note: This assumes you have the appropriate storage bucket set up
+        const { error: uploadError } = await supabase.storage
+          .from('card-images')
+          .upload(filePath, file, {
+            upsert: true,
+            cacheControl: '3600'
+          });
+        
+        if (uploadError) {
+          console.error('Error uploading card image:', uploadError);
+          return null;
+        }
+        
+        // Get the public URL
+        const { data } = supabase.storage
+          .from('card-images')
+          .getPublicUrl(filePath);
+        
+        const imageUrl = data.publicUrl;
+        
+        // Update the payment method with the image URL
+        await this.updatePaymentMethod(paymentMethodId, { imageUrl });
+        
+        return imageUrl;
+      }
+    } catch (error) {
+      console.error('Error uploading card image:', error);
+      return null;
+    }
+  }
+  
+  private async updatePaymentMethod(id: string, data: Partial<PaymentMethod>): Promise<PaymentMethod | null> {
+    try {
+      if (this.useLocalStorage) {
+        const methods = await this.getPaymentMethods();
+        const updatedMethods = methods.map(m => m.id === id ? { ...m, ...data } : m);
+        localStorage.setItem('paymentMethods', JSON.stringify(updatedMethods));
+        return updatedMethods.find(m => m.id === id) || null;
+      } else {
+        // Transform to database format
+        const dbData: any = {};
+        
+        if (data.name !== undefined) dbData.name = data.name;
+        if (data.type !== undefined) dbData.type = data.type;
+        if (data.currency !== undefined) dbData.currency = data.currency;
+        if (data.active !== undefined) dbData.active = data.active;
+        if (data.issuer !== undefined) dbData.issuer = data.issuer;
+        if (data.lastFourDigits !== undefined) dbData.last_four_digits = data.lastFourDigits;
+        if (data.imageUrl !== undefined) dbData.image_url = data.imageUrl;
+        if (data.color !== undefined) dbData.color = data.color;
+        if (data.isMonthlyStatement !== undefined) dbData.is_monthly_statement = data.isMonthlyStatement;
+        if (data.statementStartDay !== undefined) dbData.statement_start_day = data.statementStartDay;
+        if (data.rewardRules !== undefined) dbData.reward_rules = data.rewardRules;
+        
+        // Only update fields that are provided
+        if (Object.keys(dbData).length === 0) {
+          return null;
+        }
+        
+        const { error } = await supabase
+          .from('payment_methods')
+          .update(dbData)
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Error updating payment method:', error);
+          return null;
+        }
+        
+        // Get the updated method
+        const methods = await this.getPaymentMethods();
+        return methods.find(m => m.id === id) || null;
+      }
+    } catch (error) {
+      console.error('Error updating payment method:', error);
+      return null;
+    }
   }
   
   // =========== Merchant Methods ===========
