@@ -1,5 +1,5 @@
 // services/rewards/types.ts
-
+import { DateTime } from 'luxon';
 import { PaymentMethod } from "@/types";
 
 /**
@@ -104,8 +104,8 @@ export interface RewardRule {
   priority: number; // Higher priority rules are applied first
   conditions: RuleCondition[];
   reward: RuleReward;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: DateTime;
+  updatedAt: DateTime;
 }
 
 /**
@@ -120,7 +120,7 @@ export interface CalculationInput {
   usedBonusPoints?: number;
   monthlySpend?: number; // Total eligible spend this month for threshold calculation
   paymentMethod: PaymentMethod;
-  date: Date;
+  date: DateTime;
   category?: string;
   statementDay?: number; // Day of month when statement cycle starts
   [key: string]: any; // For extensibility
@@ -154,4 +154,27 @@ export interface CardType {
   availableCategories?: string[];
   maxCategoriesSelectable?: number;
   statementDay?: number; // Default statement cycle start day (1-31)
+}
+
+export interface DbRewardRule {
+  id: string;
+  card_type_id: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  priority?: number;
+  conditions: string | any[];
+  bonus_tiers?: string | any[];
+  calculation_method?: string;
+  base_multiplier?: number;
+  bonus_multiplier?: number;
+  points_rounding_strategy?: string;
+  amount_rounding_strategy?: string;
+  block_size?: number;
+  monthly_cap?: number;
+  monthly_min_spend?: number;
+  monthly_spend_period_type?: string;
+  points_currency?: string;
+  created_at: string; // ISO string from Supabase
+  updated_at?: string;
 }
