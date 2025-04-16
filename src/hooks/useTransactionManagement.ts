@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Transaction } from '@/types';
-import { useTransactionActions } from './useTransactionActions';
+import { useTransactionActions } from '@/hooks/expense/useTransactionActions';
 
 /**
  * A hook for managing transaction operations beyond basic CRUD

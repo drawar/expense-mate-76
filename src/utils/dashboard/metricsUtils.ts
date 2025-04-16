@@ -1,6 +1,6 @@
 // utils/dashboard/metricsUtils.ts
 import { Transaction, Currency } from "@/types";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 import { ChartDataItem } from "@/types/dashboard";
 
 /**

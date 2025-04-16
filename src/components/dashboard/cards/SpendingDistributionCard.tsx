@@ -5,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CreditCardIcon, TagIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
-import { CurrencyService } from '@/services/currency';
+import { CurrencyService } from '@/core/currency';
 
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];

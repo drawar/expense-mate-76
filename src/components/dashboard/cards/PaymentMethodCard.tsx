@@ -3,7 +3,7 @@
 import React from 'react';
 import { CreditCardIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { CurrencyService } from '@/services/currency';
+import { CurrencyService } from '@/core/currency';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
 

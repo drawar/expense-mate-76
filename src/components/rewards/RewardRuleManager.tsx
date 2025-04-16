@@ -7,9 +7,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Badge } from '@/components/ui/badge';
 import { CoinsIcon, Plus, PencilIcon, TrashIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { RewardRule } from '@/services/rewards/types';
-import { RuleRepository } from '@/services/rewards/RuleRepository';
-import { CardRegistry } from '@/services/rewards/CardRegistry';
+import { RewardRule } from '@/core/rewards/types';
+import { RuleRepository } from '@/core/rewards/RuleRepository';
+import { CardRegistry } from '@/core/rewards/CardRegistry';
 import RewardRuleEditor from './RewardRuleEditor';
 
 interface RewardRuleManagerProps {

@@ -1,14 +1,14 @@
-
+// pages/AddExpense.tsx - UPDATED FILE
 import { useSupabaseConnectionCheck } from '@/hooks/useSupabaseConnectionCheck';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTransactionSubmit } from '@/hooks/useTransactionSubmit';
-import ExpenseForm from '@/components/expense/ExpenseForm';
+import { ExpenseForm } from '@/components/expense/form/ExpenseForm';
 import StorageModeAlert from '@/components/expense/StorageModeAlert';
 import ErrorAlert from '@/components/expense/ErrorAlert';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 // Import the initialization function from rewards service
-import { initializeRewardSystem } from '@/services/rewards';
+import { initializeRewardSystem } from '@/core/rewards';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -75,6 +75,7 @@ const AddExpense = () => {
           <ExpenseForm
             paymentMethods={paymentMethods}
             onSubmit={handleSubmit}
+            useLocalStorage={useLocalStorage}
           />
         )}
       </div>

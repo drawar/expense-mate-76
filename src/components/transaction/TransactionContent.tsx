@@ -3,7 +3,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { SortOption, ViewMode } from '@/components/transaction/TransactionSortAndView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TransactionGroupView from '@/components/transaction/TransactionGroupView';
-import TransactionTable from '@/components/expense/TransactionTable';
+import { TransactionTable } from '@/components/expense/transaction/TransactionTable';
 import TransactionEmptyState from '@/components/transaction/TransactionEmptyState';
 import { useIsMobile } from '@/hooks/use-mobile';
 

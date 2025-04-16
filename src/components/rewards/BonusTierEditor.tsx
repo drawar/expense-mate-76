@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash, Edit } from 'lucide-react';
-import { BonusTier, RuleCondition } from '@/services/rewards/types';
+import { BonusTier, RuleCondition } from '@/core/rewards/types';
 import { ConditionEditor } from './ConditionEditor';
 
 interface BonusTierEditorProps {

@@ -1,6 +1,6 @@
 // src/components/dashboard/charts/ChartTooltip.tsx
 import React from "react";
-import { CurrencyService } from "@/services/currency";
+import { CurrencyService } from "@/core/currency";
 import { Currency } from "@/types";
 
 const DEFAULT_CURRENCY: Currency = "SGD";

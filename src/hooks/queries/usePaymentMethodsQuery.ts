@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PaymentMethod } from "@/types";
-import { getPaymentMethods } from "@/utils/storageUtils";
+import { storageService } from '@/core/storage/StorageService';
 import { toast } from "sonner";
 
 /**
@@ -12,7 +12,7 @@ export function usePaymentMethodsQuery() {
     queryKey: ["paymentMethods"],
     queryFn: async () => {
       try {
-        return await getPaymentMethods();
+        return await storageService.getPaymentMethods();
       } catch (error) {
         console.error("Error fetching payment methods:", error);
         toast.error("Failed to load payment methods");

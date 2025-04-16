@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "jest"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [
@@ -60,6 +61,7 @@
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
+    "luxon": "^3.6.1",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
@@ -78,6 +80,8 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
+    "@types/jest": "^29.5.14",
+    "@types/luxon": "^3.6.2",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -91,11 +95,13 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "husky": "^9.1.7",
+    "jest": "^29.7.0",
     "lint-staged": "^15.5.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.11",
+    "ts-jest": "^29.3.2",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"

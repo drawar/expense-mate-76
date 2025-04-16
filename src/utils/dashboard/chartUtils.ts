@@ -1,6 +1,6 @@
 // utils/dashboard/chartUtils.ts
 import { Transaction, Currency } from '@/types';
-import { CurrencyService } from '@/services/currency';
+import { CurrencyService } from '@/core/currency';
 import { format } from 'date-fns';
 import { CHART_COLORS } from './constants';
 import { 

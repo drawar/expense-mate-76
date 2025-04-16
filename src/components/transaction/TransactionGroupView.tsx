@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { Transaction } from '@/types';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate } from '@/utils/dates/formatters';
 import TransactionCard from '@/components/expense/TransactionCard';
 
 interface TransactionGroupViewProps {
