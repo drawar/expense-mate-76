@@ -78,7 +78,7 @@ export class CurrencyService extends BaseService {
    * Initialize exchange rates with default values
    */
   private initializeExchangeRates(): void {
-    this.exchangeRatesCache.set('default', this.DEFAULT_EXCHANGE_RATES);
+    this.setCachedValue(this.exchangeRatesCache, 'default', this.DEFAULT_EXCHANGE_RATES);
   }
 
   /**
@@ -130,7 +130,7 @@ export class CurrencyService extends BaseService {
     }
 
     // Get exchange rates from cache
-    const rates = this.exchangeRatesCache.get('default');
+    const rates = this.getCachedValue(this.exchangeRatesCache, 'default');
     if (!rates) return amount; // Fallback to original amount if no rates found
 
     // Add validation for currency codes to prevent accessing undefined rates
@@ -171,7 +171,7 @@ export class CurrencyService extends BaseService {
     if (fromCurrency === toCurrency) return 1;
 
     // Get exchange rates from cache
-    const rates = this.exchangeRatesCache.get('default');
+    const rates = this.getCachedValue(this.exchangeRatesCache, 'default');
     if (!rates) return 1; // Fallback to 1 if no rates found
 
     if (
@@ -191,7 +191,7 @@ export class CurrencyService extends BaseService {
    * Update exchange rates (e.g., from an external API)
    */
   public updateExchangeRates(rates: Record<Currency, Record<Currency, number>>): void {
-    this.exchangeRatesCache.set('default', rates);
+    this.setCachedValue(this.exchangeRatesCache, 'default', rates);
   }
 
   /**

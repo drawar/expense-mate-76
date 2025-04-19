@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 
 /**
  * Common data structure for pie chart data
@@ -153,7 +153,7 @@ const PieChart: React.FC<PieChartProps> = ({
         <div className="bg-background border border-border p-3 rounded-md shadow-lg">
           <p className="font-medium text-sm mb-1">{item.name}</p>
           <p className="text-primary font-bold">
-            {CurrencyService.format(item.value, currency)}
+            {currencyService.format(item.value, currency)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {Math.round(entry.percentage)}% of total

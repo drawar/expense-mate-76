@@ -3,7 +3,7 @@ import React from "react";
 import { PiggyBankIcon, TrendingDownIcon, BarChart3Icon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Progress } from "@/components/ui/progress";
 import { useSavingsPotential } from "@/hooks/dashboard/useChartData";
 
@@ -39,12 +39,12 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
   const formattedValues = React.useMemo(() => {
     if (!hasTransactions) return null;
 
-    const savingsPotentialFormatted = CurrencyService.format(
+    const savingsPotentialFormatted = currencyService.format(
       analysis.savingsPotential,
       currency
     );
     const savingsProgressRounded = Math.round(analysis.savingsProgress);
-    const discretionarySpendingFormatted = CurrencyService.format(
+    const discretionarySpendingFormatted = currencyService.format(
       analysis.discretionarySpending,
       currency
     );
@@ -74,7 +74,7 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
           <span className="text-xs">{category.category}</span>
         </div>
         <span className="text-xs text-green-500">
-          -{CurrencyService.format(category.savingsPotential, currency)}
+          -{currencyService.format(category.savingsPotential, currency)}
         </span>
       </div>
     ));

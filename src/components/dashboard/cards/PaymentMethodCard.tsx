@@ -1,11 +1,10 @@
-
 // src/components/dashboard/cards/PaymentMethodCard.tsx
 import React from 'react';
 import { CreditCardIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { CurrencyService } from '@/services/CurrencyService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
+import { currencyService } from '@/services/CurrencyService';
 
 interface PaymentMethodCardProps {
   title?: string;
@@ -86,7 +85,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                       item.highlighted ? 'font-semibold' : ''
                     }`}
                   >
-                    {CurrencyService.format(item.value, currency)}
+                    {currencyService.format(item.value, currency)}
                   </div>
                 </React.Fragment>
               ))}

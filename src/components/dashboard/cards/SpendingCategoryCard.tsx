@@ -1,9 +1,8 @@
-
 // src/components/dashboard/cards/SpendingCategoryCard.tsx
 import React from 'react';
 import { TagIcon } from 'lucide-react';
 import { Currency } from '@/types';
-import { CurrencyService } from '@/services/CurrencyService';
+import { currencyService } from '@/services/CurrencyService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
 
@@ -92,7 +91,7 @@ const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
                   <div 
                     className="text-right text-[14px] font-semibold text-olive-green dark:text-white"
                   >
-                    {CurrencyService.format(item.value, currency)}
+                    {currencyService.format(item.value, currency)}
                   </div>
                 </React.Fragment>
               ))}

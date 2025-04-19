@@ -1,5 +1,5 @@
 import { Transaction } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { formatDate } from "@/utils/dateUtils";
 import {
   CreditCardIcon,
@@ -56,17 +56,17 @@ const TransactionCard = ({
         <div className="text-right flex-shrink-0">
           <p
             className="font-semibold text-base md:text-lg whitespace-nowrap"
-            title={CurrencyService.format(amount, currency)}
+            title={currencyService.format(amount, currency)}
           >
-            {CurrencyService.format(amount, currency)}
+            {currencyService.format(amount, currency)}
           </p>
           {isPaymentDifferent && (
             <p
               className="text-sm text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap"
-              title={`Paid: ${CurrencyService.format(transaction.paymentAmount, transaction.paymentCurrency)}`}
+              title={`Paid: ${currencyService.format(transaction.paymentAmount, transaction.paymentCurrency)}`}
             >
               Paid:{" "}
-              {CurrencyService.format(
+              {currencyService.format(
                 transaction.paymentAmount,
                 transaction.paymentCurrency
               )}

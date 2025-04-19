@@ -4,7 +4,7 @@ import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Link } from "react-router-dom";
 import { 
   useUnusualSpending, 
@@ -108,7 +108,7 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
 
                   {/* Amount */}
                   <div className="text-right font-medium">
-                    {CurrencyService.format(anomaly.amount, currency)}
+                    {currencyService.format(anomaly.amount, currency)}
                   </div>
                 </div>
               ))}

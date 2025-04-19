@@ -1,4 +1,3 @@
-
 // src/components/dashboard/cards/SpendingDistributionCard.tsx
 import React, { useState } from 'react';
 import { Currency } from '@/types';
@@ -6,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { CreditCardIcon, TagIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChartDataItem } from '@/types/dashboard';
-import { CurrencyService } from '@/services/CurrencyService';
+import { currencyService } from '@/services/CurrencyService';
 
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];
@@ -115,7 +114,8 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
           <div className="mt-2 space-y-3">
             <div className="grid grid-cols-2 gap-2">
               {activeData.map((item, index) => (
-                <React.Fragment key={`${item.name}-${index}`}>
+                // Replace React.Fragment with a regular div with grid properties
+                <div key={`${item.name}-${index}`} className="contents">
                   <div className="flex items-center">
                     <div 
                       className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
@@ -133,9 +133,9 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
                   <div 
                     className="text-right text-[14px] font-semibold text-olive-green dark:text-white"
                   >
-                    {CurrencyService.format(item.value, currency)}
+                    {currencyService.format(item.value, currency)}
                   </div>
-                </React.Fragment>
+                </div>
               ))}
             </div>
           </div>

@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Currency } from "@/types";
 import { DollarSign } from "lucide-react";
 
@@ -25,7 +25,7 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
   onChange,
   className = "",
 }) => {
-  const currencyOptions = CurrencyService.getCurrencyOptions();
+  const currencyOptions = currencyService.getCurrencyOptions();
 
   return (
     <div className={`flex items-center h-full ${className}`}>

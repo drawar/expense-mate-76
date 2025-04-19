@@ -1,6 +1,6 @@
 // utils/dashboard/chartUtils.ts
 import { Transaction, Currency } from '@/types';
-import { CurrencyService } from '@/services/CurrencyService';
+import { currencyService } from '@/services/CurrencyService';
 import { format } from 'date-fns';
 import { CHART_COLORS } from './constants';
 import { 
@@ -56,7 +56,7 @@ export const chartUtils = {
       }
 
       // Convert amount to display currency
-      const convertedAmount = CurrencyService.convert(
+      const convertedAmount = currencyService.convert(
         tx.amount,
         tx.currency as Currency,
         displayCurrency,
@@ -66,7 +66,7 @@ export const chartUtils = {
       // Adjust for reimbursements if enabled
       let finalAmount = convertedAmount;
       if (includeReimbursements && tx.reimbursementAmount) {
-        const reimbursedAmount = CurrencyService.convert(
+        const reimbursedAmount = currencyService.convert(
           tx.reimbursementAmount,
           tx.currency as Currency,
           displayCurrency,
@@ -178,7 +178,7 @@ export const chartUtils = {
       // Calculate total for the period with reimbursement adjustments
       const total = periodTransactions.reduce((sum, tx) => {
         // Convert to display currency
-        const convertedAmount = CurrencyService.convert(
+        const convertedAmount = currencyService.convert(
           tx.amount,
           tx.currency as Currency,
           displayCurrency,
@@ -188,7 +188,7 @@ export const chartUtils = {
         // Adjust for reimbursements if applicable
         let finalAmount = convertedAmount;
         if (includeReimbursements && tx.reimbursementAmount) {
-          const reimbursedAmount = CurrencyService.convert(
+          const reimbursedAmount = currencyService.convert(
             tx.reimbursementAmount,
             tx.currency as Currency,
             displayCurrency,
@@ -355,7 +355,7 @@ export const chartUtils = {
       if (!tx.category) return;
 
       // Convert to display currency
-      const convertedAmount = CurrencyService.convert(
+      const convertedAmount = currencyService.convert(
         tx.amount,
         tx.currency as Currency,
         displayCurrency,
@@ -365,7 +365,7 @@ export const chartUtils = {
       // Adjust for reimbursements if applicable
       let finalAmount = convertedAmount;
       if (accountForReimbursements && tx.reimbursementAmount) {
-        const reimbursedAmount = CurrencyService.convert(
+        const reimbursedAmount = currencyService.convert(
           tx.reimbursementAmount,
           tx.currency as Currency,
           displayCurrency,

@@ -27,7 +27,7 @@ export const addTransaction = async (
     );
     
     // Calculate reward points using our centralized service
-    const pointsBreakdown = rewardCalculationService.calculatePoints(
+    const pointsBreakdown = rewardCalculatorService.calculatePoints(
       transaction as Transaction, 
       usedBonusPoints
     );
@@ -67,7 +67,8 @@ export const addTransaction = async (
             notes: completeTransaction.notes || '',
             reward_points: completeTransaction.rewardPoints,
             base_points: pointsBreakdown.basePoints,
-            bonus_points: pointsBreakdown.bonusPoints
+            bonus_points: pointsBreakdown.bonusPoints,
+            reimbursement_amount: completeTransaction.reimbursementAmount || 0 // Include reimbursement amount
           })
           .select()
           .single();
