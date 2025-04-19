@@ -16,8 +16,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [
       "prettier --write --ignore-unknown",
-      "eslint --max-warnings=8",
-      "git add"
+      "eslint --max-warnings=8"
     ]
   },
   "dependencies": {

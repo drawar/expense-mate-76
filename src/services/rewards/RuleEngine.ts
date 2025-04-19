@@ -7,36 +7,26 @@ import {
   RuleCondition,
   RoundingStrategy,
   TransactionType,
-  SpendingPeriodType,
   BonusTier
 } from './types';
 
+/**
+ * Engine for evaluating reward rules and calculating points
+ */
 export class RuleEngine {
   /**
    * Calculate reward points for a given input based on rules
    */
   public calculateRewards(input: CalculationInput, rules: RewardRule[]): CalculationResult {
-    // Filter for enabled rules only
-    const enabledRules = rules.filter(rule => rule.enabled);
-    
-    // Sort by priority (highest first)
-    enabledRules.sort((a, b) => b.priority - a.priority);
-    
-    // Find applicable rules
-    const applicableRules = enabledRules.filter(rule => 
-      this.evaluateConditions(rule.conditions, input)
-    );
+    // Filter for enabled rules only and sort by priority (highest first)
+    const applicableRules = rules
+      .filter(rule => rule.enabled)
+      .sort((a, b) => b.priority - a.priority)
+      .filter(rule => this.evaluateConditions(rule.conditions, input));
     
     // If no rules apply, return default calculation
     if (applicableRules.length === 0) {
-      return {
-        totalPoints: Math.round(input.amount),
-        basePoints: Math.round(input.amount),
-        bonusPoints: 0,
-        pointsCurrency: input.paymentMethod.issuer ? `${input.paymentMethod.issuer} Points` : 'Points',
-        minSpendMet: false,
-        messages: ['No specific reward rules applied']
-      };
+      return this.createDefaultResult(input);
     }
     
     // Use the highest priority matching rule
@@ -46,122 +36,29 @@ export class RuleEngine {
     const minSpendMet = this.isMinimumSpendMet(rule, input);
     
     // Find the applicable bonus tier if any exist
-    let appliedTier: BonusTier | undefined;
-    let effectiveMultiplier = rule.reward.bonusMultiplier;
-
-    if (rule.reward.bonusTiers && rule.reward.bonusTiers.length > 0 && minSpendMet) {
-      // Filter tiers that match the input
-      const matchingTiers = rule.reward.bonusTiers
-        .filter(tier => {
-          // Check if the tier has a compound condition
-          if (tier.condition.type === 'compound') {
-            return this.evaluateCondition(tier.condition, input);
-          } else {
-            // Single condition
-            return this.evaluateCondition(tier.condition, input);
-          }
-        })
-        .sort((a, b) => b.priority - a.priority); // Sort by priority (highest first)
-      
-      // If we have a matching tier, use its multiplier
-      if (matchingTiers.length > 0) {
-        appliedTier = matchingTiers[0];
-        effectiveMultiplier = appliedTier.multiplier;
-      }
-    }
+    const appliedTier = this.findApplicableTier(rule, input, minSpendMet);
+    
+    // Get effective multiplier based on tier or default rule
+    const effectiveMultiplier = appliedTier?.multiplier ?? rule.reward.bonusMultiplier;
     
     // Calculate points based on rule's calculation method
-    let basePoints: number, bonusPoints: number;
-    
-    if (rule.reward.calculationMethod === 'standard') {
-      // Standard method:
-      // 1. Round amount according to strategy
-      // 2. Divide by block size
-      // 3. Multiply by rates
-      const roundedAmount = this.applyRounding(
-        input.amount, 
-        rule.reward.amountRoundingStrategy
-      );
-      
-      // Calculate points per block
-      const pointsPerBlock = roundedAmount / rule.reward.blockSize;
-      
-      // Apply base rate (always 1x)
-      basePoints = this.applyRounding(
-        pointsPerBlock * rule.reward.baseMultiplier, 
-        rule.reward.pointsRoundingStrategy
-      );
-      
-      // Only apply bonus rate if minimum spend threshold is met
-      if (minSpendMet) {
-        bonusPoints = this.applyRounding(
-          pointsPerBlock * effectiveMultiplier,
-          rule.reward.pointsRoundingStrategy
-        );
-      } else {
-        bonusPoints = 0;
-      }
-    } else {
-      // Direct method:
-      // 1. Multiply amount by total rate (base=1 + bonus multiplier)
-      // 2. Round the result
-      
-      // Base points calculation 
-      basePoints = this.applyRounding(
-        input.amount * rule.reward.baseMultiplier,
-        rule.reward.pointsRoundingStrategy
-      );
-      
-      // Only apply bonus if minimum spend threshold is met
-      if (minSpendMet) {
-        // Calculate total points with multiplier
-        const totalPoints = this.applyRounding(
-          input.amount * (rule.reward.baseMultiplier + effectiveMultiplier),
-          rule.reward.pointsRoundingStrategy
-        );
-        
-        // Bonus is the difference between total and base
-        bonusPoints = totalPoints - basePoints;
-      } else {
-        bonusPoints = 0;
-      }
-    }
+    const { basePoints, bonusPoints } = this.calculatePoints(
+      rule, 
+      input.amount, 
+      effectiveMultiplier, 
+      minSpendMet
+    );
     
     // Apply monthly cap if specified
-    let actualBonusPoints = bonusPoints;
-    let remainingMonthlyBonusPoints;
+    const { actualBonusPoints, remainingMonthlyBonusPoints } = this.applyMonthlyCap(
+      bonusPoints,
+      rule,
+      input.usedBonusPoints || 0,
+      minSpendMet
+    );
     
-    if (rule.reward.monthlyCap && rule.reward.monthlyCap > 0 && minSpendMet) {
-      const usedBonusPoints = input.usedBonusPoints || 0;
-      
-      // Check if already reached the cap
-      if (usedBonusPoints >= rule.reward.monthlyCap) {
-        actualBonusPoints = 0;
-        remainingMonthlyBonusPoints = 0;
-      } else {
-        // Check if this would exceed the cap
-        const remainingCap = rule.reward.monthlyCap - usedBonusPoints;
-        if (bonusPoints > remainingCap) {
-          actualBonusPoints = remainingCap;
-          remainingMonthlyBonusPoints = 0;
-        } else {
-          remainingMonthlyBonusPoints = remainingCap - bonusPoints;
-        }
-      }
-    }
-    
-    // Create messages
-    const messages: string[] = [];
-    
-    if (!minSpendMet && rule.reward.monthlyMinSpend) {
-      messages.push(`Minimum monthly spend of ${rule.reward.monthlyMinSpend} not met for bonus points`);
-    } else if (bonusPoints > 0 && actualBonusPoints === 0) {
-      messages.push('Monthly bonus points cap reached');
-    } else if (appliedTier) {
-      messages.push(`Applied tier: ${appliedTier.name} (${effectiveMultiplier}x)`);
-    } else if (rule.description) {
-      messages.push(`Applied rule: ${rule.description}`);
-    }
+    // Create result messages
+    const messages = this.createResultMessages(rule, minSpendMet, bonusPoints, actualBonusPoints, appliedTier);
     
     // Return the result
     return {
@@ -178,6 +75,191 @@ export class RuleEngine {
   }
   
   /**
+   * Create default result when no rules apply
+   */
+  private createDefaultResult(input: CalculationInput): CalculationResult {
+    const basePoints = Math.round(input.amount);
+    return {
+      totalPoints: basePoints,
+      basePoints,
+      bonusPoints: 0,
+      pointsCurrency: input.paymentMethod.issuer ? `${input.paymentMethod.issuer} Points` : 'Points',
+      minSpendMet: false,
+      messages: ['No specific reward rules applied']
+    };
+  }
+  
+  /**
+   * Find applicable tier for a rule
+   */
+  private findApplicableTier(
+    rule: RewardRule, 
+    input: CalculationInput, 
+    minSpendMet: boolean
+  ): BonusTier | undefined {
+    if (!rule.reward.bonusTiers || rule.reward.bonusTiers.length === 0 || !minSpendMet) {
+      return undefined;
+    }
+    
+    // Filter tiers that match the input and sort by priority
+    const matchingTiers = rule.reward.bonusTiers
+      .filter(tier => this.evaluateCondition(tier.condition, input))
+      .sort((a, b) => b.priority - a.priority);
+    
+    // Return highest priority tier or undefined if none match
+    return matchingTiers.length > 0 ? matchingTiers[0] : undefined;
+  }
+  
+  /**
+   * Calculate base and bonus points
+   */
+  private calculatePoints(
+    rule: RewardRule,
+    amount: number,
+    effectiveMultiplier: number,
+    minSpendMet: boolean
+  ): { basePoints: number; bonusPoints: number } {
+    if (rule.reward.calculationMethod === 'standard') {
+      return this.calculatePointsStandard(rule, amount, effectiveMultiplier, minSpendMet);
+    } else {
+      return this.calculatePointsDirect(rule, amount, effectiveMultiplier, minSpendMet);
+    }
+  }
+  
+  /**
+   * Calculate points using standard method:
+   * 1. Round amount according to strategy
+   * 2. Divide by block size
+   * 3. Multiply by rates
+   */
+  private calculatePointsStandard(
+    rule: RewardRule,
+    amount: number,
+    effectiveMultiplier: number,
+    minSpendMet: boolean
+  ): { basePoints: number; bonusPoints: number } {
+    // Round amount according to strategy
+    const roundedAmount = this.applyRounding(
+      amount, 
+      rule.reward.amountRoundingStrategy
+    );
+    
+    // Calculate points per block
+    const pointsPerBlock = roundedAmount / rule.reward.blockSize;
+    
+    // Apply base rate
+    const basePoints = this.applyRounding(
+      pointsPerBlock * rule.reward.baseMultiplier, 
+      rule.reward.pointsRoundingStrategy
+    );
+    
+    // Only apply bonus rate if minimum spend threshold is met
+    const bonusPoints = minSpendMet ? 
+      this.applyRounding(
+        pointsPerBlock * effectiveMultiplier,
+        rule.reward.pointsRoundingStrategy
+      ) : 0;
+    
+    return { basePoints, bonusPoints };
+  }
+  
+  /**
+   * Calculate points using direct method:
+   * 1. Multiply amount by total rate (base + bonus multiplier)
+   * 2. Round the result
+   */
+  private calculatePointsDirect(
+    rule: RewardRule,
+    amount: number,
+    effectiveMultiplier: number,
+    minSpendMet: boolean
+  ): { basePoints: number; bonusPoints: number } {
+    // Base points calculation
+    const basePoints = this.applyRounding(
+      amount * rule.reward.baseMultiplier,
+      rule.reward.pointsRoundingStrategy
+    );
+    
+    // Only apply bonus if minimum spend threshold is met
+    let bonusPoints = 0;
+    
+    if (minSpendMet) {
+      // Calculate total points with multiplier
+      const totalPoints = this.applyRounding(
+        amount * (rule.reward.baseMultiplier + effectiveMultiplier),
+        rule.reward.pointsRoundingStrategy
+      );
+      
+      // Bonus is the difference between total and base
+      bonusPoints = totalPoints - basePoints;
+    }
+    
+    return { basePoints, bonusPoints };
+  }
+  
+  /**
+   * Apply monthly cap to bonus points
+   */
+  private applyMonthlyCap(
+    bonusPoints: number,
+    rule: RewardRule,
+    usedBonusPoints: number,
+    minSpendMet: boolean
+  ): { actualBonusPoints: number; remainingMonthlyBonusPoints?: number } {
+    // If no cap or spend threshold not met, return original bonus points
+    if (!rule.reward.monthlyCap || rule.reward.monthlyCap <= 0 || !minSpendMet) {
+      return { actualBonusPoints: bonusPoints };
+    }
+    
+    // Check if already reached the cap
+    if (usedBonusPoints >= rule.reward.monthlyCap) {
+      return { 
+        actualBonusPoints: 0,
+        remainingMonthlyBonusPoints: 0
+      };
+    }
+    
+    // Check if this would exceed the cap
+    const remainingCap = rule.reward.monthlyCap - usedBonusPoints;
+    if (bonusPoints > remainingCap) {
+      return {
+        actualBonusPoints: remainingCap,
+        remainingMonthlyBonusPoints: 0
+      };
+    }
+    
+    return {
+      actualBonusPoints: bonusPoints,
+      remainingMonthlyBonusPoints: remainingCap - bonusPoints
+    };
+  }
+  
+  /**
+   * Create result messages
+   */
+  private createResultMessages(
+    rule: RewardRule,
+    minSpendMet: boolean,
+    bonusPoints: number,
+    actualBonusPoints: number,
+    appliedTier?: BonusTier
+  ): string[] {
+    const messages: string[] = [];
+    
+    if (!minSpendMet && rule.reward.monthlyMinSpend) {
+      messages.push(`Minimum monthly spend of ${rule.reward.monthlyMinSpend} not met for bonus points`);
+    } else if (bonusPoints > 0 && actualBonusPoints === 0) {
+      messages.push('Monthly bonus points cap reached');
+    } else if (appliedTier) {
+      messages.push(`Applied tier: ${appliedTier.name} (${appliedTier.multiplier}x)`);
+    } else if (rule.description) {
+      messages.push(`Applied rule: ${rule.description}`);
+    }
+    
+    return messages;
+  }
+  
+  /**
    * Check if minimum monthly spend threshold is met
    */
   private isMinimumSpendMet(rule: RewardRule, input: CalculationInput): boolean {
@@ -187,7 +269,7 @@ export class RuleEngine {
     }
     
     // If monthly spend data is not provided, assume threshold is not met
-    if (!input.monthlySpend) {
+    if (input.monthlySpend === undefined) {
       return false;
     }
     
@@ -205,20 +287,14 @@ export class RuleEngine {
     }
     
     // All conditions must be satisfied (AND logic)
-    for (const condition of conditions) {
-      if (!this.evaluateCondition(condition, input)) {
-        return false;
-      }
-    }
-    
-    return true;
+    return conditions.every(condition => this.evaluateCondition(condition, input));
   }
   
   /**
    * Evaluate a single condition
    */
   public evaluateCondition(condition: RuleCondition, input: CalculationInput): boolean {
-    // For compound conditions
+    // Handle compound conditions
     if (condition.type === 'compound') {
       if (!condition.subConditions || condition.subConditions.length === 0) {
         return true;
@@ -239,35 +315,20 @@ export class RuleEngine {
       return false;
     }
     
-    // Handle specific condition types
-    switch (condition.type) {
-      case 'mcc':
-        return this.evaluateMccCondition(condition, input);
-      
-      case 'merchant':
-        return this.evaluateMerchantCondition(condition, input);
-      
-      case 'transaction_type':
-        return this.evaluateTransactionTypeCondition(condition, input);
-      
-      case 'currency':
-        return this.evaluateCurrencyCondition(condition, input);
-      
-      case 'amount':
-        return this.evaluateAmountCondition(condition, input);
-      
-      case 'date':
-        return this.evaluateDateCondition(condition, input);
-      
-      case 'category':
-        return this.evaluateCategoryCondition(condition, input);
-      
-      case 'spend_threshold':
-        return this.evaluateSpendThresholdCondition(condition, input);
-      
-      default:
-        return false;
-    }
+    // Delegate to specific condition evaluators
+    const evaluators: Record<string, (condition: RuleCondition, input: CalculationInput) => boolean> = {
+      'mcc': this.evaluateMccCondition,
+      'merchant': this.evaluateMerchantCondition,
+      'transaction_type': this.evaluateTransactionTypeCondition,
+      'currency': this.evaluateCurrencyCondition,
+      'amount': this.evaluateAmountCondition,
+      'date': this.evaluateDateCondition,
+      'category': this.evaluateCategoryCondition,
+      'spend_threshold': this.evaluateSpendThresholdCondition
+    };
+    
+    const evaluator = evaluators[condition.type];
+    return evaluator ? evaluator.call(this, condition, input) : false;
   }
   
   /**
@@ -384,7 +445,7 @@ export class RuleEngine {
       return false;
     }
     
-    // Implementation depends on your needs
+    // Implementation depends on your specific date condition format
     return true;
   }
   
@@ -411,7 +472,7 @@ export class RuleEngine {
    * Evaluate spend threshold condition
    */
   private evaluateSpendThresholdCondition(condition: RuleCondition, input: CalculationInput): boolean {
-    if (!condition.values || !input.monthlySpend) {
+    if (!condition.values || input.monthlySpend === undefined) {
       return false;
     }
     

@@ -1,10 +1,13 @@
 import { Currency, PaymentMethod } from "@/types";
+import { BaseService } from "./core/BaseService";
 
 /**
  * Service for handling all currency-related operations including
  * formatting, conversion, and currency information.
  */
-export class CurrencyService {
+export class CurrencyService extends BaseService {
+  private static _instance: CurrencyService;
+
   /**
    * List of currencies that don't use decimal places
    */
@@ -29,6 +32,167 @@ export class CurrencyService {
     THB: "฿",
     MYR: "RM",
   };
+
+  /**
+   * Currency options for dropdown selects
+   */
+  private static readonly CURRENCY_OPTIONS: {
+    value: Currency;
+    label: string;
+  }[] = [
+    { value: "USD", label: "USD - US Dollar ($)" },
+    { value: "EUR", label: "EUR - Euro (€)" },
+    { value: "GBP", label: "GBP - British Pound (£)" },
+    { value: "JPY", label: "JPY - Japanese Yen (¥)" },
+    { value: "AUD", label: "AUD - Australian Dollar (A$)" },
+    { value: "CAD", label: "CAD - Canadian Dollar (C$)" },
+    { value: "CNY", label: "CNY - Chinese Yuan (¥)" },
+    { value: "INR", label: "INR - Indian Rupee (₹)" },
+    { value: "TWD", label: "TWD - New Taiwan Dollar (NT$)" },
+    { value: "SGD", label: "SGD - Singapore Dollar (S$)" },
+    { value: "VND", label: "VND - Vietnamese Dong (₫)" },
+    { value: "IDR", label: "IDR - Indonesian Rupiah (Rp)" },
+    { value: "THB", label: "THB - Thai Baht (฿)" },
+    { value: "MYR", label: "MYR - Malaysian Ringgit (RM)" },
+  ];
+
+  // Exchange rates cache with 24-hour expiration
+  private exchangeRatesCache = this.createCache<Record<Currency, Record<Currency, number>>>(24 * 60 * 60 * 1000);
+
+  private constructor() {
+    super();
+    this.initializeExchangeRates();
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): CurrencyService {
+    if (!this._instance) {
+      this._instance = new CurrencyService();
+    }
+    return this._instance;
+  }
+
+  /**
+   * Initialize exchange rates with default values
+   */
+  private initializeExchangeRates(): void {
+    this.exchangeRatesCache.set('default', CurrencyService.DEFAULT_EXCHANGE_RATES);
+  }
+
+  /**
+   * Formats a currency amount with the appropriate symbol and formatting rules
+   */
+  public format(amount: number, currency: Currency): string {
+    // Handle edge cases where currency might be undefined or invalid
+    if (!currency || !Object.keys(CurrencyService.CURRENCY_SYMBOLS).includes(currency)) {
+      console.warn(
+        `Invalid currency provided: ${currency}, using USD as fallback`
+      );
+      currency = "USD" as Currency;
+    }
+
+    // Get decimal places based on currency type
+    const decimalPlaces = CurrencyService.NO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
+
+    // Format the number part with appropriate decimal places
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "decimal", // Use decimal style to avoid built-in currency symbols
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    });
+
+    // Get the correct currency symbol from our mapping
+    const symbol = CurrencyService.CURRENCY_SYMBOLS[currency];
+
+    // Return the formatted string with our custom symbol
+    return `${symbol}${formatter.format(amount)}`;
+  }
+
+  /**
+   * Converts an amount from one currency to another
+   */
+  public convert(
+    amount: number,
+    fromCurrency: Currency,
+    toCurrency: Currency,
+    paymentMethod?: PaymentMethod
+  ): number {
+    if (fromCurrency === toCurrency) return amount;
+
+    // Check if payment method exists before trying to access its properties
+    if (
+      paymentMethod?.conversionRate &&
+      paymentMethod.conversionRate[toCurrency] !== undefined
+    ) {
+      return amount * paymentMethod.conversionRate[toCurrency];
+    }
+
+    // Get exchange rates from cache
+    const rates = this.exchangeRatesCache.get('default');
+    if (!rates) return amount; // Fallback to original amount if no rates found
+
+    // Add validation for currency codes to prevent accessing undefined rates
+    if (!rates[fromCurrency]) {
+      console.error(`Invalid source currency: ${fromCurrency}`);
+      return amount; // Return original amount if conversion not possible
+    }
+
+    if (!rates[fromCurrency][toCurrency]) {
+      console.error(
+        `Invalid target currency or exchange rate not available: ${fromCurrency} to ${toCurrency}`
+      );
+      return amount; // Return original amount if conversion not possible
+    }
+
+    // Now we can safely access the exchange rate
+    return amount * rates[fromCurrency][toCurrency];
+  }
+
+  /**
+   * Gets the symbol for a given currency
+   */
+  public getSymbol(currency: Currency): string {
+    return CurrencyService.CURRENCY_SYMBOLS[currency] || currency;
+  }
+
+  /**
+   * Gets the list of currency options for dropdown menus
+   */
+  public getCurrencyOptions(): { value: Currency; label: string }[] {
+    return [...CurrencyService.CURRENCY_OPTIONS];
+  }
+
+  /**
+   * Gets the exchange rate between two currencies
+   */
+  public getExchangeRate(fromCurrency: Currency, toCurrency: Currency): number {
+    if (fromCurrency === toCurrency) return 1;
+
+    // Get exchange rates from cache
+    const rates = this.exchangeRatesCache.get('default');
+    if (!rates) return 1; // Fallback to 1 if no rates found
+
+    if (
+      !rates[fromCurrency] ||
+      !rates[fromCurrency][toCurrency]
+    ) {
+      console.error(
+        `Exchange rate not available: ${fromCurrency} to ${toCurrency}`
+      );
+      return 1;
+    }
+
+    return rates[fromCurrency][toCurrency];
+  }
+
+  /**
+   * Update exchange rates (e.g., from an external API)
+   */
+  public updateExchangeRates(rates: Record<Currency, Record<Currency, number>>): void {
+    this.exchangeRatesCache.set('default', rates);
+  }
 
   /**
    * Default exchange rates - in a real app, these would come from an API
@@ -262,144 +426,16 @@ export class CurrencyService {
       MYR: 1,
     },
   };
-
-  /**
-   * Currency options for dropdown selects
-   */
-  private static readonly CURRENCY_OPTIONS: {
-    value: Currency;
-    label: string;
-  }[] = [
-    { value: "USD", label: "USD - US Dollar ($)" },
-    { value: "EUR", label: "EUR - Euro (€)" },
-    { value: "GBP", label: "GBP - British Pound (£)" },
-    { value: "JPY", label: "JPY - Japanese Yen (¥)" },
-    { value: "AUD", label: "AUD - Australian Dollar (A$)" },
-    { value: "CAD", label: "CAD - Canadian Dollar (C$)" },
-    { value: "CNY", label: "CNY - Chinese Yuan (¥)" },
-    { value: "INR", label: "INR - Indian Rupee (₹)" },
-    { value: "TWD", label: "TWD - New Taiwan Dollar (NT$)" },
-    { value: "SGD", label: "SGD - Singapore Dollar (S$)" },
-    { value: "VND", label: "VND - Vietnamese Dong (₫)" },
-    { value: "IDR", label: "IDR - Indonesian Rupiah (Rp)" },
-    { value: "THB", label: "THB - Thai Baht (฿)" },
-    { value: "MYR", label: "MYR - Malaysian Ringgit (RM)" },
-  ];
-
-  /**
-   * Formats a currency amount with the appropriate symbol and formatting rules
-   *
-   * @param amount - Amount to format
-   * @param currency - Currency code
-   * @returns Formatted currency string (e.g., "$123.45")
-   */
-  static format(amount: number, currency: Currency): string {
-    // Handle edge cases where currency might be undefined or invalid
-    if (!currency || !Object.keys(this.CURRENCY_SYMBOLS).includes(currency)) {
-      console.warn(
-        `Invalid currency provided: ${currency}, using USD as fallback`
-      );
-      currency = "USD" as Currency;
-    }
-
-    // Get decimal places based on currency type
-    const decimalPlaces = this.NO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
-
-    // Format the number part with appropriate decimal places
-    const formatter = new Intl.NumberFormat("en-US", {
-      style: "decimal", // Use decimal style to avoid built-in currency symbols
-      minimumFractionDigits: decimalPlaces,
-      maximumFractionDigits: decimalPlaces,
-    });
-
-    // Get the correct currency symbol from our mapping
-    const symbol = this.CURRENCY_SYMBOLS[currency];
-
-    // Return the formatted string with our custom symbol
-    return `${symbol}${formatter.format(amount)}`;
-  }
-
-  /**
-   * Converts an amount from one currency to another
-   *
-   * @param amount - Amount to convert
-   * @param fromCurrency - Source currency code
-   * @param toCurrency - Target currency code
-   * @param paymentMethod - Optional payment method with custom conversion rates
-   * @returns Converted amount in the target currency
-   */
-  static convert(
-    amount: number,
-    fromCurrency: Currency,
-    toCurrency: Currency,
-    paymentMethod?: PaymentMethod
-  ): number {
-    if (fromCurrency === toCurrency) return amount;
-
-    // Check if payment method exists before trying to access its properties
-    if (
-      paymentMethod?.conversionRate &&
-      paymentMethod.conversionRate[toCurrency] !== undefined
-    ) {
-      return amount * paymentMethod.conversionRate[toCurrency];
-    }
-
-    // Add validation for currency codes to prevent accessing undefined rates
-    if (!this.DEFAULT_EXCHANGE_RATES[fromCurrency]) {
-      console.error(`Invalid source currency: ${fromCurrency}`);
-      return amount; // Return original amount if conversion not possible
-    }
-
-    if (!this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency]) {
-      console.error(
-        `Invalid target currency or exchange rate not available: ${fromCurrency} to ${toCurrency}`
-      );
-      return amount; // Return original amount if conversion not possible
-    }
-
-    // Now we can safely access the exchange rate
-    return amount * this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency];
-  }
-
-  /**
-   * Gets the symbol for a given currency
-   *
-   * @param currency - Currency code
-   * @returns Currency symbol (e.g., "$" for USD)
-   */
-  static getSymbol(currency: Currency): string {
-    return this.CURRENCY_SYMBOLS[currency] || currency;
-  }
-
-  /**
-   * Gets the list of currency options for dropdown menus
-   *
-   * @returns Array of currency options with value and label
-   */
-  static getCurrencyOptions(): { value: Currency; label: string }[] {
-    return [...this.CURRENCY_OPTIONS];
-  }
-
-  /**
-   * Gets the exchange rate between two currencies
-   *
-   * @param fromCurrency - Source currency code
-   * @param toCurrency - Target currency code
-   * @returns Exchange rate or 1 if conversion not possible
-   */
-  static getExchangeRate(fromCurrency: Currency, toCurrency: Currency): number {
-    if (fromCurrency === toCurrency) return 1;
-
-    if (
-      !this.DEFAULT_EXCHANGE_RATES[fromCurrency] ||
-      !this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency]
-    ) {
-      console.error(
-        `Exchange rate not available: ${fromCurrency} to ${toCurrency}`
-      );
-      return 1;
-    }
-
-    return this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency];
-  }
 }
+
+// Export singleton instance
+export const currencyService = CurrencyService.getInstance();
+
+// Also export static formatting functions for convenience
+export const formatCurrency = (amount: number, currency: Currency): string => {
+  return currencyService.format(amount, currency);
+};
+
+export const convertCurrency = (amount: number, from: Currency, to: Currency, paymentMethod?: PaymentMethod): number => {
+  return currencyService.convert(amount, from, to, paymentMethod);
+};

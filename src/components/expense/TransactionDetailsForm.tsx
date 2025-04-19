@@ -1,7 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
@@ -30,7 +30,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
-const currencyOptions = CurrencyService.getCurrencyOptions();
+const currencyOptions = currencyService.getCurrencyOptions();
 
 const TransactionDetailsForm = () => {
   const form = useFormContext();

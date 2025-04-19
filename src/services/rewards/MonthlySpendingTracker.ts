@@ -1,26 +1,32 @@
 // services/rewards/MonthlySpendingTracker.ts
 
-import { PaymentMethod, Transaction } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { Transaction } from '@/types';
+import { BaseService } from '../core/BaseService';
 import { SpendingPeriodType } from './types';
+import { dateService } from '../core/DateService';
+import { dataService } from '../core/DataService';
 
 /**
  * Service for tracking monthly spending for reward rules
  */
-export class MonthlySpendingTracker {
-  private static instance: MonthlySpendingTracker;
-  private spendingCache: Map<string, number> = new Map();
+export class MonthlySpendingTracker extends BaseService {
+  private static _instance: MonthlySpendingTracker;
   
-  private constructor() {}
+  // Cache with 15-minute expiration
+  private spendingCache = this.createCache<number>(15 * 60 * 1000);
+  
+  private constructor() {
+    super();
+  }
   
   /**
    * Get singleton instance
    */
   public static getInstance(): MonthlySpendingTracker {
-    if (!MonthlySpendingTracker.instance) {
-      MonthlySpendingTracker.instance = new MonthlySpendingTracker();
+    if (!this._instance) {
+      this._instance = new MonthlySpendingTracker();
     }
-    return MonthlySpendingTracker.instance;
+    return this._instance;
   }
   
   /**
@@ -36,24 +42,29 @@ export class MonthlySpendingTracker {
     const cacheKey = this.createCacheKey(paymentMethodId, periodType, date, statementDay);
     
     // Check cache first
-    if (this.spendingCache.has(cacheKey)) {
-      return this.spendingCache.get(cacheKey) || 0;
+    const cachedValue = this.spendingCache.get(cacheKey);
+    if (cachedValue !== undefined) {
+      return cachedValue;
     }
     
     try {
-      // Calculate date range
-      const { startDate, endDate } = this.calculateDateRange(date, periodType, statementDay);
+      // Calculate date range using the DateService
+      const { startDate, endDate } = dateService.calculateDateRange(date, periodType, statementDay);
       
       // Query database for transactions in this period
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('amount')
-        .eq('payment_method_id', paymentMethodId)
-        .gte('date', startDate.toISOString())
-        .lt('date', endDate.toISOString())
-        .eq('is_deleted', false);
+      const { data, error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('transactions')
+            .select('amount')
+            .eq('payment_method_id', paymentMethodId)
+            .gte('date', startDate.toISOString())
+            .lt('date', endDate.toISOString())
+            .eq('is_deleted', false);
+        }
+      );
         
-      if (error) {
+      if (error || !data) {
         console.error('Error fetching monthly spending:', error);
         return 0;
       }
@@ -83,8 +94,8 @@ export class MonthlySpendingTracker {
     statementDay: number = 1
   ): number {
     try {
-      // Calculate date range
-      const { startDate, endDate } = this.calculateDateRange(date, periodType, statementDay);
+      // Calculate date range using the DateService
+      const { startDate, endDate } = dateService.calculateDateRange(date, periodType, statementDay);
       
       // Filter transactions by date range and payment method
       const relevantTransactions = transactions.filter(tx => {
@@ -107,8 +118,6 @@ export class MonthlySpendingTracker {
    */
   public updateMonthlySpending(transaction: Transaction): void {
     // Clear all cache entries for this payment method
-    // This is a simple approach - in a real implementation, you might
-    // want to be more selective about which cache entries to invalidate
     this.clearCacheForPaymentMethod(transaction.paymentMethod.id);
   }
   
@@ -119,7 +128,7 @@ export class MonthlySpendingTracker {
     const keysToDelete: string[] = [];
     
     // Find all cache keys for this payment method
-    for (const key of this.spendingCache.keys()) {
+    for (const key of Object.keys(this.spendingCache)) {
       if (key.startsWith(`${paymentMethodId}-`)) {
         keysToDelete.push(key);
       }
@@ -148,53 +157,6 @@ export class MonthlySpendingTracker {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     return `${paymentMethodId}-${periodType}-${year}-${month}-${statementDay}`;
-  }
-  
-  /**
-   * Calculate date range for a period
-   */
-  private calculateDateRange(
-    date: Date,
-    periodType: SpendingPeriodType,
-    statementDay: number
-  ): { startDate: Date; endDate: Date } {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    
-    if (periodType === 'calendar_month') {
-      // Calendar month: 1st day of month to last day of month
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 1);
-      
-      return { startDate, endDate };
-    } else {
-      // Statement month: statementDay of month to statementDay of next month
-      let startMonth = month;
-      let startYear = year;
-      
-      // If the current date is before statement day, use previous month's statement day
-      if (date.getDate() < statementDay) {
-        startMonth = month - 1;
-        if (startMonth < 0) {
-          startMonth = 11; // December
-          startYear = year - 1;
-        }
-      }
-      
-      const startDate = new Date(startYear, startMonth, statementDay);
-      
-      // End date is the next statement day
-      let endMonth = startMonth + 1;
-      let endYear = startYear;
-      if (endMonth > 11) {
-        endMonth = 0; // January
-        endYear += 1;
-      }
-      
-      const endDate = new Date(endYear, endMonth, statementDay);
-      
-      return { startDate, endDate };
-    }
   }
 }
 

@@ -1,7 +1,7 @@
 // src/hooks/useCurrencyFormatter.ts
 import { useMemo, useCallback } from "react";
 import { Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService, formatCurrency as formatCurrencyUtil } from "@/services/CurrencyService";
 
 /**
  * Custom hook that provides memoized currency formatting functions
@@ -11,7 +11,7 @@ export function useCurrencyFormatter(defaultCurrency: Currency = "SGD") {
   // Create memoized formatter function that maintains referential equality
   const formatCurrency = useCallback(
     (amount: number, currency: Currency = defaultCurrency): string => {
-      return CurrencyService.format(amount, currency);
+      return currencyService.format(amount, currency);
     },
     [defaultCurrency]
   );
@@ -27,7 +27,7 @@ export function useCurrencyFormatter(defaultCurrency: Currency = "SGD") {
       ): string => {
         const key = `${amount}-${currency}`;
         if (!cache.has(key)) {
-          cache.set(key, CurrencyService.format(amount, currency));
+          cache.set(key, currencyService.format(amount, currency));
         }
         return cache.get(key)!;
       },
@@ -52,7 +52,7 @@ export function useChartCurrencyFormatter(currency: Currency = "SGD") {
   // Create tooltip formatter function for recharts
   const tooltipFormatter = useCallback(
     (value: number, name: string) => {
-      return [CurrencyService.format(value, currency), name];
+      return [currencyService.format(value, currency), name];
     },
     [currency]
   );
@@ -60,7 +60,7 @@ export function useChartCurrencyFormatter(currency: Currency = "SGD") {
   // Create axis formatter function for recharts
   const axisFormatter = useCallback(
     (value: number) => {
-      return CurrencyService.format(value, currency);
+      return currencyService.format(value, currency);
     },
     [currency]
   );
@@ -71,3 +71,8 @@ export function useChartCurrencyFormatter(currency: Currency = "SGD") {
     currency,
   };
 }
+
+/**
+ * Utility function for one-off currency formatting that doesn't need React hooks
+ */
+export const formatCurrency = formatCurrencyUtil;

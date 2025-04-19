@@ -1,9 +1,10 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Transaction } from '@/types';
-import { addTransaction } from '@/utils/storage/transactions';
 import { useToast } from '@/hooks/use-toast';
+import { dataService } from '@/services/core/DataService';
+import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
+import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
 
 export const useTransactionSubmit = (useLocalStorage: boolean) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -48,19 +49,54 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         date: transactionData.date
       });
       
-      // Save the transaction, with explicit useLocalStorage parameter
-      const result = await addTransaction(transactionData, useLocalStorage);
+      // First, calculate reward points for the transaction
+      // Get used bonus points for this payment method in the current month
+      const date = new Date(transactionData.date);
+      const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+        transactionData.paymentMethod.id,
+        date.getFullYear(),
+        date.getMonth()
+      );
       
-      console.log('Transaction saved successfully:', result);
+      // Calculate points using our reward calculator service
+      const calculationResult = await rewardCalculatorService.calculatePoints(
+        transactionData as Transaction,
+        usedBonusPoints
+      );
+      
+      // Update transaction with points information
+      const transactionWithPoints: Transaction = {
+        ...transactionData as Transaction,
+        bonusPoints: calculationResult.bonusPoints,
+        totalPoints: calculationResult.totalPoints
+      };
+      
+      // Save the transaction using our data service
+      const { success, error } = await dataService.saveTransaction(transactionWithPoints);
+      
+      if (!success) {
+        throw error || new Error('Failed to save transaction');
+      }
+      
+      // Record bonus points movement
+      if (calculationResult.bonusPoints > 0) {
+        await bonusPointsTrackingService.recordBonusPointsMovement(
+          transactionWithPoints.id,
+          transactionWithPoints.paymentMethod.id,
+          calculationResult.bonusPoints
+        );
+      }
+      
+      console.log('Transaction saved successfully:', transactionWithPoints);
       
       toast({
         title: 'Success',
-        description: 'Transaction saved successfully to ' + (useLocalStorage ? 'local storage' : 'Supabase'),
+        description: 'Transaction saved successfully' + (useLocalStorage ? ' to local storage' : ''),
       });
       
       // Navigate back to the dashboard to see updated metrics
       navigate('/');
-      return result;
+      return transactionWithPoints;
     } catch (error) {
       console.error('Error saving transaction:', error);
       

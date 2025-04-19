@@ -5,41 +5,36 @@ import {
   CalculationInput, 
   CalculationResult, 
   RewardRule,
-  RuleCondition,
   TransactionType
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { RuleEngine } from './RuleEngine';
-import { RuleRepository } from './RuleRepository';
-import { CardRegistry } from './CardRegistry';
-import { MonthlySpendingTracker } from './MonthlySpendingTracker';
+import { BaseService } from '../core/BaseService';
+import { ruleRepository } from './RuleRepository';
+import { cardRegistryService } from './CardRegistryService';
+import { monthlySpendingTracker } from './MonthlySpendingTracker';
 
 /**
  * Central service for all reward calculations
  */
-export class RewardCalculatorService {
-  private static instance: RewardCalculatorService;
+export class RewardCalculatorService extends BaseService {
+  private static _instance: RewardCalculatorService;
   private ruleEngine: RuleEngine;
-  private ruleRepository: RuleRepository;
-  private cardRegistry: CardRegistry;
-  private monthlySpendingTracker: MonthlySpendingTracker;
   private initialized = false;
   
   private constructor() {
+    super();
     this.ruleEngine = new RuleEngine();
-    this.ruleRepository = RuleRepository.getInstance();
-    this.cardRegistry = CardRegistry.getInstance();
-    this.monthlySpendingTracker = MonthlySpendingTracker.getInstance();
   }
   
   /**
    * Get singleton instance
    */
   public static getInstance(): RewardCalculatorService {
-    if (!RewardCalculatorService.instance) {
-      RewardCalculatorService.instance = new RewardCalculatorService();
+    if (!this._instance) {
+      this._instance = new RewardCalculatorService();
     }
-    return RewardCalculatorService.instance;
+    return this._instance;
   }
   
   /**
@@ -47,7 +42,7 @@ export class RewardCalculatorService {
    */
   public async initialize(): Promise<void> {
     if (!this.initialized) {
-      await this.ruleRepository.loadRules();
+      await ruleRepository.loadRules();
       this.initialized = true;
       console.log('RewardCalculatorService initialized');
     }
@@ -114,11 +109,11 @@ export class RewardCalculatorService {
     }
     
     // Get monthly spending for minimum spend threshold
-    const monthlySpend = await this.monthlySpendingTracker.getMonthlySpending(
+    const monthlySpend = await monthlySpendingTracker.getMonthlySpending(
       paymentMethod.id,
       'calendar_month',
       new Date(),
-      paymentMethod.statementStartDay
+      paymentMethod.statementStartDay || 1
     );
     
     // Create calculation input
@@ -132,7 +127,7 @@ export class RewardCalculatorService {
       monthlySpend,
       paymentMethod,
       date: new Date(),
-      statementDay: paymentMethod.statementStartDay
+      statementDay: paymentMethod.statementStartDay || 1
     };
     
     // Get rules for this payment method
@@ -147,7 +142,7 @@ export class RewardCalculatorService {
    */
   public getPointsCurrency(paymentMethod: PaymentMethod): string {
     // Try to get from card registry first
-    const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
+    const cardType = cardRegistryService.getCardTypeByIssuerAndName(
       paymentMethod.issuer || '',
       paymentMethod.name || ''
     );
@@ -182,11 +177,11 @@ export class RewardCalculatorService {
     }
     
     // Get monthly spending for minimum spend threshold
-    const monthlySpend = await this.monthlySpendingTracker.getMonthlySpending(
+    const monthlySpend = await monthlySpendingTracker.getMonthlySpending(
       transaction.paymentMethod.id,
       'calendar_month',
       new Date(transaction.date),
-      transaction.paymentMethod.statementStartDay
+      transaction.paymentMethod.statementStartDay || 1
     );
     
     // Create input object
@@ -200,7 +195,7 @@ export class RewardCalculatorService {
       monthlySpend,
       paymentMethod: transaction.paymentMethod,
       date: new Date(transaction.date),
-      statementDay: transaction.paymentMethod.statementStartDay
+      statementDay: transaction.paymentMethod.statementStartDay || 1
     };
   }
   
@@ -212,7 +207,7 @@ export class RewardCalculatorService {
     let cardTypeId: string | undefined;
     
     if (paymentMethod.issuer && paymentMethod.name) {
-      const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
+      const cardType = cardRegistryService.getCardTypeByIssuerAndName(
         paymentMethod.issuer,
         paymentMethod.name
       );
@@ -228,22 +223,22 @@ export class RewardCalculatorService {
       cardTypeId = paymentMethod.id;
     }
     
-    // Get rules for this card type from reward_rules table
-    let rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
+    // Get rules for this card type from database
+    let rules = await ruleRepository.getRulesForCardType(cardTypeId);
     
     // If no rules found, get default rules from card registry as fallback
     if (rules.length === 0) {
-      const cardType = this.cardRegistry.getCardTypeByIssuerAndName(
+      const cardType = cardRegistryService.getCardTypeByIssuerAndName(
         paymentMethod.issuer || '',
         paymentMethod.name || ''
       );
       
-      if (cardType) {
+      if (cardType && cardType.defaultRules) {
         rules = cardType.defaultRules;
         
-        // Save default rules to Supabase if they don't exist yet
+        // Save default rules to database if they don't exist yet
         for (const rule of cardType.defaultRules) {
-          await this.ruleRepository.saveRule({ 
+          await ruleRepository.saveRule({ 
             ...rule,
             cardTypeId: cardTypeId 
           });
@@ -260,111 +255,6 @@ export class RewardCalculatorService {
   }
   
   /**
-   * Convert a custom reward rule to our standard format
-   */
-  private convertCustomRule(customRule: any, cardTypeId: string): RewardRule {
-    // Implementation depends on your custom rule format
-    // This is a simplified example
-    return {
-      id: customRule.id || uuidv4(),
-      cardTypeId,
-      name: customRule.name || 'Custom Rule',
-      description: customRule.description || '',
-      enabled: true,
-      priority: customRule.priority || 10,
-      conditions: this.convertCustomConditions(customRule),
-      reward: {
-        calculationMethod: 'standard',
-        baseMultiplier: 1,
-        bonusMultiplier: customRule.pointsMultiplier ? customRule.pointsMultiplier - 1 : 0,
-        pointsRoundingStrategy: 'floor',
-        amountRoundingStrategy: 'floor',
-        blockSize: 1,
-        monthlyCap: customRule.maxSpend,
-        pointsCurrency: customRule.pointsCurrency || 'Points'
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  }
-  
-  /**
-   * Convert custom conditions to our format
-   */
-  private convertCustomConditions(customRule: any): RuleCondition[] {
-    const conditions: RuleCondition[] = [];
-    
-    // Check rule type and create appropriate condition
-    switch (customRule.type) {
-      case 'online':
-        conditions.push({
-          type: 'transaction_type',
-          operation: 'equals',
-          values: [TransactionType.ONLINE]
-        });
-        break;
-        
-      case 'contactless':
-        conditions.push({
-          type: 'transaction_type',
-          operation: 'equals',
-          values: [TransactionType.CONTACTLESS]
-        });
-        break;
-        
-      case 'mcc':
-        if (Array.isArray(customRule.condition)) {
-          conditions.push({
-            type: 'mcc',
-            operation: 'include',
-            values: customRule.condition
-          });
-        }
-        break;
-        
-      case 'merchant':
-        if (typeof customRule.condition === 'string' || Array.isArray(customRule.condition)) {
-          conditions.push({
-            type: 'merchant',
-            operation: 'include',
-            values: Array.isArray(customRule.condition) ? 
-              customRule.condition : [customRule.condition]
-          });
-        }
-        break;
-        
-      case 'currency':
-        if (Array.isArray(customRule.condition)) {
-          const excludedCurrencies = customRule.condition
-            .filter((curr: string) => curr.startsWith('!'))
-            .map((curr: string) => curr.substring(1));
-          
-          const includedCurrencies = customRule.condition
-            .filter((curr: string) => !curr.startsWith('!'));
-          
-          if (excludedCurrencies.length > 0) {
-            conditions.push({
-              type: 'currency',
-              operation: 'exclude',
-              values: excludedCurrencies
-            });
-          }
-          
-          if (includedCurrencies.length > 0) {
-            conditions.push({
-              type: 'currency',
-              operation: 'include',
-              values: includedCurrencies
-            });
-          }
-        }
-        break;
-    }
-    
-    return conditions;
-  }
-  
-  /**
    * Apply selected categories to rules
    */
   private applySelectedCategories(rules: RewardRule[], selectedCategories: string[]): RewardRule[] {
@@ -373,7 +263,7 @@ export class RewardCalculatorService {
       const updatedRule = JSON.parse(JSON.stringify(rule));
       
       // Update conditions that have a category type
-      updatedRule.conditions = rule.conditions.map((condition: RuleCondition) => {
+      updatedRule.conditions = rule.conditions.map((condition: any) => {
         if (condition.type === 'category') {
           return {
             ...condition,

@@ -1,26 +1,30 @@
 // src/services/BonusPointsTrackingService.ts
+
 import { Transaction, PaymentMethod } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { BaseService } from './core/BaseService';
+import { dataService } from './core/DataService';
 
 /**
  * Service for tracking used bonus points per payment method and month
  */
-export class BonusPointsTrackingService {
-  private static instance: BonusPointsTrackingService;
+export class BonusPointsTrackingService extends BaseService {
+  private static _instance: BonusPointsTrackingService;
   
-  // In-memory cache for performance
-  private bonusPointsCache: Map<string, number> = new Map();
+  // Cache with 15-minute expiration
+  private bonusPointsCache = this.createCache<number>(15 * 60 * 1000);
   
-  private constructor() {}
+  private constructor() {
+    super();
+  }
   
   /**
    * Get the singleton instance of the BonusPointsTrackingService
    */
   public static getInstance(): BonusPointsTrackingService {
-    if (!BonusPointsTrackingService.instance) {
-      BonusPointsTrackingService.instance = new BonusPointsTrackingService();
+    if (!BonusPointsTrackingService._instance) {
+      BonusPointsTrackingService._instance = new BonusPointsTrackingService();
     }
-    return BonusPointsTrackingService.instance;
+    return BonusPointsTrackingService._instance;
   }
   
   /**
@@ -33,40 +37,46 @@ export class BonusPointsTrackingService {
   ): Promise<number> {
     // Check cache first
     const cacheKey = `${paymentMethodId}-${year}-${month}`;
-    if (this.bonusPointsCache.has(cacheKey)) {
-      return this.bonusPointsCache.get(cacheKey) || 0;
+    const cachedValue = this.bonusPointsCache.get(cacheKey);
+    if (cachedValue !== undefined) {
+      return cachedValue;
     }
     
     try {
       // Try to query the database for used bonus points
-      try {
-        const { data, error } = await supabase
-          .from('bonus_points_movements')
-          .select('bonus_points')
-          .eq('payment_method_id', paymentMethodId)
-          .gte('created_at', new Date(year, month, 1).toISOString())
-          .lt('created_at', new Date(year, month + 1, 1).toISOString());
-          
-        if (!error && data) {
-          // Sum up the bonus points
-          const totalBonusPoints = data.reduce((sum, record) => sum + record.bonus_points, 0);
-          
-          // Update cache
-          this.bonusPointsCache.set(cacheKey, totalBonusPoints);
-          
-          return totalBonusPoints;
+      const { data, error, usedFallback } = await this.safeDbOperation(
+        async () => {
+          const result = await this.supabase
+            .from('bonus_points_movements')
+            .select('bonus_points')
+            .eq('payment_method_id', paymentMethodId)
+            .gte('created_at', new Date(year, month, 1).toISOString())
+            .lt('created_at', new Date(year, month + 1, 1).toISOString());
+            
+          return result;
+        },
+        `bonusPoints-${paymentMethodId}-${year}-${month}`,
+        (localData) => {
+          // Transform localStorage data to match database format
+          return parseInt(localData, 10);
         }
-      } catch (dbError) {
-        console.log('Database query failed, falling back to localStorage:', dbError);
-      }
+      );
       
-      // If database query fails or is not available, fall back to localStorage
-      const localStorageKey = `bonusPoints-${paymentMethodId}-${year}-${month}`;
-      const storedValue = localStorage.getItem(localStorageKey);
-      
-      if (storedValue) {
-        const totalBonusPoints = parseInt(storedValue, 10);
+      if (!error && data) {
+        // If we got data from the database, sum up the bonus points
+        let totalBonusPoints: number;
+        
+        if (usedFallback) {
+          // For fallback data, it's already the total
+          totalBonusPoints = data as unknown as number;
+        } else {
+          // For database data, sum up the points
+          totalBonusPoints = data.reduce((sum, record) => sum + record.bonus_points, 0);
+        }
+        
+        // Update cache
         this.bonusPointsCache.set(cacheKey, totalBonusPoints);
+        
         return totalBonusPoints;
       }
       
@@ -89,40 +99,39 @@ export class BonusPointsTrackingService {
       // Skip recording if bonus points is zero
       if (bonusPoints === 0) return true;
       
-      // Try to record in the database first
-      try {
-        const { error } = await supabase
-          .from('bonus_points_movements')
-          .insert({
-            transaction_id: transactionId,
-            payment_method_id: paymentMethodId,
-            bonus_points: bonusPoints
-          });
-          
-        if (!error) {
-          // Database insert succeeded
-          const now = new Date();
-          const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
-          this.bonusPointsCache.delete(cacheKey);
-          return true;
-        }
-      } catch (dbError) {
-        console.log('Database insert failed, falling back to localStorage:', dbError);
+      // Try to record in the database
+      const { error, usedFallback } = await this.safeDbOperation(
+        async () => {
+          const result = await this.supabase
+            .from('bonus_points_movements')
+            .insert({
+              transaction_id: transactionId,
+              payment_method_id: paymentMethodId,
+              bonus_points: bonusPoints,
+              created_at: new Date().toISOString()
+            });
+            
+          return result;
+        },
+        // No fallback key needed as we handle localStorage fallback specifically below
+      );
+      
+      if (error) {
+        // If database insert fails, fall back to localStorage
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        
+        const localStorageKey = `bonusPoints-${paymentMethodId}-${year}-${month}`;
+        const currentValue = localStorage.getItem(localStorageKey) || '0';
+        const updatedValue = parseInt(currentValue, 10) + bonusPoints;
+        
+        localStorage.setItem(localStorageKey, updatedValue.toString());
       }
       
-      // If database insert fails, fall back to localStorage
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      
-      const localStorageKey = `bonusPoints-${paymentMethodId}-${year}-${month}`;
-      const currentValue = localStorage.getItem(localStorageKey) || '0';
-      const updatedValue = parseInt(currentValue, 10) + bonusPoints;
-      
-      localStorage.setItem(localStorageKey, updatedValue.toString());
-      
       // Invalidate cache
-      const cacheKey = `${paymentMethodId}-${year}-${month}`;
+      const now = new Date();
+      const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
       this.bonusPointsCache.delete(cacheKey);
       
       return true;
@@ -151,15 +160,7 @@ export class BonusPointsTrackingService {
     });
     
     // Calculate total bonus points used
-    let totalBonusPoints = 0;
-    
-    for (const tx of relevantTransactions) {
-      // Extract bonus points from transaction, if available
-      const bonusPoints = tx.bonusPoints || 0;
-      totalBonusPoints += bonusPoints;
-    }
-    
-    return totalBonusPoints;
+    return relevantTransactions.reduce((total, tx) => total + (tx.bonusPoints || 0), 0);
   }
   
   /**
@@ -170,7 +171,6 @@ export class BonusPointsTrackingService {
     usedBonusPoints?: number
   ): Promise<number> {
     // Get the card info to determine the monthly cap
-    // This should ideally be fetched from a centralized configuration or card registry
     const monthlyCapByCard: Record<string, number> = {
       'UOB Preferred Visa Platinum': 4000,
       'Citibank Rewards Visa Signature': 4000,

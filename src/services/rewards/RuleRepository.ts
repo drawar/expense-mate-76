@@ -1,26 +1,30 @@
 // services/rewards/RuleRepository.ts
 
 import { RewardRule, BonusTier } from './types';
-import { supabase } from '@/integrations/supabase/client';
+import { BaseService } from '../core/BaseService';
 
 /**
  * Repository for storing and retrieving reward rules
  */
-export class RuleRepository {
-  private static instance: RuleRepository;
-  private rules: Map<string, RewardRule> = new Map();
-  private rulesByCardType: Map<string, RewardRule[]> = new Map();
+export class RuleRepository extends BaseService {
+  private static _instance: RuleRepository;
   
-  private constructor() {}
+  // Cache with 15-minute expiration
+  private rulesCache = this.createCache<RewardRule>();
+  private rulesByCardTypeCache = this.createCache<RewardRule[]>();
+  
+  private constructor() {
+    super();
+  }
   
   /**
    * Get singleton instance
    */
   public static getInstance(): RuleRepository {
-    if (!RuleRepository.instance) {
-      RuleRepository.instance = new RuleRepository();
+    if (!this._instance) {
+      this._instance = new RuleRepository();
     }
-    return RuleRepository.instance;
+    return this._instance;
   }
   
   /**
@@ -28,11 +32,15 @@ export class RuleRepository {
    */
   public async loadRules(): Promise<RewardRule[]> {
     try {
-      const { data, error } = await supabase
-        .from('reward_rules')
-        .select('*');
+      const { data, error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('reward_rules')
+            .select('*');
+        }
+      );
         
-      if (error) {
+      if (error || !data) {
         console.error('Error loading rules:', error);
         return [];
       }
@@ -40,18 +48,12 @@ export class RuleRepository {
       const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
       
       // Store rules in memory
-      this.rules.clear();
-      this.rulesByCardType.clear();
-      
       rules.forEach(rule => {
-        this.rules.set(rule.id, rule);
+        this.rulesCache.set(rule.id, rule);
         
         // Group by card type
-        if (!this.rulesByCardType.has(rule.cardTypeId)) {
-          this.rulesByCardType.set(rule.cardTypeId, []);
-        }
-        
-        this.rulesByCardType.get(rule.cardTypeId)?.push(rule);
+        const cardTypeRules = this.rulesByCardTypeCache.get(rule.cardTypeId) || [];
+        this.rulesByCardTypeCache.set(rule.cardTypeId, [...cardTypeRules, rule]);
       });
       
       return rules;
@@ -61,63 +63,73 @@ export class RuleRepository {
     }
   }
   
-/**
- * Get rules for a specific card type
- */
-public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
-  // Check cache first
-  if (this.rulesByCardType.has(cardTypeId)) {
-    return this.rulesByCardType.get(cardTypeId) || [];
-  }
-  
-  try {
-    // Query Supabase reward_rules table
-    const { data, error } = await supabase
-      .from('reward_rules')
-      .select('*')
-      .eq('card_type_id', cardTypeId)
-      .eq('enabled', true);
+  /**
+   * Get rules for a specific card type
+   */
+  public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
+    // Check cache first
+    const cached = this.rulesByCardTypeCache.get(cardTypeId);
+    if (cached) {
+      return cached;
+    }
+    
+    try {
+      // Query Supabase reward_rules table
+      const { data, error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('reward_rules')
+            .select('*')
+            .eq('card_type_id', cardTypeId)
+            .eq('enabled', true);
+        }
+      );
+        
+      if (error || !data) {
+        console.error('Error loading rules for card type:', error);
+        return [];
+      }
       
-    if (error) {
+      if (data.length === 0) {
+        console.log(`No rules found in Supabase for card type ${cardTypeId}`);
+        return [];
+      }
+      
+      console.log(`Loaded ${data.length} rules from Supabase for card type ${cardTypeId}`);
+      
+      const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
+      
+      // Cache results
+      this.rulesByCardTypeCache.set(cardTypeId, rules);
+      rules.forEach(rule => this.rulesCache.set(rule.id, rule));
+      
+      return rules;
+    } catch (error) {
       console.error('Error loading rules for card type:', error);
       return [];
     }
-    
-    if (!data || data.length === 0) {
-      console.log(`No rules found in Supabase for card type ${cardTypeId}`);
-      return [];
-    }
-    
-    console.log(`Loaded ${data.length} rules from Supabase for card type ${cardTypeId}`);
-    
-    const rules: RewardRule[] = data.map(this.mapDbRuleToRewardRule);
-    
-    // Cache results
-    this.rulesByCardType.set(cardTypeId, rules);
-    rules.forEach(rule => this.rules.set(rule.id, rule));
-    
-    return rules;
-  } catch (error) {
-    console.error('Error loading rules for card type:', error);
-    return [];
   }
-}
   
   /**
    * Get a rule by ID
    */
   public async getRule(id: string): Promise<RewardRule | null> {
     // Check cache first
-    if (this.rules.has(id)) {
-      return this.rules.get(id) || null;
+    const cached = this.rulesCache.get(id);
+    if (cached) {
+      return cached;
     }
     
     try {
-      const { data, error } = await supabase
-        .from('reward_rules')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('reward_rules')
+            .select('*')
+            .eq('id', id)
+            .single();
+        }
+      );
         
       if (error || !data) {
         console.error('Error loading rule:', error);
@@ -127,13 +139,11 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
       const rule = this.mapDbRuleToRewardRule(data);
       
       // Cache the result
-      this.rules.set(rule.id, rule);
+      this.rulesCache.set(rule.id, rule);
       
       // Add to card type mapping
-      if (!this.rulesByCardType.has(rule.cardTypeId)) {
-        this.rulesByCardType.set(rule.cardTypeId, []);
-      }
-      this.rulesByCardType.get(rule.cardTypeId)?.push(rule);
+      const cardTypeRules = this.rulesByCardTypeCache.get(rule.cardTypeId) || [];
+      this.rulesByCardTypeCache.set(rule.cardTypeId, [...cardTypeRules, rule]);
       
       return rule;
     } catch (error) {
@@ -149,13 +159,17 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
     try {
       const dbRule = this.mapRewardRuleToDbRule(rule);
       
-      const { data, error } = await supabase
-        .from('reward_rules')
-        .upsert(dbRule)
-        .select()
-        .single();
+      const { data, error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('reward_rules')
+            .upsert(dbRule)
+            .select()
+            .single();
+        }
+      );
         
-      if (error) {
+      if (error || !data) {
         console.error('Error saving rule:', error);
         return null;
       }
@@ -163,23 +177,18 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
       const savedRule = this.mapDbRuleToRewardRule(data);
       
       // Update cache
-      this.rules.set(savedRule.id, savedRule);
+      this.rulesCache.set(savedRule.id, savedRule);
       
       // Update card type mapping
-      if (!this.rulesByCardType.has(savedRule.cardTypeId)) {
-        this.rulesByCardType.set(savedRule.cardTypeId, []);
-      }
-      
-      const cardRules = this.rulesByCardType.get(savedRule.cardTypeId) || [];
-      const existingIndex = cardRules.findIndex(r => r.id === savedRule.id);
+      const cardTypeRules = this.rulesByCardTypeCache.get(savedRule.cardTypeId) || [];
+      const existingIndex = cardTypeRules.findIndex(r => r.id === savedRule.id);
       
       if (existingIndex >= 0) {
-        cardRules[existingIndex] = savedRule;
+        cardTypeRules[existingIndex] = savedRule;
+        this.rulesByCardTypeCache.set(savedRule.cardTypeId, [...cardTypeRules]);
       } else {
-        cardRules.push(savedRule);
+        this.rulesByCardTypeCache.set(savedRule.cardTypeId, [...cardTypeRules, savedRule]);
       }
-      
-      this.rulesByCardType.set(savedRule.cardTypeId, cardRules);
       
       return savedRule;
     } catch (error) {
@@ -193,28 +202,32 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
    */
   public async deleteRule(id: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('reward_rules')
-        .delete()
-        .eq('id', id);
+      // Get rule from cache first to have its cardTypeId for cache invalidation
+      const rule = this.rulesCache.get(id);
+      
+      const { error } = await this.safeDbOperation(
+        async () => {
+          return await this.supabase
+            .from('reward_rules')
+            .delete()
+            .eq('id', id);
+        }
+      );
         
       if (error) {
         console.error('Error deleting rule:', error);
         return false;
       }
       
-      // Get rule from cache to get its card type
-      const rule = this.rules.get(id);
-      
       // Remove from cache
-      this.rules.delete(id);
+      this.rulesCache.delete(id);
       
-      // Remove from card type mapping
+      // Remove from card type mapping if we have the cardTypeId
       if (rule) {
-        const cardRules = this.rulesByCardType.get(rule.cardTypeId) || [];
-        this.rulesByCardType.set(
+        const cardTypeRules = this.rulesByCardTypeCache.get(rule.cardTypeId) || [];
+        this.rulesByCardTypeCache.set(
           rule.cardTypeId,
-          cardRules.filter(r => r.id !== id)
+          cardTypeRules.filter(r => r.id !== id)
         );
       }
       
@@ -223,6 +236,14 @@ public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
       console.error('Error deleting rule:', error);
       return false;
     }
+  }
+  
+  /**
+   * Clear all caches
+   */
+  public clearCache(): void {
+    this.rulesCache.clear();
+    this.rulesByCardTypeCache.clear();
   }
   
   /**
