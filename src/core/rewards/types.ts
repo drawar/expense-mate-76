@@ -1,36 +1,45 @@
 // services/rewards/types.ts
-import { DateTime } from 'luxon';
+import { DateTime } from "luxon";
 import { PaymentMethod } from "@/types";
 
 /**
  * Transaction type enum (mutually exclusive types)
  */
 export enum TransactionType {
-  ONLINE = 'online',
-  CONTACTLESS = 'contactless',
-  IN_STORE = 'in_store' // Neither online nor contactless
+  ONLINE = "online",
+  CONTACTLESS = "contactless",
+  IN_STORE = "in_store", // Neither online nor contactless
 }
 
 /**
  * Condition types supported by the rule engine
  */
-export type ConditionType = 
-  | 'mcc' 
-  | 'merchant' 
-  | 'transaction_type' // For online/contactless/in_store
-  | 'currency'
-  | 'amount'
-  | 'date'
-  | 'category'
-  | 'spend_threshold' // For minimum monthly spend
-  | 'compound';
+export type ConditionType =
+  | "mcc"
+  | "merchant"
+  | "transaction_type" // For online/contactless/in_store
+  | "currency"
+  | "amount"
+  | "date"
+  | "category"
+  | "spend_threshold" // For minimum monthly spend
+  | "compound";
 
 /**
  * Condition interface - defines what makes a transaction eligible for a rule
  */
 export interface RuleCondition {
   type: ConditionType;
-  operation: 'include' | 'exclude' | 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'between' | 'any' | 'all';
+  operation:
+    | "include"
+    | "exclude"
+    | "equals"
+    | "not_equals"
+    | "greater_than"
+    | "less_than"
+    | "between"
+    | "any"
+    | "all";
   values?: string[] | number[] | boolean[] | TransactionType[];
   subConditions?: RuleCondition[]; // For compound conditions (AND/OR)
   field?: string; // For dynamic field conditions
@@ -39,26 +48,35 @@ export interface RuleCondition {
 /**
  * Reward calculation method
  */
-export type CalculationMethod = 
-  | 'standard'      // Amount is rounded first, then divided by blockSize, then multiplied by rate
-  | 'direct';       // Amount is multiplied by rate first, then rounded
+export type CalculationMethod =
+  | "standard" // Amount is rounded first, then divided by blockSize, then multiplied by rate
+  | "direct"; // Amount is multiplied by rate first, then rounded
 
 /**
  * Rounding strategy for amount and points
  */
-export type RoundingStrategy = 
-  | 'floor'     // Round down
-  | 'ceiling'   // Round up
-  | 'nearest'   // Round to nearest
-  | 'floor5'    // Round down to nearest $5
-  | 'none';     // No rounding
+export type RoundingStrategy =
+  | "floor" // Round down
+  | "ceiling" // Round up
+  | "nearest" // Round to nearest
+  | "floor5" // Round down to nearest $5
+  | "none"; // No rounding
 
 /**
  * Period type for minimum spend threshold
  */
-export type SpendingPeriodType = 
-  | 'statement_month'  // Based on card's statement cycle
-  | 'calendar_month';  // Based on calendar month
+export type SpendingPeriodType =
+  | "statement_month" // Based on card's statement cycle
+  | "calendar_month"; // Based on calendar month
+
+export type SpendingPeriodScope = "current" | "previous";
+
+export interface SpendingFilter {
+  type: SpendingPeriodType;
+  scope: SpendingPeriodScope;
+  date?: Date;
+  statementDay?: number;
+}
 
 /**
  * Bonus tier definition
@@ -68,11 +86,13 @@ export interface BonusTier {
   multiplier: number;
   priority: number;
   // Modify the condition to support compound conditions
-  condition: RuleCondition | {
-    type: 'compound',
-    operation: 'any' | 'all', // 'any' for OR logic, 'all' for AND logic
-    subConditions: RuleCondition[]
-  };
+  condition:
+    | RuleCondition
+    | {
+        type: "compound";
+        operation: "any" | "all"; // 'any' for OR logic, 'all' for AND logic
+        subConditions: RuleCondition[];
+      };
 }
 
 /**
@@ -80,7 +100,7 @@ export interface BonusTier {
  */
 export interface RuleReward {
   calculationMethod: CalculationMethod;
-  baseMultiplier: number // Default base multiplier
+  baseMultiplier: number; // Default base multiplier
   bonusMultiplier: number; // Default bonus multiplier
   pointsRoundingStrategy: RoundingStrategy; // How to round the calculated points
   amountRoundingStrategy: RoundingStrategy; // How to round the amount before calculation
@@ -123,7 +143,7 @@ export interface CalculationInput {
   date: DateTime;
   category?: string;
   statementDay?: number; // Day of month when statement cycle starts
-  [key: string]: any; // For extensibility
+  [key: string]: unknown; // For extensibility
 }
 
 /**
@@ -163,8 +183,8 @@ export interface DbRewardRule {
   description?: string;
   enabled: boolean;
   priority?: number;
-  conditions: string | any[];
-  bonus_tiers?: string | any[];
+  conditions: string | RuleCondition[];
+  bonus_tiers?: string | BonusTier[];
   calculation_method?: string;
   base_multiplier?: number;
   bonus_multiplier?: number;
@@ -177,4 +197,35 @@ export interface DbRewardRule {
   points_currency?: string;
   created_at: string; // ISO string from Supabase
   updated_at?: string;
+}
+
+export interface DbTransaction {
+  id: string;
+  amount: number;
+  date: string;
+  currency: string;
+  merchant_name: string;
+  payment_method_id: string;
+  category: string;
+  payment_amount: number;
+  is_deleted: boolean;
+}
+
+export interface MonthlyTransactionRow {
+  id: string;
+  merchant_id: string;
+  payment_method_id: string;
+
+  amount: number;
+  currency: string;
+
+  payment_amount: number;
+  payment_currency: string;
+
+  date: string; // ISO string
+  category?: string;
+
+  // Enriched fields for frontend display
+  merchant_name?: string;
+  payment_method_display_name?: string;
 }

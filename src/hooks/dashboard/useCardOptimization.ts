@@ -1,44 +1,88 @@
+import { useState, useEffect } from "react";
+import { Transaction, PaymentMethod } from "@/types";
+import {
+  cardOptimizationUtils,
+  CardOptimizationRecommendation,
+} from "@/utils/dashboard/cardOptimizationUtils";
 
-import { useState, useEffect } from 'react';
-import { Transaction, PaymentMethod } from '@/types';
-
-// This is a placeholder until we implement the real card optimization utility
-const cardOptimizationUtils = {
-  findOptimalCard: (transactions: Transaction[], paymentMethods: PaymentMethod[]) => {
-    // Simplified logic - in reality this would be more complex
-    if (!paymentMethods.length) return null;
-    
-    // Simply return the first active credit card for now
-    return paymentMethods.find(pm => pm.active && pm.type === 'credit_card');
-  },
-  
-  calculateSavings: (transactions: Transaction[]) => {
-    // Simplified calculation
-    return transactions.reduce((total, tx) => total + (tx.amount * 0.01), 0);
-  }
-};
-
+/**
+ * Hook for card optimization recommendations based on transaction history
+ */
 export function useCardOptimization(
   transactions: Transaction[],
   paymentMethods: PaymentMethod[]
 ) {
+  const [recommendations, setRecommendations] =
+    useState<CardOptimizationRecommendation>({
+      topCategories: [],
+      underutilizedMethods: [],
+      potentialSavings: 0,
+      bestMethodsByCategory: {},
+    });
+
   const [optimalCard, setOptimalCard] = useState<PaymentMethod | null>(null);
-  const [potentialSavings, setPotentialSavings] = useState(0);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     if (transactions.length && paymentMethods.length) {
-      // Find the optimal card based on transaction history
-      const bestCard = cardOptimizationUtils.findOptimalCard(transactions, paymentMethods);
-      setOptimalCard(bestCard);
-      
-      // Calculate potential savings
-      const savings = cardOptimizationUtils.calculateSavings(transactions);
-      setPotentialSavings(savings);
+      setIsLoading(true);
+
+      // Use setTimeout to avoid blocking the main thread for large datasets
+      setTimeout(() => {
+        try {
+          // Generate recommendations using our refactored utility
+          const results = cardOptimizationUtils.analyzeSpending(
+            transactions,
+            paymentMethods,
+            { topCategoriesLimit: 5 }
+          );
+
+          setRecommendations(results);
+
+          // Find the best overall card by identifying which one appears most frequently in category recommendations
+          const cardFrequency = new Map<string, number>();
+
+          Object.values(results.bestMethodsByCategory).forEach((methods) => {
+            if (methods.length > 0) {
+              const bestMethod = methods[0];
+              cardFrequency.set(
+                bestMethod.id,
+                (cardFrequency.get(bestMethod.id) || 0) + 1
+              );
+            }
+          });
+
+          // Find the card with the highest frequency
+          let bestCardId = "";
+          let highestFrequency = 0;
+
+          cardFrequency.forEach((frequency, id) => {
+            if (frequency > highestFrequency) {
+              highestFrequency = frequency;
+              bestCardId = id;
+            }
+          });
+
+          // Set the optimal card
+          const bestOverallCard = paymentMethods.find(
+            (method) => method.id === bestCardId
+          );
+          setOptimalCard(bestOverallCard || null);
+        } catch (error) {
+          console.error("Error analyzing card optimization:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }, 0);
     }
   }, [transactions, paymentMethods]);
-  
+
   return {
     optimalCard,
-    potentialSavings
+    potentialSavings: recommendations.potentialSavings,
+    topCategories: recommendations.topCategories,
+    underutilizedMethods: recommendations.underutilizedMethods,
+    bestMethodsByCategory: recommendations.bestMethodsByCategory,
+    isLoading,
   };
 }

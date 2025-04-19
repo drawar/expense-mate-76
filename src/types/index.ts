@@ -1,4 +1,3 @@
-
 export interface MerchantCategoryCode {
   code: string;
   description: string;
@@ -21,7 +20,7 @@ export interface Merchant {
 export interface PaymentMethod {
   id: string;
   name: string;
-  type: 'cash' | 'credit_card';
+  type: "cash" | "credit_card";
   currency: Currency;
   rewardRules: RewardRule[];
   statementStartDay?: number;
@@ -32,11 +31,11 @@ export interface PaymentMethod {
   icon?: string;
   color?: string;
   imageUrl?: string;
-  conversionRate?: Record<Currency, number>;
+  // conversionRate?: Record<Currency, number>;
   selectedCategories?: string[];
 }
 
-export type Currency = 'SGD' | 'USD' | 'EUR' | 'GBP' | string;
+export type Currency = "SGD" | "USD" | "EUR" | "GBP" | string;
 
 export interface Transaction {
   id: string;
@@ -64,7 +63,7 @@ export interface FilterOption {
 }
 
 // Import and re-export RewardRule and related types
-import type { 
+import type {
   RewardRule,
   RuleCondition,
   CalculationMethod,
@@ -73,8 +72,8 @@ import type {
   BonusTier,
   CalculationInput,
   CalculationResult,
-  TransactionType
-} from '@/core/rewards/types';
+  TransactionType,
+} from "@/core/rewards/types";
 
 // Re-export the types
 export type {
@@ -86,5 +85,5 @@ export type {
   BonusTier,
   CalculationInput,
   CalculationResult,
-  TransactionType
+  TransactionType,
 };
