@@ -1,6 +1,6 @@
 // utils/dashboard/metricsUtils.ts
 import { Transaction, Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { ChartDataItem } from "@/types/dashboard";
 
 /**
@@ -73,7 +73,7 @@ export const metricsUtils = {
   ): number {
     return transactions.reduce((total, tx) => {
       try {
-        const convertedAmount = CurrencyService.convert(
+        const convertedAmount = currencyService.convert(
           tx.amount,
           tx.currency as Currency,
           displayCurrency,
@@ -98,7 +98,7 @@ export const metricsUtils = {
       try {
         if (!tx.reimbursementAmount) return total;
 
-        const convertedAmount = CurrencyService.convert(
+        const convertedAmount = currencyService.convert(
           tx.reimbursementAmount,
           tx.currency as Currency,
           displayCurrency,
@@ -201,7 +201,7 @@ export const metricsUtils = {
         const txDate = new Date(tx.date);
         const dayOfWeek = txDate.getDay(); // 0-6, starting Sunday
 
-        const convertedAmount = CurrencyService.convert(
+        const convertedAmount = currencyService.convert(
           tx.amount,
           tx.currency as Currency,
           displayCurrency,
@@ -212,7 +212,7 @@ export const metricsUtils = {
         const netAmount =
           convertedAmount -
           (tx.reimbursementAmount
-            ? CurrencyService.convert(
+            ? currencyService.convert(
                 tx.reimbursementAmount,
                 tx.currency as Currency,
                 displayCurrency,

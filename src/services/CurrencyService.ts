@@ -11,12 +11,12 @@ export class CurrencyService extends BaseService {
   /**
    * List of currencies that don't use decimal places
    */
-  private static readonly NO_DECIMAL_CURRENCIES = ["JPY", "VND", "IDR", "TWD"];
+  private readonly NO_DECIMAL_CURRENCIES = ["JPY", "VND", "IDR", "TWD"];
 
   /**
    * Currency symbols mapping
    */
-  private static readonly CURRENCY_SYMBOLS: Record<Currency, string> = {
+  private readonly CURRENCY_SYMBOLS: Record<Currency, string> = {
     USD: "$",
     EUR: "€",
     GBP: "£",
@@ -36,7 +36,7 @@ export class CurrencyService extends BaseService {
   /**
    * Currency options for dropdown selects
    */
-  private static readonly CURRENCY_OPTIONS: {
+  private readonly CURRENCY_OPTIONS: {
     value: Currency;
     label: string;
   }[] = [
@@ -78,7 +78,7 @@ export class CurrencyService extends BaseService {
    * Initialize exchange rates with default values
    */
   private initializeExchangeRates(): void {
-    this.exchangeRatesCache.set('default', CurrencyService.DEFAULT_EXCHANGE_RATES);
+    this.exchangeRatesCache.set('default', this.DEFAULT_EXCHANGE_RATES);
   }
 
   /**
@@ -86,7 +86,7 @@ export class CurrencyService extends BaseService {
    */
   public format(amount: number, currency: Currency): string {
     // Handle edge cases where currency might be undefined or invalid
-    if (!currency || !Object.keys(CurrencyService.CURRENCY_SYMBOLS).includes(currency)) {
+    if (!currency || !Object.keys(this.CURRENCY_SYMBOLS).includes(currency)) {
       console.warn(
         `Invalid currency provided: ${currency}, using USD as fallback`
       );
@@ -94,7 +94,7 @@ export class CurrencyService extends BaseService {
     }
 
     // Get decimal places based on currency type
-    const decimalPlaces = CurrencyService.NO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
+    const decimalPlaces = this.NO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
 
     // Format the number part with appropriate decimal places
     const formatter = new Intl.NumberFormat("en-US", {
@@ -104,7 +104,7 @@ export class CurrencyService extends BaseService {
     });
 
     // Get the correct currency symbol from our mapping
-    const symbol = CurrencyService.CURRENCY_SYMBOLS[currency];
+    const symbol = this.CURRENCY_SYMBOLS[currency];
 
     // Return the formatted string with our custom symbol
     return `${symbol}${formatter.format(amount)}`;
@@ -154,14 +154,14 @@ export class CurrencyService extends BaseService {
    * Gets the symbol for a given currency
    */
   public getSymbol(currency: Currency): string {
-    return CurrencyService.CURRENCY_SYMBOLS[currency] || currency;
+    return this.CURRENCY_SYMBOLS[currency] || currency;
   }
 
   /**
    * Gets the list of currency options for dropdown menus
    */
   public getCurrencyOptions(): { value: Currency; label: string }[] {
-    return [...CurrencyService.CURRENCY_OPTIONS];
+    return [...this.CURRENCY_OPTIONS];
   }
 
   /**
@@ -197,7 +197,7 @@ export class CurrencyService extends BaseService {
   /**
    * Default exchange rates - in a real app, these would come from an API
    */
-  private static readonly DEFAULT_EXCHANGE_RATES: Record<
+  private readonly DEFAULT_EXCHANGE_RATES: Record<
     Currency,
     Record<Currency, number>
   > = {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PaymentMethod, Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
@@ -31,7 +31,7 @@ interface PaymentMethodFormProps {
   isOpen: boolean; // Add this prop to control the dialog open state
 }
 
-const currencyOptions = CurrencyService.getCurrencyOptions();
+const currencyOptions = currencyService.getCurrencyOptions();
 
 const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   currentMethod,

@@ -1,6 +1,6 @@
 // src/components/dashboard/charts/ChartTooltip.tsx
 import React from "react";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Currency } from "@/types";
 
 const DEFAULT_CURRENCY: Currency = "SGD";
@@ -53,7 +53,7 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
     <div className="bg-background border border-border p-3 rounded-md shadow-md">
       <p className="font-medium">{label}</p>
       <p className="text-primary">
-        {CurrencyService.format(payload[0].value, currency)}
+        {currencyService.format(payload[0].value, currency)}
       </p>
     </div>
   );
@@ -82,7 +82,7 @@ export const SpendingInsightTooltip: React.FC<InsightTooltipProps> = ({
     <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
       <p className="font-medium">{label}</p>
       <p className="text-primary text-lg font-semibold">
-        {CurrencyService.format(payload[0].value, currency)}
+        {currencyService.format(payload[0].value, currency)}
       </p>
 
       {showInsights && data.topCategories && data.topCategories.length > 0 && (
@@ -94,7 +94,7 @@ export const SpendingInsightTooltip: React.FC<InsightTooltipProps> = ({
             {data.topCategories.map((cat: CategoryData, index: number) => (
               <div key={index} className="flex justify-between text-xs">
                 <span>{cat.category}</span>
-                <span>{CurrencyService.format(cat.amount, currency)}</span>
+                <span>{currencyService.format(cat.amount, currency)}</span>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export const SpendingInsightTooltip: React.FC<InsightTooltipProps> = ({
 // Utility functions to create formatters for Recharts' built-in tooltip
 export const createCurrencyFormatter = (currency: Currency = "USD") => {
   return (value: number, name: string, props?: unknown) => [
-    CurrencyService.format(value, currency),
+    currencyService.format(value, currency),
     name,
   ];
 };

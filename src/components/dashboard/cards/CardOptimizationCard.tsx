@@ -1,9 +1,8 @@
-// components/dashboard/cards/CardOptimizationCard.tsx
-import React from "react";
+import React, { useState } from "react";
 import { CreditCardIcon, RefreshCwIcon, ArrowRightIcon } from "lucide-react";
 import { Currency, Transaction, PaymentMethod } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { Button } from "@/components/ui/button";
 import { usePaymentMethodOptimization } from "@/hooks/dashboard/useChartData";
 import { useDashboardContext } from "@/contexts/DashboardContext";
@@ -86,7 +85,7 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
                 Potential annual savings with optimal cards:
               </p>
               <p className="font-medium text-green-500">
-                +{CurrencyService.format(totalPotentialSavings, currency)}
+                +{currencyService.format(totalPotentialSavings, currency)}
               </p>
             </div>
 
@@ -102,7 +101,7 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
                     </span>
                     <span className="text-green-500 text-xs">
                       +
-                      {CurrencyService.format(
+                      {currencyService.format(
                         suggestion.potentialSavings,
                         currency
                       )}

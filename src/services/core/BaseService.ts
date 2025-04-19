@@ -1,6 +1,6 @@
 // src/services/core/BaseService.ts
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase as sharedClient } from '@/integrations/supabase/client';
 
 /**
@@ -10,19 +10,8 @@ export abstract class BaseService {
   protected supabase: SupabaseClient;
   
   protected constructor() {
-    // Use the shared client instance instead of creating a new one
-    try {
-      // Always use the shared client to avoid multiple GoTrueClient instances
-      this.supabase = sharedClient;
-    } catch (error) {
-      console.error('Failed to initialize Supabase client:', error);
-      // Create a mock client that will trigger fallback to localStorage
-      this.supabase = {
-        from: () => ({
-          select: () => ({ data: null, error: new Error('Supabase initialization failed') })
-        })
-      } as unknown as SupabaseClient;
-    }
+    // Always use the shared client to avoid multiple GoTrueClient instances
+    this.supabase = sharedClient;
   }
   
   /**

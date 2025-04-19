@@ -63,12 +63,13 @@ export interface Transaction {
   rewardPoints: number;  // Total reward points
   basePoints?: number;   // Base reward points
   bonusPoints?: number;  // Bonus points (promotional or category-specific)
+  totalPoints?: number;  // Adding totalPoints field to match usage in the code
   notes?: string;
   category?: string;
   tags?: string[];
   isContactless?: boolean;
-  is_deleted?: boolean; // Add this field to match the backend schema
-  reimbursementAmount?: number; // Add reimbursement amount to track expense reimbursements
+  isDeleted?: boolean;   // Updated from is_deleted to match coding style
+  reimbursementAmount?: number; // For tracking expense reimbursements
 }
 
 export interface ExpenseSummary {

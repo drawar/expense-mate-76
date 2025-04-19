@@ -1,5 +1,5 @@
 import { Transaction } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 
 import { CreditCardIcon, CoinsIcon } from "lucide-react";
 
@@ -18,12 +18,12 @@ const TransactionDetailsView = ({
             Amount
           </h3>
           <p className="text-2xl font-semibold">
-            {CurrencyService.format(transaction.amount, transaction.currency)}
+            {currencyService.format(transaction.amount, transaction.currency)}
           </p>
           {transaction.currency !== transaction.paymentCurrency && (
             <p className="text-sm text-muted-foreground">
               Paid as{" "}
-              {CurrencyService.format(
+              {currencyService.format(
                 transaction.paymentAmount,
                 transaction.paymentCurrency
               )}

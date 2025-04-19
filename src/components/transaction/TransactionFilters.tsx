@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { PaymentMethod, Currency } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 
 export type FilterOptions = {
   merchantName: string;
@@ -34,7 +34,7 @@ interface TransactionFiltersProps {
   onResetFilters: () => void;
 }
 
-const currencyOptions = CurrencyService.getCurrencyOptions();
+const currencyOptions = currencyService.getCurrencyOptions();
 
 const TransactionFilters = ({
   filterOptions,

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Transaction, PaymentMethod } from "@/types";
-import { CurrencyService } from "@/services/CurrencyService";
+import { currencyService } from "@/services/CurrencyService";
 import { formatDate } from "@/utils/dateUtils";
 import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from "lucide-react";
 import { exportTransactionsToCSV } from "@/utils/storage/transactions";
@@ -144,14 +144,14 @@ const TransactionTable = ({
                   <TableCell>{transactionCategories[transaction.id]}</TableCell>
                   <TableCell>
                     <div>
-                      {CurrencyService.format(
+                      {currencyService.format(
                         transaction.amount,
                         transaction.currency
                       )}
                     </div>
                     {transaction.currency !== transaction.paymentCurrency && (
                       <div className="text-xs text-muted-foreground">
-                        {CurrencyService.format(
+                        {currencyService.format(
                           transaction.paymentAmount,
                           transaction.paymentCurrency
                         )}
