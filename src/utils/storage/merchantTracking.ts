@@ -25,7 +25,9 @@ export const getMerchantCategoryMappings = async (): Promise<MerchantCategoryMap
     return data.map(item => ({
       merchantName: item.merchant_name,
       occurrenceCount: item.occurrence_count,
-      mostCommonMCC: item.most_common_mcc ? item.most_common_mcc as MerchantCategoryCode : undefined,
+      mostCommonMCC: item.most_common_mcc ? 
+        (typeof item.most_common_mcc === 'string' ? 
+          JSON.parse(item.most_common_mcc) : item.most_common_mcc) as MerchantCategoryCode : undefined,
       isDeleted: item.is_deleted
     }));
   } catch (error) {
@@ -58,7 +60,9 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
     return {
       merchantName: data.merchant_name,
       occurrenceCount: data.occurrence_count,
-      mostCommonMCC: data.most_common_mcc ? data.most_common_mcc as MerchantCategoryCode : undefined,
+      mostCommonMCC: data.most_common_mcc ? 
+        (typeof data.most_common_mcc === 'string' ? 
+          JSON.parse(data.most_common_mcc) : data.most_common_mcc) as MerchantCategoryCode : undefined,
       isDeleted: data.is_deleted
     };
   } catch (error) {
@@ -77,10 +81,12 @@ export const incrementMerchantOccurrence = async (
     // Check if mapping exists
     const mapping = await getMerchantCategoryMappingByName(merchantName);
     
+    // Ensure the MCC object is properly stored as JSONB in Postgres
+    // No need to stringify it manually, Supabase will handle it properly
     if (mapping) {
-      const updateData: any = {
+      const updateData = {
         occurrence_count: mapping.occurrenceCount + 1,
-        most_common_mcc: mcc,
+        most_common_mcc: mcc, // Pass the object directly
         updated_at: new Date().toISOString(),
         is_deleted: false // Ensure the entry is marked as not deleted
       };
@@ -101,7 +107,7 @@ export const incrementMerchantOccurrence = async (
         .insert({
           merchant_name: merchantName,
           occurrence_count: 1,
-          most_common_mcc: mcc,
+          most_common_mcc: mcc, // Pass the object directly
           is_deleted: false // New entries are not deleted
         });
         

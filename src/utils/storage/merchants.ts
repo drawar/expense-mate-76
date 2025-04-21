@@ -1,6 +1,8 @@
-
 import { Merchant, MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+
+// Simple memory cache to avoid repeated lookups
+const merchantCache = new Map<string, Merchant | null>();
 
 // Get merchants from Supabase
 export const getMerchants = async (): Promise<Merchant[]> => {
@@ -50,62 +52,66 @@ export const getMerchants = async (): Promise<Merchant[]> => {
   });
 };
 
-// Get merchant by name (case insensitive) or return undefined
-export const getMerchantByName = async (name: string): Promise<Merchant | undefined> => {
-  console.log('Looking for merchant by name:', name);
+/**
+ * Simplified merchant lookup by name
+ * Uses memory caching to prevent repeated lookups
+ */
+export const getMerchantByName = async (name: string): Promise<Merchant | null> => {
+  // Skip empty searches
+  if (!name || name.trim().length < 2) {
+    return null;
+  }
   
-  const { data, error } = await supabase
-    .from('merchants')
-    .select('*')
-    .ilike('name', name)
-    .maybeSingle();
+  const normalizedName = name.trim().toLowerCase();
+  
+  // Check memory cache first
+  if (merchantCache.has(normalizedName)) {
+    return merchantCache.get(normalizedName) || null;
+  }
+  
+  try {
+    // Lookup merchant in database
+    const { data, error } = await supabase
+      .from('merchants')
+      .select('*')
+      .ilike('name', name)
+      .maybeSingle();
+      
+    if (error || !data) {
+      // Cache negative result to avoid future lookups
+      merchantCache.set(normalizedName, null);
+      return null;
+    }
     
-  if (error) {
-    console.error('Error fetching merchant by name:', error);
-    return undefined;
+    // Convert database result to Merchant type
+    const merchant: Merchant = {
+      id: data.id,
+      name: data.name,
+      address: data.address || undefined,
+      coordinates: data.coordinates as { latitude: number; longitude: number } | undefined,
+      mcc: data.mcc as MerchantCategoryCode | undefined,
+      isOnline: data.is_online,
+    };
+    
+    // Cache result
+    merchantCache.set(normalizedName, merchant);
+    return merchant;
+  } catch (error) {
+    // Cache negative result on error
+    merchantCache.set(normalizedName, null);
+    return null;
   }
-  
-  if (!data) {
-    console.log('No merchant found with name:', name);
-    return undefined;
-  }
-  
-  console.log('Merchant found:', data);
-  
-  // Process coordinates to ensure correct type
-  let coordinates = undefined;
-  if (data.coordinates) {
-    try {
-      if (typeof data.coordinates === 'object') {
-        coordinates = data.coordinates as { latitude: number; longitude: number };
-      }
-    } catch (e) {
-      console.error('Error parsing coordinates:', e);
-    }
-  }
-  
-  // Process MCC code to ensure correct type
-  let mcc = undefined;
-  if (data.mcc) {
-    try {
-      if (typeof data.mcc === 'object') {
-        mcc = data.mcc as MerchantCategoryCode;
-      }
-    } catch (e) {
-      console.error('Error parsing MCC:', e);
-    }
-  }
-  
-  // Transform data to match our Merchant type
-  return {
-    id: data.id,
-    name: data.name,
-    address: data.address || undefined,
-    coordinates,
-    mcc,
-    isOnline: data.is_online,
-  };
 };
+
+/**
+ * Reset the merchant cache
+ */
+export const clearMerchantCache = () => {
+  merchantCache.clear();
+};
+
+// Rest of the exports preserved for backward compatibility
+export { clearMerchantCache as clearMerchants };
 
 // Add a new merchant or update if already exists
 export const addOrUpdateMerchant = async (merchant: Merchant): Promise<Merchant> => {

@@ -78,6 +78,19 @@ export class RuleEngine {
    * Create default result when no rules apply
    */
   private createDefaultResult(input: CalculationInput): CalculationResult {
+    // Cash payment methods should always return 0 points
+    if (input.paymentMethod.type === 'cash') {
+      return {
+        totalPoints: 0,
+        basePoints: 0,
+        bonusPoints: 0,
+        pointsCurrency: 'Points',
+        minSpendMet: false,
+        messages: ['Cash transactions do not earn points']
+      };
+    }
+    
+    // For other payment methods without specific rules, use 1:1 ratio
     const basePoints = Math.round(input.amount);
     return {
       totalPoints: basePoints,

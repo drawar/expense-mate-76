@@ -1,4 +1,3 @@
-
 import { Transaction } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import {
@@ -26,15 +25,15 @@ const TransactionDialogHeader = ({ transaction }: TransactionDialogHeaderProps) 
         )}
       </DialogTitle>
       <DialogDescription className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm mt-2">
-        <div className="flex items-center gap-1">
+        <span className="flex items-center gap-1">
           <CalendarIcon className="h-3.5 w-3.5" />
           <span>{formatDate(transaction.date)}</span>
-        </div>
+        </span>
         {transaction.merchant.mcc && (
-          <div className="flex items-center gap-1">
+          <span className="flex items-center gap-1">
             <MapPinIcon className="h-3.5 w-3.5" />
             <span>{transaction.merchant.mcc.description}</span>
-          </div>
+          </span>
         )}
       </DialogDescription>
     </DialogHeader>

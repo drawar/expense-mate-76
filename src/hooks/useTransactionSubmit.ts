@@ -4,7 +4,7 @@ import { Transaction } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/services/core/DataService';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
-import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
+import { pointsTrackingService } from '@/services/PointsTrackingService';
 import { getTransactions } from '@/utils/storageUtils'; // Import for forced refresh
 
 export const useTransactionSubmit = (useLocalStorage: boolean) => {
@@ -53,7 +53,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       // First, calculate reward points for the transaction
       // Get used bonus points for this payment method in the current month
       const date = new Date(transactionData.date);
-      const usedBonusPoints = await bonusPointsTrackingService.getUsedBonusPoints(
+      const usedBonusPoints = await pointsTrackingService.getUsedBonusPoints(
         transactionData.paymentMethod.id,
         date.getFullYear(),
         date.getMonth()
@@ -68,6 +68,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
       // Update transaction with points information
       const transactionWithPoints: Transaction = {
         ...transactionData as Transaction,
+        basePoints: calculationResult.basePoints,
         bonusPoints: calculationResult.bonusPoints,
         totalPoints: calculationResult.totalPoints
       };
@@ -79,19 +80,17 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         throw error || new Error('Failed to save transaction');
       }
       
-      // Record bonus points movement - don't wait for this to complete
-      // and don't throw errors from this step
-      if (calculationResult.bonusPoints > 0) {
-        try {
-          await bonusPointsTrackingService.recordBonusPointsMovement(
-            transactionWithPoints.id,
-            transactionWithPoints.paymentMethod.id,
-            calculationResult.bonusPoints
-          );
-        } catch (bonusError) {
-          console.warn('Non-critical error recording bonus points:', bonusError);
-          // Continue with navigation flow even if bonus points recording fails
-        }
+      // Record both base and bonus points movement for transaction creation
+      try {
+        await pointsTrackingService.recordPointsMovementForAdd(
+          transactionWithPoints.id,
+          transactionWithPoints.paymentMethod.id,
+          calculationResult.basePoints,
+          calculationResult.bonusPoints
+        );
+      } catch (pointsError) {
+        console.warn('Non-critical error recording points:', pointsError);
+        // Continue with navigation flow even if points recording fails
       }
       
       console.log('Transaction saved successfully:', transactionWithPoints);
@@ -110,48 +109,30 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         // Continue even if refresh fails
       }
       
-      // Add a small delay to ensure the data is refreshed
-      setTimeout(() => {
-        // Navigate back to the dashboard to see updated metrics
-        navigate('/');
-      }, 100);
-      
-      return transactionWithPoints;
+      // Navigate back to the transactions list
+      navigate('/transactions');
     } catch (error) {
       console.error('Error saving transaction:', error);
       
-      let errorMessage = 'Failed to save transaction';
-      
-      // Detailed error information for debugging
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        console.error('Error instance details:', {
-          message: error.message,
-          stack: error.stack
-        });
-        
-        // Check for specific errors
-        if (error.message.includes('duplicate key') || error.message.includes('constraint')) {
-          errorMessage = 'A merchant with this name already exists';
-        } else if (error.message.includes('network')) {
-          errorMessage = 'Network error - please check your connection';
-        }
-      }
-      
-      setSaveError(errorMessage);
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred while saving the transaction'
+      );
       
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: error instanceof Error ? error.message : 'Failed to save transaction',
         variant: 'destructive',
       });
-      
-      // Don't navigate when there's an error, let user fix and try again
-      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { handleSubmit, isLoading, saveError };
+  return {
+    handleSubmit,
+    isLoading,
+    saveError
+  };
 };

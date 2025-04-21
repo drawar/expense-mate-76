@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { addBonusPointsMovement } from './bonus-points';
 import { getTransactionsFromLocalStorage, saveTransactionsToLocalStorage } from './local-storage';
+import { pointsTrackingService } from '@/services/PointsTrackingService';
 
 export const deleteTransaction = async (id: string): Promise<boolean> => {
   try {
@@ -58,14 +57,23 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
       return false;
     }
     
-    // Record negative bonus points movement if needed
-    if (transaction.reward_points > transaction.base_points) {
-      const bonusPoints = transaction.reward_points - transaction.base_points;
-      await addBonusPointsMovement({
-        transactionId: transaction.id,
-        paymentMethodId: transaction.payment_method_id,
-        bonusPoints: -bonusPoints // Negative to offset the original bonus points
-      });
+    // Record contra entries for both base and bonus points
+    const basePoints = transaction.base_points || 0;
+    const bonusPoints = transaction.bonus_points || 0;
+    const paymentMethodId = transaction.payment_method_id;
+    
+    if (basePoints !== 0 || bonusPoints !== 0) {
+      try {
+        await pointsTrackingService.recordPointsMovementForDelete(
+          id,
+          paymentMethodId,
+          basePoints,
+          bonusPoints
+        );
+      } catch (pointsError) {
+        console.warn('Non-critical error recording points contra entry for deletion:', pointsError);
+        // Continue with deletion despite points recording error
+      }
     }
     
     // Update merchant occurrence count
