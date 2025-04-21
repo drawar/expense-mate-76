@@ -4,17 +4,24 @@ import { Transaction, PaymentMethod } from '@/types';
 import { BaseService } from './core/BaseService';
 import { dataService } from './core/DataService';
 
+// Interface for cache object type
+interface CacheEntry<T> {
+  value: T;
+  timestamp: number;
+}
+
 /**
  * Service for tracking used bonus points per payment method and month
  */
 export class BonusPointsTrackingService extends BaseService {
   private static _instance: BonusPointsTrackingService;
   
-  // Cache with 15-minute expiration
-  private bonusPointsCache = this.createCache<number>(15 * 60 * 1000);
+  // Cache with 15-minute expiration - matching the BaseService.createCache return type
+  private bonusPointsCache: Map<string, { value: number; timestamp: number }>;
   
   private constructor() {
     super();
+    this.bonusPointsCache = this.createCache<number>(15 * 60 * 1000);
   }
   
   /**
@@ -37,14 +44,14 @@ export class BonusPointsTrackingService extends BaseService {
   ): Promise<number> {
     // Check cache first
     const cacheKey = `${paymentMethodId}-${year}-${month}`;
-    const cachedValue = this.bonusPointsCache.get(cacheKey);
+    const cachedValue = this.getCachedValue(this.bonusPointsCache, cacheKey);
     if (cachedValue !== undefined) {
       return cachedValue;
     }
     
     try {
       // Try to query the database for used bonus points
-      const { data, error, usedFallback } = await this.safeDbOperation(
+      const { data, error, usedFallback } = await this.safeDbOperation<any>(
         async () => {
           const result = await this.supabase
             .from('bonus_points_movements')
@@ -56,9 +63,10 @@ export class BonusPointsTrackingService extends BaseService {
           return result;
         },
         `bonusPoints-${paymentMethodId}-${year}-${month}`,
-        (localData) => {
-          // Transform localStorage data to match database format
-          return parseInt(localData, 10);
+        (localData: string): { bonus_points: number }[] => {
+          // Transform localStorage data to match database format by creating a single entry array
+          // This fixes the type error by returning an array with the expected structure
+          return [{ bonus_points: parseInt(localData, 10) }];
         }
       );
       
@@ -67,15 +75,18 @@ export class BonusPointsTrackingService extends BaseService {
         let totalBonusPoints: number;
         
         if (usedFallback) {
-          // For fallback data, it's already the total
-          totalBonusPoints = data as unknown as number;
+          // For fallback data, extract the value from our array wrapper
+          totalBonusPoints = Array.isArray(data) && data.length > 0 ? 
+            data[0].bonus_points : 0;
         } else {
           // For database data, sum up the points
-          totalBonusPoints = data.reduce((sum, record) => sum + record.bonus_points, 0);
+          totalBonusPoints = Array.isArray(data) 
+            ? data.reduce((sum, record: any) => sum + (record.bonus_points || 0), 0) 
+            : 0;
         }
         
         // Update cache
-        this.bonusPointsCache.set(cacheKey, totalBonusPoints);
+        this.setCachedValue(this.bonusPointsCache, cacheKey, totalBonusPoints);
         
         return totalBonusPoints;
       }
@@ -99,25 +110,20 @@ export class BonusPointsTrackingService extends BaseService {
       // Skip recording if bonus points is zero
       if (bonusPoints === 0) return true;
       
-      // Try to record in the database
-      const { error, usedFallback } = await this.safeDbOperation(
-        async () => {
-          const result = await this.supabase
-            .from('bonus_points_movements')
-            .insert({
-              transaction_id: transactionId,
-              payment_method_id: paymentMethodId,
-              bonus_points: bonusPoints,
-              created_at: new Date().toISOString()
-            });
-            
-          return result;
-        },
-        // No fallback key needed as we handle localStorage fallback specifically below
-      );
+      // Add a small delay to ensure the transaction is fully committed to the database
+      // This helps prevent foreign key constraint violations
+      await new Promise<void>(resolve => setTimeout(resolve, 300));
       
-      if (error) {
-        // If database insert fails, fall back to localStorage
+      // Verify the transaction exists before trying to add bonus points
+      const { data: transactionExists } = await this.supabase
+        .from('transactions')
+        .select('id')
+        .eq('id', transactionId)
+        .single();
+        
+      if (!transactionExists) {
+        console.warn(`Transaction ${transactionId} not found in database. Falling back to local storage for bonus points.`);
+        // Use local storage fallback
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
@@ -127,16 +133,97 @@ export class BonusPointsTrackingService extends BaseService {
         const updatedValue = parseInt(currentValue, 10) + bonusPoints;
         
         localStorage.setItem(localStorageKey, updatedValue.toString());
+        
+        // Invalidate cache
+        const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
+        this.bonusPointsCache.delete(cacheKey);
+        
+        return true;
       }
       
-      // Invalidate cache
+      // Check if this bonus point movement already exists to avoid conflict
+      const { data: existingMovement } = await this.supabase
+        .from('bonus_points_movements')
+        .select('*')
+        .eq('transaction_id', transactionId)
+        .single();
+        
+      // If it already exists, update it instead of inserting
+      if (existingMovement) {
+        console.log('Updating existing bonus points movement for transaction:', transactionId);
+        const { error } = await this.supabase
+          .from('bonus_points_movements')
+          .update({ bonus_points: bonusPoints })
+          .eq('transaction_id', transactionId);
+        
+        if (error) {
+          console.warn('Error updating bonus points movement:', error);
+          // Continue with local storage fallback
+        } else {
+          // Success - invalidate cache and return
+          const now = new Date();
+          const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
+          this.bonusPointsCache.delete(cacheKey);
+          return true;
+        }
+      } else {
+        // It doesn't exist, try to insert
+        console.log('Creating new bonus points movement for transaction:', transactionId);
+        const { error } = await this.supabase
+          .from('bonus_points_movements')
+          .insert({
+            transaction_id: transactionId,
+            payment_method_id: paymentMethodId,
+            bonus_points: bonusPoints,
+            created_at: new Date().toISOString()
+          });
+          
+        if (error) {
+          console.warn('Error inserting bonus points movement:', error, 'Transaction ID:', transactionId);
+          // Continue with local storage fallback
+        } else {
+          // Success - invalidate cache and return
+          const now = new Date();
+          const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
+          this.bonusPointsCache.delete(cacheKey);
+          return true;
+        }
+      }
+      
+      // If we get here, use local storage fallback
       const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      
+      const localStorageKey = `bonusPoints-${paymentMethodId}-${year}-${month}`;
+      const currentValue = localStorage.getItem(localStorageKey) || '0';
+      const updatedValue = parseInt(currentValue, 10) + bonusPoints;
+      
+      localStorage.setItem(localStorageKey, updatedValue.toString());
+      
+      // Invalidate cache
       const cacheKey = `${paymentMethodId}-${now.getFullYear()}-${now.getMonth()}`;
       this.bonusPointsCache.delete(cacheKey);
       
       return true;
     } catch (error) {
-      console.error('Exception in recordBonusPointsMovement:', error);
+      console.warn('Exception in recordBonusPointsMovement:', error);
+      
+      // Even if there's an error, store in localStorage as fallback
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        
+        const localStorageKey = `bonusPoints-${paymentMethodId}-${year}-${month}`;
+        const currentValue = localStorage.getItem(localStorageKey) || '0';
+        const updatedValue = parseInt(currentValue, 10) + bonusPoints;
+        
+        localStorage.setItem(localStorageKey, updatedValue.toString());
+      } catch (e) {
+        console.error('Failed to save bonus points to localStorage:', e);
+      }
+      
       return false;
     }
   }

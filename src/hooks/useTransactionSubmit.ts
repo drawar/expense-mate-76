@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/services/core/DataService';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { bonusPointsTrackingService } from '@/services/BonusPointsTrackingService';
+import { getTransactions } from '@/utils/storageUtils'; // Import for forced refresh
 
 export const useTransactionSubmit = (useLocalStorage: boolean) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -78,13 +79,19 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         throw error || new Error('Failed to save transaction');
       }
       
-      // Record bonus points movement
+      // Record bonus points movement - don't wait for this to complete
+      // and don't throw errors from this step
       if (calculationResult.bonusPoints > 0) {
-        await bonusPointsTrackingService.recordBonusPointsMovement(
-          transactionWithPoints.id,
-          transactionWithPoints.paymentMethod.id,
-          calculationResult.bonusPoints
-        );
+        try {
+          await bonusPointsTrackingService.recordBonusPointsMovement(
+            transactionWithPoints.id,
+            transactionWithPoints.paymentMethod.id,
+            calculationResult.bonusPoints
+          );
+        } catch (bonusError) {
+          console.warn('Non-critical error recording bonus points:', bonusError);
+          // Continue with navigation flow even if bonus points recording fails
+        }
       }
       
       console.log('Transaction saved successfully:', transactionWithPoints);
@@ -94,8 +101,21 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         description: 'Transaction saved successfully' + (useLocalStorage ? ' to local storage' : ''),
       });
       
-      // Navigate back to the dashboard to see updated metrics
-      navigate('/');
+      // Force a refresh of the transaction data before navigating
+      try {
+        console.log('Forcing transaction data refresh');
+        await getTransactions(useLocalStorage, true); // Pass true as second param for force refresh
+      } catch (refreshError) {
+        console.warn('Non-critical error refreshing transactions:', refreshError);
+        // Continue even if refresh fails
+      }
+      
+      // Add a small delay to ensure the data is refreshed
+      setTimeout(() => {
+        // Navigate back to the dashboard to see updated metrics
+        navigate('/');
+      }, 100);
+      
       return transactionWithPoints;
     } catch (error) {
       console.error('Error saving transaction:', error);

@@ -1,4 +1,3 @@
-
 import { MerchantCategoryCode } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,8 +43,15 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
       .ilike('merchant_name', merchantName)
       .maybeSingle();
     
-    if (error || !data) {
-      console.error('Error fetching merchant mapping by name:', error);
+    if (error) {
+      // Only log actual errors, not "not found" cases
+      console.warn('Error fetching merchant mapping by name:', error);
+      return null;
+    }
+    
+    // If no data found, return null without an error message
+    if (!data) {
+      console.log(`No merchant mapping found for: ${merchantName}`);
       return null;
     }
     
@@ -56,7 +62,8 @@ export const getMerchantCategoryMappingByName = async (merchantName: string): Pr
       isDeleted: data.is_deleted
     };
   } catch (error) {
-    console.error('Exception fetching merchant mapping by name:', error);
+    // Log exceptions but still return null gracefully
+    console.warn('Exception fetching merchant mapping by name:', error);
     return null;
   }
 };

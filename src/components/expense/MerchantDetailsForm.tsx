@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
@@ -56,32 +55,41 @@ const MerchantDetailsForm = ({ onSelectMCC, selectedMCC }: MerchantDetailsFormPr
   // Only check for suggestions once per merchant name and when no MCC is selected
   useEffect(() => {
     const checkMerchantSuggestions = async () => {
-      if (debouncedMerchantName.trim().length >= 3 && !suggestionsChecked && !selectedMCC) {
-        try {
-          // Mark that we've checked suggestions for this merchant name
-          setSuggestionsChecked(true);
+      if (!debouncedMerchantName || debouncedMerchantName.trim().length < 3) {
+        return;
+      }
+      
+      // Don't check again if we've already checked or if an MCC is already selected
+      if (suggestionsChecked || selectedMCC) {
+        return;
+      }
+      
+      try {
+        console.log(`Checking merchant suggestions for: ${debouncedMerchantName}`);
+        
+        // Mark that we've checked suggestions for this merchant name
+        setSuggestionsChecked(true);
+        
+        // Check if we have a suggestion for this merchant name that isn't deleted
+        const hasSuggestions = await hasMerchantCategorySuggestions(debouncedMerchantName);
+        
+        if (hasSuggestions) {
+          const suggestedMCC = await getSuggestedMerchantCategory(debouncedMerchantName);
           
-          // Check if we have a suggestion for this merchant name that isn't deleted
-          const hasSuggestions = await hasMerchantCategorySuggestions(debouncedMerchantName);
-          
-          if (hasSuggestions) {
-            const suggestedMCC = await getSuggestedMerchantCategory(debouncedMerchantName);
+          if (suggestedMCC) {
+            // Set the MCC in the form and update the parent
+            onSelectMCC(suggestedMCC);
+            form.setValue('mcc', suggestedMCC);
             
-            if (suggestedMCC) {
-              // Set the MCC in the form and update the parent
-              onSelectMCC(suggestedMCC);
-              form.setValue('mcc', suggestedMCC);
-              
-              // Show toast to inform user about the suggested category
-              toast({
-                title: "Merchant category suggested",
-                description: `Using ${suggestedMCC.description} (${suggestedMCC.code}) based on previous entries`,
-              });
-            }
+            // Show toast to inform user about the suggested category
+            toast({
+              title: "Merchant category suggested",
+              description: `Using ${suggestedMCC.description} (${suggestedMCC.code}) based on previous entries`,
+            });
           }
-        } catch (error) {
-          console.error('Error checking merchant suggestions:', error);
         }
+      } catch (error) {
+        console.error('Error checking merchant suggestions:', error);
       }
     };
     
