@@ -119,9 +119,18 @@ export class DataService extends BaseService {
         transaction.id = uuidv4();
       }
       
-      // Convert date string to ISO format if needed
-      if (typeof transaction.date === 'string' && !transaction.date.includes('T')) {
-        transaction.date = new Date(transaction.date).toISOString();
+      // Format date as YYYY-MM-DD without time component
+      if (typeof transaction.date === 'string') {
+        // If it's already in YYYY-MM-DD format, keep it that way
+        if (!transaction.date.includes('T')) {
+          // It's already in YYYY-MM-DD format, no conversion needed
+        } else {
+          // It's in ISO format, extract just the date part
+          transaction.date = transaction.date.split('T')[0];
+        }
+      } else if (transaction.date instanceof Date) {
+        // Convert Date object to YYYY-MM-DD string
+        transaction.date = transaction.date.toISOString().split('T')[0];
       }
       
       // Handle merchant

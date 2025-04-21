@@ -1,5 +1,5 @@
 // hooks/expense-form/useRewardPointsStandalone.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PaymentMethod } from '@/types';
 import { simulateRewardPoints } from '@/services/rewards/rewardCalculationAdapter';
 
@@ -23,7 +23,8 @@ export function useRewardPointsStandalone(
   mcc?: string,
   merchantName?: string,
   isOnline?: boolean,
-  isContactless?: boolean
+  isContactless?: boolean,
+  debounceMs: number = 500 // Add debounce delay parameter with default 500ms
 ) {
   // State for estimated points
   const [estimatedPoints, setEstimatedPoints] = useState<PointsResult>({
@@ -31,6 +32,9 @@ export function useRewardPointsStandalone(
     basePoints: 0,
     bonusPoints: 0
   });
+  
+  // Timer reference for debouncing
+  const timerRef = useRef<number | null>(null);
   
   // Find selected payment method, with null check for paymentMethods
   const selectedPaymentMethod = paymentMethods && paymentMethodId ? 
@@ -98,9 +102,23 @@ export function useRewardPointsStandalone(
       }
     };
     
-    // Call the async function
-    calculatePoints();
-  }, [amount, paymentMethodId, selectedPaymentMethod, mcc, merchantName, isOnline, isContactless, paymentMethods]);
+    // Clear any existing timer
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+    }
+    
+    // Set a new timer to debounce the calculation
+    timerRef.current = window.setTimeout(() => {
+      calculatePoints();
+    }, debounceMs);
+    
+    // Cleanup function to clear the timer if the component unmounts
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [amount, paymentMethodId, selectedPaymentMethod, mcc, merchantName, isOnline, isContactless, paymentMethods, debounceMs]);
   
   return {
     estimatedPoints,
