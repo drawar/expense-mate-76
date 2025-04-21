@@ -10,11 +10,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { CardRegistry } from '@/services/rewards/CardRegistry';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { RuleRepository } from '@/services/rewards/RuleRepository';
+// Import useTransactionData to get access to refreshTransactions
+import { useTransactionData } from '@/hooks/transaction-list/useTransactionData';
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
-  const { paymentMethods, isLoading } = usePaymentMethods();
-  const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage);
+  const { paymentMethods: loadedPaymentMethods, isLoading: loadingPaymentMethods } = usePaymentMethods();
+  const { refreshTransactions } = useTransactionData();
+  const { handleSubmit, isLoading: isSaving, saveError } = useTransactionSubmit(useLocalStorage, refreshTransactions);
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("expense");
   const [initializationStatus, setInitializationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -50,8 +53,8 @@ const AddExpense = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Payment methods in AddExpense:', paymentMethods);
-  }, [paymentMethods]);
+    console.log('Payment methods in AddExpense:', loadedPaymentMethods);
+  }, [loadedPaymentMethods]);
   
   return (
     <div className="min-h-screen">
@@ -68,7 +71,7 @@ const AddExpense = () => {
         <StorageModeAlert useLocalStorage={useLocalStorage} />
         <ErrorAlert error={saveError} />
         
-        {(isLoading && paymentMethods.length === 0) || initializationStatus === 'loading' ? (
+        {(loadingPaymentMethods && loadedPaymentMethods.length === 0) || initializationStatus === 'loading' ? (
           <div className="animate-pulse text-center py-10">Loading...</div>
         ) : initializationStatus === 'error' ? (
           <div className="text-center py-10 text-red-500">
@@ -76,7 +79,7 @@ const AddExpense = () => {
           </div>
         ) : (
           <ExpenseForm
-            paymentMethods={paymentMethods}
+            paymentMethods={loadedPaymentMethods}
             onSubmit={handleSubmit}
           />
         )}

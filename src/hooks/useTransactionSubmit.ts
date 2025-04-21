@@ -5,9 +5,9 @@ import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/services/core/DataService';
 import { rewardCalculatorService } from '@/services/rewards/RewardCalculatorService';
 import { pointsTrackingService } from '@/services/PointsTrackingService';
-import { getTransactions } from '@/utils/storageUtils'; // Import for forced refresh
+// Remove direct import of getTransactions - we'll use the refreshTransactions function instead
 
-export const useTransactionSubmit = (useLocalStorage: boolean) => {
+export const useTransactionSubmit = (useLocalStorage: boolean, refreshTransactions?: () => Promise<void>) => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -100,13 +100,15 @@ export const useTransactionSubmit = (useLocalStorage: boolean) => {
         description: 'Transaction saved successfully' + (useLocalStorage ? ' to local storage' : ''),
       });
       
-      // Force a refresh of the transaction data before navigating
-      try {
-        console.log('Forcing transaction data refresh');
-        await getTransactions(useLocalStorage, true); // Pass true as second param for force refresh
-      } catch (refreshError) {
-        console.warn('Non-critical error refreshing transactions:', refreshError);
-        // Continue even if refresh fails
+      // If we have a refreshTransactions function, use it instead of directly calling getTransactions
+      if (refreshTransactions) {
+        try {
+          console.log('Refreshing transaction data via provided refresh function');
+          await refreshTransactions();
+        } catch (refreshError) {
+          console.warn('Non-critical error refreshing transactions:', refreshError);
+          // Continue even if refresh fails
+        }
       }
       
       // Navigate back to the transactions list
