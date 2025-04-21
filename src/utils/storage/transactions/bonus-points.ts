@@ -29,7 +29,7 @@ export const addBonusPointsMovement = async (movement: BonusPointsMovement) => {
     console.log('Sending bonus points data to Supabase:', JSON.stringify(bonusData, null, 2));
     
     const { data, error } = await supabase
-      .from('bonus_points_movements')
+      .from('points_movements')
       .insert(bonusData)
       .select();
       
@@ -69,7 +69,7 @@ const updateMonthlyBonusPointsTotals = async (paymentMethodId: string) => {
     console.log('Fetching bonus points movements since:', firstDayOfMonth.toISOString());
     
     const { data: movements, error } = await supabase
-      .from('bonus_points_movements')
+      .from('points_movements')
       .select('bonus_points')
       .eq('payment_method_id', paymentMethodId)
       .gte('created_at', firstDayOfMonth.toISOString());

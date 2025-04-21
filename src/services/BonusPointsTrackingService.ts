@@ -66,7 +66,7 @@ export class BonusPointsTrackingService extends BaseService {
       const { data, error, usedFallback } = await this.safeDbOperation<any>(
         async () => {
           const result = await this.supabase
-            .from('bonus_points_movements')
+            .from('points_movements')
             .select('bonus_points')
             .eq('payment_method_id', paymentMethodId)
             .gte('created_at', new Date(year, month, 1).toISOString())
@@ -155,7 +155,7 @@ export class BonusPointsTrackingService extends BaseService {
       
       // Check if this bonus point movement already exists to avoid conflict
       const { data: existingMovement } = await this.supabase
-        .from('bonus_points_movements')
+        .from('points_movements')
         .select('*')
         .eq('transaction_id', transactionId)
         .single();
@@ -164,7 +164,7 @@ export class BonusPointsTrackingService extends BaseService {
       if (existingMovement) {
         console.log('Updating existing bonus points movement for transaction:', transactionId);
         const { error } = await this.supabase
-          .from('bonus_points_movements')
+          .from('points_movements')
           .update({ bonus_points: bonusPoints })
           .eq('transaction_id', transactionId);
         
@@ -182,7 +182,7 @@ export class BonusPointsTrackingService extends BaseService {
         // It doesn't exist, try to insert
         console.log('Creating new bonus points movement for transaction:', transactionId);
         const { error } = await this.supabase
-          .from('bonus_points_movements')
+          .from('points_movements')
           .insert({
             transaction_id: transactionId,
             payment_method_id: paymentMethodId,
@@ -280,7 +280,7 @@ export class BonusPointsTrackingService extends BaseService {
       
       console.log('Creating new bonus points movement for transaction:', transactionId);
       const { error } = await this.supabase
-        .from('bonus_points_movements')
+        .from('points_movements')
         .insert(movement);
         
       if (error) {
@@ -345,7 +345,7 @@ export class BonusPointsTrackingService extends BaseService {
         
         console.log('Creating contra entry for previous bonus points:', transactionId);
         const { error: contraError } = await this.supabase
-          .from('bonus_points_movements')
+          .from('points_movements')
           .insert(contraMovement);
           
         if (contraError) {
@@ -366,7 +366,7 @@ export class BonusPointsTrackingService extends BaseService {
         
         console.log('Creating new entry for updated bonus points:', transactionId);
         const { error: newError } = await this.supabase
-          .from('bonus_points_movements')
+          .from('points_movements')
           .insert(newMovement);
           
         if (newError) {
@@ -413,7 +413,7 @@ export class BonusPointsTrackingService extends BaseService {
       
       console.log('Creating contra entry for deleted transaction:', transactionId);
       const { error } = await this.supabase
-        .from('bonus_points_movements')
+        .from('points_movements')
         .insert(contraMovement);
         
       if (error) {
@@ -446,7 +446,7 @@ export class BonusPointsTrackingService extends BaseService {
     try {
       // Using proper query structure with .eq() method
       const { data, error } = await this.supabase
-        .from('bonus_points_movements')
+        .from('points_movements')
         .select('*')
         .eq('transaction_id', transactionId)
         .maybeSingle();
@@ -465,7 +465,7 @@ export class BonusPointsTrackingService extends BaseService {
   
   /**
    * Calculate used bonus points from a set of transactions
-   * Useful when we don't have direct access to the bonus_points_movements table
+   * Useful when we don't have direct access to the points_movements table
    */
   public calculateUsedBonusPointsFromTransactions(
     transactions: Transaction[],

@@ -9,7 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      bonus_points_movements: {
+      points_movements: {
         Row: {
           bonus_points: number
           created_at: string
@@ -33,14 +33,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "bonus_points_movements_payment_method_id_fkey"
+            foreignKeyName: "points_movements_payment_method_id_fkey"
             columns: ["payment_method_id"]
             isOneToOne: false
             referencedRelation: "payment_methods"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bonus_points_movements_transaction_id_fkey"
+            foreignKeyName: "points_movements_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
