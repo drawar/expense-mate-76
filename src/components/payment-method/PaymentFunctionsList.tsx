@@ -16,7 +16,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { RewardRuleManager } from '@/components/rewards/RewardRuleManager';
 import { formatCurrency } from '@/utils/currencyFormatter';
@@ -30,6 +31,7 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { RewardRule } from '@/services/rewards/types';
+import { getCardTypeIdFromMethod } from '@/utils/cardUtils';
 
 interface PaymentFunctionsListProps {
   paymentMethod: PaymentMethod;
@@ -60,13 +62,9 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
   // Calculate total reward points earned
   const totalRewardPoints = paymentMethodTransactions.reduce((total, tx) => total + (tx.rewardPoints || 0), 0);
 
-  // Determine card type ID based on payment method
+  // Use the centralized utility function instead of local implementation
   const getCardTypeId = (): string => {
-    if (paymentMethod.issuer && paymentMethod.name) {
-      // Create a normalized ID format similar to that used in CardRegistry
-      return `${paymentMethod.issuer.toLowerCase()}-${paymentMethod.name.toLowerCase().replace(/\s+/g, '-')}`;
-    }
-    return paymentMethod.id;
+    return getCardTypeIdFromMethod(paymentMethod);
   };
 
   return (
@@ -251,6 +249,9 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <DialogTitle>
               Manage Reward Rules for {paymentMethod.issuer} {paymentMethod.name}
             </DialogTitle>
+            <DialogDescription>
+              Configure how points are earned when using this payment method for different types of transactions.
+            </DialogDescription>
           </DialogHeader>
           
           <RewardRuleManager cardTypeId={getCardTypeId()} />

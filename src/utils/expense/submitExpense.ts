@@ -1,4 +1,3 @@
-
 import { FormValues } from '@/hooks/useExpenseForm';
 import { Transaction, Merchant, PaymentMethod, Currency, MerchantCategoryCode } from '@/types';
 import { addOrUpdateMerchant } from '@/utils/storageUtils';
@@ -29,12 +28,16 @@ export const prepareTransactionData = async (
   // Save/update merchant in storage
   const savedMerchant = await addOrUpdateMerchant(merchant);
   
-  // Determine category
-  let category = 'Uncategorized';
-  if (selectedMCC?.code) {
-    category = getCategoryFromMCC(selectedMCC.code);
-  } else {
-    category = getCategoryFromMerchantName(values.merchantName) || 'Uncategorized';
+  // Determine category - prefer user-selected category from form if available
+  let category = values.category;
+  
+  // Only use auto-detection if user didn't select a category
+  if (!category || category === '') {
+    if (selectedMCC?.code) {
+      category = getCategoryFromMCC(selectedMCC.code);
+    } else {
+      category = getCategoryFromMerchantName(values.merchantName) || 'Uncategorized';
+    }
   }
   
   // Prepare transaction data

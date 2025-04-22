@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { RuleRepository } from '@/services/rewards/RuleRepository';
 import { RewardRule } from '@/services/rewards/types';
+import { getCardTypeIdFromMethod } from '@/utils/cardUtils';
 
 const PaymentMethods = () => {
   const { data: paymentMethods = [], isLoading, refetch } = usePaymentMethodsQuery();
@@ -42,11 +43,8 @@ const PaymentMethods = () => {
       
       // For each payment method, fetch its rules from the reward_rules table
       for (const method of paymentMethods) {
-        // Construct a cardTypeId similar to what's done in RewardCalculatorService
-        let cardTypeId = method.id;
-        if (method.issuer && method.name) {
-          cardTypeId = `${method.issuer.toLowerCase()}-${method.name.toLowerCase().replace(/\s+/g, '-')}`;
-        }
+        // Use the centralized utility function to get the card type ID
+        const cardTypeId = getCardTypeIdFromMethod(method);
         
         // Use RuleRepository to get rules from Supabase reward_rules table
         const rules = await ruleRepository.getRulesForCardType(cardTypeId);

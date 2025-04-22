@@ -147,6 +147,15 @@ export class DataService extends BaseService {
         merchantId = merchantData?.id;
       }
       
+      // Import category mapping utility
+      const { getCategoryFromMCC } = await import('@/utils/categoryMapping');
+      
+      // Determine category based on MCC code if not already specified
+      let category = transaction.category;
+      if (!category && transaction.merchant?.mcc?.code) {
+        category = getCategoryFromMCC(transaction.merchant.mcc.code);
+      }
+      
       // Prepare transaction data for insert/update
       const transactionData = {
         id: transaction.id,
@@ -163,6 +172,8 @@ export class DataService extends BaseService {
         payment_method_id: transaction.paymentMethod?.id,
         total_points: transaction.totalPoints,
         bonus_points: transaction.bonusPoints,
+        base_points: transaction.basePoints, // Add base_points field
+        category: category,
         is_deleted: transaction.isDeleted || false,
         created_at: transaction.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString()

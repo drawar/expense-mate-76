@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
 import { getTransactions, getPaymentMethods } from '@/utils/storageUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -10,10 +9,19 @@ export const useTransactionData = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const initialLoadDone = useRef(false);
+  const loadInProgress = useRef(false);
 
   // Function to load transactions
   const loadTransactions = useCallback(async () => {
+    // Prevent multiple concurrent loads
+    if (loadInProgress.current) {
+      console.log('Skipping transaction load - already in progress');
+      return;
+    }
+    
     try {
+      loadInProgress.current = true;
       setIsLoading(true);
       console.log('Loading transactions with forceLocalStorage:', USE_LOCAL_STORAGE_DEFAULT);
       
@@ -24,6 +32,7 @@ export const useTransactionData = () => {
       console.log('Loaded transactions:', loadedTransactions.length);
       setTransactions(loadedTransactions);
       setPaymentMethods(loadedPaymentMethods);
+      initialLoadDone.current = true;
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -33,13 +42,16 @@ export const useTransactionData = () => {
       });
     } finally {
       setIsLoading(false);
+      loadInProgress.current = false;
     }
   }, [toast]);
   
   // Set up Supabase listener only once on mount
   useEffect(() => {
-    // Initial load
-    loadTransactions();
+    // Initial load only if not already done
+    if (!initialLoadDone.current) {
+      loadTransactions();
+    }
     
     // Only set up the Supabase channel if we're not defaulting to local storage
     const channel = !USE_LOCAL_STORAGE_DEFAULT ? supabase

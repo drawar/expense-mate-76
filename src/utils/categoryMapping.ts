@@ -1,4 +1,3 @@
-
 import { MerchantCategoryCode } from '@/types';
 
 // Map MCC codes to categories
@@ -14,14 +13,15 @@ export const getCategoryFromMCC = (mccCode?: string): string => {
   if (['5811', '5812', '5813', '5814', '5441', '5921'].includes(mccCode)) {
     return 'Food & Drinks';
   }
-  
-  // Hawker centers and food courts (Singapore specific)
-  if (mccCode === '5814') {
-    return 'Food & Drinks';
+
+  // Transport
+  if (['4121', '4112', '4111'].includes(mccCode)) {
+    return 'Transport';
   }
+
   
   // Travel and Transport
-  if (['4121', '4112', '3000', '7011', '4225', '4119'].includes(mccCode) || 
+  if (['3000', '7011', '4225', '4119'].includes(mccCode) || 
       (mccCode.startsWith('4') && !['4814', '4899'].includes(mccCode))) {
     return 'Travel';
   }
@@ -146,4 +146,25 @@ export const getCategoryFromMerchantName = (merchantName: string): string | null
   }
   
   return null;
+};
+
+// Get all available categories for dropdown selection
+export const getAllCategories = (): string[] => {
+  return [
+    'Uncategorized',
+    'Groceries',
+    'Food & Drinks',
+    'Transport',
+    'Travel',
+    'Utilities',
+    'Shopping',
+    'Entertainment',
+    'Health & Personal Care',
+    'Services',
+    'Automotive',
+    'Education',
+    'Government',
+    'Financial Services',
+    'Home & Rent'
+  ];
 };

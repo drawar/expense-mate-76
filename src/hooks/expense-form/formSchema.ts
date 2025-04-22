@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 import { MerchantCategoryCode } from '@/types';
 
@@ -19,6 +18,7 @@ export const formSchema = z.object({
   reimbursementAmount: z.string().refine(value => value === '' || (!isNaN(Number(value)) && Number(value) >= 0), {
     message: 'Reimbursement amount must be a non-negative number',
   }).default('0'),
+  category: z.string().optional(),
   date: z.date({
     required_error: 'Date is required',
   }),

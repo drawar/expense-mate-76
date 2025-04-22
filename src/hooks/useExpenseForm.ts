@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PaymentMethod } from '@/types';
@@ -39,6 +38,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
       currency: defaultValues?.currency || 'SGD',
       paymentMethodId: defaultValues?.paymentMethodId || '',
       paymentAmount: defaultValues?.paymentAmount || '',
+      category: defaultValues?.category || '',
       date: defaultValues?.date || new Date(),
       notes: defaultValues?.notes || '',
     },

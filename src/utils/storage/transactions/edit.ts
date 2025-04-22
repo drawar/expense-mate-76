@@ -80,7 +80,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
         payment_method_id: updatedTransaction.paymentMethod.id,
         payment_amount: updatedTransaction.paymentAmount,
         payment_currency: updatedTransaction.paymentCurrency,
-        reward_points: calculationResult.totalPoints,
+        total_points: calculationResult.totalPoints, // Changed from reward_points to total_points
         base_points: calculationResult.basePoints,
         bonus_points: calculationResult.bonusPoints,
         notes: updatedTransaction.notes,
@@ -126,7 +126,7 @@ export const editTransaction = async (id: string, updatedTransaction: Omit<Trans
       paymentMethod: updatedTransaction.paymentMethod,
       paymentAmount: Number(data.payment_amount),
       paymentCurrency: data.payment_currency as any,
-      rewardPoints: data.reward_points,
+      totalPoints: data.total_points, // Changed from rewardPoints: data.reward_points
       basePoints: data.base_points,
       bonusPoints: data.bonus_points,
       notes: data.notes,

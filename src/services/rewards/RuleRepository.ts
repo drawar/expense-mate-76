@@ -17,6 +17,14 @@ export class RuleRepository extends BaseService {
     super();
   }
   
+  // Helper method to check if a cardTypeId is likely for a cash payment method
+  private isCashPaymentMethod(cardTypeId: string): boolean {
+    // Check if cardTypeId is a UUID (which indicates it's a cash payment method)
+    // UUID format: 8-4-4-4-12 characters (36 total with hyphens)
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidPattern.test(cardTypeId);
+  }
+
   /**
    * Get singleton instance
    */
@@ -67,6 +75,12 @@ export class RuleRepository extends BaseService {
    * Get rules for a specific card type
    */
   public async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
+    // Check if this is a cash payment method, return empty array if so
+    if (this.isCashPaymentMethod(cardTypeId)) {
+      console.log(`Skipping rules query for cash payment method: ${cardTypeId}`);
+      return [];
+    }
+    
     // Check cache first
     const cached = this.rulesByCardTypeCache.get(cardTypeId);
     if (cached) {
@@ -313,14 +327,16 @@ export class RuleRepository extends BaseService {
       description: rule.description,
       enabled: rule.enabled,
       priority: rule.priority,
-      conditions: JSON.stringify(rule.conditions),
+      // Pass conditions directly as an object instead of stringifying it
+      conditions: rule.conditions,
       calculation_method: rule.reward.calculationMethod,
       base_multiplier: rule.reward.baseMultiplier,
       bonus_multiplier: rule.reward.bonusMultiplier,
       points_rounding_strategy: rule.reward.pointsRoundingStrategy,
       amount_rounding_strategy: rule.reward.amountRoundingStrategy,
       block_size: rule.reward.blockSize,
-      bonus_tiers: rule.reward.bonusTiers ? JSON.stringify(rule.reward.bonusTiers) : null,
+      // Pass bonus_tiers directly as an object instead of stringifying it
+      bonus_tiers: rule.reward.bonusTiers || null,
       monthly_cap: rule.reward.monthlyCap,
       monthly_min_spend: rule.reward.monthlyMinSpend,
       monthly_spend_period_type: rule.reward.monthlySpendPeriodType,
