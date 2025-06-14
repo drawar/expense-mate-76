@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RewardRule } from '@/core/rewards/types';
 import { RuleRepository } from '@/core/rewards/RuleRepository';
@@ -54,7 +53,7 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
 
   const handleSave = async (rule: RewardRule) => {
     try {
-      if (rule.id) {
+      if (rule.id && rule.id !== `mock-${Date.now()}`) {
         await ruleRepository.updateRule(rule);
       } else {
         await ruleRepository.createRule({ ...rule, cardTypeId });
@@ -166,7 +165,6 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
           
           <RewardRuleEditor
             rule={selectedRule}
-            cardTypeId={cardTypeId}
             onSave={handleSave}
             onCancel={() => setIsEditorOpen(false)}
           />

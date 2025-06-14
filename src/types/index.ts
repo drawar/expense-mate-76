@@ -1,90 +1,74 @@
+import { Database } from '@/types/supabase';
 
-export interface MerchantCategoryCode {
-  code: string;
-  description: string;
-}
+export type Transaction = {
+  id: string;
+  date: string;
+  merchant: Merchant;
+  amount: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  paymentAmount: number;
+  paymentCurrency: Currency;
+  rewardPoints: number;
+  basePoints: number;
+  bonusPoints: number;
+  isContactless: boolean;
+  notes?: string;
+  reimbursementAmount?: number;
+  category?: string;
+  is_deleted?: boolean;
+};
 
-export interface Coordinates {
-  latitude: number;
-  longitude: number;
+export type PaymentMethodType = 'credit_card' | 'debit_card' | 'cash' | 'bank_account' | 'other';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CHF' | 'CNY' | 'SEK' | 'NZD' | 'MXN' | 'SGD' | 'HKD' | 'NOK' | 'KRW' | 'TRY' | 'RUB' | 'INR' | 'BRL' | 'ZAR';
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: PaymentMethodType;
+  issuer: string;
+  lastFourDigits?: string;
+  currency: Currency;
+  icon?: string;
+  color?: string;
+  imageUrl?: string;
+  pointsCurrency?: string;
+  active: boolean;
+  rewardRules?: any[];
+  conversionRate?: Record<string, number>;
+  selectedCategories?: string[];
+  statementStartDay?: number;
+  isMonthlyStatement?: boolean;
 }
 
 export interface Merchant {
   id: string;
   name: string;
   address?: string;
-  coordinates?: Coordinates;
   mcc?: MerchantCategoryCode;
-  isOnline?: boolean;
-}
-
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  type: 'cash' | 'credit_card';
-  currency: Currency;
-  rewardRules: RewardRule[];
-  statementStartDay?: number;
-  isMonthlyStatement?: boolean;
-  active: boolean;
-  lastFourDigits?: string;
-  issuer?: string;
-  icon?: string;
-  color?: string;
-  imageUrl?: string;
-  conversionRate?: Record<Currency, number>;
-  selectedCategories?: string[];
-}
-
-export type Currency = 'SGD' | 'USD' | 'EUR' | 'GBP' | string;
-
-export interface Transaction {
-  id: string;
-  amount: number;
-  currency: Currency;
-  merchant: Merchant;
-  paymentMethod: PaymentMethod;
-  paymentAmount: number;
-  paymentCurrency: Currency;
-  date: string; // Using string format for dates
-  category?: string;
-  notes?: string;
-  isContactless: boolean;
-  rewardPoints?: number;
-  basePoints?: number;
-  bonusPoints?: number;
-  reimbursementAmount?: number;
+  isOnline: boolean;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   is_deleted?: boolean;
+  created_at?: string;
+  deleted_at?: string;
 }
 
-export interface FilterOption {
-  label: string;
-  value: string;
-  checked: boolean;
+export interface MerchantCategoryCode {
+  code: string;
+  description: string;
 }
 
-// Import and re-export RewardRule and related types
-import type { 
-  RewardRule,
-  RuleCondition,
-  CalculationMethod,
-  RoundingStrategy,
-  SpendingPeriodType,
-  BonusTier,
-  CalculationInput,
-  CalculationResult,
-  TransactionType
-} from '@/core/rewards/types';
-
-// Re-export the types
-export type {
-  RewardRule,
-  RuleCondition,
-  CalculationMethod,
-  RoundingStrategy,
-  SpendingPeriodType,
-  BonusTier,
-  CalculationInput,
-  CalculationResult,
-  TransactionType
+export type CalculationResult = {
+  totalPoints: number;
+  basePoints: number;
+  bonusPoints: number;
+  pointsCurrency: string;
+  remainingMonthlyBonusPoints?: number;
+  minSpendMet: boolean;
+  appliedRule?: any;
+  appliedTier?: any;
+  messages: string[];
 };

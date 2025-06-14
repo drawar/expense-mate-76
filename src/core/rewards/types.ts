@@ -58,8 +58,8 @@ export type SpendingPeriodType =
  */
 export interface BonusTier {
   name: string;
-  minSpend: number;
-  maxSpend?: number;
+  minSpend?: number; // Make optional
+  maxSpend?: number; // Make optional
   multiplier: number;
   priority: number;
   // Modify the condition to support compound conditions
