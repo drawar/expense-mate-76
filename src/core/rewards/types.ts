@@ -1,4 +1,4 @@
-// services/rewards/types.ts
+
 import { DateTime } from 'luxon';
 
 /**
@@ -79,7 +79,7 @@ export interface BonusTier {
  */
 export interface RuleReward {
   calculationMethod: CalculationMethod;
-  baseMultiplier: number // Default base multiplier
+  baseMultiplier: number; // Default base multiplier
   bonusMultiplier: number; // Default bonus multiplier
   pointsRoundingStrategy: RoundingStrategy; // How to round the calculated points
   amountRoundingStrategy: RoundingStrategy; // How to round the amount before calculation
@@ -118,7 +118,7 @@ export interface CalculationInput {
   transactionType: TransactionType; // Updated to use enum
   usedBonusPoints?: number;
   monthlySpend?: number; // Total eligible spend this month for threshold calculation
-  paymentMethod: PaymentMethod;
+  paymentMethod: any; // Using any for now to avoid circular dependency
   date: DateTime;
   category?: string;
   statementDay?: number; // Day of month when statement cycle starts

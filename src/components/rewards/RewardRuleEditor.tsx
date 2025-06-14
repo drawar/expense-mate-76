@@ -1,49 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { RewardRule, RuleCondition, BonusTier } from '@/core/rewards/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ConditionEditor } from './ConditionEditor';
 import { BonusTierEditor } from './BonusTierEditor';
-import { RewardRule, RuleCondition, BonusTier } from '@/core/rewards/types';
 
 interface RewardRuleEditorProps {
   rule?: RewardRule;
-  onSave: (rule: RewardRule) => void;
+  onSave: (rule: RewardRule) => Promise<void>;
   onCancel: () => void;
 }
 
-export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
-  rule,
-  onSave,
-  onCancel
-}) => {
-  const [formData, setFormData] = useState<RewardRule>(() => {
-    if (rule) {
-      return {
-        ...rule,
-        // Ensure dates are Date objects
-        createdAt: rule.createdAt instanceof Date ? rule.createdAt : new Date(rule.createdAt.toString()),
-        updatedAt: rule.updatedAt instanceof Date ? rule.updatedAt : new Date(rule.updatedAt.toString())
-      };
-    }
-    
-    return {
+export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCancel }) => {
+  const [editRule, setEditRule] = useState<RewardRule>(() => {
+    return rule || {
       id: '',
       cardTypeId: '',
       name: '',
       description: '',
       enabled: true,
-      priority: 0,
+      priority: 1,
       conditions: [],
       reward: {
-        type: 'points',
         calculationMethod: 'standard',
         baseMultiplier: 1,
+        bonusMultiplier: 1,
+        pointsRoundingStrategy: 'floor',
+        amountRoundingStrategy: 'floor',
         blockSize: 1,
         pointsCurrency: 'points',
         bonusTiers: []
@@ -53,40 +42,30 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
     };
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleSave = async () => {
+    try {
+      await onSave({
+        ...editRule,
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Failed to save rule:', error);
+    }
   };
 
-  const updateField = (field: keyof RewardRule, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-      updatedAt: new Date()
-    }));
-  };
-
-  const updateRewardField = (field: string, value: any) => {
-    setFormData(prev => ({
+  const updateReward = (updates: Partial<typeof editRule.reward>) => {
+    setEditRule(prev => ({
       ...prev,
       reward: {
         ...prev.reward,
-        [field]: value
+        ...updates
       },
       updatedAt: new Date()
     }));
   };
 
-  const updateConditions = (conditions: RuleCondition[]) => {
-    updateField('conditions', conditions);
-  };
-
-  const updateBonusTiers = (bonusTiers: BonusTier[]) => {
-    updateRewardField('bonusTiers', bonusTiers);
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
@@ -96,52 +75,41 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <Label htmlFor="name">Rule Name</Label>
             <Input
               id="name"
-              value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
+              value={editRule.name}
+              onChange={(e) => setEditRule(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter rule name"
-              required
             />
           </div>
-
+          
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => updateField('description', e.target.value)}
+              value={editRule.description}
+              onChange={(e) => setEditRule(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Enter rule description"
             />
           </div>
-
-          <div>
-            <Label htmlFor="cardTypeId">Card Type ID</Label>
-            <Input
-              id="cardTypeId"
-              value={formData.cardTypeId}
-              onChange={(e) => updateField('cardTypeId', e.target.value)}
-              placeholder="Enter card type ID"
-              required
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="enabled"
+              checked={editRule.enabled}
+              onCheckedChange={(checked) => setEditRule(prev => ({ ...prev, enabled: checked }))}
             />
+            <Label htmlFor="enabled">Enabled</Label>
           </div>
-
+          
           <div>
             <Label htmlFor="priority">Priority</Label>
             <Input
               id="priority"
               type="number"
-              value={formData.priority}
-              onChange={(e) => updateField('priority', parseInt(e.target.value) || 0)}
-              placeholder="Enter priority (higher = more important)"
+              value={editRule.priority}
+              onChange={(e) => setEditRule(prev => ({ ...prev, priority: parseInt(e.target.value) || 1 }))}
+              min="1"
+              max="100"
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="enabled"
-              checked={formData.enabled}
-              onCheckedChange={(checked) => updateField('enabled', checked)}
-            />
-            <Label htmlFor="enabled">Enabled</Label>
           </div>
         </CardContent>
       </Card>
@@ -154,63 +122,88 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div>
             <Label htmlFor="calculationMethod">Calculation Method</Label>
             <Select
-              value={formData.reward.calculationMethod}
-              onValueChange={(value) => updateRewardField('calculationMethod', value)}
+              value={editRule.reward.calculationMethod}
+              onValueChange={(value: 'standard' | 'direct') => updateReward({ calculationMethod: value })}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="tiered">Tiered</SelectItem>
-                <SelectItem value="fixed">Fixed</SelectItem>
+                <SelectItem value="direct">Direct</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          <div>
-            <Label htmlFor="baseMultiplier">Base Multiplier</Label>
-            <Input
-              id="baseMultiplier"
-              type="number"
-              step="0.01"
-              value={formData.reward.baseMultiplier}
-              onChange={(e) => updateRewardField('baseMultiplier', parseFloat(e.target.value) || 1)}
-            />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="baseMultiplier">Base Multiplier</Label>
+              <Input
+                id="baseMultiplier"
+                type="number"
+                step="0.1"
+                value={editRule.reward.baseMultiplier}
+                onChange={(e) => updateReward({ baseMultiplier: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="bonusMultiplier">Bonus Multiplier</Label>
+              <Input
+                id="bonusMultiplier"
+                type="number"
+                step="0.1"
+                value={editRule.reward.bonusMultiplier}
+                onChange={(e) => updateReward({ bonusMultiplier: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
           </div>
-
-          <div>
-            <Label htmlFor="blockSize">Block Size</Label>
-            <Input
-              id="blockSize"
-              type="number"
-              step="0.01"
-              value={formData.reward.blockSize}
-              onChange={(e) => updateRewardField('blockSize', parseFloat(e.target.value) || 1)}
-            />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="blockSize">Block Size</Label>
+              <Input
+                id="blockSize"
+                type="number"
+                value={editRule.reward.blockSize}
+                onChange={(e) => updateReward({ blockSize: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="pointsCurrency">Points Currency</Label>
+              <Input
+                id="pointsCurrency"
+                value={editRule.reward.pointsCurrency}
+                onChange={(e) => updateReward({ pointsCurrency: e.target.value })}
+                placeholder="points"
+              />
+            </div>
           </div>
-
-          <div>
-            <Label htmlFor="pointsCurrency">Points Currency</Label>
-            <Input
-              id="pointsCurrency"
-              value={formData.reward.pointsCurrency}
-              onChange={(e) => updateRewardField('pointsCurrency', e.target.value)}
-              placeholder="e.g., points, miles, cashback"
-            />
-          </div>
-
-          {formData.reward.monthlyCap && (
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="monthlyCap">Monthly Cap</Label>
               <Input
                 id="monthlyCap"
                 type="number"
-                value={formData.reward.monthlyCap}
-                onChange={(e) => updateRewardField('monthlyCap', parseFloat(e.target.value) || undefined)}
+                value={editRule.reward.monthlyCap || ''}
+                onChange={(e) => updateReward({ monthlyCap: e.target.value ? parseInt(e.target.value) : undefined })}
+                placeholder="No cap"
               />
             </div>
-          )}
+            
+            <div>
+              <Label htmlFor="monthlyMinSpend">Monthly Min Spend</Label>
+              <Input
+                id="monthlyMinSpend"
+                type="number"
+                value={editRule.reward.monthlyMinSpend || ''}
+                onChange={(e) => updateReward({ monthlyMinSpend: e.target.value ? parseInt(e.target.value) : undefined })}
+                placeholder="No minimum"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -220,36 +213,32 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
         </CardHeader>
         <CardContent>
           <ConditionEditor
-            conditions={formData.conditions}
-            onChange={updateConditions}
+            conditions={editRule.conditions}
+            onChange={(conditions) => setEditRule(prev => ({ ...prev, conditions }))}
           />
         </CardContent>
       </Card>
 
-      {formData.reward.calculationMethod === 'tiered' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Bonus Tiers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BonusTierEditor
-              tiers={formData.reward.bonusTiers}
-              onChange={updateBonusTiers}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bonus Tiers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BonusTierEditor
+            bonusTiers={editRule.reward.bonusTiers || []}
+            onChange={(bonusTiers) => updateReward({ bonusTiers })}
+          />
+        </CardContent>
+      </Card>
 
       <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button onClick={handleSave}>
           Save Rule
         </Button>
       </div>
-    </form>
+    </div>
   );
 };
-
-export default RewardRuleEditor;

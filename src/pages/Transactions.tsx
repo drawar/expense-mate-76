@@ -45,37 +45,36 @@ const Transactions = () => {
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  // Get unique categories for filter dropdown
+  const categories = Array.from(
+    new Set(
+      transactions
+        .map(t => t.category)
+        .filter(Boolean)
+    )
+  );
+
   return (
     <div className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-16">
         <TransactionHeader />
         
         <TransactionFilterControls
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filterOptions={filterOptions}
-          activeFilters={activeFilters}
+          filters={filterOptions}
+          onFiltersChange={handleFilterChange}
           paymentMethods={paymentMethods}
-          onFilterChange={handleFilterChange}
-          onResetFilters={resetFilters}
-          sortOption={sortOption}
-          viewMode={viewMode}
-          onSortChange={setSortOption}
-          onViewChange={setViewMode}
+          categories={categories}
+          onClearFilters={resetFilters}
         />
         
         <TransactionContent 
-          isLoading={isLoading}
-          transactions={transactions}
-          filteredTransactions={filteredTransactions}
+          transactions={filteredTransactions}
           paymentMethods={paymentMethods}
-          viewMode={viewMode}
+          onView={handleViewTransaction}
+          onEdit={handleEditTransaction}
+          onDelete={(transaction) => handleDeleteTransaction(transaction.id)}
+          viewMode={'table'}
           sortOption={sortOption}
-          onViewChange={setViewMode}
-          onResetFilters={resetFilters}
-          onViewTransaction={handleViewTransaction}
-          onEditTransaction={handleEditTransaction}
-          onDeleteTransaction={(transaction) => handleDeleteTransaction(transaction.id)}
         />
       </div>
       

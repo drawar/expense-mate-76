@@ -1,110 +1,135 @@
-import { RewardRule, BonusTier, CalculationMethod, RoundingStrategy, SpendingPeriodType } from './types';
+
 import { DateTime } from 'luxon';
-import { DbRewardRule } from './types';
+import { RewardRule, DbRewardRule, RuleCondition, BonusTier, RuleReward } from './types';
 
+export class RuleMapper {
+  /**
+   * Maps a database row to a RewardRule object
+   */
+  static fromDatabase(dbRule: DbRewardRule): RewardRule {
+    // Parse JSON fields
+    let conditions: RuleCondition[] = [];
+    let bonusTiers: BonusTier[] = [];
 
-function isCalculationMethod(value: string | undefined | null): value is CalculationMethod {
-  return value === 'standard' || value === 'direct';
-}
-
-function isRoundingStrategy(value: string | undefined | null): value is RoundingStrategy {
-  return value === 'floor5' || value === 'nearest' || value === 'ceiling' || value === 'floor' || value === 'none';
-}
-
-function isSpendingPeriodType(value: string | undefined | null): value is SpendingPeriodType {
-  return value === 'statement_month' || value === 'calendar_month';
-}
-
-/**
- * Converts a raw database rule into an app-level RewardRule object.
- * @param dbRule The raw rule from Supabase.
- * @returns A parsed and structured RewardRule.
- */
-export function mapDbRuleToRewardRule(dbRule: DbRewardRule): RewardRule {
-	// Ensures the conditions field is parsed into a usable JS object (from stringified JSON)
-  const conditions = typeof dbRule.conditions === 'string'
-    ? JSON.parse(dbRule.conditions)
-    : dbRule.conditions || [];
-
-  let bonusTiers: BonusTier[] | undefined;
-
-  if (dbRule.bonus_tiers) {
     try {
-      bonusTiers = typeof dbRule.bonus_tiers === 'string'
-        ? JSON.parse(dbRule.bonus_tiers)
-        : dbRule.bonus_tiers;
-
-      if (bonusTiers) {
-        bonusTiers = bonusTiers.map((tier: any) => {
-          if (
-						tier.condition?.type === 'compound' && 
-						typeof tier.condition.subConditions === 'string'
-					) {
-            tier.condition.subConditions = JSON.parse(tier.condition.subConditions);
-          }
-          return tier;
-        });
+      if (typeof dbRule.conditions === 'string') {
+        conditions = JSON.parse(dbRule.conditions);
+      } else if (Array.isArray(dbRule.conditions)) {
+        conditions = dbRule.conditions;
       }
-    } catch (e) {
-      console.error('Error parsing bonus tiers:', e);
+    } catch (error) {
+      console.warn('Failed to parse conditions for rule', dbRule.id, error);
+      conditions = [];
     }
-  }
 
-  return {
-    id: dbRule.id,
-    cardTypeId: dbRule.card_type_id,
-    name: dbRule.name,
-    description: dbRule.description || '',
-    enabled: dbRule.enabled,
-    priority: dbRule.priority || 0,
-    conditions,
-    reward: {
-      calculationMethod: isCalculationMethod(dbRule.calculation_method) ? dbRule.calculation_method : 'standard',
-      baseMultiplier: dbRule.base_multiplier || 0,
+    try {
+      if (typeof dbRule.bonus_tiers === 'string') {
+        bonusTiers = JSON.parse(dbRule.bonus_tiers);
+      } else if (Array.isArray(dbRule.bonus_tiers)) {
+        bonusTiers = dbRule.bonus_tiers;
+      }
+    } catch (error) {
+      console.warn('Failed to parse bonus tiers for rule', dbRule.id, error);
+      bonusTiers = [];
+    }
+
+    // Build reward object
+    const reward: RuleReward = {
+      calculationMethod: (dbRule.calculation_method as any) || 'standard',
+      baseMultiplier: dbRule.base_multiplier || 1,
       bonusMultiplier: dbRule.bonus_multiplier || 0,
-      pointsRoundingStrategy: isRoundingStrategy(dbRule.points_rounding_strategy) ? dbRule.points_rounding_strategy : 'floor',
-      amountRoundingStrategy: isRoundingStrategy(dbRule.amount_rounding_strategy) ? dbRule.amount_rounding_strategy : 'floor',
+      pointsRoundingStrategy: (dbRule.points_rounding_strategy as any) || 'floor',
+      amountRoundingStrategy: (dbRule.amount_rounding_strategy as any) || 'floor',
       blockSize: dbRule.block_size || 1,
       bonusTiers,
       monthlyCap: dbRule.monthly_cap,
       monthlyMinSpend: dbRule.monthly_min_spend,
-      monthlySpendPeriodType: isSpendingPeriodType(dbRule.monthly_spend_period_type) ? dbRule.monthly_spend_period_type : 'calendar_month',
-      pointsCurrency: dbRule.points_currency || 'Points'
-    },
-    createdAt: DateTime.fromISO(dbRule.created_at),
-    updatedAt: DateTime.fromISO(dbRule.updated_at ?? dbRule.created_at),
-  };
+      monthlySpendPeriodType: (dbRule.monthly_spend_period_type as any) || 'calendar_month',
+      pointsCurrency: dbRule.points_currency || 'points'
+    };
+
+    // Parse dates - convert from ISO string to Date objects
+    let createdAt: Date;
+    let updatedAt: Date;
+
+    try {
+      createdAt = new Date(dbRule.created_at);
+      updatedAt = dbRule.updated_at ? new Date(dbRule.updated_at) : createdAt;
+    } catch (error) {
+      console.warn('Failed to parse dates for rule', dbRule.id, error);
+      const now = new Date();
+      createdAt = now;
+      updatedAt = now;
+    }
+
+    return {
+      id: dbRule.id,
+      cardTypeId: dbRule.card_type_id,
+      name: dbRule.name,
+      description: dbRule.description || '',
+      enabled: dbRule.enabled,
+      priority: dbRule.priority || 1,
+      conditions,
+      reward,
+      createdAt,
+      updatedAt
+    };
+  }
+
+  /**
+   * Maps a RewardRule object to database format
+   */
+  static toDatabase(rule: RewardRule): Partial<DbRewardRule> {
+    return {
+      id: rule.id,
+      card_type_id: rule.cardTypeId,
+      name: rule.name,
+      description: rule.description,
+      enabled: rule.enabled,
+      priority: rule.priority,
+      conditions: JSON.stringify(rule.conditions),
+      bonus_tiers: JSON.stringify(rule.reward.bonusTiers || []),
+      calculation_method: rule.reward.calculationMethod,
+      base_multiplier: rule.reward.baseMultiplier,
+      bonus_multiplier: rule.reward.bonusMultiplier,
+      points_rounding_strategy: rule.reward.pointsRoundingStrategy,
+      amount_rounding_strategy: rule.reward.amountRoundingStrategy,
+      block_size: rule.reward.blockSize,
+      monthly_cap: rule.reward.monthlyCap,
+      monthly_min_spend: rule.reward.monthlyMinSpend,
+      monthly_spend_period_type: rule.reward.monthlySpendPeriodType,
+      points_currency: rule.reward.pointsCurrency,
+      created_at: rule.createdAt.toISOString(),
+      updated_at: rule.updatedAt.toISOString()
+    };
+  }
+
+  /**
+   * Creates a new RewardRule with default values
+   */
+  static createDefault(cardTypeId: string): RewardRule {
+    const now = new Date();
+    
+    return {
+      id: '', // Will be generated by the database
+      cardTypeId,
+      name: 'New Rule',
+      description: '',
+      enabled: true,
+      priority: 1,
+      conditions: [],
+      reward: {
+        calculationMethod: 'standard',
+        baseMultiplier: 1,
+        bonusMultiplier: 0,
+        pointsRoundingStrategy: 'floor',
+        amountRoundingStrategy: 'floor',
+        blockSize: 1,
+        bonusTiers: [],
+        pointsCurrency: 'points'
+      },
+      createdAt: now,
+      updatedAt: now
+    };
+  }
 }
-
-
-/**
- * Converts an app-level RewardRule into a database-ready DbRewardRule.
- * @param rule The structured RewardRule object.
- * @returns A raw DbRewardRule formatted for Supabase.
- */
-export function mapRewardRuleToDbRule(rule: RewardRule): any {
-  return {
-    id: rule.id,
-    card_type_id: rule.cardTypeId,
-    name: rule.name,
-    description: rule.description,
-    enabled: rule.enabled,
-    priority: rule.priority,
-    conditions: JSON.stringify(rule.conditions),
-    calculation_method: rule.reward.calculationMethod,
-    base_multiplier: rule.reward.baseMultiplier,
-    bonus_multiplier: rule.reward.bonusMultiplier,
-    points_rounding_strategy: rule.reward.pointsRoundingStrategy,
-    amount_rounding_strategy: rule.reward.amountRoundingStrategy,
-    block_size: rule.reward.blockSize,
-    bonus_tiers: rule.reward.bonusTiers ? JSON.stringify(rule.reward.bonusTiers) : null,
-    monthly_cap: rule.reward.monthlyCap,
-    monthly_min_spend: rule.reward.monthlyMinSpend,
-    monthly_spend_period_type: rule.reward.monthlySpendPeriodType,
-    points_currency: rule.reward.pointsCurrency,
-    created_at: rule.createdAt.toISO(),
-    updated_at: rule.updatedAt.toISO(),
-  };
-}
-
-
