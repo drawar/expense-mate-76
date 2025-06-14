@@ -2,14 +2,16 @@
 import { Transaction, PaymentMethod } from '@/types';
 import { CalculationResult } from '@/types';
 import { rewardService } from './RewardService';
-import { RuleRepository } from './RuleRepository';
+import { RuleRepository, initializeRuleRepository } from './RuleRepository';
+import { supabase } from '@/integrations/supabase/client';
 import { DateTime } from 'luxon';
 
 export const initializeRewardSystem = async (readOnly: boolean = false): Promise<void> => {
   try {
     console.log(`Initializing reward system (read-only: ${readOnly})`);
-    // Set read-only mode on the repository
-    const ruleRepository = RuleRepository.getInstance();
+    
+    // Initialize the rule repository with supabase client
+    const ruleRepository = initializeRuleRepository(supabase);
     ruleRepository.setReadOnly(readOnly);
     
     console.log('Reward system initialized successfully');
@@ -44,19 +46,15 @@ export async function simulateRewardPoints(
   isOnline?: boolean,
   isContactless?: boolean
 ): Promise<CalculationResult> {
-  const input = {
+  return rewardService.simulateRewards(
     amount,
     currency,
     paymentMethod,
     mcc,
     merchantName,
-    transactionType: 'purchase' as const,
     isOnline,
-    isContactless,
-    date: DateTime.now()
-  };
-  
-  return rewardService.calculateRewards(input);
+    isContactless
+  );
 }
 
 export function formatRewardPointsMessage(

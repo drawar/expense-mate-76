@@ -1,53 +1,79 @@
-
-import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant } from '@/types';
-import { RewardRule } from '../rewards/types';
-import { RuleMapper } from '../rewards/RuleMapper';
+import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
 
 export class StorageService {
-  private supabase: SupabaseClient<Database>;
-  private localStorageMode: boolean = false;
-  private ruleMapper: RuleMapper = new RuleMapper();
-  
-  constructor(supabaseClient: SupabaseClient<Database>) {
-    this.supabase = supabaseClient;
+  private useLocalStorage: boolean = false;
+
+  constructor() {
+    // Initialize reward system when storage service is created
+    this.initializeRewards();
   }
 
-  setLocalStorageMode(enabled: boolean): void {
-    this.localStorageMode = enabled;
+  private async initializeRewards() {
+    try {
+      await initializeRewardSystem(this.useLocalStorage);
+    } catch (error) {
+      console.warn('Failed to initialize reward system:', error);
+    }
+  }
+
+  setLocalStorageMode(useLocal: boolean) {
+    this.useLocalStorage = useLocal;
+    // Re-initialize reward system with new mode
+    this.initializeRewards();
   }
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
+    if (this.useLocalStorage) {
+      return this.getPaymentMethodsFromLocalStorage();
+    }
+
     try {
-      const { data: paymentMethods, error } = await this.supabase
+      const { data, error } = await supabase
         .from('payment_methods')
         .select('*')
-        .eq('is_deleted', false);
+        .eq('active', true)
+        .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        return this.getPaymentMethodsFromLocalStorage();
+      }
 
-      return paymentMethods.map(pm => ({
-        id: pm.id,
-        name: pm.name,
-        type: pm.type as any,
-        issuer: pm.issuer || '',
-        lastFourDigits: pm.last_four_digits,
-        currency: pm.currency as any,
-        icon: pm.icon,
-        color: pm.color,
-        imageUrl: pm.image_url,
-        pointsCurrency: pm.points_currency,
-        active: pm.active,
-        rewardRules: pm.reward_rules,
-        selectedCategories: pm.selected_categories,
-        statementStartDay: pm.statement_start_day,
-        isMonthlyStatement: pm.is_monthly_statement,
-        conversionRate: pm.conversion_rate
+      if (!data) return [];
+
+      return data.map((row: DbPaymentMethod) => ({
+        id: row.id,
+        name: row.name,
+        type: row.type as any,
+        issuer: row.issuer || '',
+        lastFourDigits: row.last_four_digits || undefined,
+        currency: row.currency,
+        icon: row.icon || undefined,
+        color: row.color || undefined,
+        imageUrl: row.image_url || undefined,
+        pointsCurrency: row.points_currency || undefined,
+        active: row.active,
+        rewardRules: row.reward_rules || [],
+        selectedCategories: row.selected_categories || [],
+        statementStartDay: row.statement_start_day || undefined,
+        isMonthlyStatement: row.is_monthly_statement || undefined,
+        conversionRate: row.conversion_rate || undefined
       }));
     } catch (error) {
       console.error('Error fetching payment methods:', error);
-      throw error;
+      return this.getPaymentMethodsFromLocalStorage();
+    }
+  }
+
+  private getPaymentMethodsFromLocalStorage(): PaymentMethod[] {
+    try {
+      const stored = localStorage.getItem('paymentMethods');
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Error parsing payment methods from localStorage:', error);
+      return [];
     }
   }
 
@@ -74,7 +100,7 @@ export class StorageService {
         updated_at: new Date().toISOString()
       }));
 
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('payment_methods')
         .upsert(dbPaymentMethods);
 
@@ -87,7 +113,7 @@ export class StorageService {
 
   async getMerchants(): Promise<Merchant[]> {
     try {
-      const { data: merchants, error } = await this.supabase
+      const { data: merchants, error } = await supabase
         .from('merchants')
         .select('*')
         .eq('is_deleted', false);
@@ -124,7 +150,7 @@ export class StorageService {
         updated_at: new Date().toISOString()
       }));
 
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('merchants')
         .upsert(dbMerchants);
 
@@ -136,236 +162,282 @@ export class StorageService {
   }
 
   async getTransactions(): Promise<Transaction[]> {
+    if (this.useLocalStorage) {
+      return this.getTransactionsFromLocalStorage();
+    }
+
     try {
-      const { data: transactions, error } = await this.supabase
+      const { data, error } = await supabase
         .from('transactions')
         .select(`
           *,
-          payment_methods!inner(
-            id,
-            name,
-            type,
-            issuer,
-            currency,
-            icon,
-            color,
-            image_url,
-            last_four_digits,
-            active,
-            reward_rules,
-            selected_categories,
-            statement_start_day,
-            is_monthly_statement,
-            conversion_rate
+          payment_methods:payment_method_id(
+            id, name, type, issuer, last_four_digits, currency, 
+            icon, color, image_url, points_currency, active, 
+            reward_rules, selected_categories, statement_start_day, 
+            is_monthly_statement, conversion_rate
           ),
-          merchants!inner(
-            id,
-            name,
-            address,
-            mcc,
-            is_online,
-            coordinates,
-            is_deleted,
-            created_at,
-            deleted_at
+          merchants:merchant_id(
+            id, name, address, mcc, is_online, coordinates, is_deleted
           )
         `)
         .eq('is_deleted', false)
         .order('date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        return this.getTransactionsFromLocalStorage();
+      }
 
-      return transactions.map(tx => ({
-        id: tx.id,
-        date: tx.date,
+      if (!data) return [];
+
+      return data.map(row => ({
+        id: row.id,
+        date: row.date,
         merchant: {
-          id: tx.merchants.id,
-          name: tx.merchants.name,
-          address: tx.merchants.address || '',
-          mcc: tx.merchants.mcc ? {
-            code: tx.merchants.mcc.code,
-            description: tx.merchants.mcc.description
-          } : undefined,
-          isOnline: tx.merchants.is_online || false,
-          coordinates: tx.merchants.coordinates
-        },
-        amount: parseFloat(tx.amount),
-        currency: tx.currency as any,
+          id: row.merchants?.id || '',
+          name: row.merchants?.name || 'Unknown Merchant',
+          address: row.merchants?.address || undefined,
+          mcc: row.merchants?.mcc || undefined,
+          isOnline: row.merchants?.is_online || false,
+          coordinates: row.merchants?.coordinates || undefined,
+          is_deleted: row.merchants?.is_deleted || false
+        } as Merchant,
+        amount: parseFloat(row.amount?.toString() || '0'),
+        currency: row.currency,
         paymentMethod: {
-          id: tx.payment_methods.id,
-          name: tx.payment_methods.name,
-          type: tx.payment_methods.type as any,
-          issuer: tx.payment_methods.issuer || '',
-          lastFourDigits: tx.payment_methods.last_four_digits,
-          currency: tx.payment_methods.currency as any,
-          icon: tx.payment_methods.icon,
-          color: tx.payment_methods.color,
-          imageUrl: tx.payment_methods.image_url,
-          pointsCurrency: tx.payment_methods.points_currency,
-          active: tx.payment_methods.active,
-          rewardRules: tx.payment_methods.reward_rules,
-          selectedCategories: tx.payment_methods.selected_categories,
-          statementStartDay: tx.payment_methods.statement_start_day,
-          isMonthlyStatement: tx.payment_methods.is_monthly_statement,
-          conversionRate: tx.payment_methods.conversion_rate
-        },
-        paymentAmount: parseFloat(tx.payment_amount || tx.amount),
-        paymentCurrency: (tx.payment_currency || tx.currency) as any,
-        rewardPoints: tx.total_points || 0,
-        basePoints: tx.base_points || 0,
-        bonusPoints: tx.bonus_points || 0,
-        isContactless: tx.is_contactless || false,
-        notes: tx.notes,
-        reimbursementAmount: tx.reimbursement_amount ? parseFloat(tx.reimbursement_amount) : undefined,
-        category: tx.category
+          id: row.payment_methods?.id || '',
+          name: row.payment_methods?.name || 'Unknown Payment Method',
+          type: row.payment_methods?.type as any,
+          issuer: row.payment_methods?.issuer || '',
+          lastFourDigits: row.payment_methods?.last_four_digits || undefined,
+          currency: row.payment_methods?.currency || 'USD',
+          icon: row.payment_methods?.icon || undefined,
+          color: row.payment_methods?.color || undefined,
+          imageUrl: row.payment_methods?.image_url || undefined,
+          pointsCurrency: row.payment_methods?.points_currency || undefined,
+          active: row.payment_methods?.active || true,
+          rewardRules: row.payment_methods?.reward_rules || [],
+          selectedCategories: row.payment_methods?.selected_categories || [],
+          statementStartDay: row.payment_methods?.statement_start_day || undefined,
+          isMonthlyStatement: row.payment_methods?.is_monthly_statement || undefined,
+          conversionRate: row.payment_methods?.conversion_rate || undefined
+        } as PaymentMethod,
+        paymentAmount: parseFloat(row.payment_amount?.toString() || row.amount?.toString() || '0'),
+        paymentCurrency: row.payment_currency || row.currency,
+        rewardPoints: row.total_points || 0,
+        basePoints: row.base_points || 0,
+        bonusPoints: row.bonus_points || 0,
+        isContactless: row.is_contactless || false,
+        notes: row.notes || undefined,
+        reimbursementAmount: row.reimbursement_amount ? parseFloat(row.reimbursement_amount.toString()) : undefined,
+        category: row.category || undefined
       }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      throw error;
+      return this.getTransactionsFromLocalStorage();
     }
   }
 
-  async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<Transaction> {
+  private getTransactionsFromLocalStorage(): Transaction[] {
     try {
-      const newTransaction: Transaction = {
-        id: crypto.randomUUID(),
-        ...transaction,
-      };
+      const stored = localStorage.getItem('transactions');
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Error parsing transactions from localStorage:', error);
+      return [];
+    }
+  }
 
-      const dbTransaction = {
-        id: newTransaction.id,
-        date: newTransaction.date,
-        merchant_id: newTransaction.merchant.id,
-        amount: newTransaction.amount.toString(),
-        currency: newTransaction.currency,
-        payment_method_id: newTransaction.paymentMethod.id,
-        payment_amount: newTransaction.paymentAmount.toString(),
-        payment_currency: newTransaction.paymentCurrency,
-        total_points: newTransaction.rewardPoints,
-        base_points: newTransaction.basePoints,
-        bonus_points: newTransaction.bonusPoints,
-        is_contactless: newTransaction.isContactless,
-        notes: newTransaction.notes,
-        reimbursement_amount: newTransaction.reimbursementAmount?.toString(),
-        category: newTransaction.category,
-        is_deleted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+  private saveTransactionsToLocalStorage(transactions: Transaction[]) {
+    try {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+    } catch (error) {
+      console.error('Error saving transactions to localStorage:', error);
+    }
+  }
 
-      const { error } = await this.supabase
+  async addTransaction(transactionData: Omit<Transaction, 'id'>): Promise<Transaction> {
+    if (this.useLocalStorage) {
+      return this.addTransactionToLocalStorage(transactionData);
+    }
+
+    try {
+      // Calculate reward points before saving
+      const tempTransaction: Transaction = {
+        ...transactionData,
+        id: 'temp'
+      };
+      
+      const rewardCalculation = await calculateRewardPoints(tempTransaction);
+
+      // First, ensure merchant exists
+      const merchantResult = await supabase
+        .from('merchants')
+        .upsert([{
+          id: transactionData.merchant.id,
+          name: transactionData.merchant.name,
+          address: transactionData.merchant.address,
+          mcc: transactionData.merchant.mcc,
+          is_online: transactionData.merchant.isOnline,
+          coordinates: transactionData.merchant.coordinates
+        }], { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (merchantResult.error) {
+        console.error('Error upserting merchant:', merchantResult.error);
+        return this.addTransactionToLocalStorage(transactionData);
+      }
+
+      // Insert transaction
+      const { data, error } = await supabase
         .from('transactions')
-        .insert([dbTransaction]);
+        .insert([{
+          date: transactionData.date,
+          merchant_id: transactionData.merchant.id,
+          amount: transactionData.amount,
+          currency: transactionData.currency,
+          payment_method_id: transactionData.paymentMethod.id,
+          payment_amount: transactionData.paymentAmount,
+          payment_currency: transactionData.paymentCurrency,
+          total_points: rewardCalculation.totalPoints,
+          base_points: rewardCalculation.basePoints,
+          bonus_points: rewardCalculation.bonusPoints,
+          is_contactless: transactionData.isContactless,
+          notes: transactionData.notes,
+          reimbursement_amount: transactionData.reimbursementAmount,
+          category: transactionData.category
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error adding transaction:', error);
+        return this.addTransactionToLocalStorage(transactionData);
+      }
+
+      // Return the complete transaction object
+      const newTransaction: Transaction = {
+        id: data.id,
+        date: data.date,
+        merchant: transactionData.merchant,
+        amount: parseFloat(data.amount.toString()),
+        currency: data.currency,
+        paymentMethod: transactionData.paymentMethod,
+        paymentAmount: parseFloat(data.payment_amount.toString()),
+        paymentCurrency: data.payment_currency,
+        rewardPoints: data.total_points || 0,
+        basePoints: data.base_points || 0,
+        bonusPoints: data.bonus_points || 0,
+        isContactless: data.is_contactless || false,
+        notes: data.notes || undefined,
+        reimbursementAmount: data.reimbursement_amount ? parseFloat(data.reimbursement_amount.toString()) : undefined,
+        category: data.category || undefined
+      };
 
       return newTransaction;
     } catch (error) {
       console.error('Error adding transaction:', error);
-      throw error;
+      return this.addTransactionToLocalStorage(transactionData);
     }
   }
 
-  async updateTransaction(id: string, transactionData: Partial<Omit<Transaction, 'id'>>): Promise<Transaction> {
+  private addTransactionToLocalStorage(transactionData: Omit<Transaction, 'id'>): Transaction {
+    const transactions = this.getTransactionsFromLocalStorage();
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: crypto.randomUUID()
+    };
+    
+    transactions.unshift(newTransaction);
+    this.saveTransactionsToLocalStorage(transactions);
+    return newTransaction;
+  }
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
+    if (this.useLocalStorage) {
+      return this.updateTransactionInLocalStorage(id, updates);
+    }
+
     try {
-      const dbTransaction: any = {};
-      
-      if (transactionData.merchant?.id) dbTransaction.merchant_id = transactionData.merchant.id;
-      if (transactionData.amount !== undefined) dbTransaction.amount = transactionData.amount.toString();
-      if (transactionData.currency) dbTransaction.currency = transactionData.currency;
-      if (transactionData.paymentMethod?.id) dbTransaction.payment_method_id = transactionData.paymentMethod.id;
-      if (transactionData.paymentAmount !== undefined) dbTransaction.payment_amount = transactionData.paymentAmount.toString();
-      if (transactionData.paymentCurrency) dbTransaction.payment_currency = transactionData.paymentCurrency;
-      if (transactionData.rewardPoints !== undefined) dbTransaction.total_points = transactionData.rewardPoints;
-      if (transactionData.basePoints !== undefined) dbTransaction.base_points = transactionData.basePoints;
-      if (transactionData.bonusPoints !== undefined) dbTransaction.bonus_points = transactionData.bonusPoints;
-      if (transactionData.isContactless !== undefined) dbTransaction.is_contactless = transactionData.isContactless;
-      if (transactionData.notes !== undefined) dbTransaction.notes = transactionData.notes;
-      if (transactionData.reimbursementAmount !== undefined) dbTransaction.reimbursement_amount = transactionData.reimbursementAmount?.toString();
-      if (transactionData.category !== undefined) dbTransaction.category = transactionData.category;
-      
-      dbTransaction.updated_at = new Date().toISOString();
-
-      const { error } = await this.supabase
+      const { data, error } = await supabase
         .from('transactions')
-        .update(dbTransaction)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Return the updated transaction by fetching it
-      const { data: updatedTx, error: fetchError } = await this.supabase
-        .from('transactions')
-        .select(`
-          *,
-          payment_methods!inner(*),
-          merchants!inner(*)
-        `)
+        .update({
+          date: updates.date,
+          amount: updates.amount,
+          currency: updates.currency,
+          payment_amount: updates.paymentAmount,
+          payment_currency: updates.paymentCurrency,
+          total_points: updates.rewardPoints,
+          base_points: updates.basePoints,
+          bonus_points: updates.bonusPoints,
+          is_contactless: updates.isContactless,
+          notes: updates.notes,
+          reimbursement_amount: updates.reimbursementAmount,
+          category: updates.category,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
+        .select()
         .single();
 
-      if (fetchError) throw fetchError;
+      if (error) {
+        console.error('Supabase error updating transaction:', error);
+        return this.updateTransactionInLocalStorage(id, updates);
+      }
 
-      return {
-        id: updatedTx.id,
-        date: updatedTx.date,
-        merchant: {
-          id: updatedTx.merchants.id,
-          name: updatedTx.merchants.name,
-          address: updatedTx.merchants.address || '',
-          mcc: updatedTx.merchants.mcc,
-          isOnline: updatedTx.merchants.is_online || false,
-          coordinates: updatedTx.merchants.coordinates
-        },
-        amount: parseFloat(updatedTx.amount),
-        currency: updatedTx.currency as any,
-        paymentMethod: {
-          id: updatedTx.payment_methods.id,
-          name: updatedTx.payment_methods.name,
-          type: updatedTx.payment_methods.type as any,
-          issuer: updatedTx.payment_methods.issuer || '',
-          lastFourDigits: updatedTx.payment_methods.last_four_digits,
-          currency: updatedTx.payment_methods.currency as any,
-          icon: updatedTx.payment_methods.icon,
-          color: updatedTx.payment_methods.color,
-          imageUrl: updatedTx.payment_methods.image_url,
-          pointsCurrency: updatedTx.payment_methods.points_currency,
-          active: updatedTx.payment_methods.active,
-          rewardRules: updatedTx.payment_methods.reward_rules,
-          selectedCategories: updatedTx.payment_methods.selected_categories,
-          statementStartDay: updatedTx.payment_methods.statement_start_day,
-          isMonthlyStatement: updatedTx.payment_methods.is_monthly_statement,
-          conversionRate: updatedTx.payment_methods.conversion_rate
-        },
-        paymentAmount: parseFloat(updatedTx.payment_amount),
-        paymentCurrency: updatedTx.payment_currency as any,
-        rewardPoints: updatedTx.total_points || 0,
-        basePoints: updatedTx.base_points || 0,
-        bonusPoints: updatedTx.bonus_points || 0,
-        isContactless: updatedTx.is_contactless || false,
-        notes: updatedTx.notes,
-        reimbursementAmount: updatedTx.reimbursement_amount ? parseFloat(updatedTx.reimbursement_amount) : undefined,
-        category: updatedTx.category
-      };
+      // Get full transaction data
+      const transactions = await this.getTransactions();
+      return transactions.find(t => t.id === id) || null;
     } catch (error) {
       console.error('Error updating transaction:', error);
-      throw error;
+      return this.updateTransactionInLocalStorage(id, updates);
     }
+  }
+
+  private updateTransactionInLocalStorage(id: string, updates: Partial<Transaction>): Transaction | null {
+    const transactions = this.getTransactionsFromLocalStorage();
+    const index = transactions.findIndex(t => t.id === id);
+    
+    if (index === -1) return null;
+    
+    transactions[index] = { ...transactions[index], ...updates };
+    this.saveTransactionsToLocalStorage(transactions);
+    return transactions[index];
   }
 
   async deleteTransaction(id: string): Promise<boolean> {
+    if (this.useLocalStorage) {
+      return this.deleteTransactionFromLocalStorage(id);
+    }
+
     try {
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('transactions')
-        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+        .update({ 
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error deleting transaction:', error);
+        return this.deleteTransactionFromLocalStorage(id);
+      }
+
       return true;
     } catch (error) {
       console.error('Error deleting transaction:', error);
-      return false;
+      return this.deleteTransactionFromLocalStorage(id);
     }
+  }
+
+  private deleteTransactionFromLocalStorage(id: string): boolean {
+    const transactions = this.getTransactionsFromLocalStorage();
+    const filteredTransactions = transactions.filter(t => t.id !== id);
+    this.saveTransactionsToLocalStorage(filteredTransactions);
+    return true;
   }
 
   async exportTransactionsToCSV(transactions: Transaction[]): Promise<string> {
@@ -375,29 +447,50 @@ export class StorageService {
       'Amount',
       'Currency',
       'Payment Method',
+      'Payment Amount',
+      'Payment Currency',
+      'Reward Points',
+      'Base Points',
+      'Bonus Points',
+      'Is Contactless',
+      'Notes',
       'Category',
-      'Points',
-      'Notes'
+      'Reimbursement Amount'
     ];
 
     const csvRows = [
       headers.join(','),
-      ...transactions.map(tx => [
-        tx.date,
-        `"${tx.merchant.name}"`,
-        tx.amount,
-        tx.currency,
-        `"${tx.paymentMethod.name}"`,
-        `"${tx.category || 'Uncategorized'}"`,
-        tx.rewardPoints,
-        `"${tx.notes || ''}"`
+      ...transactions.map(transaction => [
+        transaction.date,
+        `"${transaction.merchant.name}"`,
+        transaction.amount,
+        transaction.currency,
+        `"${transaction.paymentMethod.name}"`,
+        transaction.paymentAmount,
+        transaction.paymentCurrency,
+        transaction.rewardPoints,
+        transaction.basePoints,
+        transaction.bonusPoints,
+        transaction.isContactless,
+        `"${transaction.notes || ''}"`,
+        `"${transaction.category || ''}"`,
+        transaction.reimbursementAmount || ''
       ].join(','))
     ];
 
     return csvRows.join('\n');
   }
+
+  async hasMerchantCategorySuggestions(merchantName: string): Promise<boolean> {
+    // Simple implementation for now
+    return false;
+  }
+
+  async getSuggestedMerchantCategory(merchantName: string): Promise<string | null> {
+    // Simple implementation for now
+    return null;
+  }
 }
 
-// Create and export the singleton instance
-import { supabase } from '@/integrations/supabase/client';
-export const storageService = new StorageService(supabase);
+// Export singleton instance
+export const storageService = new StorageService();

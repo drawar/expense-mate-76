@@ -11,20 +11,49 @@ import { DateTime } from 'luxon';
  * Service for calculating reward points based on rules and transaction data
  */
 export class RewardService {
-  private ruleRepository: RuleRepository;
+  private ruleRepository: RuleRepository | null = null;
 
   constructor() {
-    this.ruleRepository = RuleRepository.getInstance();
+    // Don't initialize repository in constructor - do it lazily
+  }
+
+  /**
+   * Initialize the repository with supabase client
+   */
+  private getRuleRepository(): RuleRepository {
+    if (!this.ruleRepository) {
+      try {
+        this.ruleRepository = RuleRepository.getInstance();
+      } catch (error) {
+        console.warn('RuleRepository not initialized, using fallback behavior');
+        return null as any;
+      }
+    }
+    return this.ruleRepository;
   }
 
   /**
    * Calculate reward points for a transaction
    */
   async calculateRewards(input: CalculationInput): Promise<CalculationResult> {
+    const ruleRepository = this.getRuleRepository();
+    
+    if (!ruleRepository) {
+      // Fallback behavior when repository is not available
+      return {
+        totalPoints: 0,
+        basePoints: 0,
+        bonusPoints: 0,
+        pointsCurrency: 'points',
+        minSpendMet: false,
+        messages: ['Reward system not initialized']
+      };
+    }
+
     const cardTypeId = input.paymentMethod?.type?.toLowerCase() || 'generic';
     
     // Get rules for this card type
-    const rules = await this.ruleRepository.getRulesForCardType(cardTypeId);
+    const rules = await ruleRepository.getRulesForCardType(cardTypeId);
     
     if (rules.length === 0) {
       return {

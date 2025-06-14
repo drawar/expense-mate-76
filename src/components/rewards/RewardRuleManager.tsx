@@ -9,7 +9,7 @@ import { getRuleRepository } from '@/core/rewards/RuleRepository';
 import { PlusIcon, EditIcon, TrashIcon } from 'lucide-react';
 
 interface RewardRuleManagerProps {
-  // Remove cardTypeId prop to fix the error
+  // No props needed - component manages its own state
 }
 
 export const RewardRuleManager: React.FC<RewardRuleManagerProps> = () => {
