@@ -133,3 +133,9 @@ export class RuleMapper {
     };
   }
 }
+
+/**
+ * Export individual mapper functions for backward compatibility
+ */
+export const mapDbRuleToRewardRule = RuleMapper.fromDatabase;
+export const mapRewardRuleToDbRule = RuleMapper.toDatabase;

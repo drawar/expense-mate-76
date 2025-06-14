@@ -1,6 +1,7 @@
+
 import { RewardRule } from './types';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { mapDbRuleToRewardRule, mapRewardRuleToDbRule } from './RuleMapper';
+import { RuleMapper } from './RuleMapper';
 import { DEFAULT_CACHE_TTL_MS } from './constants';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -51,9 +52,8 @@ export class RuleRepository {
   }
 
   /**
-   * Determines if the cache for a specific card type is stale.
-   * @param cardTypeId The card type identifier to check.
-   * @returns True if the cache is expired or missing for the card.
+   * Loads all rules from the database and updates the cache.
+   * @returns A promise that resolves to a list of all reward rules.
    */
   public async loadRules(): Promise<RewardRule[]> {
     try {
@@ -64,7 +64,7 @@ export class RuleRepository {
         return [];
       }
 
-      const rules = data.map(mapDbRuleToRewardRule);
+      const rules = data.map(RuleMapper.fromDatabase);
       this.lastRuleLoadTime = Date.now();
       this.rules.clear();
       this.rulesByCardType.clear();
@@ -111,7 +111,7 @@ export class RuleRepository {
         return [];
       }
 
-      const rules = data.map(mapDbRuleToRewardRule);
+      const rules = data.map(RuleMapper.fromDatabase);
       this.rulesByCardType.set(cardTypeId, rules);
       rules.forEach(r => this.rules.set(r.id, r));
       return rules;
@@ -142,7 +142,7 @@ export class RuleRepository {
         return null;
       }
 
-      const rule = mapDbRuleToRewardRule(data);
+      const rule = RuleMapper.fromDatabase(data);
       this.rules.set(rule.id, rule);
       if (!this.rulesByCardType.has(rule.cardTypeId)) {
         this.rulesByCardType.set(rule.cardTypeId, []);
@@ -170,7 +170,7 @@ export class RuleRepository {
     }
 
     try {
-      const dbRule = mapRewardRuleToDbRule(rule);
+      const dbRule = RuleMapper.toDatabase(rule);
       const { data, error } = await this.supabase
         .from('reward_rules')
         .upsert(dbRule)
@@ -182,7 +182,7 @@ export class RuleRepository {
         return null;
       }
 
-      const savedRule = mapDbRuleToRewardRule(data);
+      const savedRule = RuleMapper.fromDatabase(data);
       this.rules.set(savedRule.id, savedRule);
 
       const cardRules = this.rulesByCardType.get(savedRule.cardTypeId) || [];

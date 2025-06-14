@@ -17,7 +17,7 @@ interface RewardRuleEditorProps {
   onCancel: () => void;
 }
 
-export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCancel }) => {
+const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCancel }) => {
   const [editRule, setEditRule] = useState<RewardRule>(() => {
     return rule || {
       id: '',
@@ -213,8 +213,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave
         </CardHeader>
         <CardContent>
           <ConditionEditor
-            conditions={editRule.conditions}
-            onChange={(conditions) => setEditRule(prev => ({ ...prev, conditions }))}
+            condition={editRule.conditions[0] || { type: 'mcc', operation: 'include', values: [] }}
+            onChange={(condition) => setEditRule(prev => ({ 
+              ...prev, 
+              conditions: condition ? [condition] : []
+            }))}
           />
         </CardContent>
       </Card>
@@ -225,8 +228,8 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave
         </CardHeader>
         <CardContent>
           <BonusTierEditor
-            bonusTiers={editRule.reward.bonusTiers || []}
-            onChange={(bonusTiers) => updateReward({ bonusTiers })}
+            tier={editRule.reward.bonusTiers?.[0] || null}
+            onChange={(tier) => updateReward({ bonusTiers: tier ? [tier] : [] })}
           />
         </CardContent>
       </Card>
@@ -242,3 +245,6 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave
     </div>
   );
 };
+
+export { RewardRuleEditor };
+export default RewardRuleEditor;
