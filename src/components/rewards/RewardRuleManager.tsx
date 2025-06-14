@@ -1,3 +1,4 @@
+
 // components/rewards/RewardRuleManager.tsx
 
 import React, { useEffect, useState } from 'react';
@@ -72,7 +73,9 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
   // Handle saving a rule
   const handleSaveRule = async (rule: RewardRule) => {
     try {
-      const savedRule = await ruleRepository.saveRule(rule);
+      // Set the cardTypeId if it's a new rule
+      const ruleToSave = { ...rule, cardTypeId };
+      const savedRule = await ruleRepository.saveRule(ruleToSave);
       
       if (savedRule) {
         // Update local rules state
@@ -223,7 +226,7 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
                   <Badge 
                     className={rule.enabled ? 'bg-green-500' : 'bg-gray-500'}
                   >
-                    {(rule.reward.baseMultiplier + rule.reward.bonusMultiplier).toFixed(1)}x
+                    {(rule.reward.baseMultiplier + (rule.reward.bonusMultiplier || 0)).toFixed(1)}x
                   </Badge>
                 </div>
               </CardHeader>
@@ -234,8 +237,8 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
                   </div>
                   <div>
                     <span className="font-medium">Calculation:</span> 
-                    {rule.reward.baseMultiplier.toFixed(1)}x base + 
-                    {rule.reward.bonusMultiplier.toFixed(1)}x bonus
+                    {rule.reward.baseMultiplier.toFixed(1)}x base
+                    {rule.reward.bonusMultiplier && ` + ${rule.reward.bonusMultiplier.toFixed(1)}x bonus`}
                     {rule.reward.blockSize > 1 ? ` per $${rule.reward.blockSize}` : ' per $1'}
                   </div>
                   {rule.reward.monthlyCap && (
@@ -277,7 +280,6 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId
           </DialogHeader>
           <RewardRuleEditor
             rule={editingRule}
-            cardTypeId={cardTypeId}
             onSave={handleSaveRule}
             onCancel={() => setIsDialogOpen(false)}
           />

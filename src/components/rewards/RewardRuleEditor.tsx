@@ -26,9 +26,9 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
     if (rule) {
       return {
         ...rule,
-        // Convert DateTime to Date if needed
-        createdAt: new Date(rule.createdAt.toString()),
-        updatedAt: new Date(rule.updatedAt.toString())
+        // Ensure dates are Date objects
+        createdAt: rule.createdAt instanceof Date ? rule.createdAt : new Date(rule.createdAt.toString()),
+        updatedAt: rule.updatedAt instanceof Date ? rule.updatedAt : new Date(rule.updatedAt.toString())
       };
     }
     

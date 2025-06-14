@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PaymentMethod } from '@/types';
@@ -35,6 +36,11 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
 }) => {
   const form = useFormContext();
   const isOnline = form.watch('isOnline');
+  const isContactless = form.watch('isContactless');
+  const amount = form.watch('amount');
+  const currency = form.watch('currency');
+  const mcc = form.watch('mcc');
+  const merchantName = form.watch('merchantName');
   
   return (
     <Card>
@@ -58,8 +64,13 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
         />
         
         <PointsDisplay 
-          selectedPaymentMethod={selectedPaymentMethod}
-          pointsCalculation={pointsCalculation}
+          amount={amount || 0}
+          currency={currency || 'SGD'}
+          paymentMethod={selectedPaymentMethod || null}
+          mcc={mcc}
+          merchantName={merchantName}
+          isOnline={isOnline}
+          isContactless={isContactless}
         />
       </CardContent>
       <CardFooter className="flex justify-end space-x-2">

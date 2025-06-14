@@ -1,6 +1,5 @@
 // services/rewards/types.ts
 import { DateTime } from 'luxon';
-import { PaymentMethod } from "@/types";
 
 /**
  * Transaction type enum (mutually exclusive types)
@@ -104,8 +103,8 @@ export interface RewardRule {
   priority: number; // Higher priority rules are applied first
   conditions: RuleCondition[];
   reward: RuleReward;
-  createdAt: DateTime;
-  updatedAt: DateTime;
+  createdAt: Date; // Changed from DateTime to Date for consistency
+  updatedAt: Date; // Changed from DateTime to Date for consistency
 }
 
 /**
