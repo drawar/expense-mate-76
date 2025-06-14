@@ -13,7 +13,7 @@ export interface RewardRule {
 }
 
 export interface RuleCondition {
-  type: 'mcc' | 'transaction_type' | 'currency' | 'merchant' | 'amount' | 'compound';
+  type: 'mcc' | 'transaction_type' | 'currency' | 'merchant' | 'amount' | 'compound' | 'category';
   operation: 'include' | 'exclude' | 'equals' | 'greater_than' | 'less_than' | 'range' | 'any' | 'all';
   values: (string | number)[];
   displayName?: string;
@@ -21,16 +21,16 @@ export interface RuleCondition {
 }
 
 export interface RewardConfig {
-  calculationMethod: 'standard' | 'tiered' | 'flat_rate';
+  calculationMethod: 'standard' | 'tiered' | 'flat_rate' | 'direct';
   baseMultiplier: number;
   bonusMultiplier: number;
   pointsRoundingStrategy: 'floor' | 'ceiling' | 'nearest';
-  amountRoundingStrategy: 'floor' | 'ceiling' | 'nearest' | 'floor5';
+  amountRoundingStrategy: 'floor' | 'ceiling' | 'nearest' | 'floor5' | 'none';
   blockSize: number;
   bonusTiers: BonusTier[];
   monthlyCap?: number;
   monthlyMinSpend?: number;
-  monthlySpendPeriodType?: 'calendar' | 'statement';
+  monthlySpendPeriodType?: 'calendar' | 'statement' | 'statement_month';
   pointsCurrency: string;
 }
 
@@ -72,8 +72,9 @@ export interface CalculationResult {
   messages: string[];
 }
 
-export type TransactionType = 'purchase' | 'refund' | 'adjustment';
+export type TransactionType = 'purchase' | 'refund' | 'adjustment' | 'online' | 'contactless' | 'in_store';
 
+// Constant values for transaction types
 export const TransactionTypeValues = {
   purchase: 'purchase' as const,
   refund: 'refund' as const,
@@ -81,13 +82,18 @@ export const TransactionTypeValues = {
   online: 'online' as const,
   contactless: 'contactless' as const,
   in_store: 'in_store' as const,
-};
+} as const;
 
 export interface CardType {
   id: string;
   name: string;
   issuer: string;
+  pointsCurrency?: string;
   rewardRules: RewardRule[];
+  defaultRules?: RewardRule[];
+  hasCategories?: boolean;
+  availableCategories?: string[];
+  maxCategoriesSelectable?: number;
 }
 
 export interface DbRewardRule {

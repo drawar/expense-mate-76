@@ -21,7 +21,8 @@ export type Transaction = {
 };
 
 export type PaymentMethodType = 'credit_card' | 'debit_card' | 'cash' | 'bank_account' | 'other';
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CHF' | 'CNY' | 'SEK' | 'NZD' | 'MXN' | 'SGD' | 'HKD' | 'NOK' | 'KRW' | 'TRY' | 'RUB' | 'INR' | 'BRL' | 'ZAR' | 'TWD' | 'VND' | 'IDR' | 'THB' | 'MYR';
+// Updated Currency type to match what's actually implemented in CurrencyService
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CNY' | 'INR' | 'SGD' | 'TWD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export interface PaymentMethod {
   id: string;

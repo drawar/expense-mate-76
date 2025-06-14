@@ -1,6 +1,6 @@
 // services/rewards/CardRegistry.ts
 
-import { CardType, RewardRule, TransactionType } from './types';
+import { CardType, RewardRule, TransactionTypeValues } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -82,6 +82,7 @@ export class CardRegistry {
       issuer: 'DBS',
       name: 'Woman\'s World MasterCard',
       pointsCurrency: 'DBS Points',
+      rewardRules: [],
       defaultRules: [
         this.createDBSWomansWorldCardRule()
       ]
@@ -93,6 +94,7 @@ export class CardRegistry {
       issuer: 'Citibank',
       name: 'Rewards Visa Signature',
       pointsCurrency: 'ThankYou Points',
+      rewardRules: [],
       defaultRules: [
         this.createCitibankRewardsCardRule()
       ]
@@ -104,6 +106,7 @@ export class CardRegistry {
       issuer: 'UOB',
       name: 'Preferred Visa Platinum',
       pointsCurrency: 'UNI$',
+      rewardRules: [],
       defaultRules: [
         this.createUOBPlatinumCardRule()
       ]
@@ -126,6 +129,7 @@ export class CardRegistry {
         'Travel'
       ],
       maxCategoriesSelectable: 2,
+      rewardRules: [],
       defaultRules: [
         this.createUOBLadysSolitaireCardRule()
       ]
@@ -225,7 +229,7 @@ export class CardRegistry {
         {
           type: 'transaction_type',
           operation: 'equals',
-          values: [TransactionType.ONLINE]
+          values: [TransactionTypeValues.online]
         }
       ],
       reward: {
@@ -235,6 +239,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor5',
         blockSize: 5,
+        bonusTiers: [],
         monthlyCap: 2700, // Cap at 2,700 bonus points per month
         pointsCurrency: 'DBS Points'
       },
@@ -259,16 +264,18 @@ export class CardRegistry {
         {
           type: 'compound',
           operation: 'any', // OR logic
+          values: [], // Required for RuleCondition but not used for compound
           subConditions: [
             // Online transactions excluding airlines and travel
             {
               type: 'compound',
               operation: 'all', // AND logic
+              values: [], // Required for RuleCondition but not used for compound
               subConditions: [
                 {
                   type: 'transaction_type',
                   operation: 'equals',
-                  values: [TransactionType.ONLINE]
+                  values: [TransactionTypeValues.online]
                 },
                 {
                   type: 'mcc',
@@ -302,6 +309,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor',
         blockSize: 1,
+        bonusTiers: [],
         monthlyCap: 9000, // Cap at 9,000 bonus points per month
         pointsCurrency: 'ThankYou Points'
       },
@@ -340,7 +348,7 @@ export class CardRegistry {
             condition: {
               type: 'transaction_type',
               operation: 'equals',
-              values: [TransactionType.CONTACTLESS]
+              values: [TransactionTypeValues.contactless]
             }
           },
           {
@@ -350,11 +358,12 @@ export class CardRegistry {
             condition: {
               type: 'compound',
               operation: 'all', // AND logic
+              values: [], // Required for RuleCondition but not used for compound
               subConditions: [
                 {
                   type: 'transaction_type',
                   operation: 'equals',
-                  values: [TransactionType.ONLINE]
+                  values: [TransactionTypeValues.online]
                 },
                 {
                   type: 'mcc',
@@ -405,6 +414,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor5',
         blockSize: 5,
+        bonusTiers: [],
         monthlyCap: 3600, // Cap at 3,600 bonus points per month
         pointsCurrency: 'UNI$'
       },
