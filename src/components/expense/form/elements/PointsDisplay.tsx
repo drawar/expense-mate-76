@@ -1,70 +1,116 @@
 
-// components/expense/form/PointsDisplay.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { CoinsIcon } from 'lucide-react';
 import { PaymentMethod } from '@/types';
-import { PointsCalculationResult } from '@/hooks/expense/expense-form/useRewardPointsStandalone';
 import { rewardService } from '@/core/rewards';
 
 interface PointsDisplayProps {
-  selectedPaymentMethod: PaymentMethod | undefined;
-  pointsCalculation: PointsCalculationResult;
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethod | null;
+  mcc?: string;
+  merchantName?: string;
+  isOnline?: boolean;
+  isContactless?: boolean;
 }
 
-/**
- * Component for displaying reward point calculations
- */
-const PointsDisplay: React.FC<PointsDisplayProps> = ({
-  selectedPaymentMethod,
-  pointsCalculation
+export const PointsDisplay: React.FC<PointsDisplayProps> = ({
+  amount,
+  currency,
+  paymentMethod,
+  mcc,
+  merchantName,
+  isOnline,
+  isContactless
 }) => {
-  // Only hide for cash payment methods or if no payment method is selected
-  if (!selectedPaymentMethod || selectedPaymentMethod.type === 'cash') {
+  const [points, setPoints] = useState<{
+    totalPoints: number;
+    basePoints: number;
+    bonusPoints: number;
+    pointsCurrency: string;
+    messages?: string[];
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const calculatePoints = async () => {
+      if (!paymentMethod || !amount || amount <= 0) {
+        setPoints(null);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const result = await rewardService.simulatePoints(
+          amount,
+          currency,
+          paymentMethod,
+          mcc,
+          merchantName,
+          isOnline,
+          isContactless
+        );
+
+        setPoints({
+          totalPoints: result.totalPoints,
+          basePoints: result.basePoints,
+          bonusPoints: result.bonusPoints,
+          pointsCurrency: result.pointsCurrency,
+          messages: result.messages
+        });
+      } catch (error) {
+        console.error('Error calculating points:', error);
+        setPoints(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    calculatePoints();
+  }, [amount, currency, paymentMethod, mcc, merchantName, isOnline, isContactless]);
+
+  if (!paymentMethod || !amount || amount <= 0) {
     return null;
   }
 
-  const { 
-    totalPoints, 
-    basePoints = 0, 
-    bonusPoints = 0, 
-    remainingMonthlyBonusPoints,
-    messageText,
-    pointsCurrency = selectedPaymentMethod ? 
-      rewardService.getPointsCurrency(selectedPaymentMethod) : 
-      'Points'
-  } = pointsCalculation;
-
-  // Render a card with the points information
   return (
-    <Card className="border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
-      <CardContent className="pt-6 pb-4">
-        <div className="flex items-start space-x-4">
-          <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full">
-            <CoinsIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+    <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <CoinsIcon className="h-5 w-5 text-blue-600" />
+            <span className="font-medium text-blue-900">Reward Points</span>
           </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold">
-              {totalPoints.toLocaleString()} {pointsCurrency}
-            </h3>
-            {basePoints !== undefined && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Base: {basePoints.toLocaleString()} {bonusPoints > 0 && 
-                  `+ Bonus: ${bonusPoints.toLocaleString()}`}
-              </p>
-            )}
-            {messageText && (
-              <p className="text-sm text-amber-600 dark:text-amber-400">
-                {messageText}
-              </p>
-            )}
-            {remainingMonthlyBonusPoints !== undefined && remainingMonthlyBonusPoints > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                {remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month
-              </p>
-            )}
-          </div>
+          
+          {isLoading ? (
+            <div className="animate-pulse">
+              <div className="h-6 w-16 bg-gray-200 rounded"></div>
+            </div>
+          ) : points ? (
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                {points.totalPoints.toLocaleString()} {points.pointsCurrency}
+              </Badge>
+              {points.bonusPoints > 0 && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  +{points.bonusPoints} bonus
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-500">No points</span>
+          )}
         </div>
+        
+        {points && points.messages && points.messages.length > 0 && (
+          <div className="mt-2 text-xs text-gray-600">
+            {points.messages.map((message, index) => (
+              <div key={index}>{message}</div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

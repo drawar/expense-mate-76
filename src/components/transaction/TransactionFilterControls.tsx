@@ -1,110 +1,189 @@
-import { FilterOptions } from '@/hooks/expense/useTransactionList';
-import { SortOption, ViewMode } from '@/components/transaction/TransactionSortAndView';
-import TransactionSearchBar from '@/components/transaction/TransactionSearchBar';
-import TransactionFilters from '@/components/transaction/TransactionFilters';
-import TransactionSortAndView from '@/components/transaction/TransactionSortAndView';
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/calendar';
+import { CalendarIcon, FilterIcon, XIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { PaymentMethod } from '@/types';
 
-// Create a local type that matches what TransactionFilters expects
-type TransactionFilterOptionsType = {
-  merchantName?: string;
-  paymentMethodId?: string;
-  currency?: string;
-  startDate?: Date | null;
-  endDate?: Date | null;
-};
-
-interface TransactionFilterControlsProps {
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  filterOptions: FilterOptions;
-  activeFilters: string[];
-  paymentMethods: PaymentMethod[];
-  onFilterChange: (key: keyof FilterOptions, value: string) => void;
-  onResetFilters: () => void;
-  sortOption: SortOption;
-  viewMode: ViewMode;
-  onSortChange: (value: SortOption) => void;
-  onViewChange: (value: ViewMode) => void;
+interface FilterOptions {
+  searchTerm: string;
+  paymentMethodId: string;
+  category: string;
+  merchantName: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  minAmount: string;
+  maxAmount: string;
 }
 
-const TransactionFilterControls = ({
-  searchQuery,
-  onSearchChange,
-  filterOptions,
-  activeFilters,
+interface TransactionFilterControlsProps {
+  filters: FilterOptions;
+  onFiltersChange: (filters: FilterOptions) => void;
+  paymentMethods: PaymentMethod[];
+  categories: string[];
+  onClearFilters: () => void;
+}
+
+export const TransactionFilterControls: React.FC<TransactionFilterControlsProps> = ({
+  filters,
+  onFiltersChange,
   paymentMethods,
-  onFilterChange,
-  onResetFilters,
-  sortOption,
-  viewMode,
-  onSortChange,
-  onViewChange
-}: TransactionFilterControlsProps) => {
-  // Create a handler that can adapt between the different filter option types
-  const handleFilterChange = (key: keyof TransactionFilterOptionsType, value: string) => {
-    // Map the TransactionFilters keys to useTransactionList keys if needed
-    let mappedKey: keyof FilterOptions;
-    
-    if (key === 'startDate') {
-      mappedKey = 'dateRange' as keyof FilterOptions;
-      // For date range, you'd need to update the object differently
-      // This is just an example - you'd need to handle this based on your actual implementation
-      onFilterChange(mappedKey, value);
-      return;
-    } else if (key === 'endDate') {
-      mappedKey = 'dateRange' as keyof FilterOptions;
-      // Similar to startDate
-      onFilterChange(mappedKey, value);
-      return;
-    } else if (key === 'paymentMethodId') {
-      mappedKey = 'paymentMethods' as keyof FilterOptions;
-    } else if (key === 'merchantName') {
-      mappedKey = 'merchants' as keyof FilterOptions;
-    } else if (key === 'currency') {
-      mappedKey = 'currencies' as keyof FilterOptions;
-    } else {
-      mappedKey = key as keyof FilterOptions;
-    }
-    
-    onFilterChange(mappedKey, value);
+  categories,
+  onClearFilters
+}) => {
+  const hasActiveFilters = Object.values(filters).some(value => 
+    typeof value === 'string' ? value.trim() !== '' : value !== null
+  );
+
+  const updateFilter = (key: keyof FilterOptions, value: any) => {
+    onFiltersChange({
+      ...filters,
+      [key]: value
+    });
   };
-  
-  // Create a filtered options object that matches what TransactionFilters expects
-  const adaptedFilterOptions: TransactionFilterOptionsType = {
-    merchantName: filterOptions.merchants?.[0] || '',
-    paymentMethodId: filterOptions.paymentMethods?.[0] || '',
-    currency: filterOptions.currencies?.[0] || '',
-    startDate: filterOptions.dateRange?.from || null,
-    endDate: filterOptions.dateRange?.to || null,
-  };
-  
+
   return (
-    <div className="bg-background py-4 mb-6 border-b">
-      <div className="flex flex-col md:flex-row gap-4">
-        <TransactionSearchBar 
-          searchQuery={searchQuery}
-          onSearchChange={onSearchChange}
-        />
-        
-        <div className="flex items-center gap-2">
-          <TransactionFilters
-            filterOptions={adaptedFilterOptions}
-            activeFilters={activeFilters}
-            paymentMethods={paymentMethods}
-            onFilterChange={handleFilterChange}
-            onResetFilters={onResetFilters}
-          />
-          
-          <TransactionSortAndView
-            sortOption={sortOption}
-            viewMode={viewMode}
-            onSortChange={onSortChange}
-            onViewChange={onViewChange}
-          />
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <FilterIcon className="h-4 w-4" />
+            <span className="font-medium">Filters</span>
+          </div>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={onClearFilters}>
+              <XIcon className="h-4 w-4 mr-1" />
+              Clear All
+            </Button>
+          )}
         </div>
-      </div>
-    </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Search</label>
+            <Input
+              placeholder="Search transactions..."
+              value={filters.searchTerm}
+              onChange={(e) => updateFilter('searchTerm', e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Payment Method</label>
+            <Select
+              value={filters.paymentMethodId}
+              onValueChange={(value) => updateFilter('paymentMethodId', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All methods" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All methods</SelectItem>
+                {paymentMethods.map((method) => (
+                  <SelectItem key={method.id} value={method.id}>
+                    {method.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Category</label>
+            <Select
+              value={filters.category}
+              onValueChange={(value) => updateFilter('category', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Merchant</label>
+            <Input
+              placeholder="Merchant name..."
+              value={filters.merchantName}
+              onChange={(e) => updateFilter('merchantName', e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Start Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {filters.startDate ? format(filters.startDate, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <DatePicker
+                  mode="single"
+                  selected={filters.startDate}
+                  onSelect={(date) => updateFilter('startDate', date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">End Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {filters.endDate ? format(filters.endDate, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <DatePicker
+                  mode="single"
+                  selected={filters.endDate}
+                  onSelect={(date) => updateFilter('endDate', date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Min Amount</label>
+            <Input
+              type="number"
+              placeholder="0.00"
+              value={filters.minAmount}
+              onChange={(e) => updateFilter('minAmount', e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-1 block">Max Amount</label>
+            <Input
+              type="number"
+              placeholder="1000.00"
+              value={filters.maxAmount}
+              onChange={(e) => updateFilter('maxAmount', e.target.value)}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -2,14 +2,15 @@ import { RewardRule } from './types';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { mapDbRuleToRewardRule, mapRewardRuleToDbRule } from './RuleMapper';
 import { DEFAULT_CACHE_TTL_MS } from './constants';
-
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * A repository for managing reward rules from Supabase.
  * Supports loading, caching, and basic CRUD operations.
  */
 export class RuleRepository {
-  private rules = new Map<string, RewardRule>(); // in-memoery cache by rule ID
+  private static instance: RuleRepository;
+  private rules = new Map<string, RewardRule>(); // in-memory cache by rule ID
   private rulesByCardType = new Map<string, RewardRule[]>(); // secondary index for looking up rules by card type
   private lastRuleLoadTime = 0; // timestamp for when rules were last refreshed
   private readonly = false; // prevents saving/deleting in production scenarios like expense submission.
@@ -18,7 +19,17 @@ export class RuleRepository {
    * A repository for managing reward rules from Supabase.
    * Supports loading, caching, and basic CRUD operations.
    */
-  constructor(private readonly supabase: SupabaseClient) {}
+  private constructor(private readonly supabase: SupabaseClient) {}
+
+  /**
+   * Get the singleton instance of RuleRepository
+   */
+  public static getInstance(): RuleRepository {
+    if (!RuleRepository.instance) {
+      RuleRepository.instance = new RuleRepository(supabase);
+    }
+    return RuleRepository.instance;
+  }
 
   /**
    * Enables or disables read-only mode.
@@ -52,8 +63,6 @@ export class RuleRepository {
         console.log('[DEBUG] data from supabase:', data);
         return [];
       }
-
-      
 
       const rules = data.map(mapDbRuleToRewardRule);
       this.lastRuleLoadTime = Date.now();

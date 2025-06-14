@@ -1,79 +1,105 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
-
-// Import our new components
-import TransactionDialogHeader from './dialog/TransactionDialogHeader';
-import TransactionDetailsView from './dialog/TransactionDetailsView';
-import TransactionDialogActions from './dialog/TransactionDialogActions';
-import TransactionEditForm from './dialog/TransactionEditForm';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface TransactionDialogProps {
   transaction: Transaction | null;
-  paymentMethods: PaymentMethod[];
-  allTransactions: Transaction[];
   isOpen: boolean;
-  mode: 'view' | 'edit';
   onClose: () => void;
-  onEdit: (transaction: Transaction) => void;
-  onDelete: (transaction: Transaction) => void;
-  onSave: (transaction: Omit<Transaction, 'id'>) => void;
+  onEdit?: (transaction: Transaction) => void;
+  onDelete?: (transaction: Transaction) => void;
+  paymentMethods: PaymentMethod[];
 }
 
-const TransactionDialog = ({
+export const TransactionDialog: React.FC<TransactionDialogProps> = ({
   transaction,
-  paymentMethods,
-  allTransactions,
   isOpen,
-  mode,
   onClose,
   onEdit,
   onDelete,
-  onSave,
-}: TransactionDialogProps) => {
-  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>(mode);
-  
+  paymentMethods
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+
   if (!transaction) return null;
-  
-  const handleSaveEdit = (updatedTransaction: Omit<Transaction, 'id'>) => {
-    onSave(updatedTransaction);
-    setDialogMode('view');
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(transaction);
+    }
+    setIsEditing(true);
   };
-  
-  const handleCancelEdit = () => {
-    setDialogMode('view');
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(transaction);
+    }
+    onClose();
   };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        onClose();
-        setDialogMode(mode);
-      }
-    }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-        {dialogMode === 'view' ? (
-          <>
-            <TransactionDialogHeader transaction={transaction} />
-            <TransactionDetailsView transaction={transaction} />
-            <TransactionDialogActions 
-              transaction={transaction} 
-              onDelete={onDelete} 
-              onEdit={() => setDialogMode('edit')} 
-            />
-          </>
-        ) : (
-          <TransactionEditForm 
-            transaction={transaction}
-            paymentMethods={paymentMethods}
-            onSubmit={handleSaveEdit}
-            onCancel={handleCancelEdit}
-          />
-        )}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Transaction Details</h3>
+                <p className="text-sm text-gray-600">
+                  {new Date(transaction.date).toLocaleDateString()}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Amount</label>
+                  <p className="text-lg">{transaction.currency} {transaction.amount}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Merchant</label>
+                  <p>{transaction.merchant?.name || 'Unknown'}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Payment Method</label>
+                  <p>{transaction.paymentMethod?.name || 'Unknown'}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Points Earned</label>
+                  <p>{transaction.rewardPoints || 0} points</p>
+                </div>
+              </div>
+              
+              {transaction.notes && (
+                <div>
+                  <label className="text-sm font-medium">Notes</label>
+                  <p className="text-sm text-gray-600">{transaction.notes}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={onClose}>
+                  Close
+                </Button>
+                {onEdit && (
+                  <Button variant="outline" onClick={handleEdit}>
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button variant="destructive" onClick={handleDelete}>
+                    Delete
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </DialogContent>
     </Dialog>
   );
