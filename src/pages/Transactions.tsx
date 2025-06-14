@@ -82,13 +82,9 @@ const Transactions = () => {
         <TransactionDialog
           transaction={selectedTransaction}
           paymentMethods={paymentMethods}
-          allTransactions={transactions}
           isOpen={isTransactionDialogOpen}
-          mode={dialogMode === 'delete' ? 'view' : dialogMode}
           onClose={() => setIsTransactionDialogOpen(false)}
-          onEdit={handleEditTransaction}
-          onDelete={(transaction) => handleDeleteTransaction(transaction.id)}
-          onSave={handleSaveEdit}
+          onTransactionUpdated={handleSaveEdit}
         />
       )}
       

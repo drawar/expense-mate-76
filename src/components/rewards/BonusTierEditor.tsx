@@ -1,17 +1,15 @@
-// components/rewards/BonusTierEditor.tsx
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+
+import React from 'react';
+import { BonusTier } from '@/core/rewards/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash, Edit } from 'lucide-react';
-import { BonusTier, RuleCondition } from '@/core/rewards/types';
-import { ConditionEditor } from './ConditionEditor';
+import { Card, CardContent } from '@/components/ui/card';
 
-interface BonusTierEditorProps {
-  tier: BonusTier;
-  onChange: (tier: BonusTier) => void;
-  onDelete: () => void;
+export interface BonusTierEditorProps {
+  tier: BonusTier | null;
+  onChange: (tier: BonusTier | null) => void;
+  onDelete?: () => void;
 }
 
 export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
@@ -19,135 +17,81 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
   onChange,
   onDelete
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  
-  // Handle tier name change
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      ...tier,
-      name: e.target.value
-    });
+  const handleChange = (field: keyof BonusTier, value: any) => {
+    if (!tier) {
+      onChange({
+        minSpend: 0,
+        maxSpend: undefined,
+        multiplier: 1,
+        [field]: value
+      });
+    } else {
+      onChange({
+        ...tier,
+        [field]: value
+      });
+    }
   };
-  
-  // Handle tier multiplier change
-  const handleMultiplierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (isNaN(value)) return;
-    
-    onChange({
-      ...tier,
-      multiplier: value
-    });
+
+  const handleRemove = () => {
+    onChange(null);
+    if (onDelete) onDelete();
   };
-  
-  // Handle tier priority change
-  const handlePriorityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (isNaN(value)) return;
-    
-    onChange({
-      ...tier,
-      priority: value
-    });
-  };
-  
-  // Handle condition change
-  const handleConditionChange = (condition: RuleCondition) => {
-    onChange({
-      ...tier,
-      condition
-    });
-  };
-  
+
+  if (!tier) {
+    return (
+      <div className="text-center py-4">
+        <Button 
+          variant="outline" 
+          onClick={() => onChange({ minSpend: 0, maxSpend: undefined, multiplier: 1 })}
+        >
+          Add Bonus Tier
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="p-4 pb-2">
-        <div className="flex justify-between items-center">
-          {isEditing ? (
+      <CardContent className="p-4 space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="minSpend">Min Spend</Label>
             <Input
-              value={tier.name}
-              onChange={handleNameChange}
-              placeholder="Tier Name"
-              className="font-semibold"
+              id="minSpend"
+              type="number"
+              value={tier.minSpend}
+              onChange={(e) => handleChange('minSpend', parseFloat(e.target.value) || 0)}
             />
-          ) : (
-            <CardTitle className="text-base">{tier.name}</CardTitle>
-          )}
-          <div className="flex space-x-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-              className="h-7 w-7 p-0"
-            >
-              <Edit size={16} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="h-7 w-7 p-0"
-            >
-              <Trash size={16} />
-            </Button>
+          </div>
+          
+          <div>
+            <Label htmlFor="maxSpend">Max Spend</Label>
+            <Input
+              id="maxSpend"
+              type="number"
+              value={tier.maxSpend || ''}
+              onChange={(e) => handleChange('maxSpend', e.target.value ? parseFloat(e.target.value) : undefined)}
+              placeholder="No limit"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="multiplier">Multiplier</Label>
+            <Input
+              id="multiplier"
+              type="number"
+              step="0.1"
+              value={tier.multiplier}
+              onChange={(e) => handleChange('multiplier', parseFloat(e.target.value) || 1)}
+            />
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="space-y-3">
-          {isEditing ? (
-            <>
-              <div>
-                <Label htmlFor="multiplier" className="text-xs">Bonus Multiplier</Label>
-                <Input
-                  id="multiplier"
-                  type="number"
-                  step="0.1"
-                  value={tier.multiplier}
-                  onChange={handleMultiplierChange}
-                  placeholder="e.g., 1.8 for 9x per $5"
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label htmlFor="priority" className="text-xs">Priority</Label>
-                <Input
-                  id="priority"
-                  type="number"
-                  value={tier.priority}
-                  onChange={handlePriorityChange}
-                  placeholder="Higher values take precedence"
-                  className="h-8"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Condition</Label>
-                <ConditionEditor
-                  condition={tier.condition}
-                  onChange={handleConditionChange}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-sm">
-                <span className="font-medium">Multiplier:</span> {tier.multiplier}x
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Priority:</span> {tier.priority}
-              </div>
-              <div>
-                <span className="font-medium text-sm">Condition Type:</span>
-                <div className="pl-2 mt-1 text-sm">
-                  {tier.condition.type === 'compound' 
-                    ? `Compound (${tier.condition.operation === 'all' ? 'AND' : 'OR'})` 
-                    : tier.condition.type}
-                </div>
-              </div>
-            </>
-          )}
+        
+        <div className="flex justify-end">
+          <Button variant="destructive" size="sm" onClick={handleRemove}>
+            Remove Tier
+          </Button>
         </div>
       </CardContent>
     </Card>

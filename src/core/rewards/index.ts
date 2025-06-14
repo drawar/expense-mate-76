@@ -1,9 +1,8 @@
+
 import { Transaction, PaymentMethod } from '@/types';
 import { CalculationResult } from '@/types';
 import { rewardService } from './RewardService';
 import { RuleRepository } from './RuleRepository';
-import { CardRegistry } from './CardRegistry';
-import { MonthlySpendingTracker } from './MonthlySpendingTracker';
 
 export const initializeRewardSystem = async (readOnly: boolean = false): Promise<void> => {
   try {
@@ -12,8 +11,6 @@ export const initializeRewardSystem = async (readOnly: boolean = false): Promise
     const ruleRepository = RuleRepository.getInstance();
     ruleRepository.setReadOnly(readOnly);
     
-    // Initialize the reward service
-    await rewardService.initialize();
     console.log('Reward system initialized successfully');
   } catch (error) {
     console.error('Failed to initialize reward system:', error);
@@ -22,7 +19,18 @@ export const initializeRewardSystem = async (readOnly: boolean = false): Promise
 };
 
 export async function calculateRewardPoints(transaction: Transaction): Promise<CalculationResult> {
-  return rewardService.calculatePoints(transaction, 0);
+  const input = {
+    amount: transaction.amount,
+    currency: transaction.currency,
+    paymentMethod: transaction.paymentMethod,
+    mcc: transaction.merchant.mcc?.code,
+    merchantName: transaction.merchant.name,
+    transactionType: 'purchase' as const,
+    isOnline: transaction.merchant.isOnline,
+    isContactless: transaction.isContactless
+  };
+  
+  return rewardService.calculateRewards(input);
 }
 
 export async function simulateRewardPoints(
@@ -34,15 +42,18 @@ export async function simulateRewardPoints(
   isOnline?: boolean,
   isContactless?: boolean
 ): Promise<CalculationResult> {
-  return rewardService.simulatePoints(
+  const input = {
     amount,
     currency,
     paymentMethod,
     mcc,
     merchantName,
+    transactionType: 'purchase' as const,
     isOnline,
     isContactless
-  );
+  };
+  
+  return rewardService.calculateRewards(input);
 }
 
 export function formatRewardPointsMessage(
@@ -63,4 +74,4 @@ export function formatRewardPointsMessage(
 }
 
 // Re-export the singleton instances
-export { rewardService, RuleRepository, CardRegistry, MonthlySpendingTracker };
+export { rewardService, RuleRepository };

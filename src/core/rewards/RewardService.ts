@@ -1,22 +1,19 @@
-import { DateTime } from 'luxon';
+
 import { 
   RewardRule, 
   CalculationInput, 
   CalculationResult, 
   TransactionType 
 } from './types';
-import { MonthlySpendingTracker } from './MonthlySpendingTracker';
 import { RuleRepository } from './RuleRepository';
 
 /**
  * Service for calculating reward points based on rules and transaction data
  */
 export class RewardService {
-  private spendingTracker: MonthlySpendingTracker;
   private ruleRepository: RuleRepository;
 
   constructor() {
-    this.spendingTracker = new MonthlySpendingTracker();
     this.ruleRepository = RuleRepository.getInstance();
   }
 
@@ -214,3 +211,6 @@ export class RewardService {
     }
   }
 }
+
+// Export singleton instance
+export const rewardService = new RewardService();

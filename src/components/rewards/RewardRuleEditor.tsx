@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RewardRule, RuleCondition, BonusTier } from '@/core/rewards/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,35 +12,13 @@ import { ConditionEditor } from './ConditionEditor';
 import { BonusTierEditor } from './BonusTierEditor';
 
 interface RewardRuleEditorProps {
-  rule?: RewardRule;
+  rule: RewardRule;
   onSave: (rule: RewardRule) => Promise<void>;
   onCancel: () => void;
 }
 
-const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCancel }) => {
-  const [editRule, setEditRule] = useState<RewardRule>(() => {
-    return rule || {
-      id: '',
-      cardTypeId: '',
-      name: '',
-      description: '',
-      enabled: true,
-      priority: 1,
-      conditions: [],
-      reward: {
-        calculationMethod: 'standard',
-        baseMultiplier: 1,
-        bonusMultiplier: 1,
-        pointsRoundingStrategy: 'floor',
-        amountRoundingStrategy: 'floor',
-        blockSize: 1,
-        pointsCurrency: 'points',
-        bonusTiers: []
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  });
+export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCancel }) => {
+  const [editRule, setEditRule] = useState<RewardRule>(rule);
 
   const handleSave = async () => {
     try {
@@ -246,5 +224,4 @@ const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({ rule, onSave, onCan
   );
 };
 
-export { RewardRuleEditor };
 export default RewardRuleEditor;

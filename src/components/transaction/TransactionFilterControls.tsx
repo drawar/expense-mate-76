@@ -9,21 +9,11 @@ import { CalendarIcon, FilterIcon, XIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { PaymentMethod } from '@/types';
-
-interface FilterOptions {
-  searchTerm: string;
-  paymentMethodId: string;
-  category: string;
-  merchantName: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  minAmount: string;
-  maxAmount: string;
-}
+import { FilterOptions } from '@/hooks/expense/useTransactionList';
 
 interface TransactionFilterControlsProps {
-  filters: FilterOptions | null;
-  onFiltersChange: (filters: FilterOptions) => void;
+  filters: FilterOptions;
+  onFiltersChange: (name: keyof FilterOptions, value: any) => void;
   paymentMethods: PaymentMethod[];
   categories: string[];
   onClearFilters: () => void;
@@ -36,27 +26,33 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
   categories,
   onClearFilters
 }) => {
-  // Provide default filters if null/undefined
+  // Ensure filters is never null/undefined
   const safeFilters = filters || {
-    searchTerm: '',
-    paymentMethodId: '',
-    category: '',
-    merchantName: '',
-    startDate: null,
-    endDate: null,
-    minAmount: '',
-    maxAmount: ''
+    paymentMethods: [],
+    dateRange: { from: null, to: null },
+    merchants: [],
+    categories: [],
+    currencies: []
   };
 
-  const hasActiveFilters = Object.values(safeFilters).some(value => 
-    typeof value === 'string' ? value.trim() !== '' : value !== null
-  );
+  // Safe check for active filters
+  const hasActiveFilters = (() => {
+    try {
+      return Object.values(safeFilters).some(value => {
+        if (Array.isArray(value)) return value.length > 0;
+        if (value && typeof value === 'object' && 'from' in value) {
+          return value.from !== null || value.to !== null;
+        }
+        return typeof value === 'string' ? value.trim() !== '' : value !== null;
+      });
+    } catch (error) {
+      console.warn('Error checking active filters:', error);
+      return false;
+    }
+  })();
 
   const updateFilter = (key: keyof FilterOptions, value: any) => {
-    onFiltersChange({
-      ...safeFilters,
-      [key]: value
-    });
+    onFiltersChange(key, value);
   };
 
   return (
@@ -77,19 +73,10 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block">Search</label>
-            <Input
-              placeholder="Search transactions..."
-              value={safeFilters.searchTerm}
-              onChange={(e) => updateFilter('searchTerm', e.target.value)}
-            />
-          </div>
-          
-          <div>
             <label className="text-sm font-medium mb-1 block">Payment Method</label>
             <Select
-              value={safeFilters.paymentMethodId}
-              onValueChange={(value) => updateFilter('paymentMethodId', value)}
+              value={safeFilters.paymentMethods?.[0] || ''}
+              onValueChange={(value) => updateFilter('paymentMethods', value ? [value] : [])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All methods" />
@@ -108,8 +95,8 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
           <div>
             <label className="text-sm font-medium mb-1 block">Category</label>
             <Select
-              value={safeFilters.category}
-              onValueChange={(value) => updateFilter('category', value)}
+              value={safeFilters.categories?.[0] || ''}
+              onValueChange={(value) => updateFilter('categories', value ? [value] : [])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All categories" />
@@ -126,30 +113,20 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Merchant</label>
-            <Input
-              placeholder="Merchant name..."
-              value={safeFilters.merchantName}
-              onChange={(e) => updateFilter('merchantName', e.target.value)}
-            />
-          </div>
-          
-          <div>
             <label className="text-sm font-medium mb-1 block">Start Date</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {safeFilters.startDate ? format(safeFilters.startDate, 'PPP') : 'Pick a date'}
+                  {safeFilters.dateRange?.from ? format(safeFilters.dateRange.from, 'PPP') : 'Pick a date'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={safeFilters.startDate}
-                  onSelect={(date) => updateFilter('startDate', date)}
+                  selected={safeFilters.dateRange?.from || undefined}
+                  onSelect={(date) => updateFilter('dateRange', { ...safeFilters.dateRange, from: date })}
                   initialFocus
-                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -161,39 +138,18 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {safeFilters.endDate ? format(safeFilters.endDate, 'PPP') : 'Pick a date'}
+                  {safeFilters.dateRange?.to ? format(safeFilters.dateRange.to, 'PPP') : 'Pick a date'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={safeFilters.endDate}
-                  onSelect={(date) => updateFilter('endDate', date)}
+                  selected={safeFilters.dateRange?.to || undefined}
+                  onSelect={(date) => updateFilter('dateRange', { ...safeFilters.dateRange, to: date })}
                   initialFocus
-                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-1 block">Min Amount</label>
-            <Input
-              type="number"
-              placeholder="0.00"
-              value={safeFilters.minAmount}
-              onChange={(e) => updateFilter('minAmount', e.target.value)}
-            />
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-1 block">Max Amount</label>
-            <Input
-              type="number"
-              placeholder="1000.00"
-              value={safeFilters.maxAmount}
-              onChange={(e) => updateFilter('maxAmount', e.target.value)}
-            />
           </div>
         </div>
       </CardContent>
