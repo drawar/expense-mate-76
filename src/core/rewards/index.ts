@@ -3,6 +3,7 @@ import { Transaction, PaymentMethod } from '@/types';
 import { CalculationResult } from '@/types';
 import { rewardService } from './RewardService';
 import { RuleRepository } from './RuleRepository';
+import { DateTime } from 'luxon';
 
 export const initializeRewardSystem = async (readOnly: boolean = false): Promise<void> => {
   try {
@@ -27,7 +28,8 @@ export async function calculateRewardPoints(transaction: Transaction): Promise<C
     merchantName: transaction.merchant.name,
     transactionType: 'purchase' as const,
     isOnline: transaction.merchant.isOnline,
-    isContactless: transaction.isContactless
+    isContactless: transaction.isContactless,
+    date: DateTime.fromISO(transaction.date)
   };
   
   return rewardService.calculateRewards(input);
@@ -50,7 +52,8 @@ export async function simulateRewardPoints(
     merchantName,
     transactionType: 'purchase' as const,
     isOnline,
-    isContactless
+    isContactless,
+    date: DateTime.now()
   };
   
   return rewardService.calculateRewards(input);

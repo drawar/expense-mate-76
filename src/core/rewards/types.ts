@@ -1,14 +1,8 @@
 
-import { DateTime } from 'luxon';
-
 /**
  * Transaction type enum (mutually exclusive types)
  */
-export enum TransactionType {
-  ONLINE = 'online',
-  CONTACTLESS = 'contactless',
-  IN_STORE = 'in_store' // Neither online nor contactless
-}
+export type TransactionType = 'purchase' | 'online' | 'contactless' | 'in_store';
 
 /**
  * Condition types supported by the rule engine
@@ -64,6 +58,8 @@ export type SpendingPeriodType =
  */
 export interface BonusTier {
   name: string;
+  minSpend: number;
+  maxSpend?: number;
   multiplier: number;
   priority: number;
   // Modify the condition to support compound conditions
@@ -103,8 +99,8 @@ export interface RewardRule {
   priority: number; // Higher priority rules are applied first
   conditions: RuleCondition[];
   reward: RuleReward;
-  createdAt: Date; // Changed from DateTime to Date for consistency
-  updatedAt: Date; // Changed from DateTime to Date for consistency
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -115,13 +111,15 @@ export interface CalculationInput {
   currency: string;
   mcc?: string;
   merchantName?: string;
-  transactionType: TransactionType; // Updated to use enum
+  transactionType: TransactionType;
   usedBonusPoints?: number;
   monthlySpend?: number; // Total eligible spend this month for threshold calculation
   paymentMethod: any; // Using any for now to avoid circular dependency
-  date: DateTime;
+  date: any; // DateTime or Date object
   category?: string;
   statementDay?: number; // Day of month when statement cycle starts
+  isOnline?: boolean;
+  isContactless?: boolean;
   [key: string]: any; // For extensibility
 }
 

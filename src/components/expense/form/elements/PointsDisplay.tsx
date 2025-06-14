@@ -43,7 +43,7 @@ export const PointsDisplay: React.FC<PointsDisplayProps> = ({
 
       setIsLoading(true);
       try {
-        const result = await rewardService.simulatePoints(
+        const result = await rewardService.simulateRewards(
           amount,
           currency,
           paymentMethod,

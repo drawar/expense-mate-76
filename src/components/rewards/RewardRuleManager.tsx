@@ -1,219 +1,179 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus } from 'lucide-react';
 import { RewardRule } from '@/core/rewards/types';
 import { RuleRepository } from '@/core/rewards/RuleRepository';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlusIcon, EditIcon, TrashIcon } from 'lucide-react';
 import { RewardRuleEditor } from './RewardRuleEditor';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 
-export const RewardRuleManager: React.FC = () => {
+interface RewardRuleManagerProps {
+  cardTypeId: string;
+}
+
+export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ cardTypeId }) => {
   const [rules, setRules] = useState<RewardRule[]>([]);
-  const [selectedCardType, setSelectedCardType] = useState<string>('');
-  const [editingRule, setEditingRule] = useState<RewardRule | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<RewardRule | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const ruleRepository = RuleRepository.getInstance();
 
-  // Load rules when component mounts or card type changes
   useEffect(() => {
-    if (selectedCardType) {
-      loadRules();
-    }
-  }, [selectedCardType]);
+    loadRules();
+  }, [cardTypeId]);
 
   const loadRules = async () => {
-    if (!selectedCardType) return;
-    
-    setLoading(true);
+    setIsLoading(true);
     try {
-      const cardRules = await ruleRepository.getRulesForCardType(selectedCardType);
-      setRules(cardRules);
+      const loadedRules = await ruleRepository.getRulesForCardType(cardTypeId);
+      setRules(loadedRules);
     } catch (error) {
-      console.error('Failed to load rules:', error);
+      console.error('Error loading rules:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleCreateRule = () => {
-    setIsCreating(true);
-    setEditingRule({
-      id: '',
-      cardTypeId: selectedCardType,
-      name: 'New Rule',
-      description: '',
-      enabled: true,
-      priority: 1,
-      conditions: [],
-      reward: {
-        calculationMethod: 'standard',
-        baseMultiplier: 1,
-        bonusMultiplier: 0,
-        pointsRoundingStrategy: 'floor',
-        amountRoundingStrategy: 'floor',
-        blockSize: 1,
-        pointsCurrency: 'points',
-        bonusTiers: []
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+  const handleCreateNew = () => {
+    setSelectedRule(null);
+    setIsEditorOpen(true);
   };
 
-  const handleEditRule = (rule: RewardRule) => {
-    setIsCreating(false);
-    setEditingRule(rule);
+  const handleEdit = (rule: RewardRule) => {
+    setSelectedRule(rule);
+    setIsEditorOpen(true);
   };
 
-  const handleSaveRule = async (rule: RewardRule) => {
+  const handleSave = async (rule: RewardRule) => {
     try {
-      const savedRule = await ruleRepository.saveRule(rule);
-      if (savedRule) {
-        setEditingRule(null);
-        setIsCreating(false);
-        await loadRules(); // Reload rules to get updated list
+      if (rule.id) {
+        await ruleRepository.updateRule(rule);
+      } else {
+        await ruleRepository.createRule({ ...rule, cardTypeId });
       }
+      await loadRules();
+      setIsEditorOpen(false);
+      setSelectedRule(null);
     } catch (error) {
-      console.error('Failed to save rule:', error);
+      console.error('Error saving rule:', error);
     }
   };
 
-  const handleDeleteRule = async (ruleId: string) => {
-    try {
-      const success = await ruleRepository.deleteRule(ruleId);
-      if (success) {
-        await loadRules(); // Reload rules to get updated list
+  const handleDelete = async (ruleId: string) => {
+    if (confirm('Are you sure you want to delete this rule?')) {
+      try {
+        await ruleRepository.deleteRule(ruleId);
+        await loadRules();
+      } catch (error) {
+        console.error('Error deleting rule:', error);
       }
-    } catch (error) {
-      console.error('Failed to delete rule:', error);
     }
   };
 
-  const handleCancel = () => {
-    setEditingRule(null);
-    setIsCreating(false);
-  };
-
-  // Available card types - this could be moved to a configuration file
-  const cardTypes = [
-    { id: 'uob-one', name: 'UOB One Card' },
-    { id: 'dbs-pv', name: 'DBS Paylah! Visa' },
-    { id: 'citibank-premier', name: 'Citibank Premier Miles' },
-    { id: 'amex-platinum', name: 'American Express Platinum' },
-    { id: 'generic', name: 'Generic Card' }
-  ];
-
-  if (editingRule) {
-    return (
-      <RewardRuleEditor
-        rule={editingRule}
-        onSave={handleSaveRule}
-        onCancel={handleCancel}
-      />
-    );
+  if (isLoading) {
+    return <div>Loading rules...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Reward Rule Management</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="cardType">Card Type</Label>
-            <Select
-              value={selectedCardType}
-              onValueChange={setSelectedCardType}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a card type" />
-              </SelectTrigger>
-              <SelectContent>
-                {cardTypes.map((cardType) => (
-                  <SelectItem key={cardType.id} value={cardType.id}>
-                    {cardType.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Reward Rules</h3>
+        <Button onClick={handleCreateNew}>
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Rule
+        </Button>
+      </div>
 
-          {selectedCardType && (
-            <Button onClick={handleCreateRule}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Rule
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {selectedCardType && (
+      {rules.length === 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle>Rules for {cardTypes.find(ct => ct.id === selectedCardType)?.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-4">Loading rules...</div>
-            ) : rules.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                No rules found for this card type.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {rules.map((rule) => (
-                  <Card key={rule.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-medium">{rule.name}</h3>
-                          <Badge variant={rule.enabled ? "default" : "secondary"}>
-                            {rule.enabled ? "Enabled" : "Disabled"}
-                          </Badge>
-                          <Badge variant="outline">Priority: {rule.priority}</Badge>
-                        </div>
-                        {rule.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {rule.description}
-                          </p>
-                        )}
-                        <div className="text-xs text-muted-foreground mt-2">
-                          Base: {rule.reward.baseMultiplier}x | 
-                          Bonus: {rule.reward.bonusMultiplier}x | 
-                          Currency: {rule.reward.pointsCurrency}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditRule(rule)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteRule(rule.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">No reward rules configured.</p>
+            <Button onClick={handleCreateNew} className="mt-4">
+              Create Your First Rule
+            </Button>
           </CardContent>
         </Card>
+      ) : (
+        <div className="space-y-3">
+          {rules.map((rule) => (
+            <Card key={rule.id}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base">{rule.name}</CardTitle>
+                    {rule.description && (
+                      <p className="text-sm text-gray-600 mt-1">{rule.description}</p>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(rule)}
+                    >
+                      <EditIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(rule.id)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    {rule.reward.baseMultiplier + rule.reward.bonusMultiplier}x Points
+                  </span>
+                  <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
+                    {rule.conditions.length} condition(s)
+                  </span>
+                  {rule.reward.monthlyCap && (
+                    <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                      Cap: {rule.reward.monthlyCap.toLocaleString()}
+                    </span>
+                  )}
+                  {!rule.enabled && (
+                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                      Disabled
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
+
+      <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedRule ? 'Edit Reward Rule' : 'Create New Reward Rule'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <RewardRuleEditor
+            rule={selectedRule}
+            cardTypeId={cardTypeId}
+            onSave={handleSave}
+            onCancel={() => setIsEditorOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+export default RewardRuleManager;

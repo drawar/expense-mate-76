@@ -1,4 +1,3 @@
-
 import { 
   RewardRule, 
   CalculationInput, 
@@ -6,6 +5,7 @@ import {
   TransactionType 
 } from './types';
 import { RuleRepository } from './RuleRepository';
+import { DateTime } from 'luxon';
 
 /**
  * Service for calculating reward points based on rules and transaction data
@@ -56,6 +56,41 @@ export class RewardService {
       minSpendMet: false,
       messages: ['No matching reward rules found']
     };
+  }
+
+  /**
+   * Simulate reward points for a transaction (used in UI)
+   */
+  async simulateRewards(
+    amount: number,
+    currency: string,
+    paymentMethod: any,
+    mcc?: string,
+    merchantName?: string,
+    isOnline?: boolean,
+    isContactless?: boolean
+  ): Promise<CalculationResult> {
+    const input: CalculationInput = {
+      amount,
+      currency,
+      paymentMethod,
+      mcc,
+      merchantName,
+      transactionType: 'purchase' as TransactionType,
+      isOnline,
+      isContactless,
+      date: DateTime.now()
+    };
+    
+    return this.calculateRewards(input);
+  }
+
+  /**
+   * Get points currency for a payment method
+   */
+  getPointsCurrency(paymentMethod: any): string {
+    // Default implementation - can be enhanced based on payment method type
+    return paymentMethod?.pointsCurrency || 'points';
   }
 
   /**
