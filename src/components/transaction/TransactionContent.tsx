@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Transaction, PaymentMethod } from '@/types';
-import { TransactionTable } from '@/components/expense/TransactionTable';
-import { TransactionGroupView } from './TransactionGroupView';
+import TransactionTable from '@/components/expense/TransactionTable';
+import TransactionGroupView from './TransactionGroupView';
 
 interface TransactionContentProps {
   transactions: Transaction[];

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, FilterIcon, XIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -132,11 +132,12 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <DatePicker
+                <Calendar
                   mode="single"
                   selected={filters.startDate}
                   onSelect={(date) => updateFilter('startDate', date)}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -152,11 +153,12 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <DatePicker
+                <Calendar
                   mode="single"
                   selected={filters.endDate}
                   onSelect={(date) => updateFilter('endDate', date)}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
