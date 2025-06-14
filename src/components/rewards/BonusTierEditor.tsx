@@ -15,16 +15,9 @@ interface BonusTierEditorProps {
 export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({ tiers, onChange }) => {
   const addTier = () => {
     const newTier: BonusTier = {
-      name: `Tier ${tiers.length + 1}`,
-      minSpend: 0,
-      maxSpend: undefined,
+      minAmount: 0,
+      maxAmount: undefined,
       multiplier: 1,
-      priority: tiers.length + 1,
-      condition: {
-        type: 'mcc',
-        operation: 'include',
-        values: []
-      }
     };
     onChange([...tiers, newTier]);
   };
@@ -41,10 +34,6 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({ tiers, onChang
   };
 
   const handleTierChange = (index: number, field: keyof BonusTier, value: any) => {
-    const newTier: BonusTier = {
-      ...tiers[index],
-      [field]: value
-    };
     updateTier(index, { [field]: value });
   };
 
@@ -75,21 +64,21 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({ tiers, onChang
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor={`tier-${index}-min-spend`}>Min Spend</Label>
+                <Label htmlFor={`tier-${index}-min-amount`}>Min Amount</Label>
                 <Input
-                  id={`tier-${index}-min-spend`}
+                  id={`tier-${index}-min-amount`}
                   type="number"
-                  value={tier.minSpend || 0}
-                  onChange={(e) => handleTierChange(index, 'minSpend', parseFloat(e.target.value) || 0)}
+                  value={tier.minAmount || 0}
+                  onChange={(e) => handleTierChange(index, 'minAmount', parseFloat(e.target.value) || 0)}
                 />
               </div>
               <div>
-                <Label htmlFor={`tier-${index}-max-spend`}>Max Spend</Label>
+                <Label htmlFor={`tier-${index}-max-amount`}>Max Amount</Label>
                 <Input
-                  id={`tier-${index}-max-spend`}
+                  id={`tier-${index}-max-amount`}
                   type="number"
-                  value={tier.maxSpend || ''}
-                  onChange={(e) => handleTierChange(index, 'maxSpend', e.target.value ? parseFloat(e.target.value) : undefined)}
+                  value={tier.maxAmount || ''}
+                  onChange={(e) => handleTierChange(index, 'maxAmount', e.target.value ? parseFloat(e.target.value) : undefined)}
                   placeholder="No limit"
                 />
               </div>

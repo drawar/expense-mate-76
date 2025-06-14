@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrashIcon, PlusIcon } from 'lucide-react';
 
 interface ConditionEditorProps {
   condition: RuleCondition;
@@ -14,36 +13,6 @@ interface ConditionEditorProps {
 }
 
 export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onChange }) => {
-  const addSubCondition = () => {
-    const newSubCondition: RuleCondition = {
-      type: 'mcc',
-      operation: 'include',
-      values: []
-    };
-    
-    onChange({
-      ...condition,
-      subConditions: [...(condition.subConditions || []), newSubCondition]
-    });
-  };
-
-  const updateSubCondition = (index: number, subCondition: RuleCondition) => {
-    const newSubConditions = [...(condition.subConditions || [])];
-    newSubConditions[index] = subCondition;
-    onChange({
-      ...condition,
-      subConditions: newSubConditions
-    });
-  };
-
-  const removeSubCondition = (index: number) => {
-    const newSubConditions = condition.subConditions?.filter((_, i) => i !== index) || [];
-    onChange({
-      ...condition,
-      subConditions: newSubConditions
-    });
-  };
-
   const handleTypeChange = (type: string) => {
     onChange({
       ...condition,
@@ -59,7 +28,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onC
     });
   };
 
-  const handleValuesChange = (values: string[]) => {
+  const handleValuesChange = (values: (string | number)[]) => {
     onChange({
       ...condition,
       values: values
@@ -132,7 +101,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onC
             <Input
               type="number"
               placeholder="Enter amount"
-              value={(condition.values as number[])?.[0] || ''}
+              value={(condition.values as number[])?.[0]?.toString() || ''}
               onChange={(e) => handleValuesChange([parseFloat(e.target.value) || 0])}
             />
           </div>
@@ -152,61 +121,6 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onC
     }
   };
 
-  if (condition.type === 'compound') {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Compound Condition</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label>Logic Operation</Label>
-            <Select
-              value={condition.operation}
-              onValueChange={handleOperationChange}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any (OR)</SelectItem>
-                <SelectItem value="all">All (AND)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label>Sub-conditions</Label>
-              <Button type="button" onClick={addSubCondition} size="sm">
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {condition.subConditions?.map((subCondition, index) => (
-              <div key={index} className="flex gap-2 items-start">
-                <div className="flex-1">
-                  <ConditionEditor
-                    condition={subCondition}
-                    onChange={(updated) => updateSubCondition(index, updated)}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeSubCondition(index)}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardContent className="space-y-3 pt-3">
@@ -223,8 +137,6 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onC
                 <SelectItem value="transaction_type">Transaction Type</SelectItem>
                 <SelectItem value="currency">Currency</SelectItem>
                 <SelectItem value="amount">Amount</SelectItem>
-                <SelectItem value="category">Category</SelectItem>
-                <SelectItem value="compound">Compound</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -239,10 +151,9 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({ condition, onC
                 <SelectItem value="include">Include</SelectItem>
                 <SelectItem value="exclude">Exclude</SelectItem>
                 <SelectItem value="equals">Equals</SelectItem>
-                <SelectItem value="not_equals">Not Equals</SelectItem>
                 <SelectItem value="greater_than">Greater Than</SelectItem>
                 <SelectItem value="less_than">Less Than</SelectItem>
-                <SelectItem value="between">Between</SelectItem>
+                <SelectItem value="range">Range</SelectItem>
               </SelectContent>
             </Select>
           </div>

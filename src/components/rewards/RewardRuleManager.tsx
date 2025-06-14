@@ -9,10 +9,12 @@ import { getRuleRepository } from '@/core/rewards/RuleRepository';
 import { PlusIcon, EditIcon, TrashIcon } from 'lucide-react';
 
 interface RewardRuleManagerProps {
-  // No props needed - component manages its own state
+  cardTypeId?: string;
 }
 
-export const RewardRuleManager: React.FC<RewardRuleManagerProps> = () => {
+export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({ 
+  cardTypeId = 'generic'
+}) => {
   const [rules, setRules] = useState<RewardRule[]>([]);
   const [selectedRule, setSelectedRule] = useState<RewardRule | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,12 +22,12 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = () => {
 
   useEffect(() => {
     loadRules();
-  }, []);
+  }, [cardTypeId]);
 
   const loadRules = async () => {
     try {
       const repository = getRuleRepository();
-      const loadedRules = await repository.getRulesForCardType('generic');
+      const loadedRules = await repository.getRulesForCardType(cardTypeId);
       setRules(loadedRules);
     } catch (error) {
       console.error('Error loading rules:', error);
@@ -50,7 +52,7 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = () => {
       
       if (isCreating) {
         const newRule = await repository.createRule({
-          cardTypeId: 'generic',
+          cardTypeId: cardTypeId,
           name: rule.name,
           description: rule.description,
           enabled: rule.enabled,

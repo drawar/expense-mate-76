@@ -1,3 +1,4 @@
+
 export interface RewardRule {
   id: string;
   cardTypeId: string;
@@ -12,10 +13,11 @@ export interface RewardRule {
 }
 
 export interface RuleCondition {
-  type: 'mcc' | 'transaction_type' | 'currency' | 'merchant' | 'amount';
-  operation: 'include' | 'exclude' | 'equals' | 'greater_than' | 'less_than' | 'range';
+  type: 'mcc' | 'transaction_type' | 'currency' | 'merchant' | 'amount' | 'compound';
+  operation: 'include' | 'exclude' | 'equals' | 'greater_than' | 'less_than' | 'range' | 'any' | 'all';
   values: (string | number)[];
   displayName?: string;
+  subConditions?: RuleCondition[];
 }
 
 export interface RewardConfig {
@@ -35,8 +37,13 @@ export interface RewardConfig {
 export interface BonusTier {
   minAmount?: number;
   maxAmount?: number;
+  minSpend?: number;
+  maxSpend?: number;
   multiplier: number;
   description?: string;
+  name?: string;
+  priority?: number;
+  condition?: RuleCondition;
 }
 
 export interface CalculationInput {
@@ -66,6 +73,22 @@ export interface CalculationResult {
 }
 
 export type TransactionType = 'purchase' | 'refund' | 'adjustment';
+
+export const TransactionTypeValues = {
+  purchase: 'purchase' as const,
+  refund: 'refund' as const,
+  adjustment: 'adjustment' as const,
+  online: 'online' as const,
+  contactless: 'contactless' as const,
+  in_store: 'in_store' as const,
+};
+
+export interface CardType {
+  id: string;
+  name: string;
+  issuer: string;
+  rewardRules: RewardRule[];
+}
 
 export interface DbRewardRule {
   id: string;

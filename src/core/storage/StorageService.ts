@@ -486,7 +486,7 @@ export class StorageService {
     return false;
   }
 
-  async getSuggestedMerchantCategory(merchantName: string): Promise<string | null> {
+  async getSuggestedMerchantCategory(merchantName: string): Promise<MerchantCategoryCode | null> {
     // Simple implementation for now
     return null;
   }

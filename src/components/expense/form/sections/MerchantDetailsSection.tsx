@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
@@ -63,9 +64,10 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
           const hasSuggestions = await storageService.hasMerchantCategorySuggestions(debouncedName);
           
           if (hasSuggestions) {
-            const suggestedMCC = await storageService.getSuggestedMerchantCategory(debouncedName);
+            const suggestedMCCResult = await storageService.getSuggestedMerchantCategory(debouncedName);
             
-            if (suggestedMCC) {
+            if (suggestedMCCResult && typeof suggestedMCCResult === 'object') {
+              const suggestedMCC = suggestedMCCResult as MerchantCategoryCode;
               // Set the MCC in the form and update the parent
               onSelectMCC(suggestedMCC);
               form.setValue('mcc', suggestedMCC);
