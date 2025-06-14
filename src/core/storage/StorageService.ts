@@ -1,7 +1,7 @@
+
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
-import { Transaction, PaymentMethod, Merchant } from '@/types';
-import { DbPaymentMethod, DbMerchant } from '@/types';
+import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant } from '@/types';
 import { RewardRule } from '../rewards/types';
 import { RuleMapper } from '../rewards/RuleMapper';
 
@@ -30,10 +30,10 @@ export class StorageService {
       return paymentMethods.map(pm => ({
         id: pm.id,
         name: pm.name,
-        type: pm.type,
+        type: pm.type as any,
         issuer: pm.issuer || '',
         lastFourDigits: pm.last_four_digits,
-        currency: pm.currency,
+        currency: pm.currency as any,
         icon: pm.icon,
         color: pm.color,
         imageUrl: pm.image_url,
@@ -190,18 +190,18 @@ export class StorageService {
           coordinates: tx.merchants.coordinates
         },
         amount: parseFloat(tx.amount),
-        currency: tx.currency,
+        currency: tx.currency as any,
         paymentMethod: {
           id: tx.payment_methods.id,
           name: tx.payment_methods.name,
-          type: tx.payment_methods.type,
+          type: tx.payment_methods.type as any,
           issuer: tx.payment_methods.issuer || '',
           lastFourDigits: tx.payment_methods.last_four_digits,
-          currency: tx.payment_methods.currency,
+          currency: tx.payment_methods.currency as any,
           icon: tx.payment_methods.icon,
           color: tx.payment_methods.color,
           imageUrl: tx.payment_methods.image_url,
-          pointsCurrency: tx.payment_methods.points_currency, // Default to currency if not set
+          pointsCurrency: tx.payment_methods.points_currency,
           active: tx.payment_methods.active,
           rewardRules: tx.payment_methods.reward_rules,
           selectedCategories: tx.payment_methods.selected_categories,
@@ -210,7 +210,7 @@ export class StorageService {
           conversionRate: tx.payment_methods.conversion_rate
         },
         paymentAmount: parseFloat(tx.payment_amount || tx.amount),
-        paymentCurrency: tx.payment_currency || tx.currency,
+        paymentCurrency: (tx.payment_currency || tx.currency) as any,
         rewardPoints: tx.total_points || 0,
         basePoints: tx.base_points || 0,
         bonusPoints: tx.bonus_points || 0,
@@ -221,40 +221,6 @@ export class StorageService {
       }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      throw error;
-    }
-  }
-
-  async saveTransactions(transactions: Transaction[]): Promise<void> {
-    try {
-      const dbTransactions = transactions.map(tx => ({
-        id: tx.id,
-        date: tx.date,
-        merchant_id: tx.merchant.id,
-        amount: tx.amount,
-        currency: tx.currency,
-        payment_method_id: tx.paymentMethod.id,
-        payment_amount: tx.paymentAmount,
-        payment_currency: tx.paymentCurrency,
-        total_points: tx.rewardPoints,
-        base_points: tx.basePoints,
-        bonus_points: tx.bonusPoints,
-        is_contactless: tx.isContactless,
-        notes: tx.notes,
-        reimbursement_amount: tx.reimbursementAmount,
-        category: tx.category,
-        is_deleted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-
-      const { error } = await this.supabase
-        .from('transactions')
-        .upsert(dbTransactions);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving transactions:', error);
       throw error;
     }
   }
@@ -270,17 +236,17 @@ export class StorageService {
         id: newTransaction.id,
         date: newTransaction.date,
         merchant_id: newTransaction.merchant.id,
-        amount: newTransaction.amount,
+        amount: newTransaction.amount.toString(),
         currency: newTransaction.currency,
         payment_method_id: newTransaction.paymentMethod.id,
-        payment_amount: newTransaction.paymentAmount,
+        payment_amount: newTransaction.paymentAmount.toString(),
         payment_currency: newTransaction.paymentCurrency,
         total_points: newTransaction.rewardPoints,
         base_points: newTransaction.basePoints,
         bonus_points: newTransaction.bonusPoints,
         is_contactless: newTransaction.isContactless,
         notes: newTransaction.notes,
-        reimbursement_amount: newTransaction.reimbursementAmount,
+        reimbursement_amount: newTransaction.reimbursementAmount?.toString(),
         category: newTransaction.category,
         is_deleted: false,
         created_at: new Date().toISOString(),
@@ -300,27 +266,25 @@ export class StorageService {
     }
   }
 
-  async editTransaction(id: string, transactionData: Partial<Omit<Transaction, 'id'>>): Promise<void> {
+  async updateTransaction(id: string, transactionData: Partial<Omit<Transaction, 'id'>>): Promise<Transaction> {
     try {
-      const dbTransaction = {
-        merchant_id: transactionData.merchant?.id,
-        amount: transactionData.amount,
-        currency: transactionData.currency,
-        payment_method_id: transactionData.paymentMethod?.id,
-        payment_amount: transactionData.paymentAmount,
-        payment_currency: transactionData.paymentCurrency,
-        total_points: transactionData.rewardPoints,
-        base_points: transactionData.basePoints,
-        bonus_points: transactionData.bonusPoints,
-        is_contactless: transactionData.isContactless,
-        notes: transactionData.notes,
-        reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category,
-        updated_at: new Date().toISOString()
-      };
-
-      // Remove undefined properties from the update object
-      Object.keys(dbTransaction).forEach(key => dbTransaction[key] === undefined ? delete dbTransaction[key] : {});
+      const dbTransaction: any = {};
+      
+      if (transactionData.merchant?.id) dbTransaction.merchant_id = transactionData.merchant.id;
+      if (transactionData.amount !== undefined) dbTransaction.amount = transactionData.amount.toString();
+      if (transactionData.currency) dbTransaction.currency = transactionData.currency;
+      if (transactionData.paymentMethod?.id) dbTransaction.payment_method_id = transactionData.paymentMethod.id;
+      if (transactionData.paymentAmount !== undefined) dbTransaction.payment_amount = transactionData.paymentAmount.toString();
+      if (transactionData.paymentCurrency) dbTransaction.payment_currency = transactionData.paymentCurrency;
+      if (transactionData.rewardPoints !== undefined) dbTransaction.total_points = transactionData.rewardPoints;
+      if (transactionData.basePoints !== undefined) dbTransaction.base_points = transactionData.basePoints;
+      if (transactionData.bonusPoints !== undefined) dbTransaction.bonus_points = transactionData.bonusPoints;
+      if (transactionData.isContactless !== undefined) dbTransaction.is_contactless = transactionData.isContactless;
+      if (transactionData.notes !== undefined) dbTransaction.notes = transactionData.notes;
+      if (transactionData.reimbursementAmount !== undefined) dbTransaction.reimbursement_amount = transactionData.reimbursementAmount?.toString();
+      if (transactionData.category !== undefined) dbTransaction.category = transactionData.category;
+      
+      dbTransaction.updated_at = new Date().toISOString();
 
       const { error } = await this.supabase
         .from('transactions')
@@ -328,13 +292,68 @@ export class StorageService {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Return the updated transaction by fetching it
+      const { data: updatedTx, error: fetchError } = await this.supabase
+        .from('transactions')
+        .select(`
+          *,
+          payment_methods!inner(*),
+          merchants!inner(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      return {
+        id: updatedTx.id,
+        date: updatedTx.date,
+        merchant: {
+          id: updatedTx.merchants.id,
+          name: updatedTx.merchants.name,
+          address: updatedTx.merchants.address || '',
+          mcc: updatedTx.merchants.mcc,
+          isOnline: updatedTx.merchants.is_online || false,
+          coordinates: updatedTx.merchants.coordinates
+        },
+        amount: parseFloat(updatedTx.amount),
+        currency: updatedTx.currency as any,
+        paymentMethod: {
+          id: updatedTx.payment_methods.id,
+          name: updatedTx.payment_methods.name,
+          type: updatedTx.payment_methods.type as any,
+          issuer: updatedTx.payment_methods.issuer || '',
+          lastFourDigits: updatedTx.payment_methods.last_four_digits,
+          currency: updatedTx.payment_methods.currency as any,
+          icon: updatedTx.payment_methods.icon,
+          color: updatedTx.payment_methods.color,
+          imageUrl: updatedTx.payment_methods.image_url,
+          pointsCurrency: updatedTx.payment_methods.points_currency,
+          active: updatedTx.payment_methods.active,
+          rewardRules: updatedTx.payment_methods.reward_rules,
+          selectedCategories: updatedTx.payment_methods.selected_categories,
+          statementStartDay: updatedTx.payment_methods.statement_start_day,
+          isMonthlyStatement: updatedTx.payment_methods.is_monthly_statement,
+          conversionRate: updatedTx.payment_methods.conversion_rate
+        },
+        paymentAmount: parseFloat(updatedTx.payment_amount),
+        paymentCurrency: updatedTx.payment_currency as any,
+        rewardPoints: updatedTx.total_points || 0,
+        basePoints: updatedTx.base_points || 0,
+        bonusPoints: updatedTx.bonus_points || 0,
+        isContactless: updatedTx.is_contactless || false,
+        notes: updatedTx.notes,
+        reimbursementAmount: updatedTx.reimbursement_amount ? parseFloat(updatedTx.reimbursement_amount) : undefined,
+        category: updatedTx.category
+      };
     } catch (error) {
-      console.error('Error editing transaction:', error);
+      console.error('Error updating transaction:', error);
       throw error;
     }
   }
 
-  async deleteTransaction(id: string): Promise<void> {
+  async deleteTransaction(id: string): Promise<boolean> {
     try {
       const { error } = await this.supabase
         .from('transactions')
@@ -342,55 +361,43 @@ export class StorageService {
         .eq('id', id);
 
       if (error) throw error;
+      return true;
     } catch (error) {
       console.error('Error deleting transaction:', error);
-      throw error;
+      return false;
     }
   }
 
-  async updateMerchantTracking(merchantName: string): Promise<void> {
-    try {
-      // Fetch all transactions for the given merchant name
-      const { data: transactions, error } = await this.supabase
-        .from('transactions')
-        .select('*')
-        .like('merchant_name', merchantName);
+  async exportTransactionsToCSV(transactions: Transaction[]): Promise<string> {
+    const headers = [
+      'Date',
+      'Merchant',
+      'Amount',
+      'Currency',
+      'Payment Method',
+      'Category',
+      'Points',
+      'Notes'
+    ];
 
-      if (error) {
-        console.error('Error fetching transactions for merchant:', merchantName, error);
-        return;
-      }
+    const csvRows = [
+      headers.join(','),
+      ...transactions.map(tx => [
+        tx.date,
+        `"${tx.merchant.name}"`,
+        tx.amount,
+        tx.currency,
+        `"${tx.paymentMethod.name}"`,
+        `"${tx.category || 'Uncategorized'}"`,
+        tx.rewardPoints,
+        `"${tx.notes || ''}"`
+      ].join(','))
+    ];
 
-      // Update each transaction with the correct merchant ID
-      for (const transaction of transactions) {
-        const { data: merchant, error: merchantError } = await this.supabase
-          .from('merchants')
-          .select('id')
-          .eq('name', merchantName)
-          .single();
-
-        if (merchantError) {
-          console.error('Error fetching merchant ID for name:', merchantName, merchantError);
-          continue; // Skip this transaction and move to the next
-        }
-
-        if (merchant) {
-          const { error: updateError } = await this.supabase
-            .from('transactions')
-            .update({ merchant_id: merchant.id })
-            .eq('id', transaction.id);
-
-          if (updateError) {
-            console.error('Error updating transaction with new merchant ID:', transaction.id, merchant.id, updateError);
-          } else {
-            console.log(`Transaction ${transaction.id} updated with merchant ID ${merchant.id}`);
-          }
-        } else {
-          console.warn(`No merchant found with name: ${merchantName}`);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating merchant tracking:', error);
-    }
+    return csvRows.join('\n');
   }
 }
+
+// Create and export the singleton instance
+import { supabase } from '@/integrations/supabase/client';
+export const storageService = new StorageService(supabase);

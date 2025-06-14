@@ -1,8 +1,9 @@
+
 // hooks/useTransactionSubmit.ts - NEW ADAPTER HOOK
 import { useState } from 'react';
 import { Transaction } from '@/types';
 import { useTransactionActions } from '@/hooks/expense/useTransactionActions';
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 
 /**
  * Adapter hook for backward compatibility 

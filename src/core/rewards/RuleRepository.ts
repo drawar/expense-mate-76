@@ -1,19 +1,21 @@
+
 import { SupabaseClient } from '@supabase/supabase-js';
 import { RewardRule, DbRewardRule } from './types';
 import { RuleMapper } from './RuleMapper';
+import { Database } from '@/types/supabase';
 
 export class RuleRepository {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient<Database>;
   private static instance: RuleRepository;
   private readOnly: boolean = false;
   private ruleMapper: RuleMapper;
 
-  private constructor(supabaseClient: SupabaseClient) {
+  private constructor(supabaseClient: SupabaseClient<Database>) {
     this.supabase = supabaseClient;
     this.ruleMapper = new RuleMapper();
   }
 
-  public static getInstance(supabaseClient?: SupabaseClient): RuleRepository {
+  public static getInstance(supabaseClient?: SupabaseClient<Database>): RuleRepository {
     if (!RuleRepository.instance && supabaseClient) {
       RuleRepository.instance = new RuleRepository(supabaseClient);
     } else if (!RuleRepository.instance && !supabaseClient) {
@@ -29,7 +31,7 @@ export class RuleRepository {
   async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {
     try {
       const { data, error } = await this.supabase
-        .from<DbRewardRule>('reward_rules')
+        .from('reward_rules')
         .select('*')
         .eq('card_type_id', cardTypeId);
 
@@ -53,7 +55,10 @@ export class RuleRepository {
       
       const { error } = await this.supabase
         .from('reward_rules')
-        .update(dbRule)
+        .update({
+          ...dbRule,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', rule.id);
 
       if (error) throw error;
@@ -89,7 +94,11 @@ export class RuleRepository {
       
       const { error } = await this.supabase
         .from('reward_rules')
-        .insert([dbRule]);
+        .insert([{
+          ...dbRule,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }]);
 
       if (error) throw error;
       
@@ -126,7 +135,7 @@ export class RuleRepository {
 // Singleton instance
 let ruleRepositoryInstance: RuleRepository | null = null;
 
-export const initializeRuleRepository = (supabaseClient: SupabaseClient): RuleRepository => {
+export const initializeRuleRepository = (supabaseClient: SupabaseClient<Database>): RuleRepository => {
   if (!ruleRepositoryInstance) {
     ruleRepositoryInstance = RuleRepository.getInstance(supabaseClient);
   }

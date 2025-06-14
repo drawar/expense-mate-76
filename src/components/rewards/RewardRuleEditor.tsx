@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RewardRule, RuleCondition, BonusTier } from '@/core/rewards/types';
 import { Button } from '@/components/ui/button';
@@ -22,18 +23,28 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
 }) => {
   const [name, setName] = useState(rule?.name || '');
   const [description, setDescription] = useState(rule?.description || '');
-  const [enabled, setEnabled] = useState(rule?.enabled || true);
+  const [enabled, setEnabled] = useState(rule?.enabled ?? true);
   const [priority, setPriority] = useState(rule?.priority || 1);
-  const [conditions, setConditions] = useState<RuleCondition[]>(rule?.conditions || []);
+  const [condition, setCondition] = useState<RuleCondition>(
+    rule?.conditions?.[0] || {
+      type: 'mcc',
+      operation: 'include',
+      values: []
+    }
+  );
   const [bonusTiers, setBonusTiers] = useState<BonusTier[]>(rule?.reward?.bonusTiers || []);
 
   useEffect(() => {
     if (rule) {
       setName(rule.name || '');
       setDescription(rule.description || '');
-      setEnabled(rule.enabled || true);
+      setEnabled(rule.enabled ?? true);
       setPriority(rule.priority || 1);
-      setConditions(rule.conditions || []);
+      setCondition(rule.conditions?.[0] || {
+        type: 'mcc',
+        operation: 'include',
+        values: []
+      });
       setBonusTiers(rule.reward?.bonusTiers || []);
     }
   }, [rule]);
@@ -46,7 +57,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
       description,
       enabled,
       priority,
-      conditions,
+      conditions: [condition],
       reward: {
         calculationMethod: rule?.reward?.calculationMethod || 'standard',
         baseMultiplier: rule?.reward?.baseMultiplier || 1,
@@ -95,7 +106,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <Switch
               id="enabled"
               checked={enabled}
-              onCheckedChange={(checked) => setEnabled(checked)}
+              onCheckedChange={setEnabled}
             />
           </div>
           <div>
@@ -112,12 +123,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Conditions</CardTitle>
+          <CardTitle>Condition</CardTitle>
         </CardHeader>
         <CardContent>
           <ConditionEditor
-            conditions={conditions}
-            onChange={(newConditions) => setConditions(newConditions)}
+            condition={condition}
+            onChange={setCondition}
           />
         </CardContent>
       </Card>
@@ -129,7 +140,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
         <CardContent>
           <BonusTierEditor
             tiers={bonusTiers}
-            onChange={(newTiers) => setBonusTiers(newTiers)}
+            onChange={setBonusTiers}
           />
         </CardContent>
       </Card>

@@ -1,3 +1,4 @@
+
 import { Database } from '@/types/supabase';
 
 export type Transaction = {
@@ -20,7 +21,7 @@ export type Transaction = {
 };
 
 export type PaymentMethodType = 'credit_card' | 'debit_card' | 'cash' | 'bank_account' | 'other';
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CHF' | 'CNY' | 'SEK' | 'NZD' | 'MXN' | 'SGD' | 'HKD' | 'NOK' | 'KRW' | 'TRY' | 'RUB' | 'INR' | 'BRL' | 'ZAR';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CHF' | 'CNY' | 'SEK' | 'NZD' | 'MXN' | 'SGD' | 'HKD' | 'NOK' | 'KRW' | 'TRY' | 'RUB' | 'INR' | 'BRL' | 'ZAR' | 'TWD' | 'VND' | 'IDR' | 'THB' | 'MYR';
 
 export interface PaymentMethod {
   id: string;
@@ -72,3 +73,37 @@ export type CalculationResult = {
   appliedTier?: any;
   messages: string[];
 };
+
+// Database types for Supabase
+export interface DbPaymentMethod {
+  id: string;
+  name: string;
+  type: string;
+  issuer: string | null;
+  last_four_digits: string | null;
+  currency: string;
+  icon: string | null;
+  color: string | null;
+  image_url: string | null;
+  points_currency: string | null;
+  active: boolean;
+  reward_rules: any | null;
+  selected_categories: any | null;
+  statement_start_day: number | null;
+  is_monthly_statement: boolean | null;
+  conversion_rate: any | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbMerchant {
+  id: string;
+  name: string;
+  address: string | null;
+  mcc: any | null;
+  is_online: boolean | null;
+  coordinates: any | null;
+  is_deleted?: boolean;
+  created_at: string;
+  updated_at?: string;
+}

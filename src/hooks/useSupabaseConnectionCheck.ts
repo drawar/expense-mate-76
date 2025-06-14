@@ -1,8 +1,9 @@
+
 // hooks/useSupabaseConnectionCheck.ts - UPDATED FILE
 import { useState, useEffect } from 'react';
 import { supabase, USE_LOCAL_STORAGE_DEFAULT } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 
 export const useSupabaseConnectionCheck = () => {
   const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);

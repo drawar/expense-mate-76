@@ -1,7 +1,8 @@
+
 // hooks/usePaymentMethods.ts - NEW FILE
 import { useState, useEffect } from 'react';
 import { PaymentMethod } from '@/types';
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 
 export function usePaymentMethods() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);

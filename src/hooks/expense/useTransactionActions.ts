@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { Transaction } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 
 export function useTransactionActions(options?: { 
   onAddSuccess?: () => void,
@@ -12,10 +13,9 @@ export function useTransactionActions(options?: {
   const { onAddSuccess, redirectPath = '/transactions' } = options || {};
   
   const handleSave = async (id: string, data: Partial<Transaction>): Promise<Transaction | null> => {
-    // Existing implementation...
     try {
       setIsLoading(true);
-      const updated = await storageService.editTransaction(id, data);
+      const updated = await storageService.updateTransaction(id, data);
       toast({
         title: 'Success',
         description: 'Transaction updated successfully',
@@ -35,7 +35,6 @@ export function useTransactionActions(options?: {
   };
   
   const handleDelete = async (transaction: Transaction): Promise<boolean> => {
-    // Existing implementation...
     try {
       setIsLoading(true);
       const success = await storageService.deleteTransaction(transaction.id);
@@ -71,10 +70,8 @@ export function useTransactionActions(options?: {
       // Handle navigation after success
       setTimeout(() => {
         if (onAddSuccess) {
-          // Use the callback if provided
           onAddSuccess();
         } else {
-          // Otherwise, use window.location for navigation
           window.location.href = redirectPath;
         }
       }, 100);

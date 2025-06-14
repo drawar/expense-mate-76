@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Transaction, PaymentMethod } from '@/types';
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 
 export type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
 
@@ -59,11 +59,6 @@ export function useTransactionList() {
       setIsLoading(false);
     }
   };
-  
-  // Initial load
-  useEffect(() => {
-    loadTransactions();
-  }, []);
   
   // Refresh transactions
   const refreshTransactions = () => {
@@ -210,6 +205,10 @@ export function useTransactionList() {
     setSearchQuery('');
     setSortOption('date-desc');
   };
+  
+  useEffect(() => {
+    loadTransactions();
+  }, []);
   
   return {
     transactions,

@@ -4,6 +4,14 @@
  */
 export type TransactionType = 'purchase' | 'online' | 'contactless' | 'in_store';
 
+// Create a const object for runtime access
+export const TransactionTypeValues = {
+  purchase: 'purchase' as TransactionType,
+  online: 'online' as TransactionType,
+  contactless: 'contactless' as TransactionType,
+  in_store: 'in_store' as TransactionType
+};
+
 /**
  * Condition types supported by the rule engine
  */
@@ -58,8 +66,8 @@ export type SpendingPeriodType =
  */
 export interface BonusTier {
   name: string;
-  minSpend?: number; // Make optional
-  maxSpend?: number; // Make optional
+  minSpend?: number; // Optional minimum spend for this tier
+  maxSpend?: number; // Optional maximum spend for this tier
   multiplier: number;
   priority: number;
   // Modify the condition to support compound conditions

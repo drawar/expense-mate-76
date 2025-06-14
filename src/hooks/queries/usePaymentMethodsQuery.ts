@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PaymentMethod } from "@/types";
-import { storageService } from '@/core/storage/StorageService';
+import { storageService } from '@/core/storage';
 import { toast } from "sonner";
 
 /**
