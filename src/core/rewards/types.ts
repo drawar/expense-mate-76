@@ -118,3 +118,5 @@ export interface DbRewardRule {
   created_at: string;
   updated_at?: string;
 }
+
+export type SpendingPeriodType = 'calendar' | 'statement' | 'statement_month';

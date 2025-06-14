@@ -1,3 +1,4 @@
+
 // services/rewards/CardRegistry.ts
 
 import { CardType, RewardRule, TransactionTypeValues } from './types';
@@ -141,6 +142,7 @@ export class CardRegistry {
       issuer: 'UOB',
       name: 'Visa Signature',
       pointsCurrency: 'UNI$',
+      rewardRules: [],
       defaultRules: [
         this.createUOBVisaSignatureCardRule()
       ]
@@ -152,6 +154,7 @@ export class CardRegistry {
       issuer: 'OCBC',
       name: 'Rewards World Mastercard',
       pointsCurrency: 'OCBC$',
+      rewardRules: [],
       defaultRules: [
         this.createOCBCRewardsWorldCardRule()
       ]
@@ -163,6 +166,7 @@ export class CardRegistry {
       issuer: 'American Express',
       name: 'Platinum Credit',
       pointsCurrency: 'Membership Rewards Points',
+      rewardRules: [],
       defaultRules: [
         this.createAmexPlatinumCreditCardRule()
       ]
@@ -174,6 +178,7 @@ export class CardRegistry {
       issuer: 'American Express',
       name: 'Platinum Singapore',
       pointsCurrency: 'Membership Rewards Points',
+      rewardRules: [],
       defaultRules: [
         this.createAmexPlatinumSingaporeCardRule()
       ]
@@ -185,6 +190,7 @@ export class CardRegistry {
       issuer: 'American Express',
       name: 'Platinum Canada',
       pointsCurrency: 'Membership Rewards Points',
+      rewardRules: [],
       defaultRules: [
         this.createAmexPlatinumCanadaCardRule()
       ]
@@ -196,6 +202,7 @@ export class CardRegistry {
       issuer: 'American Express',
       name: 'Cobalt',
       pointsCurrency: 'Membership Rewards Points',
+      rewardRules: [],
       defaultRules: [
         this.createAmexCobaltCardRule()
       ]
@@ -207,6 +214,7 @@ export class CardRegistry {
       issuer: 'TD',
       name: 'Aeroplan Visa Infinite',
       pointsCurrency: 'Aeroplan Points',
+      rewardRules: [],
       defaultRules: [
         this.createTDAeroplanVisaInfiniteCardRule()
       ]
@@ -450,6 +458,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'floor',
         amountRoundingStrategy: 'floor5',
         blockSize: 5,
+        bonusTiers: [],
         monthlyCap: 3600, // Cap at 3,600 bonus points per month
         monthlyMinSpend: 1000, // Min $1,000 foreign currency spend to qualify
         monthlySpendPeriodType: 'statement_month',
@@ -493,6 +502,7 @@ export class CardRegistry {
             condition: {
               type: 'compound',
               operation: 'any', // OR logic
+              values: [], // Required for RuleCondition but not used for compound
               subConditions: [
                 {
                   // Department store MCC
@@ -549,6 +559,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'nearest',
         amountRoundingStrategy: 'none',
         blockSize: 1.6, // 2 points per $1.6
+        bonusTiers: [],
         pointsCurrency: 'Membership Rewards Points'
       },
       createdAt: new Date(),
@@ -576,6 +587,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'nearest',
         amountRoundingStrategy: 'none',
         blockSize: 1.6, // $1.60 per 2 points
+        bonusTiers: [],
         pointsCurrency: 'Membership Rewards Points'
       },
       createdAt: new Date(),
@@ -624,6 +636,7 @@ export class CardRegistry {
             condition: {
               type: 'compound',
               operation: 'all', // AND logic
+              values: [], // Required for RuleCondition but not used for compound
               subConditions: [
                 {
                   type: 'mcc',
@@ -735,6 +748,7 @@ export class CardRegistry {
             condition: {
               type: 'compound',
               operation: 'any', // OR logic
+              values: [], // Required for RuleCondition but not used for compound
               subConditions: [
                 {
                   type: 'mcc',
@@ -791,6 +805,7 @@ export class CardRegistry {
         {
           type: 'compound',
           operation: 'any', // OR logic
+          values: [], // Required for RuleCondition but not used for compound
           subConditions: [
             // Gas stations
             {
@@ -820,6 +835,7 @@ export class CardRegistry {
         pointsRoundingStrategy: 'nearest',
         amountRoundingStrategy: 'nearest',
         blockSize: 1,
+        bonusTiers: [],
         pointsCurrency: 'Aeroplan Points'
       },
       createdAt: new Date(),

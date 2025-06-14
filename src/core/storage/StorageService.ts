@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant } from '@/types';
+import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant, Currency, MerchantCategoryCode } from '@/types';
 import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
 
 export class StorageService {
@@ -49,11 +49,11 @@ export class StorageService {
         type: row.type as any,
         issuer: row.issuer || '',
         lastFourDigits: row.last_four_digits || undefined,
-        currency: row.currency,
+        currency: row.currency as Currency,
         icon: row.icon || undefined,
         color: row.color || undefined,
         imageUrl: row.image_url || undefined,
-        pointsCurrency: row.points_currency || undefined,
+        pointsCurrency: undefined, // Will be handled separately
         active: row.active,
         rewardRules: row.reward_rules || [],
         selectedCategories: row.selected_categories || [],
@@ -89,7 +89,6 @@ export class StorageService {
         icon: pm.icon,
         color: pm.color,
         image_url: pm.imageUrl,
-        points_currency: pm.pointsCurrency,
         active: pm.active,
         reward_rules: pm.rewardRules,
         selected_categories: pm.selectedCategories,
@@ -124,17 +123,42 @@ export class StorageService {
         id: m.id,
         name: m.name,
         address: m.address || '',
-        mcc: m.mcc ? {
-          code: m.mcc.code,
-          description: m.mcc.description
-        } : undefined,
+        mcc: m.mcc ? this.parseMCC(m.mcc) : undefined,
         isOnline: m.is_online || false,
-        coordinates: m.coordinates
+        coordinates: m.coordinates ? this.parseCoordinates(m.coordinates) : undefined
       }));
     } catch (error) {
       console.error('Error fetching merchants:', error);
       throw error;
     }
+  }
+
+  private parseMCC(mccData: any): MerchantCategoryCode | undefined {
+    if (!mccData) return undefined;
+    
+    // Handle different possible formats of MCC data
+    if (typeof mccData === 'object' && mccData.code && mccData.description) {
+      return {
+        code: String(mccData.code),
+        description: String(mccData.description)
+      };
+    }
+    
+    return undefined;
+  }
+
+  private parseCoordinates(coordinatesData: any): { lat: number; lng: number; } | undefined {
+    if (!coordinatesData) return undefined;
+    
+    // Handle different possible formats of coordinates data
+    if (typeof coordinatesData === 'object' && coordinatesData.lat && coordinatesData.lng) {
+      return {
+        lat: Number(coordinatesData.lat),
+        lng: Number(coordinatesData.lng)
+      };
+    }
+    
+    return undefined;
   }
 
   async saveMerchants(merchants: Merchant[]): Promise<void> {
@@ -173,7 +197,7 @@ export class StorageService {
           *,
           payment_methods:payment_method_id(
             id, name, type, issuer, last_four_digits, currency, 
-            icon, color, image_url, points_currency, active, 
+            icon, color, image_url, active, 
             reward_rules, selected_categories, statement_start_day, 
             is_monthly_statement, conversion_rate
           ),
@@ -198,24 +222,24 @@ export class StorageService {
           id: row.merchants?.id || '',
           name: row.merchants?.name || 'Unknown Merchant',
           address: row.merchants?.address || undefined,
-          mcc: row.merchants?.mcc || undefined,
+          mcc: row.merchants?.mcc ? this.parseMCC(row.merchants.mcc) : undefined,
           isOnline: row.merchants?.is_online || false,
-          coordinates: row.merchants?.coordinates || undefined,
+          coordinates: row.merchants?.coordinates ? this.parseCoordinates(row.merchants.coordinates) : undefined,
           is_deleted: row.merchants?.is_deleted || false
         } as Merchant,
         amount: parseFloat(row.amount?.toString() || '0'),
-        currency: row.currency,
+        currency: row.currency as Currency,
         paymentMethod: {
           id: row.payment_methods?.id || '',
           name: row.payment_methods?.name || 'Unknown Payment Method',
           type: row.payment_methods?.type as any,
           issuer: row.payment_methods?.issuer || '',
           lastFourDigits: row.payment_methods?.last_four_digits || undefined,
-          currency: row.payment_methods?.currency || 'USD',
+          currency: (row.payment_methods?.currency || 'USD') as Currency,
           icon: row.payment_methods?.icon || undefined,
           color: row.payment_methods?.color || undefined,
           imageUrl: row.payment_methods?.image_url || undefined,
-          pointsCurrency: row.payment_methods?.points_currency || undefined,
+          pointsCurrency: undefined, // Will be handled separately
           active: row.payment_methods?.active || true,
           rewardRules: row.payment_methods?.reward_rules || [],
           selectedCategories: row.payment_methods?.selected_categories || [],
@@ -224,7 +248,7 @@ export class StorageService {
           conversionRate: row.payment_methods?.conversion_rate || undefined
         } as PaymentMethod,
         paymentAmount: parseFloat(row.payment_amount?.toString() || row.amount?.toString() || '0'),
-        paymentCurrency: row.payment_currency || row.currency,
+        paymentCurrency: (row.payment_currency || row.currency) as Currency,
         rewardPoints: row.total_points || 0,
         basePoints: row.base_points || 0,
         bonusPoints: row.bonus_points || 0,
