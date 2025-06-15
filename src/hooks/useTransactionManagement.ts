@@ -3,9 +3,6 @@ import { useState } from 'react';
 import { Transaction } from '@/types';
 import { useTransactionActions } from '@/hooks/expense/useTransactionActions';
 
-/**
- * A hook for managing transaction operations beyond basic CRUD
- */
 export function useTransactionManagement(
   transactions: Transaction[], 
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>
@@ -16,10 +13,14 @@ export function useTransactionManagement(
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
 
-  // Get the basic CRUD operations
   const {
+    isLoading,
+    handleSave,
+    handleDelete,
+    handleAdd,
+    handleExportCSV,
     isCreating,
-    isUpdating,
+    isUpdating,  
     isDeleting,
     createTransaction,
     updateTransaction,
@@ -46,12 +47,15 @@ export function useTransactionManagement(
 
   const confirmDeleteTransaction = async () => {
     if (transactionToDelete) {
-      await deleteTransaction(transactionToDelete);
-      
-      // Update local state
-      setTransactions(prev => 
-        prev.filter(t => t.id !== transactionToDelete)
-      );
+      // Find the transaction object first
+      const transactionToDeleteObj = transactions.find(t => t.id === transactionToDelete);
+      if (transactionToDeleteObj) {
+        await handleDelete(transactionToDeleteObj);
+        
+        setTransactions(prev => 
+          prev.filter(t => t.id !== transactionToDelete)
+        );
+      }
       
       setDeleteConfirmOpen(false);
       setTransactionToDelete(null);
@@ -60,16 +64,14 @@ export function useTransactionManagement(
 
   const handleSaveEdit = async (updatedTransaction: Transaction) => {
     const { id, ...transactionData } = updatedTransaction;
-    await updateTransaction(id, transactionData);
+    await handleSave(id, transactionData);
     
-    // Update local state
     setTransactions(prev => 
       prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
     );
     
     setIsTransactionDialogOpen(false);
     
-    // If it's a merchant name change, update tracking
     if (updatedTransaction.merchant?.name && selectedTransaction?.merchant?.name !== updatedTransaction.merchant.name) {
       await updateMerchantTracking(updatedTransaction.merchant.name);
     }
@@ -89,7 +91,6 @@ export function useTransactionManagement(
     confirmDeleteTransaction,
     handleSaveEdit,
     
-    // Pass through the basic CRUD operations
     isCreating,
     isUpdating,
     isDeleting,

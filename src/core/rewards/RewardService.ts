@@ -211,7 +211,6 @@ export class RewardService {
     return this.calculateRewards(input);
   }
 
-  // Add the missing simulatePoints method for backward compatibility
   async simulatePoints(
     amount: number,
     currency: string,
@@ -223,7 +222,35 @@ export class RewardService {
   ): Promise<CalculationResult> {
     return this.simulateRewards(amount, currency, paymentMethod, mcc, merchantName, isOnline, isContactless);
   }
+
+  getPointsCurrency(paymentMethod: PaymentMethod): string {
+    return paymentMethod.pointsCurrency || 'points';
+  }
 }
 
-// Create singleton instance
-export const rewardService = new RewardService(new RuleRepository());
+// Create singleton instance using the singleton RuleRepository
+import { getRuleRepository } from './RuleRepository';
+
+let rewardServiceInstance: RewardService | null = null;
+
+export const rewardService = (() => {
+  if (!rewardServiceInstance) {
+    try {
+      const ruleRepository = getRuleRepository();
+      rewardServiceInstance = new RewardService(ruleRepository);
+    } catch (error) {
+      console.warn('RuleRepository not initialized, creating mock RewardService');
+      // Create a mock repository for fallback
+      const mockRepository = {
+        findApplicableRules: async () => [],
+        getRulesForCardType: async () => [],
+        updateRule: async () => {},
+        createRule: async () => ({ id: 'mock', cardTypeId: 'mock', name: 'mock', description: '', enabled: true, priority: 1, conditions: [], reward: { calculationMethod: 'standard' as const, baseMultiplier: 1, bonusMultiplier: 0, pointsRoundingStrategy: 'floor' as const, amountRoundingStrategy: 'none' as const, blockSize: 1, bonusTiers: [], pointsCurrency: 'points' }, createdAt: new Date(), updatedAt: new Date() }),
+        deleteRule: async () => {},
+        setReadOnly: () => {}
+      } as any;
+      rewardServiceInstance = new RewardService(mockRepository);
+    }
+  }
+  return rewardServiceInstance;
+})();

@@ -1,6 +1,6 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { RewardRule, DbRewardRule } from './types';
+import { RewardRule, DbRewardRule, CalculationInput } from './types';
 import { RuleMapper } from './RuleMapper';
 import { Database } from '@/types/supabase';
 
@@ -26,6 +26,17 @@ export class RuleRepository {
 
   setReadOnly(readOnly: boolean): void {
     this.readOnly = readOnly;
+  }
+
+  async findApplicableRules(input: CalculationInput): Promise<RewardRule[]> {
+    try {
+      // For now, get rules for the payment method's card type
+      const cardTypeId = input.paymentMethod.id;
+      return await this.getRulesForCardType(cardTypeId);
+    } catch (error) {
+      console.error('Error finding applicable rules:', error);
+      return [];
+    }
   }
 
   async getRulesForCardType(cardTypeId: string): Promise<RewardRule[]> {

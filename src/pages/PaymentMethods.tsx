@@ -81,15 +81,14 @@ const PaymentMethods = () => {
         name: formData.get('name') as string,
         type: formData.get('type') as 'cash' | 'credit_card',
         currency: formData.get('currency') as any,
-        // Add rewardRules property with an empty array as default
-        rewardRules: [], // This is now just a placeholder, as actual rules are stored in the reward_rules table
+        issuer: formData.get('issuer') as string || 'Cash', // Provide default issuer
+        rewardRules: [],
         active: formData.get('active') === 'on',
         imageUrl: editingMethod?.imageUrl,
       };
       
       // Add credit card specific fields if applicable
       if (method.type === 'credit_card') {
-        method.issuer = formData.get('issuer') as string || undefined;
         method.lastFourDigits = formData.get('lastFourDigits') as string || undefined;
         
         const statementDay = formData.get('statementStartDay') as string;
@@ -185,18 +184,15 @@ const PaymentMethods = () => {
     setIsUploading(true);
     
     try {
-      // Use the updated StorageService instead
-      const imageUrl = await storageService.uploadCardImage(file, imageUploadMethod.id);
+      const imageUrl = await storageService.uploadCardImage(file);
       
       if (imageUrl) {
-        // Update the payment method with the image URL
         const updatedMethods = paymentMethods.map(method => 
           method.id === imageUploadMethod.id 
             ? { ...method, imageUrl } 
             : method
         );
         
-        // Use the updated StorageService instead
         await storageService.savePaymentMethods(updatedMethods);
         
         toast({
@@ -204,7 +200,7 @@ const PaymentMethods = () => {
           description: 'Card image uploaded successfully',
         });
 
-        refetch(); // Refresh the data
+        refetch();
       } else {
         throw new Error('Failed to upload image');
       }
