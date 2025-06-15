@@ -75,14 +75,14 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
           <div>
             <label className="text-sm font-medium mb-1 block">Payment Method</label>
             <Select
-              value={safeFilters.paymentMethods?.[0] || ''}
-              onValueChange={(value) => updateFilter('paymentMethods', value ? [value] : [])}
+              value={safeFilters.paymentMethods?.[0] || 'all'}
+              onValueChange={(value) => updateFilter('paymentMethods', value === 'all' ? [] : [value])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All methods" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All methods</SelectItem>
+                <SelectItem value="all">All methods</SelectItem>
                 {paymentMethods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
                     {method.name}
@@ -95,14 +95,14 @@ export const TransactionFilterControls: React.FC<TransactionFilterControlsProps>
           <div>
             <label className="text-sm font-medium mb-1 block">Category</label>
             <Select
-              value={safeFilters.categories?.[0] || ''}
-              onValueChange={(value) => updateFilter('categories', value ? [value] : [])}
+              value={safeFilters.categories?.[0] || 'all'}
+              onValueChange={(value) => updateFilter('categories', value === 'all' ? [] : [value])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
