@@ -32,7 +32,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     setSelectedMCC,
     selectedPaymentMethod,
     shouldOverridePayment,
-    estimatedPoints: pointsCalculation,
+    pointsCalculation,
   } = useExpenseForm({ 
     paymentMethods, 
     defaultValues
