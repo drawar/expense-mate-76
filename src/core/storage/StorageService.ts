@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant, Currency, MerchantCategoryCode } from '@/types';
 import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
@@ -283,70 +284,97 @@ export class StorageService {
   }
 
   async addTransaction(transactionData: Omit<Transaction, 'id'>): Promise<Transaction> {
+    console.log('StorageService.addTransaction called with:', transactionData);
+    
     if (this.useLocalStorage) {
+      console.log('Using localStorage mode for transaction');
       return this.addTransactionToLocalStorage(transactionData);
     }
 
     try {
+      // Generate a proper merchant ID if it's empty
+      const merchantId = transactionData.merchant.id || crypto.randomUUID();
+      console.log('Generated merchant ID:', merchantId);
+
       // Calculate reward points before saving
       const tempTransaction: Transaction = {
         ...transactionData,
-        id: 'temp'
+        id: 'temp',
+        merchant: {
+          ...transactionData.merchant,
+          id: merchantId
+        }
       };
       
       const rewardCalculation = await calculateRewardPoints(tempTransaction);
+      console.log('Calculated reward points:', rewardCalculation);
 
       // First, ensure merchant exists
+      const merchantData = {
+        id: merchantId,
+        name: transactionData.merchant.name,
+        address: transactionData.merchant.address,
+        mcc: transactionData.merchant.mcc as any,
+        is_online: transactionData.merchant.isOnline,
+        coordinates: transactionData.merchant.coordinates as any
+      };
+      
+      console.log('Upserting merchant:', merchantData);
       const merchantResult = await supabase
         .from('merchants')
-        .upsert([{
-          id: transactionData.merchant.id,
-          name: transactionData.merchant.name,
-          address: transactionData.merchant.address,
-          mcc: transactionData.merchant.mcc as any,
-          is_online: transactionData.merchant.isOnline,
-          coordinates: transactionData.merchant.coordinates as any
-        }], { onConflict: 'id' })
+        .upsert([merchantData], { onConflict: 'id' })
         .select()
         .single();
 
       if (merchantResult.error) {
         console.error('Error upserting merchant:', merchantResult.error);
+        console.log('Falling back to localStorage due to merchant error');
         return this.addTransactionToLocalStorage(transactionData);
       }
 
+      console.log('Merchant upserted successfully:', merchantResult.data);
+
       // Insert transaction
+      const transactionInsertData = {
+        date: transactionData.date,
+        merchant_id: merchantId,
+        amount: transactionData.amount,
+        currency: transactionData.currency,
+        payment_method_id: transactionData.paymentMethod.id,
+        payment_amount: transactionData.paymentAmount,
+        payment_currency: transactionData.paymentCurrency,
+        total_points: rewardCalculation.totalPoints,
+        base_points: rewardCalculation.basePoints,
+        bonus_points: rewardCalculation.bonusPoints,
+        is_contactless: transactionData.isContactless,
+        notes: transactionData.notes,
+        reimbursement_amount: transactionData.reimbursementAmount,
+        category: transactionData.category
+      };
+
+      console.log('Inserting transaction:', transactionInsertData);
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          date: transactionData.date,
-          merchant_id: transactionData.merchant.id,
-          amount: transactionData.amount,
-          currency: transactionData.currency,
-          payment_method_id: transactionData.paymentMethod.id,
-          payment_amount: transactionData.paymentAmount,
-          payment_currency: transactionData.paymentCurrency,
-          total_points: rewardCalculation.totalPoints,
-          base_points: rewardCalculation.basePoints,
-          bonus_points: rewardCalculation.bonusPoints,
-          is_contactless: transactionData.isContactless,
-          notes: transactionData.notes,
-          reimbursement_amount: transactionData.reimbursementAmount,
-          category: transactionData.category
-        }])
+        .insert([transactionInsertData])
         .select()
         .single();
 
       if (error) {
         console.error('Supabase error adding transaction:', error);
+        console.log('Falling back to localStorage due to transaction error');
         return this.addTransactionToLocalStorage(transactionData);
       }
+
+      console.log('Transaction inserted successfully:', data);
 
       // Return the complete transaction object
       const newTransaction: Transaction = {
         id: data.id,
         date: data.date,
-        merchant: transactionData.merchant,
+        merchant: {
+          ...transactionData.merchant,
+          id: merchantId
+        },
         amount: parseFloat(data.amount.toString()),
         currency: data.currency as Currency,
         paymentMethod: transactionData.paymentMethod,
@@ -361,22 +389,30 @@ export class StorageService {
         category: data.category || undefined
       };
 
+      console.log('Returning completed transaction:', newTransaction);
       return newTransaction;
     } catch (error) {
-      console.error('Error adding transaction:', error);
+      console.error('Error adding transaction to Supabase:', error);
+      console.log('Falling back to localStorage due to caught error');
       return this.addTransactionToLocalStorage(transactionData);
     }
   }
 
   private addTransactionToLocalStorage(transactionData: Omit<Transaction, 'id'>): Transaction {
+    console.log('Adding transaction to localStorage:', transactionData);
     const transactions = this.getTransactionsFromLocalStorage();
     const newTransaction: Transaction = {
       ...transactionData,
-      id: crypto.randomUUID()
+      id: crypto.randomUUID(),
+      merchant: {
+        ...transactionData.merchant,
+        id: transactionData.merchant.id || crypto.randomUUID()
+      }
     };
     
     transactions.unshift(newTransaction);
     this.saveTransactionsToLocalStorage(transactions);
+    console.log('Transaction added to localStorage:', newTransaction);
     return newTransaction;
   }
 
