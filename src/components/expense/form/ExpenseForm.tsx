@@ -1,9 +1,8 @@
-// components/expense/form/ExpenseForm.tsx - UPDATED FILE
+
 import React from 'react';
 import { FormProvider } from 'react-hook-form';
 import { Transaction, PaymentMethod } from '@/types';
 import { useExpenseForm } from '@/hooks/expense/useExpenseForm';
-import { useTransactionActions } from '@/hooks/expense/useTransactionActions';
 import { useToast } from '@/hooks/use-toast';
 
 // Import section components
@@ -13,16 +12,18 @@ import { PaymentDetailsSection } from './sections/PaymentDetailsSection';
 
 interface ExpenseFormProps {
   paymentMethods: PaymentMethod[];
-  onSubmit: (transaction: Transaction) => void;
+  onSubmit: (transaction: Omit<Transaction, 'id'>) => void;
   defaultValues?: Partial<any>;
   useLocalStorage?: boolean;
+  isSaving?: boolean;
 }
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ 
   paymentMethods, 
   onSubmit, 
   defaultValues,
-  useLocalStorage = false
+  useLocalStorage = false,
+  isSaving = false
 }) => {
   const { toast } = useToast();
   const {
@@ -31,25 +32,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     setSelectedMCC,
     selectedPaymentMethod,
     shouldOverridePayment,
-    pointsCalculation,
+    estimatedPoints: pointsCalculation,
   } = useExpenseForm({ 
     paymentMethods, 
     defaultValues
   });
   
-  const {
-    handleAdd,
-    isLoading
-  } = useTransactionActions({
-    redirectPath: '/transactions', // Adjust this path based on your app's routing
-    onAddSuccess: () => {
-      // Alternatively, use a custom navigation logic if needed
-      // history.push('/transactions'); 
-      // or other navigation method your app uses
-    }
-  });
-  
-  const handleFormSubmit = async (values: any) => {
+  const handleFormSubmit = (values: any) => {
     try {
       if (!values.merchantName || values.merchantName.trim() === '') {
         toast({
@@ -69,7 +58,6 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         return;
       }
       
-      // Get payment method
       const paymentMethod = paymentMethods.find(pm => pm.id === values.paymentMethodId);
       if (!paymentMethod) {
         toast({
@@ -80,7 +68,6 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         return;
       }
       
-      // Prepare merchant data
       const merchantData = {
         id: '', // Will be assigned by storage service
         name: values.merchantName.trim(),
@@ -89,17 +76,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         mcc: selectedMCC,
       };
       
-      // Determine amount to use for payment
       const paymentAmount = shouldOverridePayment && values.paymentAmount
         ? Number(values.paymentAmount)
         : Number(values.amount);
       
-      // Reimbursement amount
       const reimbursementAmount = values.reimbursementAmount 
         ? Number(values.reimbursementAmount) 
         : 0;
       
-      // Prepare transaction data
       const transactionData: Omit<Transaction, 'id'> = {
         date: values.date.toISOString().split('T')[0], // YYYY-MM-DD format
         merchant: merchantData,
@@ -108,22 +92,15 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         paymentMethod: paymentMethod,
         paymentAmount: paymentAmount,
         paymentCurrency: paymentMethod.currency,
-        rewardPoints: pointsCalculation.totalPoints,
-        basePoints: pointsCalculation.basePoints,
-        bonusPoints: pointsCalculation.bonusPoints,
+        rewardPoints: pointsCalculation?.totalPoints || 0,
+        basePoints: pointsCalculation?.basePoints || 0,
+        bonusPoints: pointsCalculation?.bonusPoints || 0,
         notes: values.notes,
         isContactless: !values.isOnline && values.isContactless,
         reimbursementAmount: reimbursementAmount,
       };
       
-      // Use onSubmit directly instead of handleAdd to maintain the parent component's workflow
-      // Submit using handleAdd
-      const savedTransaction = await handleAdd(transactionData);
-      
-      // If success callback is needed
-      if (savedTransaction) {
-        onSubmit(savedTransaction);
-      }
+      onSubmit(transactionData);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
@@ -149,7 +126,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           selectedPaymentMethod={selectedPaymentMethod}
           shouldOverridePayment={shouldOverridePayment}
           pointsCalculation={pointsCalculation}
-          isSubmitting={isLoading}
+          isSubmitting={isSaving}
         />
       </form>
     </FormProvider>

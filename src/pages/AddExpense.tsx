@@ -76,6 +76,7 @@ const AddExpense = () => {
             paymentMethods={paymentMethods}
             onSubmit={handleSubmit}
             useLocalStorage={useLocalStorage}
+            isSaving={isSaving}
           />
         )}
       </div>
