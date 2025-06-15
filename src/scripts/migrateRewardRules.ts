@@ -4,7 +4,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CardRuleService } from '@/components/expense/cards/CardRuleService';
 import { 
-  TransactionType, 
+  TransactionTypeValues, 
   RewardRule, 
   RuleCondition,
   CalculationMethod
@@ -89,7 +89,7 @@ function convertOldRuleToNew(oldRule: any, cardTypeId: string): RewardRule {
     conditions.push({
       type: 'transaction_type',
       operation: 'equals',
-      values: [TransactionType.ONLINE]
+      values: [TransactionTypeValues.online]
     });
   }
   
@@ -98,7 +98,7 @@ function convertOldRuleToNew(oldRule: any, cardTypeId: string): RewardRule {
     conditions.push({
       type: 'transaction_type',
       operation: 'equals',
-      values: [TransactionType.CONTACTLESS]
+      values: [TransactionTypeValues.contactless]
     });
   }
   
@@ -178,6 +178,7 @@ function convertOldRuleToNew(oldRule: any, cardTypeId: string): RewardRule {
       pointsRoundingStrategy: 'floor',
       amountRoundingStrategy: oldRule.rounding || 'floor',
       blockSize,
+      bonusTiers: [], // Add required bonusTiers property
       monthlyCap: oldRule.monthly_cap,
       pointsCurrency
     },
