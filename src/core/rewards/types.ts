@@ -1,4 +1,3 @@
-
 export interface RewardRule {
   id: string;
   cardTypeId: string;
@@ -120,3 +119,6 @@ export interface DbRewardRule {
 }
 
 export type SpendingPeriodType = 'calendar' | 'statement' | 'statement_month';
+
+// Add missing CalculationMethod type alias
+export type CalculationMethod = 'standard' | 'tiered' | 'flat_rate' | 'direct';

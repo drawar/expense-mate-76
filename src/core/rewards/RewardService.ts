@@ -1,99 +1,196 @@
-import { 
-  RewardRule, 
-  CalculationInput, 
-  CalculationResult, 
-  TransactionType 
-} from './types';
-import { RuleRepository } from './RuleRepository';
 import { DateTime } from 'luxon';
+import { PaymentMethod } from '@/types';
+import { CalculationInput, CalculationResult, RewardRule } from './types';
+import { RuleRepository } from './RuleRepository';
 
-/**
- * Service for calculating reward points based on rules and transaction data
- */
 export class RewardService {
-  private ruleRepository: RuleRepository | null = null;
+  private ruleRepository: RuleRepository;
 
-  constructor() {
-    // Don't initialize repository in constructor - do it lazily
+  constructor(ruleRepository: RuleRepository) {
+    this.ruleRepository = ruleRepository;
   }
 
-  /**
-   * Initialize the repository with supabase client
-   */
-  private getRuleRepository(): RuleRepository {
-    if (!this.ruleRepository) {
-      try {
-        this.ruleRepository = RuleRepository.getInstance();
-      } catch (error) {
-        console.warn('RuleRepository not initialized, using fallback behavior');
-        return null as any;
-      }
-    }
-    return this.ruleRepository;
-  }
-
-  /**
-   * Calculate reward points for a transaction
-   */
   async calculateRewards(input: CalculationInput): Promise<CalculationResult> {
-    const ruleRepository = this.getRuleRepository();
-    
-    if (!ruleRepository) {
-      // Fallback behavior when repository is not available
-      return {
-        totalPoints: 0,
-        basePoints: 0,
-        bonusPoints: 0,
-        pointsCurrency: 'points',
-        minSpendMet: false,
-        messages: ['Reward system not initialized']
-      };
-    }
+    let totalPoints = 0;
+    let basePoints = 0;
+    let bonusPoints = 0;
+    let minSpendMet = true;
+    const messages: string[] = [];
+    let appliedRule: RewardRule | undefined;
+    let appliedTier: any;
 
-    const cardTypeId = input.paymentMethod?.type?.toLowerCase() || 'generic';
-    
-    // Get rules for this card type
-    const rules = await ruleRepository.getRulesForCardType(cardTypeId);
-    
-    if (rules.length === 0) {
-      return {
-        totalPoints: 0,
-        basePoints: 0,
-        bonusPoints: 0,
-        pointsCurrency: 'points',
-        minSpendMet: false,
-        messages: ['No reward rules found for this card type']
-      };
-    }
+    try {
+      // 1. Find applicable rules
+      const rules = await this.ruleRepository.findApplicableRules(input);
 
-    // Sort rules by priority (higher priority first)
-    const sortedRules = rules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-    // Find the first matching rule
-    for (const rule of sortedRules) {
-      if (this.ruleMatches(rule, input)) {
-        return this.calculateRewardForRule(rule, input);
+      if (!rules || rules.length === 0) {
+        return {
+          totalPoints: 0,
+          basePoints: 0,
+          bonusPoints: 0,
+          pointsCurrency: input.paymentMethod.pointsCurrency || 'points',
+          minSpendMet: true,
+          messages: ['No applicable reward rules found'],
+        };
       }
-    }
 
-    // No matching rule found
-    return {
-      totalPoints: 0,
-      basePoints: 0,
-      bonusPoints: 0,
-      pointsCurrency: 'points',
-      minSpendMet: false,
-      messages: ['No matching reward rules found']
-    };
+      // 2. Apply rules based on priority
+      for (const rule of rules) {
+        appliedRule = rule;
+
+        // Check monthly minimum spend
+        if (rule.reward.monthlyMinSpend && input.monthlySpend && input.monthlySpend < rule.reward.monthlyMinSpend) {
+          minSpendMet = false;
+          messages.push(`Monthly minimum spend of ${rule.reward.monthlyMinSpend} not met`);
+          continue; // Skip to the next rule
+        }
+
+        // 3. Calculate base points
+        switch (rule.reward.calculationMethod) {
+          case 'standard':
+            basePoints = this.calculateStandardPoints(input.amount, rule.reward.baseMultiplier, rule.reward.pointsRoundingStrategy, rule.reward.blockSize, rule.reward.amountRoundingStrategy);
+            break;
+          case 'tiered':
+            const { points: tieredPoints, tier } = this.calculateTieredPoints(input.amount, rule.reward.bonusTiers, input.monthlySpend);
+            bonusPoints = tieredPoints;
+            appliedTier = tier;
+            break;
+          case 'flat_rate':
+            basePoints = rule.reward.baseMultiplier;
+            break;
+          case 'direct':
+            basePoints = input.amount;
+            break;
+          default:
+            console.warn(`Unknown calculation method: ${rule.reward.calculationMethod}`);
+            break;
+        }
+
+        // 4. Calculate bonus points
+        if (rule.reward.bonusMultiplier > 0) {
+          bonusPoints += this.calculateBonusPoints(input.amount, rule.reward.bonusMultiplier, rule.reward.pointsRoundingStrategy, rule.reward.blockSize, rule.reward.amountRoundingStrategy);
+        }
+
+        // 5. Apply monthly cap
+        let remainingMonthlyBonusPoints: number | undefined;
+        if (rule.reward.monthlyCap !== undefined) {
+          const cap = rule.reward.monthlyCap;
+          const usedBonusPoints = input.usedBonusPoints || 0;
+          const availableBonusPoints = cap - usedBonusPoints;
+          bonusPoints = Math.min(bonusPoints, availableBonusPoints);
+          remainingMonthlyBonusPoints = availableBonusPoints;
+          if (availableBonusPoints <= 0) {
+            messages.push('Monthly bonus points cap reached');
+          }
+        }
+
+        totalPoints = basePoints + bonusPoints;
+
+        return {
+          totalPoints,
+          basePoints,
+          bonusPoints,
+          pointsCurrency: rule.reward.pointsCurrency,
+          remainingMonthlyBonusPoints,
+          minSpendMet,
+          appliedRule,
+          appliedTier,
+          messages,
+        };
+      }
+
+      // If no rule was successfully applied
+      return {
+        totalPoints: 0,
+        basePoints: 0,
+        bonusPoints: 0,
+        pointsCurrency: input.paymentMethod.pointsCurrency || 'points',
+        minSpendMet: true,
+        messages: ['No applicable reward rules applied'],
+      };
+
+    } catch (error) {
+      console.error('Error calculating rewards:', error);
+      throw error;
+    }
   }
 
-  /**
-   * Simulate reward points for a transaction (used in UI)
-   */
+  private calculateStandardPoints(amount: number, multiplier: number, roundingStrategy: string = 'floor', blockSize: number = 1, amountRoundingStrategy: string = 'none'): number {
+    let roundedAmount = amount;
+
+    switch (amountRoundingStrategy) {
+      case 'floor':
+        roundedAmount = Math.floor(amount);
+        break;
+      case 'ceiling':
+        roundedAmount = Math.ceil(amount);
+        break;
+      case 'nearest':
+        roundedAmount = Math.round(amount);
+        break;
+      case 'floor5':
+        roundedAmount = Math.floor(amount / 5) * 5;
+        break;
+      case 'none':
+      default:
+        break;
+    }
+
+    let points = (roundedAmount / blockSize) * multiplier;
+
+    switch (roundingStrategy) {
+      case 'floor':
+        return Math.floor(points);
+      case 'ceiling':
+        return Math.ceil(points);
+      case 'nearest':
+        return Math.round(points);
+      default:
+        return Math.floor(points);
+    }
+  }
+
+  private calculateBonusPoints(amount: number, multiplier: number, roundingStrategy: string = 'floor', blockSize: number = 1, amountRoundingStrategy: string = 'none'): number {
+    return this.calculateStandardPoints(amount, multiplier, roundingStrategy, blockSize, amountRoundingStrategy);
+  }
+
+  private calculateTieredPoints(amount: number, tiers: any[], monthlySpend?: number): { points: number, tier: any } {
+    let points = 0;
+    let appliedTier: any;
+
+    if (!tiers || tiers.length === 0) {
+      return { points: 0, tier: null };
+    }
+
+    // Sort tiers by priority
+    tiers.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+    for (const tier of tiers) {
+      if (tier.minAmount !== undefined && amount < tier.minAmount) {
+        continue;
+      }
+      if (tier.maxAmount !== undefined && amount > tier.maxAmount) {
+        continue;
+      }
+      if (tier.minSpend !== undefined && monthlySpend !== undefined && monthlySpend < tier.minSpend) {
+        continue;
+      }
+      if (tier.maxSpend !== undefined && monthlySpend !== undefined && monthlySpend > tier.maxSpend) {
+        continue;
+      }
+
+      points = this.calculateStandardPoints(amount, tier.multiplier);
+      appliedTier = tier;
+      break; // Apply only the first matching tier
+    }
+
+    return { points, tier: appliedTier };
+  }
+
   async simulateRewards(
     amount: number,
     currency: string,
-    paymentMethod: any,
+    paymentMethod: PaymentMethod,
     mcc?: string,
     merchantName?: string,
     isOnline?: boolean,
@@ -105,176 +202,28 @@ export class RewardService {
       paymentMethod,
       mcc,
       merchantName,
-      transactionType: 'purchase' as TransactionType,
+      transactionType: 'purchase',
       isOnline,
       isContactless,
       date: DateTime.now()
     };
-    
+
     return this.calculateRewards(input);
   }
 
-  /**
-   * Get points currency for a payment method
-   */
-  getPointsCurrency(paymentMethod: any): string {
-    // Default implementation - can be enhanced based on payment method type
-    return paymentMethod?.pointsCurrency || 'points';
-  }
-
-  /**
-   * Check if a rule matches the transaction
-   */
-  private ruleMatches(rule: RewardRule, input: CalculationInput): boolean {
-    if (!rule.enabled) return false;
-
-    // Check all conditions
-    for (const condition of rule.conditions) {
-      if (!this.conditionMatches(condition, input)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Check if a condition matches the transaction
-   */
-  private conditionMatches(condition: any, input: CalculationInput): boolean {
-    switch (condition.type) {
-      case 'mcc':
-        if (!input.mcc) return false;
-        if (condition.operation === 'include') {
-          return condition.values?.includes(input.mcc) || false;
-        } else if (condition.operation === 'exclude') {
-          return !condition.values?.includes(input.mcc) || true;
-        }
-        break;
-
-      case 'transaction_type':
-        if (condition.operation === 'equals') {
-          return condition.values?.includes(input.transactionType) || false;
-        }
-        break;
-
-      case 'currency':
-        if (condition.operation === 'include') {
-          return condition.values?.includes(input.currency) || false;
-        } else if (condition.operation === 'exclude') {
-          return !condition.values?.includes(input.currency) || true;
-        }
-        break;
-
-      case 'merchant':
-        if (!input.merchantName) return false;
-        if (condition.operation === 'include') {
-          return condition.values?.some(merchant => 
-            input.merchantName.toLowerCase().includes(merchant.toLowerCase())
-          ) || false;
-        }
-        break;
-    }
-
-    return true;
-  }
-
-  /**
-   * Calculate rewards for a specific rule
-   */
-  private calculateRewardForRule(rule: RewardRule, input: CalculationInput): CalculationResult {
-    const reward = rule.reward;
-    const result: CalculationResult = {
-      totalPoints: 0,
-      basePoints: 0,
-      bonusPoints: 0,
-      pointsCurrency: reward.pointsCurrency,
-      minSpendMet: true,
-      appliedRule: rule,
-      messages: []
-    };
-
-    // Apply amount rounding first
-    let effectiveAmount = input.amount;
-    switch (reward.amountRoundingStrategy) {
-      case 'floor':
-        effectiveAmount = Math.floor(effectiveAmount);
-        break;
-      case 'ceiling':
-        effectiveAmount = Math.ceil(effectiveAmount);
-        break;
-      case 'floor5':
-        effectiveAmount = Math.floor(effectiveAmount / 5) * 5;
-        break;
-      case 'nearest':
-        effectiveAmount = Math.round(effectiveAmount);
-        break;
-    }
-
-    // Calculate base points
-    const baseMultiplier = reward.baseMultiplier || 1;
-    let basePoints = 0;
-
-    if (reward.calculationMethod === 'standard') {
-      basePoints = Math.floor(effectiveAmount / reward.blockSize) * baseMultiplier;
-    } else {
-      basePoints = (effectiveAmount * baseMultiplier) / reward.blockSize;
-    }
-
-    result.basePoints = this.applyPointsRounding(basePoints, reward.pointsRoundingStrategy);
-
-    // Check minimum spend requirement
-    const monthlySpend = input.monthlySpend || 0;
-    const minSpendRequired = reward.monthlyMinSpend || 0;
-    result.minSpendMet = monthlySpend >= minSpendRequired;
-
-    // Calculate bonus points if minimum spend is met
-    if (result.minSpendMet && reward.bonusMultiplier && reward.bonusMultiplier > 0) {
-      let bonusPoints = 0;
-      
-      if (reward.calculationMethod === 'standard') {
-        bonusPoints = Math.floor(effectiveAmount / reward.blockSize) * reward.bonusMultiplier;
-      } else {
-        bonusPoints = (effectiveAmount * reward.bonusMultiplier) / reward.blockSize;
-      }
-
-      result.bonusPoints = this.applyPointsRounding(bonusPoints, reward.pointsRoundingStrategy);
-    }
-
-    // Apply monthly cap if specified
-    if (reward.monthlyCap && result.bonusPoints > 0) {
-      const usedBonusPoints = input.usedBonusPoints || 0;
-      const remainingCap = Math.max(0, reward.monthlyCap - usedBonusPoints);
-      
-      if (result.bonusPoints > remainingCap) {
-        result.bonusPoints = remainingCap;
-        result.messages.push(`Bonus points capped at ${remainingCap} due to monthly limit`);
-      }
-      
-      result.remainingMonthlyBonusPoints = remainingCap - result.bonusPoints;
-    }
-
-    result.totalPoints = result.basePoints + result.bonusPoints;
-
-    return result;
-  }
-
-  /**
-   * Apply points rounding strategy
-   */
-  private applyPointsRounding(points: number, strategy: string): number {
-    switch (strategy) {
-      case 'floor':
-        return Math.floor(points);
-      case 'ceiling':
-        return Math.ceil(points);
-      case 'nearest':
-        return Math.round(points);
-      default:
-        return points;
-    }
+  // Add the missing simulatePoints method for backward compatibility
+  async simulatePoints(
+    amount: number,
+    currency: string,
+    paymentMethod: PaymentMethod,
+    mcc?: string,
+    merchantName?: string,
+    isOnline?: boolean,
+    isContactless?: boolean
+  ): Promise<CalculationResult> {
+    return this.simulateRewards(amount, currency, paymentMethod, mcc, merchantName, isOnline, isContactless);
   }
 }
 
-// Export singleton instance
-export const rewardService = new RewardService();
+// Create singleton instance
+export const rewardService = new RewardService(new RuleRepository());

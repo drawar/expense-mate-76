@@ -1,3 +1,4 @@
+import { storageService } from '@/core/storage';
 
 // Placeholder utility functions for storage operations
 export const getStorageKey = (key: string) => `app_${key}`;
@@ -26,4 +27,9 @@ export const removeStorageItem = (key: string) => {
   } catch (error) {
     console.error('Error removing storage item:', error);
   }
+};
+
+// Add the missing getTransactions export
+export const getTransactions = async () => {
+  return await storageService.getTransactions();
 };

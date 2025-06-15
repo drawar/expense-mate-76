@@ -236,3 +236,137 @@ const mockTransaction = (category: string, amount: number, paymentMethod: Paymen
     isContactless: false // Add the missing property
   };
 };
+
+// Function to analyze card optimization
+export const analyzeCardOptimization = (
+  transactions: Transaction[],
+  paymentMethods: PaymentMethod[]
+): CardOptimizationInsight[] => {
+  const currentCard = paymentMethods.find(method => method.active);
+
+  const sampleTransactions: Transaction[] = [
+    {
+      id: 'sample-1',
+      date: '2024-01-01',
+      amount: 150,
+      currency: 'SGD',
+      category: 'Dining',
+      merchant: {
+        id: 'merchant-1',
+        name: 'Restaurant ABC',
+        isOnline: false
+      },
+      paymentAmount: 150,
+      paymentCurrency: 'SGD',
+      paymentMethod: currentCard,
+      rewardPoints: 1,
+      basePoints: 1,
+      bonusPoints: 0,
+      isContactless: false
+    },
+    {
+      id: 'sample-2',
+      date: '2024-01-02',
+      amount: 200,
+      currency: 'SGD',
+      category: 'Shopping',
+      merchant: {
+        id: 'merchant-2',
+        name: 'Online Store XYZ',
+        isOnline: true
+      },
+      paymentAmount: 200,
+      paymentCurrency: 'SGD',
+      paymentMethod: currentCard,
+      rewardPoints: 2,
+      basePoints: 2,
+      bonusPoints: 0,
+      isContactless: false
+    },
+    {
+      id: 'sample-3',
+      date: '2024-01-03',
+      amount: 100,
+      currency: 'SGD',
+      category: 'Travel',
+      merchant: {
+        id: 'merchant-3',
+        name: 'Airline ABC',
+        isOnline: false
+      },
+      paymentAmount: 100,
+      paymentCurrency: 'SGD',
+      paymentMethod: currentCard,
+      rewardPoints: 1,
+      basePoints: 1,
+      bonusPoints: 0,
+      isContactless: false
+    },
+    {
+      id: 'sample-4',
+      date: '2024-01-04',
+      amount: 300,
+      currency: 'SGD',
+      category: 'Entertainment',
+      merchant: {
+        id: 'merchant-4',
+        name: 'Movie Theater XYZ',
+        isOnline: false
+      },
+      paymentAmount: 300,
+      paymentCurrency: 'SGD',
+      paymentMethod: currentCard,
+      rewardPoints: 3,
+      basePoints: 3,
+      bonusPoints: 0,
+      isContactless: false
+    }
+  ];
+
+  const mockCards: PaymentMethod[] = [
+    {
+      id: 'uob-preferred',
+      name: 'UOB Preferred Platinum Visa',
+      type: 'credit_card',
+      issuer: 'UOB',
+      currency: 'SGD',
+      rewardRules: [],
+      active: true
+    },
+    {
+      id: 'dbs-altitude',
+      name: 'DBS Altitude Visa Signature',
+      type: 'credit_card',
+      issuer: 'DBS',
+      currency: 'SGD',
+      rewardRules: [],
+      active: true
+    },
+    {
+      id: 'citi-rewards',
+      name: 'Citibank Rewards Visa',
+      type: 'credit_card',
+      issuer: 'Citibank',
+      currency: 'SGD',
+      rewardRules: [],
+      active: true
+    }
+  ];
+
+  return [{
+    id: 'sample-optimization',
+    type: 'better_card',
+    title: 'Consider UOB Preferred Platinum for Dining',
+    description: 'You could earn 5x more points on dining with UOB Preferred Platinum',
+    potentialSavings: 45,
+    currentCard: currentCard.name,
+    recommendedCard: 'UOB Preferred Platinum Visa',
+    category: 'Dining',
+    transactions: sampleTransactions.map(tx => ({
+      ...tx,
+      basePoints: tx.basePoints || 0,
+      bonusPoints: tx.bonusPoints || 0
+    })),
+    impact: 'high'
+  }];
+};

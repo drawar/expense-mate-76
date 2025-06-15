@@ -126,12 +126,26 @@ export function useTransactionActions(options?: {
       setIsLoading(false);
     }
   };
+
+  // Add missing properties expected by useTransactionManagement
+  const updateMerchantTracking = async (merchantName: string) => {
+    // Placeholder implementation
+    console.log('Updating merchant tracking for:', merchantName);
+  };
   
   return {
     isLoading,
     handleSave,
     handleDelete,
     handleAdd,
-    handleExportCSV
+    handleExportCSV,
+    // Add aliases and missing properties for backward compatibility
+    isCreating: isLoading,
+    isUpdating: isLoading,
+    isDeleting: isLoading,
+    createTransaction: handleAdd,
+    updateTransaction: handleSave,
+    deleteTransaction: handleDelete,
+    updateMerchantTracking
   };
 }

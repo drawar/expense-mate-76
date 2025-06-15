@@ -515,6 +515,12 @@ export class StorageService {
     // Simple implementation for now
     return null;
   }
+
+  async uploadCardImage(file: File): Promise<string> {
+    // Placeholder implementation for card image upload
+    // In a real implementation, this would upload to a storage service
+    return URL.createObjectURL(file);
+  }
 }
 
 // Export singleton instance
