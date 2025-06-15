@@ -1,4 +1,3 @@
-
 // utils/dashboard/filterUtils.ts
 import { Transaction } from '@/types';
 import { TimeframeTab } from './types';
@@ -206,6 +205,9 @@ export function filterTransactionsByTimeframe(
     originalTransactionCount: transactions.length
   });
 
+  // Track how many comparisons we've logged
+  let comparisonLogCount = 0;
+
   // Filter transactions based on date range with improved date parsing
   const filtered = transactions.filter((transaction) => {
     if (!transaction.date) {
@@ -241,7 +243,7 @@ export function filterTransactionsByTimeframe(
     );
 
     // Log first few comparisons for debugging
-    if (filtered.length < 3) {
+    if (comparisonLogCount < 3) {
       console.log('Transaction date comparison:', {
         transactionId: transaction.id,
         transactionDate: format(transactionDate, 'yyyy-MM-dd'),
@@ -249,6 +251,7 @@ export function filterTransactionsByTimeframe(
         endDate: format(endDate, 'yyyy-MM-dd'),
         isInRange
       });
+      comparisonLogCount++;
     }
 
     return isInRange;
