@@ -1,3 +1,4 @@
+
 // utils/dashboard/filterUtils.ts
 import { Transaction } from '@/types';
 import { TimeframeTab } from './types';
@@ -11,7 +12,12 @@ import {
   subYears, 
   startOfWeek, 
   endOfWeek, 
-  eachDayOfInterval 
+  eachDayOfInterval,
+  parseISO,
+  isValid,
+  isBefore,
+  isAfter,
+  isSameDay
 } from 'date-fns';
 
 /**
@@ -32,6 +38,7 @@ export function filterTransactionsByTimeframe(
   previousPeriod: boolean = false
 ): Transaction[] {
   if (!transactions || transactions.length === 0) {
+    console.log('No transactions to filter');
     return [];
   }
 
@@ -39,6 +46,7 @@ export function filterTransactionsByTimeframe(
   let endDate: Date;
 
   if (timeframe === 'allTime') {
+    console.log('Returning all transactions for allTime filter');
     return transactions;
   }
 
@@ -190,23 +198,63 @@ export function filterTransactionsByTimeframe(
   }
 
   // Log filtering details for debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Filtering for ${previousPeriod ? 'previous' : 'current'} period:`, {
-      timeframe,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    });
-  }
-
-  // Filter transactions based on date range
-  const filtered = transactions.filter((transaction) => {
-    const transactionDate = new Date(transaction.date);
-    return transactionDate >= startDate && transactionDate <= endDate;
+  console.log(`Filtering for ${previousPeriod ? 'previous' : 'current'} period:`, {
+    timeframe,
+    startDate: format(startDate, 'yyyy-MM-dd'),
+    endDate: format(endDate, 'yyyy-MM-dd'),
+    useStatementMonth,
+    originalTransactionCount: transactions.length
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Found ${filtered.length} transactions for ${previousPeriod ? 'previous' : 'current'} period`);
-  }
+  // Filter transactions based on date range with improved date parsing
+  const filtered = transactions.filter((transaction) => {
+    if (!transaction.date) {
+      console.warn('Transaction missing date:', transaction.id);
+      return false;
+    }
+
+    let transactionDate: Date;
+    
+    // Handle both string and Date objects
+    if (typeof transaction.date === 'string') {
+      // Try parsing ISO string first
+      transactionDate = parseISO(transaction.date);
+      
+      // If that fails, try creating a new Date
+      if (!isValid(transactionDate)) {
+        transactionDate = new Date(transaction.date);
+      }
+    } else {
+      transactionDate = new Date(transaction.date);
+    }
+
+    // Check if the parsed date is valid
+    if (!isValid(transactionDate)) {
+      console.warn('Invalid transaction date:', transaction.date, 'for transaction:', transaction.id);
+      return false;
+    }
+
+    // Check if transaction date is within range (inclusive)
+    const isInRange = (
+      (isSameDay(transactionDate, startDate) || isAfter(transactionDate, startDate)) &&
+      (isSameDay(transactionDate, endDate) || isBefore(transactionDate, endDate))
+    );
+
+    // Log first few comparisons for debugging
+    if (filtered.length < 3) {
+      console.log('Transaction date comparison:', {
+        transactionId: transaction.id,
+        transactionDate: format(transactionDate, 'yyyy-MM-dd'),
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+        isInRange
+      });
+    }
+
+    return isInRange;
+  });
+
+  console.log(`Found ${filtered.length} transactions for ${previousPeriod ? 'previous' : 'current'} period (${timeframe})`);
   
   return filtered;
 }
