@@ -28,7 +28,7 @@ export class MonthlySpendingTracker {
    */
   public async getMonthlySpending(
     paymentMethodId: string,
-    periodType: SpendingPeriodType = 'calendar_month',
+    periodType: SpendingPeriodType = 'calendar',
     date: Date = new Date(),
     statementDay: number = 1
   ): Promise<number> {
@@ -78,7 +78,7 @@ export class MonthlySpendingTracker {
   public calculateMonthlySpendingFromTransactions(
     transactions: Transaction[],
     paymentMethodId: string,
-    periodType: SpendingPeriodType = 'calendar_month',
+    periodType: SpendingPeriodType = 'calendar',
     date: Date = new Date(),
     statementDay: number = 1
   ): number {
@@ -161,7 +161,7 @@ export class MonthlySpendingTracker {
     const year = date.getFullYear();
     const month = date.getMonth();
     
-    if (periodType === 'calendar_month') {
+    if (periodType === 'calendar') {
       // Calendar month: 1st day of month to last day of month
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 1);

@@ -10,8 +10,8 @@ export const initializeRewardSystem = async (readOnly: boolean = false): Promise
   try {
     console.log(`Initializing reward system (read-only: ${readOnly})`);
     
-    // Initialize the rule repository with supabase client
-    const ruleRepository = initializeRuleRepository(supabase);
+    // Initialize the rule repository with supabase client - use any to resolve type conflict
+    const ruleRepository = initializeRuleRepository(supabase as any);
     ruleRepository.setReadOnly(readOnly);
     
     console.log('Reward system initialized successfully');

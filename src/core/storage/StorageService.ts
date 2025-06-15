@@ -43,7 +43,7 @@ export class StorageService {
 
       if (!data) return [];
 
-      return data.map((row: DbPaymentMethod) => ({
+      return data.map((row: any) => ({
         id: row.id,
         name: row.name,
         type: row.type as any,
@@ -53,7 +53,7 @@ export class StorageService {
         icon: row.icon || undefined,
         color: row.color || undefined,
         imageUrl: row.image_url || undefined,
-        pointsCurrency: undefined, // Will be handled separately
+        pointsCurrency: row.points_currency || undefined,
         active: row.active,
         rewardRules: row.reward_rules || [],
         selectedCategories: row.selected_categories || [],
@@ -89,6 +89,7 @@ export class StorageService {
         icon: pm.icon,
         color: pm.color,
         image_url: pm.imageUrl,
+        points_currency: pm.pointsCurrency || null,
         active: pm.active,
         reward_rules: pm.rewardRules,
         selected_categories: pm.selectedCategories,
@@ -163,13 +164,13 @@ export class StorageService {
 
   async saveMerchants(merchants: Merchant[]): Promise<void> {
     try {
-      const dbMerchants: DbMerchant[] = merchants.map(m => ({
+      const dbMerchants = merchants.map(m => ({
         id: m.id,
         name: m.name,
         address: m.address,
-        mcc: m.mcc,
+        mcc: m.mcc as any, // Cast to any for JSON compatibility
         is_online: m.isOnline,
-        coordinates: m.coordinates,
+        coordinates: m.coordinates as any, // Cast to any for JSON compatibility
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));
@@ -302,9 +303,9 @@ export class StorageService {
           id: transactionData.merchant.id,
           name: transactionData.merchant.name,
           address: transactionData.merchant.address,
-          mcc: transactionData.merchant.mcc,
+          mcc: transactionData.merchant.mcc as any,
           is_online: transactionData.merchant.isOnline,
-          coordinates: transactionData.merchant.coordinates
+          coordinates: transactionData.merchant.coordinates as any
         }], { onConflict: 'id' })
         .select()
         .single();
@@ -347,10 +348,10 @@ export class StorageService {
         date: data.date,
         merchant: transactionData.merchant,
         amount: parseFloat(data.amount.toString()),
-        currency: data.currency,
+        currency: data.currency as Currency,
         paymentMethod: transactionData.paymentMethod,
         paymentAmount: parseFloat(data.payment_amount.toString()),
-        paymentCurrency: data.payment_currency,
+        paymentCurrency: data.payment_currency as Currency,
         rewardPoints: data.total_points || 0,
         basePoints: data.base_points || 0,
         bonusPoints: data.bonus_points || 0,
