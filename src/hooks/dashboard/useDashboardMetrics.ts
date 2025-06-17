@@ -1,8 +1,10 @@
+
 // hooks/dashboard/useDashboardMetrics.ts
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { DashboardData } from "@/types/dashboard";
 import { metricsUtils, chartUtils } from "@/utils/dashboard";
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface UseDashboardMetricsOptions {
   filteredTransactions: Transaction[];
@@ -54,16 +56,42 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
         } as DashboardData;
       }
 
-      // Calculate metrics
+      // Apply category mapping to transactions before calculating metrics
+      const transactionsWithCategories = filteredTransactions.map(transaction => {
+        // Use transaction's stored category if available and not "Uncategorized"
+        if (transaction.category && transaction.category !== "Uncategorized") {
+          return transaction;
+        }
+
+        let determinedCategory = "Uncategorized";
+
+        // Try to determine from MCC
+        if (transaction.merchant.mcc?.code) {
+          determinedCategory = getCategoryFromMCC(transaction.merchant.mcc.code);
+        } else {
+          // Try to determine from merchant name
+          const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+          if (nameBasedCategory) {
+            determinedCategory = nameBasedCategory;
+          }
+        }
+
+        return {
+          ...transaction,
+          category: determinedCategory
+        };
+      });
+
+      // Calculate metrics using transactions with proper categories
       const metrics = metricsUtils.calculateMetrics(
-        filteredTransactions,
+        transactionsWithCategories,
         previousPeriodTransactions,
         displayCurrency
       );
 
-      // Generate chart data for categories
+      // Generate chart data for categories using transactions with proper categories
       const categoriesData = chartUtils.generatePieChartData(
-        filteredTransactions,
+        transactionsWithCategories,
         {
           groupBy: 'category',
           displayCurrency,
@@ -74,7 +102,7 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
 
       // Generate chart data for payment methods
       const paymentMethodsData = chartUtils.generatePieChartData(
-        filteredTransactions,
+        transactionsWithCategories,
         {
           groupBy: 'paymentMethod',
           displayCurrency,
@@ -84,7 +112,7 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
 
       // Generate time series data
       const barData = chartUtils.generateTimeSeriesData(
-        filteredTransactions,
+        transactionsWithCategories,
         {
           period: 'month',
           displayCurrency,
@@ -95,7 +123,7 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
 
       // Calculate day of week spending if enabled
       const dayOfWeekSpending = calculateDayOfWeekMetrics 
-        ? metricsUtils.calculateAverageByDayOfWeek(filteredTransactions, displayCurrency)
+        ? metricsUtils.calculateAverageByDayOfWeek(transactionsWithCategories, displayCurrency)
         : {};
 
       // Transform bar data to the expected spendingTrends format
@@ -119,9 +147,9 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
         { name: paymentMethodsData[0].name, value: paymentMethodsData[0].value } : 
         undefined;
 
-      // Create the dashboard data object
+      // Create the dashboard data object with properly categorized transactions
       const result: DashboardData = {
-        filteredTransactions,
+        filteredTransactions: transactionsWithCategories,
         metrics,
         charts: {
           categories: categoriesData,
