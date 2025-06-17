@@ -87,6 +87,7 @@ export const TransactionDetailsSection: React.FC = () => {
                   onValueChange={(value) => {
                     field.onChange(value);
                   }}
+                  defaultValue="CAD"
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -193,4 +194,3 @@ export const TransactionDetailsSection: React.FC = () => {
     </Card>
   );
 };
-

@@ -1,3 +1,4 @@
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -50,7 +51,7 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
       isOnline: defaultValues?.isOnline ?? false,
       isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || '',
-      currency: defaultValues?.currency || 'SGD',
+      currency: defaultValues?.currency || 'CAD',
       paymentMethodId: defaultValues?.paymentMethodId || '',
       paymentAmount: defaultValues?.paymentAmount || '',
       reimbursementAmount: defaultValues?.reimbursementAmount || '0',

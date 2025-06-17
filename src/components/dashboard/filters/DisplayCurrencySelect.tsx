@@ -1,3 +1,4 @@
+
 // components/dashboard/filters/DisplayCurrencySelect.tsx
 import React from "react";
 import {
@@ -33,10 +34,10 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
       <Select
         value={value}
         onValueChange={(value: string) => onChange(value as Currency)}
-        defaultValue="SGD"
+        defaultValue="CAD"
       >
         <SelectTrigger className="w-[80px] h-8 text-sm bg-transparent border-none">
-          <SelectValue placeholder="SGD" />
+          <SelectValue placeholder="CAD" />
         </SelectTrigger>
         <SelectContent>
           {currencyOptions.map((option) => (

@@ -1,3 +1,4 @@
+
 // components/dashboard/DashboardProvider.tsx
 import React from "react";
 import {
@@ -13,7 +14,7 @@ import { useDashboard } from "@/hooks/dashboard";
 export function DashboardProvider({ children, config }: DashboardProviderProps) {
   // Default configuration values
   const defaultConfig: DashboardConfig = {
-    defaultCurrency: "SGD",
+    defaultCurrency: "CAD",
     defaultTimeframe: "thisMonth",
     defaultStatementDay: 15,
     defaultUseStatementMonth: false,

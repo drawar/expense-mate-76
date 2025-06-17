@@ -95,7 +95,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </Label>
               <Select
                 name="currency"
-                defaultValue={currentMethod?.currency || "USD"}
+                defaultValue={currentMethod?.currency || "CAD"}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select currency" />
