@@ -1,11 +1,13 @@
+
 // components/dashboard/layout/RecentTransactions.tsx
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Transaction } from '@/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircleIcon, ArrowUpRightIcon } from 'lucide-react';
 import TransactionCard from '@/components/expense/TransactionCard';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -25,6 +27,34 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   
   // Limit to max items
   const displayTransactions = transactions.slice(0, maxItems);
+  
+  // Apply category mapping logic to transactions (same as in TransactionTable)
+  const transactionsWithCategories = useMemo(() => {
+    return displayTransactions.map(transaction => {
+      // Use transaction's stored category if available
+      if (transaction.category && transaction.category !== "Uncategorized") {
+        return transaction;
+      }
+
+      let determinedCategory = "Uncategorized";
+
+      // Try to determine from MCC
+      if (transaction.merchant.mcc?.code) {
+        determinedCategory = getCategoryFromMCC(transaction.merchant.mcc.code);
+      } else {
+        // Try to determine from merchant name
+        const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+        if (nameBasedCategory) {
+          determinedCategory = nameBasedCategory;
+        }
+      }
+
+      return {
+        ...transaction,
+        category: determinedCategory
+      };
+    });
+  }, [displayTransactions]);
   
   // Render the empty state when no transactions are available
   const renderEmptyState = useCallback(() => {
@@ -52,11 +82,11 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Link>
       </div>
       
-      {displayTransactions.length === 0 ? (
+      {transactionsWithCategories.length === 0 ? (
         renderEmptyState()
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {displayTransactions.map((transaction) => (
+          {transactionsWithCategories.map((transaction) => (
             <TransactionCard 
               key={transaction.id} 
               transaction={transaction}

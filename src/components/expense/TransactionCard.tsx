@@ -1,125 +1,116 @@
 
-import { Transaction } from "@/types";
-import { CurrencyService } from "@/core/currency";
+import React from 'react';
+import { Transaction } from '@/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CurrencyService } from '@/core/currency';
 import { formatDate } from '@/utils/dates/formatters';
-import {
-  CreditCardIcon,
-  BanknoteIcon,
-  TagIcon,
-  MapPinIcon,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { CSSProperties } from "react";
+import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
 
 interface TransactionCardProps {
   transaction: Transaction;
-  onClick?: () => void;
   className?: string;
-  style?: CSSProperties;
+  onClick?: () => void;
 }
 
-const TransactionCard = ({
-  transaction,
-  onClick,
-  className,
-  style,
-}: TransactionCardProps) => {
-  const { merchant, amount, currency, date, paymentMethod, rewardPoints } =
-    transaction;
+const TransactionCard: React.FC<TransactionCardProps> = ({ 
+  transaction, 
+  className = '',
+  onClick 
+}) => {
+  // Determine category for display
+  const displayCategory = React.useMemo(() => {
+    // Use transaction's stored category if available
+    if (transaction.category && transaction.category !== "Uncategorized") {
+      return transaction.category;
+    }
 
-  const isPaymentDifferent =
-    transaction.paymentAmount !== amount ||
-    transaction.paymentCurrency !== currency;
+    // Try to determine from MCC
+    if (transaction.merchant.mcc?.code) {
+      return getCategoryFromMCC(transaction.merchant.mcc.code);
+    }
+
+    // Try to determine from merchant name
+    const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+    if (nameBasedCategory) {
+      return nameBasedCategory;
+    }
+
+    return "Uncategorized";
+  }, [transaction]);
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
 
   return (
-    <div
-      className={cn(
-        "modern-card p-4 overflow-hidden",
-        onClick &&
-          "cursor-pointer hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200",
-        className
-      )}
-      onClick={onClick}
-      style={style}
+    <Card 
+      className={`cursor-pointer transition-all hover:shadow-md ${className}`}
+      onClick={handleClick}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0 pr-2">
-          <h3
-            className="font-semibold text-base md:text-lg truncate"
-            title={merchant.name}
-          >
-            {merchant.name}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {formatDate(date.toString())}
-          </p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p
-            className="font-semibold text-base md:text-lg whitespace-nowrap"
-            title={CurrencyService.format(amount, currency)}
-          >
-            {CurrencyService.format(amount, currency)}
-          </p>
-          {isPaymentDifferent && (
-            <p
-              className="text-sm text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap"
-              title={`Paid: ${CurrencyService.format(transaction.paymentAmount, transaction.paymentCurrency)}`}
-            >
-              Paid:{" "}
-              {CurrencyService.format(
-                transaction.paymentAmount,
-                transaction.paymentCurrency
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Header with merchant name and date */}
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium text-foreground truncate">
+                {transaction.merchant.name}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(transaction.date)}
+              </p>
+            </div>
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {displayCategory}
+            </Badge>
+          </div>
+
+          {/* Amount */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-semibold text-foreground">
+                {CurrencyService.format(transaction.amount, transaction.currency)}
+              </p>
+              {transaction.currency !== transaction.paymentCurrency && (
+                <p className="text-xs text-muted-foreground">
+                  Paid: {CurrencyService.format(transaction.paymentAmount, transaction.paymentCurrency)}
+                </p>
               )}
-            </p>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2">
-        <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-blue-50 dark:bg-blue-900/30 max-w-full">
-          {paymentMethod.type === "credit_card" ? (
-            <CreditCardIcon
-              className="h-3.5 w-3.5 mr-1.5 flex-shrink-0"
-              style={{ color: paymentMethod.color }}
-            />
-          ) : (
-            <BanknoteIcon
-              className="h-3.5 w-3.5 mr-1.5 flex-shrink-0"
-              style={{ color: paymentMethod.color }}
-            />
-          )}
-          <span className="truncate" title={paymentMethod.name}>
-            {paymentMethod.name}
-          </span>
-        </div>
-
-        {merchant.mcc && (
-          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-purple-50 dark:bg-purple-900/30 max-w-full">
-            <TagIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-purple-500" />
-            <span className="truncate" title={merchant.mcc.description}>
-              {merchant.mcc.description}
+          {/* Payment method and points */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground truncate">
+              {transaction.paymentMethod.name}
             </span>
+            {transaction.rewardPoints > 0 && (
+              <span className="text-primary font-medium">
+                {transaction.rewardPoints.toLocaleString()} pts
+              </span>
+            )}
           </div>
-        )}
 
-        {rewardPoints > 0 && (
-          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
-            <span>+{rewardPoints} points</span>
+          {/* Transaction type indicators */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {transaction.merchant.isOnline ? (
+              <span>Online</span>
+            ) : (
+              <span>In-store</span>
+            )}
+            {transaction.isContactless && !transaction.merchant.isOnline && (
+              <>
+                <span>•</span>
+                <span>Contactless</span>
+              </>
+            )}
           </div>
-        )}
-
-        {merchant.address && (
-          <div className="inline-flex items-center text-xs rounded-full px-3 py-1 bg-red-50 dark:bg-red-900/30 max-w-full">
-            <MapPinIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-red-500" />
-            <span className="truncate" title={merchant.address}>
-              {merchant.address}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-export default TransactionCard;
+export default React.memo(TransactionCard);
