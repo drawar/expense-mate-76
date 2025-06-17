@@ -43,6 +43,16 @@ export const PointsDisplay: React.FC<PointsDisplayProps> = ({
 
       setIsLoading(true);
       try {
+        console.log('PointsDisplay calculating for:', {
+          amount,
+          currency,
+          paymentMethodId: paymentMethod.id,
+          mcc,
+          merchantName,
+          isOnline,
+          isContactless
+        });
+
         const result = await rewardService.simulateRewards(
           amount,
           currency,
@@ -53,6 +63,8 @@ export const PointsDisplay: React.FC<PointsDisplayProps> = ({
           isContactless
         );
 
+        console.log('PointsDisplay calculation result:', result);
+
         setPoints({
           totalPoints: result.totalPoints,
           basePoints: result.basePoints,
@@ -61,7 +73,7 @@ export const PointsDisplay: React.FC<PointsDisplayProps> = ({
           messages: result.messages
         });
       } catch (error) {
-        console.error('Error calculating points:', error);
+        console.error('Error calculating points in PointsDisplay:', error);
         setPoints(null);
       } finally {
         setIsLoading(false);

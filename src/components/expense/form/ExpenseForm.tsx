@@ -2,7 +2,7 @@
 import React from 'react';
 import { FormProvider } from 'react-hook-form';
 import { Transaction, PaymentMethod } from '@/types';
-import { useExpenseForm } from '@/hooks/expense/useExpenseForm';
+import { useExpenseForm } from '@/hooks/useExpenseForm';
 import { useToast } from '@/hooks/use-toast';
 
 // Import section components
@@ -84,6 +84,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         ? Number(values.reimbursementAmount) 
         : 0;
       
+      console.log('Form submission - Points calculation:', pointsCalculation);
+      
       const transactionData: Omit<Transaction, 'id'> = {
         date: values.date.toISOString().split('T')[0], // YYYY-MM-DD format
         merchant: merchantData,
@@ -100,6 +102,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         reimbursementAmount: reimbursementAmount,
       };
       
+      console.log('Transaction data being submitted:', transactionData);
       onSubmit(transactionData);
     } catch (error) {
       console.error('Error submitting form:', error);

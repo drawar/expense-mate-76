@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PointsCalculationResult } from '@/hooks/expense/useExpenseForm';
+import { PointsCalculationResult } from '@/hooks/useExpenseForm';
 
 // Import sub-components
 import PaymentMethodSelect from '../elements/PaymentMethodSelect';
@@ -65,9 +65,9 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
         
         <PointsDisplay 
           amount={amount || 0}
-          currency={currency || 'SGD'}
+          currency={currency || 'CAD'}
           paymentMethod={selectedPaymentMethod || null}
-          mcc={mcc}
+          mcc={mcc?.code}
           merchantName={merchantName}
           isOnline={isOnline}
           isContactless={isContactless}

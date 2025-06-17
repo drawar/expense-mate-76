@@ -5,8 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { FormValues, formSchema } from '@/hooks/expense/expense-form/formSchema';
 import { useMerchantData } from '@/hooks/expense/expense-form/useMerchantData';
 import { usePaymentMethodLogic } from '@/hooks/expense/expense-form/usePaymentMethodLogic';
-import { useRewardPointsStandalone } from '@/hooks/expense/expense-form/useRewardPointsStandalone';
 import { useState, useEffect } from 'react';
+import { rewardService } from '@/core/rewards/RewardService';
 
 interface UseExpenseFormProps {
   paymentMethods: PaymentMethod[];
@@ -16,16 +16,22 @@ interface UseExpenseFormProps {
 // Change regular export to type export
 export type { FormValues } from '@/hooks/expense/expense-form/formSchema';
 
+export interface PointsCalculationResult {
+  totalPoints: number;
+  basePoints?: number;
+  bonusPoints?: number;
+  remainingMonthlyBonusPoints?: number;
+  pointsCurrency?: string;
+  messageText?: string;
+}
+
 export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseFormProps) => {
   const { toast } = useToast();
-  const [estimatedPoints, setEstimatedPoints] = useState<number | {
-    totalPoints: number;
-    basePoints?: number;
-    bonusPoints?: number;
-    remainingMonthlyBonusPoints?: number;
-    pointsCurrency?: string;
-    messageText?: string;
-  }>(0);
+  const [pointsCalculation, setPointsCalculation] = useState<PointsCalculationResult>({
+    totalPoints: 0,
+    basePoints: 0,
+    bonusPoints: 0
+  });
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,21 +76,58 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     isOnline
   );
   
-  // Use the standalone simulatePoints from our hook - passing the full array of paymentMethods
-  const { estimatedPoints: calculatedPoints } = useRewardPointsStandalone(
-    shouldOverridePayment ? paymentAmount : amount,
-    paymentMethodId,
-    paymentMethods,
-    selectedMCC?.code,
-    merchantName,
-    isOnline,
-    isContactless
-  );
-  
-  // Update the local state when the calculated points change
+  // Calculate reward points using the reward service
   useEffect(() => {
-    setEstimatedPoints(calculatedPoints);
-  }, [calculatedPoints]);
+    const calculatePoints = async () => {
+      if (!selectedPaymentMethod || amount <= 0) {
+        setPointsCalculation({
+          totalPoints: 0,
+          basePoints: 0,
+          bonusPoints: 0
+        });
+        return;
+      }
+      
+      try {
+        const effectiveAmount = shouldOverridePayment ? paymentAmount : amount;
+        const result = await rewardService.simulateRewards(
+          effectiveAmount,
+          currency,
+          selectedPaymentMethod,
+          selectedMCC?.code,
+          merchantName,
+          isOnline,
+          isContactless
+        );
+        
+        // Format message text
+        let messageText;
+        if (result.bonusPoints === 0 && result.remainingMonthlyBonusPoints === 0) {
+          messageText = "Monthly bonus points cap reached";
+        } else if (result.bonusPoints === 0) {
+          messageText = "Not eligible for bonus points";
+        } else if (result.bonusPoints > 0) {
+          messageText = `Earning ${result.bonusPoints} bonus points`;
+        } else if (result.remainingMonthlyBonusPoints !== undefined) {
+          messageText = `${result.remainingMonthlyBonusPoints.toLocaleString()} bonus points remaining this month`;
+        }
+        
+        setPointsCalculation({
+          totalPoints: result.totalPoints,
+          basePoints: result.basePoints,
+          bonusPoints: result.bonusPoints,
+          remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints,
+          pointsCurrency: result.pointsCurrency,
+          messageText
+        });
+      } catch (error) {
+        console.error('Error calculating reward points:', error);
+        // Keep last calculation result on error
+      }
+    };
+    
+    calculatePoints();
+  }, [amount, currency, selectedPaymentMethod, selectedMCC?.code, merchantName, isOnline, isContactless, shouldOverridePayment, paymentAmount]);
 
   return {
     form,
@@ -92,6 +135,6 @@ export const useExpenseForm = ({ paymentMethods, defaultValues }: UseExpenseForm
     setSelectedMCC,
     selectedPaymentMethod,
     shouldOverridePayment,
-    estimatedPoints,
+    pointsCalculation,
   };
 };
