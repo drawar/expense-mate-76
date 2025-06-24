@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       merchant_category_mappings: {
         Row: {
           created_at: string | null
@@ -99,6 +129,7 @@ export type Database = {
           selected_categories: Json | null
           statement_start_day: number | null
           type: string
+          user_id: string
         }
         Insert: {
           active?: boolean
@@ -117,6 +148,7 @@ export type Database = {
           selected_categories?: Json | null
           statement_start_day?: number | null
           type: string
+          user_id: string
         }
         Update: {
           active?: boolean
@@ -135,6 +167,7 @@ export type Database = {
           selected_categories?: Json | null
           statement_start_day?: number | null
           type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -146,6 +179,7 @@ export type Database = {
           id: string
           payment_method_id: string | null
           transaction_id: string | null
+          user_id: string
         }
         Insert: {
           base_points?: number | null
@@ -154,6 +188,7 @@ export type Database = {
           id?: string
           payment_method_id?: string | null
           transaction_id?: string | null
+          user_id: string
         }
         Update: {
           base_points?: number | null
@@ -162,6 +197,7 @@ export type Database = {
           id?: string
           payment_method_id?: string | null
           transaction_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -294,6 +330,7 @@ export type Database = {
           reimbursement_amount: number | null
           total_points: number | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           amount: number
@@ -315,6 +352,7 @@ export type Database = {
           reimbursement_amount?: number | null
           total_points?: number | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           amount?: number
@@ -336,6 +374,7 @@ export type Database = {
           reimbursement_amount?: number | null
           total_points?: number | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {

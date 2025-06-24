@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant, Currency, MerchantCategoryCode } from '@/types';
 import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
@@ -80,6 +79,11 @@ export class StorageService {
 
   async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<void> {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('User not authenticated');
+      }
+
       const dbPaymentMethods: DbPaymentMethod[] = paymentMethods.map(pm => ({
         id: pm.id,
         name: pm.name,
@@ -97,6 +101,7 @@ export class StorageService {
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
         conversion_rate: pm.conversionRate,
+        user_id: session.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));
@@ -292,6 +297,11 @@ export class StorageService {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('User not authenticated');
+      }
+
       // Generate a proper merchant ID if it's empty
       const merchantId = transactionData.merchant.id || crypto.randomUUID();
       console.log('Generated merchant ID:', merchantId);
@@ -349,7 +359,8 @@ export class StorageService {
         is_contactless: transactionData.isContactless,
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category
+        category: transactionData.category,
+        user_id: session.user.id
       };
 
       console.log('Inserting transaction:', transactionInsertData);
