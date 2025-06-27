@@ -78,41 +78,71 @@ export class StorageService {
   }
 
   async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<void> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('User not authenticated');
-      }
+    const user = await this.getCurrentUser();
+    if (!user) {
+      throw new Error('User must be authenticated to save payment methods');
+    }
 
-      const dbPaymentMethods: DbPaymentMethod[] = paymentMethods.map(pm => ({
-        id: pm.id,
-        name: pm.name,
-        type: pm.type,
-        issuer: pm.issuer,
-        last_four_digits: pm.lastFourDigits,
-        currency: pm.currency,
-        icon: pm.icon,
-        color: pm.color,
-        image_url: pm.imageUrl,
-        points_currency: pm.pointsCurrency || null,
-        active: pm.active,
-        reward_rules: pm.rewardRules,
-        selected_categories: pm.selectedCategories,
-        statement_start_day: pm.statementStartDay,
-        is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate,
-        user_id: session.user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+    try {
+      // Add user_id to each payment method
+      const paymentMethodsWithUserId = paymentMethods.map(method => ({
+        ...method,
+        user_id: user.id
       }));
 
-      const { error } = await supabase
+      // Clear existing payment methods for this user and insert new ones
+      await supabase
         .from('payment_methods')
-        .upsert(dbPaymentMethods);
+        .delete()
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (paymentMethodsWithUserId.length > 0) {
+        const { error } = await supabase
+          .from('payment_methods')
+          .insert(paymentMethodsWithUserId);
+
+        if (error) {
+          console.error('Error saving payment methods:', error);
+          throw error;
+        }
+      }
     } catch (error) {
-      console.error('Error saving payment methods:', error);
+      console.error('Error in savePaymentMethods:', error);
+      throw error;
+    }
+  }
+
+  async saveTransactions(transactions: Transaction[]): Promise<void> {
+    const user = await this.getCurrentUser();
+    if (!user) {
+      throw new Error('User must be authenticated to save transactions');
+    }
+
+    try {
+      // Add user_id to each transaction
+      const transactionsWithUserId = transactions.map(transaction => ({
+        ...transaction,
+        user_id: user.id
+      }));
+
+      // Clear existing transactions for this user and insert new ones
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (transactionsWithUserId.length > 0) {
+        const { error } = await supabase
+          .from('transactions')
+          .insert(transactionsWithUserId);
+
+        if (error) {
+          console.error('Error saving transactions:', error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('Error in saveTransactions:', error);
       throw error;
     }
   }
@@ -567,6 +597,11 @@ export class StorageService {
     // Placeholder implementation for card image upload
     // In a real implementation, this would upload to a storage service
     return URL.createObjectURL(file);
+  }
+
+  private async getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 }
 
