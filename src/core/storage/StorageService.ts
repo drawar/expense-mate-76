@@ -265,6 +265,8 @@ export class StorageService {
     }
 
     try {
+      console.log('Fetching transactions from Supabase...');
+      
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -282,12 +284,19 @@ export class StorageService {
         .or(`is_deleted.is.false,is_deleted.is.null`)
         .order('date', { ascending: false });
 
+      console.log('Supabase query result:', { data, error, count: data?.length });
+
       if (error) {
         console.error('Supabase error:', error);
         return this.getTransactionsFromLocalStorage();
       }
 
-      if (!data) return [];
+      if (!data || data.length === 0) {
+        console.log('No transactions found in database');
+        return [];
+      }
+
+      console.log('Processing transactions:', data.length);
 
       return data.map(row => ({
         id: row.id,
