@@ -3,7 +3,7 @@ import { Transaction, PaymentMethod, Merchant, DbPaymentMethod, DbMerchant, Curr
 import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
 
 export class StorageService {
-  private useLocalStorage: boolean = false;
+  private useLocalStorage: boolean = true; // Changed to true by default
 
   constructor() {
     // Initialize reward system when storage service is created
@@ -25,46 +25,8 @@ export class StorageService {
   }
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    if (this.useLocalStorage) {
-      return this.getPaymentMethodsFromLocalStorage();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Supabase error:', error);
-        return this.getPaymentMethodsFromLocalStorage();
-      }
-
-      if (!data) return [];
-
-      return data.map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        type: row.type as any,
-        issuer: row.issuer || '',
-        lastFourDigits: row.last_four_digits || undefined,
-        currency: row.currency as Currency,
-        icon: row.icon || undefined,
-        color: row.color || undefined,
-        imageUrl: row.image_url || undefined,
-        pointsCurrency: row.points_currency || undefined,
-        active: row.active,
-        rewardRules: row.reward_rules || [],
-        selectedCategories: row.selected_categories || [],
-        statementStartDay: row.statement_start_day || undefined,
-        isMonthlyStatement: row.is_monthly_statement || undefined,
-        conversionRate: row.conversion_rate || undefined
-      }));
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-      return this.getPaymentMethodsFromLocalStorage();
-    }
+    // Always use localStorage mode now
+    return this.getPaymentMethodsFromLocalStorage();
   }
 
   private getPaymentMethodsFromLocalStorage(): PaymentMethod[] {
@@ -78,118 +40,17 @@ export class StorageService {
   }
 
   async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<void> {
-    const user = await this.getCurrentUser();
-    if (!user) {
-      throw new Error('User must be authenticated to save payment methods');
-    }
-
+    // Always use localStorage mode now
     try {
-      // Transform PaymentMethod objects to database format
-      const dbPaymentMethods = paymentMethods.map(pm => ({
-        id: pm.id,
-        name: pm.name,
-        type: pm.type,
-        issuer: pm.issuer,
-        last_four_digits: pm.lastFourDigits,
-        currency: pm.currency,
-        icon: pm.icon,
-        color: pm.color,
-        image_url: pm.imageUrl,
-        points_currency: pm.pointsCurrency || null,
-        active: pm.active,
-        reward_rules: pm.rewardRules,
-        selected_categories: pm.selectedCategories,
-        statement_start_day: pm.statementStartDay,
-        is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate,
-        user_id: user.id
-      }));
-
-      // Clear existing payment methods for this user and insert new ones
-      await supabase
-        .from('payment_methods')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (dbPaymentMethods.length > 0) {
-        const { error } = await supabase
-          .from('payment_methods')
-          .insert(dbPaymentMethods);
-
-        if (error) {
-          console.error('Error saving payment methods:', error);
-          throw error;
-        }
-      }
+      localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
     } catch (error) {
-      console.error('Error in savePaymentMethods:', error);
-      throw error;
+      console.error('Error saving payment methods to localStorage:', error);
     }
   }
 
   async saveTransactions(transactions: Transaction[]): Promise<void> {
-    const user = await this.getCurrentUser();
-    if (!user) {
-      throw new Error('User must be authenticated to save transactions');
-    }
-
-    try {
-      // First, ensure all merchants exist
-      const merchantData = transactions.map(t => ({
-        id: t.merchant.id || crypto.randomUUID(),
-        name: t.merchant.name,
-        address: t.merchant.address,
-        mcc: t.merchant.mcc as any,
-        is_online: t.merchant.isOnline,
-        coordinates: t.merchant.coordinates as any
-      }));
-
-      if (merchantData.length > 0) {
-        await supabase
-          .from('merchants')
-          .upsert(merchantData, { onConflict: 'id' });
-      }
-
-      // Transform Transaction objects to database format
-      const dbTransactions = transactions.map(transaction => ({
-        id: transaction.id,
-        date: transaction.date,
-        merchant_id: transaction.merchant.id || crypto.randomUUID(),
-        amount: transaction.amount,
-        currency: transaction.currency,
-        payment_method_id: transaction.paymentMethod.id,
-        payment_amount: transaction.paymentAmount,
-        payment_currency: transaction.paymentCurrency,
-        total_points: transaction.rewardPoints,
-        base_points: transaction.basePoints,
-        bonus_points: transaction.bonusPoints,
-        is_contactless: transaction.isContactless,
-        notes: transaction.notes,
-        reimbursement_amount: transaction.reimbursementAmount,
-        category: transaction.category,
-        user_id: user.id
-      }));
-
-      // Clear existing transactions for this user and insert new ones
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (dbTransactions.length > 0) {
-        const { error } = await supabase
-          .from('transactions')
-          .insert(dbTransactions);
-
-        if (error) {
-          console.error('Error saving transactions:', error);
-          throw error;
-        }
-      }
-    } catch (error) {
-      console.error('Error in saveTransactions:', error);
-      throw error;
-    }
+    // Always use localStorage mode now
+    this.saveTransactionsToLocalStorage(transactions);
   }
 
   async getMerchants(): Promise<Merchant[]> {
@@ -268,81 +129,8 @@ export class StorageService {
   }
 
   async getTransactions(): Promise<Transaction[]> {
-    if (this.useLocalStorage) {
-      return this.getTransactionsFromLocalStorage();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          payment_methods:payment_method_id(
-            id, name, type, issuer, last_four_digits, currency, 
-            icon, color, image_url, active, 
-            reward_rules, selected_categories, statement_start_day, 
-            is_monthly_statement, conversion_rate
-          ),
-          merchants:merchant_id(
-            id, name, address, mcc, is_online, coordinates, is_deleted
-          )
-        `)
-        .eq('is_deleted', false)
-        .order('date', { ascending: false });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        return this.getTransactionsFromLocalStorage();
-      }
-
-      if (!data) return [];
-
-      return data.map(row => ({
-        id: row.id,
-        date: row.date,
-        merchant: {
-          id: row.merchants?.id || '',
-          name: row.merchants?.name || 'Unknown Merchant',
-          address: row.merchants?.address || undefined,
-          mcc: row.merchants?.mcc ? this.parseMCC(row.merchants.mcc) : undefined,
-          isOnline: row.merchants?.is_online || false,
-          coordinates: row.merchants?.coordinates ? this.parseCoordinates(row.merchants.coordinates) : undefined,
-          is_deleted: row.merchants?.is_deleted || false
-        } as Merchant,
-        amount: parseFloat(row.amount?.toString() || '0'),
-        currency: row.currency as Currency,
-        paymentMethod: {
-          id: row.payment_methods?.id || '',
-          name: row.payment_methods?.name || 'Unknown Payment Method',
-          type: row.payment_methods?.type as any,
-          issuer: row.payment_methods?.issuer || '',
-          lastFourDigits: row.payment_methods?.last_four_digits || undefined,
-          currency: (row.payment_methods?.currency || 'USD') as Currency,
-          icon: row.payment_methods?.icon || undefined,
-          color: row.payment_methods?.color || undefined,
-          imageUrl: row.payment_methods?.image_url || undefined,
-          pointsCurrency: undefined, // Will be handled separately
-          active: row.payment_methods?.active || true,
-          rewardRules: row.payment_methods?.reward_rules || [],
-          selectedCategories: row.payment_methods?.selected_categories || [],
-          statementStartDay: row.payment_methods?.statement_start_day || undefined,
-          isMonthlyStatement: row.payment_methods?.is_monthly_statement || undefined,
-          conversionRate: row.payment_methods?.conversion_rate || undefined
-        } as PaymentMethod,
-        paymentAmount: parseFloat(row.payment_amount?.toString() || row.amount?.toString() || '0'),
-        paymentCurrency: (row.payment_currency || row.currency) as Currency,
-        rewardPoints: row.total_points || 0,
-        basePoints: row.base_points || 0,
-        bonusPoints: row.bonus_points || 0,
-        isContactless: row.is_contactless || false,
-        notes: row.notes || undefined,
-        reimbursementAmount: row.reimbursement_amount ? parseFloat(row.reimbursement_amount.toString()) : undefined,
-        category: row.category || undefined
-      }));
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      return this.getTransactionsFromLocalStorage();
-    }
+    // Always use localStorage mode now
+    return this.getTransactionsFromLocalStorage();
   }
 
   private getTransactionsFromLocalStorage(): Transaction[] {
@@ -366,122 +154,9 @@ export class StorageService {
   async addTransaction(transactionData: Omit<Transaction, 'id'>): Promise<Transaction> {
     console.log('StorageService.addTransaction called with:', transactionData);
     
-    if (this.useLocalStorage) {
-      console.log('Using localStorage mode for transaction');
-      return this.addTransactionToLocalStorage(transactionData);
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Generate a proper merchant ID if it's empty
-      const merchantId = transactionData.merchant.id || crypto.randomUUID();
-      console.log('Generated merchant ID:', merchantId);
-
-      // Calculate reward points before saving
-      const tempTransaction: Transaction = {
-        ...transactionData,
-        id: 'temp',
-        merchant: {
-          ...transactionData.merchant,
-          id: merchantId
-        }
-      };
-      
-      const rewardCalculation = await calculateRewardPoints(tempTransaction);
-      console.log('Calculated reward points:', rewardCalculation);
-
-      // First, ensure merchant exists
-      const merchantData = {
-        id: merchantId,
-        name: transactionData.merchant.name,
-        address: transactionData.merchant.address,
-        mcc: transactionData.merchant.mcc as any,
-        is_online: transactionData.merchant.isOnline,
-        coordinates: transactionData.merchant.coordinates as any
-      };
-      
-      console.log('Upserting merchant:', merchantData);
-      const merchantResult = await supabase
-        .from('merchants')
-        .upsert([merchantData], { onConflict: 'id' })
-        .select()
-        .single();
-
-      if (merchantResult.error) {
-        console.error('Error upserting merchant:', merchantResult.error);
-        console.log('Falling back to localStorage due to merchant error');
-        return this.addTransactionToLocalStorage(transactionData);
-      }
-
-      console.log('Merchant upserted successfully:', merchantResult.data);
-
-      // Insert transaction
-      const transactionInsertData = {
-        date: transactionData.date,
-        merchant_id: merchantId,
-        amount: transactionData.amount,
-        currency: transactionData.currency,
-        payment_method_id: transactionData.paymentMethod.id,
-        payment_amount: transactionData.paymentAmount,
-        payment_currency: transactionData.paymentCurrency,
-        total_points: rewardCalculation.totalPoints,
-        base_points: rewardCalculation.basePoints,
-        bonus_points: rewardCalculation.bonusPoints,
-        is_contactless: transactionData.isContactless,
-        notes: transactionData.notes,
-        reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category,
-        user_id: session.user.id
-      };
-
-      console.log('Inserting transaction:', transactionInsertData);
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([transactionInsertData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase error adding transaction:', error);
-        console.log('Falling back to localStorage due to transaction error');
-        return this.addTransactionToLocalStorage(transactionData);
-      }
-
-      console.log('Transaction inserted successfully:', data);
-
-      // Return the complete transaction object
-      const newTransaction: Transaction = {
-        id: data.id,
-        date: data.date,
-        merchant: {
-          ...transactionData.merchant,
-          id: merchantId
-        },
-        amount: parseFloat(data.amount.toString()),
-        currency: data.currency as Currency,
-        paymentMethod: transactionData.paymentMethod,
-        paymentAmount: parseFloat(data.payment_amount.toString()),
-        paymentCurrency: data.payment_currency as Currency,
-        rewardPoints: data.total_points || 0,
-        basePoints: data.base_points || 0,
-        bonusPoints: data.bonus_points || 0,
-        isContactless: data.is_contactless || false,
-        notes: data.notes || undefined,
-        reimbursementAmount: data.reimbursement_amount ? parseFloat(data.reimbursement_amount.toString()) : undefined,
-        category: data.category || undefined
-      };
-
-      console.log('Returning completed transaction:', newTransaction);
-      return newTransaction;
-    } catch (error) {
-      console.error('Error adding transaction to Supabase:', error);
-      console.log('Falling back to localStorage due to caught error');
-      return this.addTransactionToLocalStorage(transactionData);
-    }
+    // Always use localStorage mode now
+    console.log('Using localStorage mode for transaction');
+    return this.addTransactionToLocalStorage(transactionData);
   }
 
   private addTransactionToLocalStorage(transactionData: Omit<Transaction, 'id'>): Transaction {
@@ -503,44 +178,8 @@ export class StorageService {
   }
 
   async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
-    if (this.useLocalStorage) {
-      return this.updateTransactionInLocalStorage(id, updates);
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .update({
-          date: updates.date,
-          amount: updates.amount,
-          currency: updates.currency,
-          payment_amount: updates.paymentAmount,
-          payment_currency: updates.paymentCurrency,
-          total_points: updates.rewardPoints,
-          base_points: updates.basePoints,
-          bonus_points: updates.bonusPoints,
-          is_contactless: updates.isContactless,
-          notes: updates.notes,
-          reimbursement_amount: updates.reimbursementAmount,
-          category: updates.category,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase error updating transaction:', error);
-        return this.updateTransactionInLocalStorage(id, updates);
-      }
-
-      // Get full transaction data
-      const transactions = await this.getTransactions();
-      return transactions.find(t => t.id === id) || null;
-    } catch (error) {
-      console.error('Error updating transaction:', error);
-      return this.updateTransactionInLocalStorage(id, updates);
-    }
+    // Always use localStorage mode now
+    return this.updateTransactionInLocalStorage(id, updates);
   }
 
   private updateTransactionInLocalStorage(id: string, updates: Partial<Transaction>): Transaction | null {
@@ -555,29 +194,8 @@ export class StorageService {
   }
 
   async deleteTransaction(id: string): Promise<boolean> {
-    if (this.useLocalStorage) {
-      return this.deleteTransactionFromLocalStorage(id);
-    }
-
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({ 
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Supabase error deleting transaction:', error);
-        return this.deleteTransactionFromLocalStorage(id);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error deleting transaction:', error);
-      return this.deleteTransactionFromLocalStorage(id);
-    }
+    // Always use localStorage mode now
+    return this.deleteTransactionFromLocalStorage(id);
   }
 
   private deleteTransactionFromLocalStorage(id: string): boolean {
