@@ -4,6 +4,8 @@ import { initializeRewardSystem, calculateRewardPoints } from '@/core/rewards';
 
 export class StorageService {
   private useLocalStorage: boolean = false;
+  // Default user ID for operations when auth is disabled
+  private readonly DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
   constructor() {
     // Initialize reward system when storage service is created
@@ -96,7 +98,8 @@ export class StorageService {
         selected_categories: pm.selectedCategories,
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate
+        conversion_rate: pm.conversionRate,
+        user_id: this.DEFAULT_USER_ID
       }));
 
       // Clear existing payment methods and insert new ones
@@ -155,7 +158,8 @@ export class StorageService {
         is_contactless: transaction.isContactless,
         notes: transaction.notes,
         reimbursement_amount: transaction.reimbursementAmount,
-        category: transaction.category
+        category: transaction.category,
+        user_id: this.DEFAULT_USER_ID
       }));
 
       // Clear existing transactions and insert new ones
@@ -417,7 +421,8 @@ export class StorageService {
         is_contactless: transactionData.isContactless,
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category
+        category: transactionData.category,
+        user_id: this.DEFAULT_USER_ID
       };
 
       console.log('Inserting transaction:', transactionInsertData);
