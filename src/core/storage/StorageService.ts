@@ -279,7 +279,7 @@ export class StorageService {
             id, name, address, mcc, is_online, coordinates, is_deleted
           )
         `)
-        .eq('is_deleted', false)
+        .or(`is_deleted.is.false,is_deleted.is.null`)
         .order('date', { ascending: false });
 
       if (error) {
