@@ -84,9 +84,24 @@ export class StorageService {
     }
 
     try {
-      // Add user_id to each payment method
-      const paymentMethodsWithUserId = paymentMethods.map(method => ({
-        ...method,
+      // Transform PaymentMethod objects to database format
+      const dbPaymentMethods = paymentMethods.map(pm => ({
+        id: pm.id,
+        name: pm.name,
+        type: pm.type,
+        issuer: pm.issuer,
+        last_four_digits: pm.lastFourDigits,
+        currency: pm.currency,
+        icon: pm.icon,
+        color: pm.color,
+        image_url: pm.imageUrl,
+        points_currency: pm.pointsCurrency || null,
+        active: pm.active,
+        reward_rules: pm.rewardRules,
+        selected_categories: pm.selectedCategories,
+        statement_start_day: pm.statementStartDay,
+        is_monthly_statement: pm.isMonthlyStatement,
+        conversion_rate: pm.conversionRate,
         user_id: user.id
       }));
 
@@ -96,10 +111,10 @@ export class StorageService {
         .delete()
         .eq('user_id', user.id);
 
-      if (paymentMethodsWithUserId.length > 0) {
+      if (dbPaymentMethods.length > 0) {
         const { error } = await supabase
           .from('payment_methods')
-          .insert(paymentMethodsWithUserId);
+          .insert(dbPaymentMethods);
 
         if (error) {
           console.error('Error saving payment methods:', error);
@@ -119,9 +134,39 @@ export class StorageService {
     }
 
     try {
-      // Add user_id to each transaction
-      const transactionsWithUserId = transactions.map(transaction => ({
-        ...transaction,
+      // First, ensure all merchants exist
+      const merchantData = transactions.map(t => ({
+        id: t.merchant.id || crypto.randomUUID(),
+        name: t.merchant.name,
+        address: t.merchant.address,
+        mcc: t.merchant.mcc as any,
+        is_online: t.merchant.isOnline,
+        coordinates: t.merchant.coordinates as any
+      }));
+
+      if (merchantData.length > 0) {
+        await supabase
+          .from('merchants')
+          .upsert(merchantData, { onConflict: 'id' });
+      }
+
+      // Transform Transaction objects to database format
+      const dbTransactions = transactions.map(transaction => ({
+        id: transaction.id,
+        date: transaction.date,
+        merchant_id: transaction.merchant.id || crypto.randomUUID(),
+        amount: transaction.amount,
+        currency: transaction.currency,
+        payment_method_id: transaction.paymentMethod.id,
+        payment_amount: transaction.paymentAmount,
+        payment_currency: transaction.paymentCurrency,
+        total_points: transaction.rewardPoints,
+        base_points: transaction.basePoints,
+        bonus_points: transaction.bonusPoints,
+        is_contactless: transaction.isContactless,
+        notes: transaction.notes,
+        reimbursement_amount: transaction.reimbursementAmount,
+        category: transaction.category,
         user_id: user.id
       }));
 
@@ -131,10 +176,10 @@ export class StorageService {
         .delete()
         .eq('user_id', user.id);
 
-      if (transactionsWithUserId.length > 0) {
+      if (dbTransactions.length > 0) {
         const { error } = await supabase
           .from('transactions')
-          .insert(transactionsWithUserId);
+          .insert(dbTransactions);
 
         if (error) {
           console.error('Error saving transactions:', error);
