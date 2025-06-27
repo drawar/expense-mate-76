@@ -78,11 +78,6 @@ export class StorageService {
   }
 
   async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<void> {
-    const user = await this.getCurrentUser();
-    if (!user) {
-      throw new Error('User must be authenticated to save payment methods');
-    }
-
     try {
       // Transform PaymentMethod objects to database format
       const dbPaymentMethods = paymentMethods.map(pm => ({
@@ -101,15 +96,14 @@ export class StorageService {
         selected_categories: pm.selectedCategories,
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate,
-        user_id: user.id
+        conversion_rate: pm.conversionRate
       }));
 
-      // Clear existing payment methods for this user and insert new ones
+      // Clear existing payment methods and insert new ones
       await supabase
         .from('payment_methods')
         .delete()
-        .eq('user_id', user.id);
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
       if (dbPaymentMethods.length > 0) {
         const { error } = await supabase
@@ -128,11 +122,6 @@ export class StorageService {
   }
 
   async saveTransactions(transactions: Transaction[]): Promise<void> {
-    const user = await this.getCurrentUser();
-    if (!user) {
-      throw new Error('User must be authenticated to save transactions');
-    }
-
     try {
       // First, ensure all merchants exist
       const merchantData = transactions.map(t => ({
@@ -166,15 +155,14 @@ export class StorageService {
         is_contactless: transaction.isContactless,
         notes: transaction.notes,
         reimbursement_amount: transaction.reimbursementAmount,
-        category: transaction.category,
-        user_id: user.id
+        category: transaction.category
       }));
 
-      // Clear existing transactions for this user and insert new ones
+      // Clear existing transactions and insert new ones
       await supabase
         .from('transactions')
         .delete()
-        .eq('user_id', user.id);
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
       if (dbTransactions.length > 0) {
         const { error } = await supabase
@@ -372,11 +360,6 @@ export class StorageService {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('User not authenticated');
-      }
-
       // Generate a proper merchant ID if it's empty
       const merchantId = transactionData.merchant.id || crypto.randomUUID();
       console.log('Generated merchant ID:', merchantId);
@@ -434,8 +417,7 @@ export class StorageService {
         is_contactless: transactionData.isContactless,
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category,
-        user_id: session.user.id
+        category: transactionData.category
       };
 
       console.log('Inserting transaction:', transactionInsertData);
@@ -642,11 +624,6 @@ export class StorageService {
     // Placeholder implementation for card image upload
     // In a real implementation, this would upload to a storage service
     return URL.createObjectURL(file);
-  }
-
-  private async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
   }
 }
 
