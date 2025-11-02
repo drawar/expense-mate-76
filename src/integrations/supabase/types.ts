@@ -14,7 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      merchants: {
+        Row: {
+          address: string | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          is_online: boolean | null
+          mcc: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          mcc?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          mcc?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          annual_fee: number | null
+          billing_cycle_day: number | null
+          color: string | null
+          created_at: string | null
+          credit_limit: number | null
+          currency: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          interest_rate: number | null
+          is_active: boolean | null
+          issuer: string | null
+          last_four_digits: string | null
+          name: string
+          network: string | null
+          notes: string | null
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          annual_fee?: number | null
+          billing_cycle_day?: number | null
+          color?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          currency?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          interest_rate?: number | null
+          is_active?: boolean | null
+          issuer?: string | null
+          last_four_digits?: string | null
+          name: string
+          network?: string | null
+          notes?: string | null
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          annual_fee?: number | null
+          billing_cycle_day?: number | null
+          color?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          currency?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          interest_rate?: number | null
+          is_active?: boolean | null
+          issuer?: string | null
+          last_four_digits?: string | null
+          name?: string
+          network?: string | null
+          notes?: string | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          currency: string | null
+          date: string
+          id: string
+          is_contactless: boolean | null
+          is_deleted: boolean | null
+          merchant_id: string | null
+          notes: string | null
+          payment_amount: number | null
+          payment_currency: string | null
+          payment_method_id: string | null
+          total_points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          date: string
+          id?: string
+          is_contactless?: boolean | null
+          is_deleted?: boolean | null
+          merchant_id?: string | null
+          notes?: string | null
+          payment_amount?: number | null
+          payment_currency?: string | null
+          payment_method_id?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          date?: string
+          id?: string
+          is_contactless?: boolean | null
+          is_deleted?: boolean | null
+          merchant_id?: string | null
+          notes?: string | null
+          payment_amount?: number | null
+          payment_currency?: string | null
+          payment_method_id?: string | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
