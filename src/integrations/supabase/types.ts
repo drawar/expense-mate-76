@@ -134,6 +134,69 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_rules: {
+        Row: {
+          bonus_tiers: Json | null
+          card_type_id: string
+          conditions: Json | null
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          excluded_categories: string[] | null
+          excluded_merchants: string[] | null
+          id: string
+          included_categories: string[] | null
+          included_merchants: string[] | null
+          max_bonus_per_transaction: number | null
+          min_spend: number | null
+          monthly_bonus_cap: number | null
+          name: string
+          priority: number | null
+          qualifying_period_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_tiers?: Json | null
+          card_type_id: string
+          conditions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          excluded_categories?: string[] | null
+          excluded_merchants?: string[] | null
+          id?: string
+          included_categories?: string[] | null
+          included_merchants?: string[] | null
+          max_bonus_per_transaction?: number | null
+          min_spend?: number | null
+          monthly_bonus_cap?: number | null
+          name: string
+          priority?: number | null
+          qualifying_period_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_tiers?: Json | null
+          card_type_id?: string
+          conditions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          excluded_categories?: string[] | null
+          excluded_merchants?: string[] | null
+          id?: string
+          included_categories?: string[] | null
+          included_merchants?: string[] | null
+          max_bonus_per_transaction?: number | null
+          min_spend?: number | null
+          monthly_bonus_cap?: number | null
+          name?: string
+          priority?: number | null
+          qualifying_period_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
