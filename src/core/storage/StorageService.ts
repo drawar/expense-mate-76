@@ -35,7 +35,7 @@ export class StorageService {
       const { data, error } = await supabase
         .from('payment_methods')
         .select('*')
-        .eq('active', true)
+        .eq('is_active', true)
         .order('name');
 
       if (error) {
@@ -56,7 +56,7 @@ export class StorageService {
         color: row.color || undefined,
         imageUrl: row.image_url || undefined,
         pointsCurrency: row.points_currency || undefined,
-        active: row.active,
+        active: row.is_active,
         rewardRules: row.reward_rules || [],
         selectedCategories: row.selected_categories || [],
         statementStartDay: row.statement_start_day || undefined,
@@ -93,7 +93,7 @@ export class StorageService {
         color: pm.color,
         image_url: pm.imageUrl,
         points_currency: pm.pointsCurrency || null,
-        active: pm.active,
+        is_active: pm.active,
         reward_rules: pm.rewardRules,
         selected_categories: pm.selectedCategories,
         statement_start_day: pm.statementStartDay,
@@ -273,7 +273,7 @@ export class StorageService {
           *,
           payment_methods:payment_method_id(
             id, name, type, issuer, last_four_digits, currency, 
-            icon, color, image_url, active, 
+            icon, color, image_url, is_active, 
             reward_rules, selected_categories, statement_start_day, 
             is_monthly_statement, conversion_rate
           ),
@@ -323,7 +323,7 @@ export class StorageService {
           color: row.payment_methods?.color || undefined,
           imageUrl: row.payment_methods?.image_url || undefined,
           pointsCurrency: undefined, // Will be handled separately
-          active: row.payment_methods?.active || true,
+          active: row.payment_methods?.is_active || true,
           rewardRules: row.payment_methods?.reward_rules || [],
           selectedCategories: row.payment_methods?.selected_categories || [],
           statementStartDay: row.payment_methods?.statement_start_day || undefined,
