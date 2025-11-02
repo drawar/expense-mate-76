@@ -1,25 +1,23 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { RewardRule, DbRewardRule, CalculationInput } from './types';
 import { RuleMapper } from './RuleMapper';
-import { Database } from '@/types/supabase';
 
 export class RuleRepository {
-  private supabase: SupabaseClient<Database>;
+  private supabase: SupabaseClient<any>;
   private static instance: RuleRepository;
   private readOnly: boolean = false;
   private ruleMapper: RuleMapper;
 
-  private constructor(supabaseClient: SupabaseClient<Database>) {
+  private constructor(supabaseClient: SupabaseClient<any>) {
     this.supabase = supabaseClient;
     this.ruleMapper = new RuleMapper();
   }
 
-  public static getInstance(supabaseClient?: SupabaseClient<Database>): RuleRepository {
-    if (!RuleRepository.instance && supabaseClient) {
-      RuleRepository.instance = new RuleRepository(supabaseClient);
-    } else if (!RuleRepository.instance && !supabaseClient) {
-      throw new Error('Supabase client must be provided to create the first instance.');
+public static getInstance(supabaseClient?: SupabaseClient<any>): RuleRepository {
+    if (!RuleRepository.instance) {
+      RuleRepository.instance = new RuleRepository(supabaseClient ?? supabase);
     }
     return RuleRepository.instance;
   }
@@ -146,9 +144,9 @@ export class RuleRepository {
 // Singleton instance
 let ruleRepositoryInstance: RuleRepository | null = null;
 
-export const initializeRuleRepository = (supabaseClient: SupabaseClient<Database>): RuleRepository => {
+export const initializeRuleRepository = (supabaseClient?: SupabaseClient<any>): RuleRepository => {
   if (!ruleRepositoryInstance) {
-    ruleRepositoryInstance = RuleRepository.getInstance(supabaseClient);
+    ruleRepositoryInstance = RuleRepository.getInstance(supabaseClient ?? supabase);
   }
   return ruleRepositoryInstance;
 };

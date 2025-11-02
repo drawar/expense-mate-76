@@ -31,6 +31,13 @@ export class StorageService {
       return this.getPaymentMethodsFromLocalStorage();
     }
 
+    // If not authenticated, fall back to local storage
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+    if (!session?.user) {
+      return this.getPaymentMethodsFromLocalStorage();
+    }
+
     try {
       const { data, error } = await supabase
         .from('payment_methods')
@@ -43,7 +50,10 @@ export class StorageService {
         return this.getPaymentMethodsFromLocalStorage();
       }
 
-      if (!data) return [];
+      if (!data || data.length === 0) {
+        const local = this.getPaymentMethodsFromLocalStorage();
+        return local;
+      }
 
       return data.map((row: any) => ({
         id: row.id,
@@ -79,7 +89,28 @@ export class StorageService {
     }
   }
 
+  private savePaymentMethodsToLocalStorage(paymentMethods: PaymentMethod[]) {
+    try {
+      localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+    } catch (error) {
+      console.error('Error saving payment methods to localStorage:', error);
+    }
+  }
+
   async savePaymentMethods(paymentMethods: PaymentMethod[]): Promise<void> {
+    // If using local mode or not authenticated, persist locally
+    if (this.useLocalStorage) {
+      this.savePaymentMethodsToLocalStorage(paymentMethods);
+      return;
+    }
+
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+    if (!session?.user) {
+      this.savePaymentMethodsToLocalStorage(paymentMethods);
+      return;
+    }
+
     try {
       // Transform PaymentMethod objects to database format
       const dbPaymentMethods = paymentMethods.map(pm => ({
@@ -99,28 +130,21 @@ export class StorageService {
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
         conversion_rate: pm.conversionRate,
-        user_id: this.DEFAULT_USER_ID
+        user_id: session.user.id
       }));
 
-      // Clear existing payment methods and insert new ones
-      await supabase
+      // Upsert instead of delete-all to respect RLS
+      const { error } = await supabase
         .from('payment_methods')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .upsert(dbPaymentMethods, { onConflict: 'id' });
 
-      if (dbPaymentMethods.length > 0) {
-        const { error } = await supabase
-          .from('payment_methods')
-          .insert(dbPaymentMethods);
-
-        if (error) {
-          console.error('Error saving payment methods:', error);
-          throw error;
-        }
+      if (error) {
+        console.error('Error saving payment methods, falling back to local:', error);
+        this.savePaymentMethodsToLocalStorage(paymentMethods);
       }
     } catch (error) {
-      console.error('Error in savePaymentMethods:', error);
-      throw error;
+      console.error('Error in savePaymentMethods, falling back to local:', error);
+      this.savePaymentMethodsToLocalStorage(paymentMethods);
     }
   }
 
