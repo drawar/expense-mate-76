@@ -20,6 +20,7 @@ export type Database = {
           coordinates: Json | null
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           is_online: boolean | null
           mcc: string | null
           name: string
@@ -30,6 +31,7 @@ export type Database = {
           coordinates?: Json | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_online?: boolean | null
           mcc?: string | null
           name: string
@@ -40,6 +42,7 @@ export type Database = {
           coordinates?: Json | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_online?: boolean | null
           mcc?: string | null
           name?: string
@@ -52,6 +55,7 @@ export type Database = {
           annual_fee: number | null
           billing_cycle_day: number | null
           color: string | null
+          conversion_rate: Json | null
           created_at: string | null
           credit_limit: number | null
           currency: string | null
@@ -60,11 +64,16 @@ export type Database = {
           image_url: string | null
           interest_rate: number | null
           is_active: boolean | null
+          is_monthly_statement: boolean | null
           issuer: string | null
           last_four_digits: string | null
           name: string
           network: string | null
           notes: string | null
+          points_currency: string | null
+          reward_rules: Json | null
+          selected_categories: Json | null
+          statement_start_day: number | null
           type: string
           updated_at: string | null
           user_id: string
@@ -73,6 +82,7 @@ export type Database = {
           annual_fee?: number | null
           billing_cycle_day?: number | null
           color?: string | null
+          conversion_rate?: Json | null
           created_at?: string | null
           credit_limit?: number | null
           currency?: string | null
@@ -81,11 +91,16 @@ export type Database = {
           image_url?: string | null
           interest_rate?: number | null
           is_active?: boolean | null
+          is_monthly_statement?: boolean | null
           issuer?: string | null
           last_four_digits?: string | null
           name: string
           network?: string | null
           notes?: string | null
+          points_currency?: string | null
+          reward_rules?: Json | null
+          selected_categories?: Json | null
+          statement_start_day?: number | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -94,6 +109,7 @@ export type Database = {
           annual_fee?: number | null
           billing_cycle_day?: number | null
           color?: string | null
+          conversion_rate?: Json | null
           created_at?: string | null
           credit_limit?: number | null
           currency?: string | null
@@ -102,11 +118,16 @@ export type Database = {
           image_url?: string | null
           interest_rate?: number | null
           is_active?: boolean | null
+          is_monthly_statement?: boolean | null
           issuer?: string | null
           last_four_digits?: string | null
           name?: string
           network?: string | null
           notes?: string | null
+          points_currency?: string | null
+          reward_rules?: Json | null
+          selected_categories?: Json | null
+          statement_start_day?: number | null
           type?: string
           updated_at?: string | null
           user_id?: string
@@ -116,6 +137,8 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          base_points: number | null
+          bonus_points: number | null
           category: string | null
           created_at: string | null
           currency: string | null
@@ -128,12 +151,15 @@ export type Database = {
           payment_amount: number | null
           payment_currency: string | null
           payment_method_id: string | null
+          reimbursement_amount: number | null
           total_points: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           amount: number
+          base_points?: number | null
+          bonus_points?: number | null
           category?: string | null
           created_at?: string | null
           currency?: string | null
@@ -146,12 +172,15 @@ export type Database = {
           payment_amount?: number | null
           payment_currency?: string | null
           payment_method_id?: string | null
+          reimbursement_amount?: number | null
           total_points?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           amount?: number
+          base_points?: number | null
+          bonus_points?: number | null
           category?: string | null
           created_at?: string | null
           currency?: string | null
@@ -164,6 +193,7 @@ export type Database = {
           payment_amount?: number | null
           payment_currency?: string | null
           payment_method_id?: string | null
+          reimbursement_amount?: number | null
           total_points?: number | null
           updated_at?: string | null
           user_id?: string
