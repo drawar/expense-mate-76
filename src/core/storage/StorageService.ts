@@ -396,6 +396,14 @@ export class StorageService {
       return this.addTransactionToLocalStorage(transactionData);
     }
 
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+    if (!session?.user) {
+      console.log('No authenticated user, falling back to localStorage');
+      return this.addTransactionToLocalStorage(transactionData);
+    }
+
     try {
       // Generate a proper merchant ID if it's empty
       const merchantId = transactionData.merchant.id || crypto.randomUUID();
@@ -439,7 +447,7 @@ export class StorageService {
 
       console.log('Merchant upserted successfully:', merchantResult.data);
 
-      // Insert transaction
+      // Insert transaction with authenticated user ID
       const transactionInsertData = {
         date: transactionData.date,
         merchant_id: merchantId,
@@ -455,7 +463,7 @@ export class StorageService {
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
         category: transactionData.category,
-        user_id: this.DEFAULT_USER_ID
+        user_id: session.user.id
       };
 
       console.log('Inserting transaction:', transactionInsertData);
