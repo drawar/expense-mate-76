@@ -69,6 +69,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
   const handleSelectMCC = (mcc: MerchantCategoryCode) => {
     console.log("Selected MCC:", mcc);
     onSelectMCC(mcc);
+    setShowMCCDialog(false);
   };
 
   return (
