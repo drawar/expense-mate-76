@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { syncPaymentMethodsToSupabase } from '@/utils/syncLocalStorageToSupabase';
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +25,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Sync localStorage data when user signs in
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(() => {
+            syncPaymentMethodsToSupabase(session.user.id);
+          }, 0);
+        }
       }
     );
 
@@ -32,6 +40,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Sync localStorage data if user is already logged in
+      if (session?.user) {
+        setTimeout(() => {
+          syncPaymentMethodsToSupabase(session.user.id);
+        }, 0);
+      }
     });
 
     return () => subscription.unsubscribe();
