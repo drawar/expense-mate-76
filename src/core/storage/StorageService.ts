@@ -399,10 +399,15 @@ export class StorageService {
     // Check if user is authenticated
     const { data: authData } = await supabase.auth.getSession();
     const session = authData?.session;
+    console.log('🔐 Auth check - Session exists:', !!session, 'User ID:', session?.user?.id);
+    
     if (!session?.user) {
-      console.log('No authenticated user, falling back to localStorage');
+      console.error('❌ NO AUTHENTICATED USER - This is the problem! User must be logged in.');
+      console.log('Falling back to localStorage due to no auth');
       return this.addTransactionToLocalStorage(transactionData);
     }
+    
+    console.log('✅ User authenticated with ID:', session.user.id, '- Proceeding with Supabase insert');
 
     try {
       // Generate a proper merchant ID if it's empty
