@@ -3,6 +3,9 @@ import { PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 
 const PAYMENT_METHODS_KEY = 'expense-tracker-payment-methods';
+const SYNC_INTERVAL_MS = 5 * 60 * 1000; // Sync every 5 minutes
+
+let syncIntervalId: NodeJS.Timeout | null = null;
 
 /**
  * Syncs payment methods from localStorage to Supabase after login
@@ -56,5 +59,35 @@ export async function syncPaymentMethodsToSupabase(userId: string): Promise<void
   } catch (error) {
     console.error('Error in syncPaymentMethodsToSupabase:', error);
     toast.error('Failed to sync payment methods');
+  }
+}
+
+/**
+ * Starts periodic sync of localStorage to Supabase
+ */
+export function startPeriodicSync(userId: string): void {
+  // Clear any existing interval
+  stopPeriodicSync();
+  
+  console.log('🔄 Starting periodic sync (every 5 minutes)...');
+  
+  // Run sync immediately
+  syncPaymentMethodsToSupabase(userId);
+  
+  // Then set up interval
+  syncIntervalId = setInterval(() => {
+    console.log('⏰ Running scheduled sync...');
+    syncPaymentMethodsToSupabase(userId);
+  }, SYNC_INTERVAL_MS);
+}
+
+/**
+ * Stops periodic sync
+ */
+export function stopPeriodicSync(): void {
+  if (syncIntervalId) {
+    console.log('⏹️ Stopping periodic sync');
+    clearInterval(syncIntervalId);
+    syncIntervalId = null;
   }
 }
