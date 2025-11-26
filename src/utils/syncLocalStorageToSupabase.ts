@@ -2,7 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 
-const PAYMENT_METHODS_KEY = 'paymentMethods';
+const PAYMENT_METHODS_KEY = 'expense-tracker-payment-methods';
+const LEGACY_KEY = 'paymentMethods';
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // Sync every 5 minutes
 
 let syncIntervalId: NodeJS.Timeout | null = null;
@@ -14,8 +15,12 @@ export async function syncPaymentMethodsToSupabase(userId: string): Promise<void
   try {
     console.log('🔄 Starting sync of localStorage payment methods to Supabase...');
     
-    // Get payment methods from localStorage
-    const localStorageData = localStorage.getItem(PAYMENT_METHODS_KEY);
+    // Get payment methods from localStorage (check both keys)
+    let localStorageData = localStorage.getItem(PAYMENT_METHODS_KEY);
+    if (!localStorageData) {
+      localStorageData = localStorage.getItem(LEGACY_KEY);
+    }
+    
     if (!localStorageData) {
       console.log('✅ No localStorage payment methods to sync');
       return;
@@ -51,8 +56,9 @@ export async function syncPaymentMethodsToSupabase(userId: string): Promise<void
 
     console.log('✅ Successfully synced payment methods to Supabase');
     
-    // Clear localStorage after successful sync
+    // Clear localStorage after successful sync (both keys)
     localStorage.removeItem(PAYMENT_METHODS_KEY);
+    localStorage.removeItem(LEGACY_KEY);
     console.log('🗑️ Cleared payment methods from localStorage');
     
     toast.success('Payment methods synced to cloud');
