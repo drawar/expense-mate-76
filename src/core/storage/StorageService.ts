@@ -81,7 +81,11 @@ export class StorageService {
 
   private getPaymentMethodsFromLocalStorage(): PaymentMethod[] {
     try {
-      const stored = localStorage.getItem('paymentMethods');
+      // Check both possible keys for backward compatibility
+      let stored = localStorage.getItem('expense-tracker-payment-methods');
+      if (!stored) {
+        stored = localStorage.getItem('paymentMethods');
+      }
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error parsing payment methods from localStorage:', error);
@@ -91,7 +95,9 @@ export class StorageService {
 
   private savePaymentMethodsToLocalStorage(paymentMethods: PaymentMethod[]) {
     try {
-      localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+      localStorage.setItem('expense-tracker-payment-methods', JSON.stringify(paymentMethods));
+      // Remove old key if it exists
+      localStorage.removeItem('paymentMethods');
     } catch (error) {
       console.error('Error saving payment methods to localStorage:', error);
     }
