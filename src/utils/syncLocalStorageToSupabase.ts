@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 
-const PAYMENT_METHODS_KEY = 'expense-tracker-payment-methods';
+const PAYMENT_METHODS_KEY = 'paymentMethods';
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // Sync every 5 minutes
 
 let syncIntervalId: NodeJS.Timeout | null = null;
