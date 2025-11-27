@@ -39,6 +39,7 @@ export const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
         paymentMethods={paymentMethods}
         onSubmit={onSubmit}
         isEditMode={true}
+        editingTransaction={transaction}
         defaultValues={{
           merchantName: transaction.merchant.name,
           merchantAddress: transaction.merchant.address,

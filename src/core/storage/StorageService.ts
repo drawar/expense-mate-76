@@ -619,7 +619,7 @@ export class StorageService {
     try {
       // If merchant data is being updated, upsert the merchant first
       if (updates.merchant) {
-        const merchantId = updates.merchant.id || crypto.randomUUID();
+        const merchantId = updates.merchant.id && updates.merchant.id.trim() !== "" ? updates.merchant.id : crypto.randomUUID();
         const merchantData = {
           id: merchantId,
           name: updates.merchant.name,
@@ -653,7 +653,7 @@ export class StorageService {
         .from("transactions")
         .update({
           date: updates.date,
-          merchant_id: updates.merchant?.id,
+          merchant_id: (updates.merchant?.id && updates.merchant.id.trim() !== "") ? updates.merchant.id : null,
           amount: updates.amount,
           currency: updates.currency,
           payment_amount: updates.paymentAmount,
