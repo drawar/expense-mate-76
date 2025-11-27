@@ -1,39 +1,39 @@
+import { Transaction, PaymentMethod } from "@/types";
+import { CalculationResult } from "@/types";
+import { rewardService } from "./RewardService";
+import { RuleRepository, initializeRuleRepository } from "./RuleRepository";
+import { supabase } from "@/integrations/supabase/client";
+import { DateTime } from "luxon";
 
-import { Transaction, PaymentMethod } from '@/types';
-import { CalculationResult } from '@/types';
-import { rewardService } from './RewardService';
-import { RuleRepository, initializeRuleRepository } from './RuleRepository';
-import { supabase } from '@/integrations/supabase/client';
-import { DateTime } from 'luxon';
-
-export const initializeRewardSystem = async (readOnly: boolean = false): Promise<void> => {
+export const initializeRewardSystem = async (): Promise<void> => {
   try {
-    console.log(`Initializing reward system (read-only: ${readOnly})`);
-    
-    // Initialize the rule repository with supabase client - use any to resolve type conflict
-    const ruleRepository = initializeRuleRepository(supabase as any);
-    ruleRepository.setReadOnly(readOnly);
-    
-    console.log('Reward system initialized successfully');
+    console.log("Initializing reward system");
+
+    // Initialize the rule repository with supabase client
+    const ruleRepository = initializeRuleRepository(supabase);
+
+    console.log("Reward system initialized successfully");
   } catch (error) {
-    console.error('Failed to initialize reward system:', error);
+    console.error("Failed to initialize reward system:", error);
     throw error;
   }
 };
 
-export async function calculateRewardPoints(transaction: Transaction): Promise<CalculationResult> {
+export async function calculateRewardPoints(
+  transaction: Transaction
+): Promise<CalculationResult> {
   const input = {
     amount: transaction.amount,
     currency: transaction.currency,
     paymentMethod: transaction.paymentMethod,
     mcc: transaction.merchant.mcc?.code,
     merchantName: transaction.merchant.name,
-    transactionType: 'purchase' as const,
+    transactionType: "purchase" as const,
     isOnline: transaction.merchant.isOnline,
     isContactless: transaction.isContactless,
-    date: DateTime.fromISO(transaction.date)
+    date: DateTime.fromISO(transaction.date),
   };
-  
+
   return rewardService.calculateRewards(input);
 }
 
@@ -74,5 +74,20 @@ export function formatRewardPointsMessage(
   return undefined;
 }
 
-// Re-export the singleton instances
+// Re-export the singleton instances and logger
 export { rewardService, RuleRepository };
+export { logger } from "./logger";
+export { CardTypeIdService, cardTypeIdService } from "./CardTypeIdService";
+export { BonusPointsTracker, bonusPointsTracker } from "./BonusPointsTracker";
+export {
+  MonthlySpendingTracker,
+  monthlySpendingTracker,
+} from "./MonthlySpendingTracker";
+
+// Re-export error classes
+export {
+  RepositoryError,
+  AuthenticationError,
+  ValidationError,
+  PersistenceError,
+} from "./errors";
