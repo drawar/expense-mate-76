@@ -34,14 +34,8 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     <CreditCardIcon className="h-5 w-5" style={{ color: method.color }} /> : 
     <BanknoteIcon className="h-5 w-5" style={{ color: method.color }} />;
 
-  // Determine card type ID based on payment method
-  const getCardTypeId = (): string => {
-    if (method.issuer && method.name) {
-      // Create a normalized ID format similar to that used in CardRegistry
-      return `${method.issuer.toLowerCase()}-${method.name.toLowerCase().replace(/\s+/g, '-')}`;
-    }
-    return method.id;
-  };
+  // Use payment method's UUID as card type ID (matches reward_rules.card_type_id column type)
+  const getCardTypeId = (): string => method.id;
 
   return (
     <Card className={cn(
