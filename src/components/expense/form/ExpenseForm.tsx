@@ -16,6 +16,7 @@ interface ExpenseFormProps {
   useLocalStorage?: boolean;
   isSaving?: boolean;
   isEditMode?: boolean;
+  editingTransaction?: Transaction; // Add this to preserve merchant ID when editing
 }
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({
@@ -25,6 +26,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   useLocalStorage = false,
   isSaving = false,
   isEditMode = false,
+  editingTransaction, // Extract the new prop
 }) => {
   const { toast } = useToast();
   const {
@@ -73,7 +75,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       }
 
       const merchantData = {
-        id: "", // Will be assigned by storage service
+        id: isEditMode && editingTransaction?.merchant?.id ? editingTransaction.merchant.id : "", // Preserve merchant ID when editing
         name: values.merchantName.trim(),
         address: values.merchantAddress?.trim(),
         isOnline: values.isOnline,
