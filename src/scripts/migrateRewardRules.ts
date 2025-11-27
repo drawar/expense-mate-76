@@ -65,7 +65,7 @@ async function migrateRewardRules() {
         };
       });
 
-      const { error } = await supabase.from("reward_rules").insert(dbRules);
+      const { error } = await supabase.from("reward_rules").insert(dbRules as any);
 
       if (error) {
         console.error("Error inserting new rules:", error);
@@ -114,41 +114,42 @@ function convertOldRuleToNew(
   }
 
   // Check for included MCCs
-  if (oldRule.included_mccs && oldRule.included_mccs.length > 0) {
+  if (oldRule.included_mccs && Array.isArray(oldRule.included_mccs) && oldRule.included_mccs.length > 0) {
     conditions.push({
       type: "mcc",
       operation: "include",
-      values: oldRule.included_mccs,
+      values: oldRule.included_mccs as (string | number)[],
     });
   }
 
   // Check for excluded MCCs
-  if (oldRule.excluded_mccs && oldRule.excluded_mccs.length > 0) {
+  if (oldRule.excluded_mccs && Array.isArray(oldRule.excluded_mccs) && oldRule.excluded_mccs.length > 0) {
     conditions.push({
       type: "mcc",
       operation: "exclude",
-      values: oldRule.excluded_mccs,
+      values: oldRule.excluded_mccs as (string | number)[],
     });
   }
 
   // Check for currency restrictions
   if (
     oldRule.currency_restrictions &&
+    Array.isArray(oldRule.currency_restrictions) &&
     oldRule.currency_restrictions.length > 0
   ) {
     const excludedCurrencies = oldRule.currency_restrictions
-      .filter((curr: string) => curr.startsWith("!"))
-      .map((curr: string) => curr.substring(1));
+      .filter((curr: any) => typeof curr === 'string' && curr.startsWith("!"))
+      .map((curr: any) => curr.substring(1));
 
     const includedCurrencies = oldRule.currency_restrictions.filter(
-      (curr: string) => !curr.startsWith("!")
+      (curr: any) => typeof curr === 'string' && !curr.startsWith("!")
     );
 
     if (excludedCurrencies.length > 0) {
       conditions.push({
         type: "currency",
         operation: "exclude",
-        values: excludedCurrencies,
+        values: excludedCurrencies as (string | number)[],
       });
     }
 
@@ -156,7 +157,7 @@ function convertOldRuleToNew(
       conditions.push({
         type: "currency",
         operation: "include",
-        values: includedCurrencies,
+        values: includedCurrencies as (string | number)[],
       });
     }
   }
@@ -186,20 +187,20 @@ function convertOldRuleToNew(
   return {
     id: uuidv4(),
     cardTypeId,
-    name: oldRule.name,
-    description: oldRule.description || "",
-    enabled: oldRule.enabled,
+    name: oldRule.name as string,
+    description: (oldRule.description as string) || "",
+    enabled: oldRule.enabled as boolean,
     priority: 10, // Default priority
     conditions,
     reward: {
       calculationMethod,
-      baseMultiplier: oldRule.base_point_rate,
-      bonusMultiplier: oldRule.bonus_point_rate,
-      pointsRoundingStrategy: "floor",
-      amountRoundingStrategy: oldRule.rounding || "floor",
+      baseMultiplier: oldRule.base_point_rate as number,
+      bonusMultiplier: oldRule.bonus_point_rate as number,
+      pointsRoundingStrategy: "floor" as const,
+      amountRoundingStrategy: ((oldRule.rounding as string) || "floor") as any,
       blockSize,
       bonusTiers: [], // Add required bonusTiers property
-      monthlyCap: oldRule.monthly_cap,
+      monthlyCap: oldRule.monthly_cap as number,
       pointsCurrency,
     },
     createdAt: new Date(),
@@ -214,12 +215,12 @@ function determineCalculationMethod(
   oldRule: Record<string, unknown>
 ): CalculationMethod {
   // UOB cards typically use standard method with floor5 rounding
-  if (oldRule.cardType.toLowerCase().includes("uob")) {
+  if ((oldRule.cardType as string).toLowerCase().includes("uob")) {
     return "standard";
   }
 
   // Citibank cards typically use direct method
-  if (oldRule.cardType.toLowerCase().includes("citibank")) {
+  if ((oldRule.cardType as string).toLowerCase().includes("citibank")) {
     return "direct";
   }
 

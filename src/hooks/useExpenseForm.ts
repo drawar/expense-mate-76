@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PaymentMethod, MerchantCategoryCode } from "@/types";
+import { PaymentMethod, MerchantCategoryCode, Currency } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   FormValues,
@@ -80,7 +80,7 @@ export const useExpenseForm = ({
   );
 
   const { selectedPaymentMethod, shouldOverridePayment } =
-    usePaymentMethodLogic(form, paymentMethods, currency, amount, isOnline);
+    usePaymentMethodLogic(form, paymentMethods, currency as Currency, amount, isOnline);
 
   // Track changes to the reward points field
   useEffect(() => {
