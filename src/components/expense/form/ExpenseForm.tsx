@@ -114,6 +114,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         notes: values.notes as string,
         isContactless: !(values.isOnline as boolean) && (values.isContactless as boolean),
         reimbursementAmount: reimbursementAmount,
+        category: selectedMCC?.description || selectedMCC?.code || undefined,
       };
 
       console.log("Transaction data being submitted:", transactionData);
