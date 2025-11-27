@@ -261,12 +261,15 @@ export class StorageService {
   private parseMCC(mccData: unknown): MerchantCategoryCode | undefined {
     if (!mccData) return undefined;
 
-    // Handle different possible formats of MCC data
-    if (typeof mccData === "object" && mccData.code && mccData.description) {
-      return {
-        code: String(mccData.code),
-        description: String(mccData.description),
-      };
+    // Handle JSONB format from database
+    if (typeof mccData === "object" && mccData !== null) {
+      const obj = mccData as Record<string, unknown>;
+      if (obj.code && obj.description) {
+        return {
+          code: String(obj.code),
+          description: String(obj.description),
+        };
+      }
     }
 
     return undefined;
@@ -408,10 +411,12 @@ export class StorageService {
         bonusPoints: row.bonus_points || 0,
         isContactless: row.is_contactless || false,
         notes: row.notes || undefined,
-        reimbursementAmount: row.reimbursement_amount
-          ? parseFloat(row.reimbursement_amount.toString())
-          : undefined,
+        reimbursementAmount:
+          row.reimbursement_amount != null
+            ? parseFloat(row.reimbursement_amount.toString())
+            : undefined,
         category: row.category || undefined,
+        deleted_at: row.deleted_at || undefined,
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -626,6 +631,7 @@ export class StorageService {
           coordinates: updates.merchant.coordinates
             ? JSON.parse(JSON.stringify(updates.merchant.coordinates))
             : null,
+          is_deleted: false,
         };
 
         const merchantResult = await supabase
@@ -653,8 +659,8 @@ export class StorageService {
           payment_amount: updates.paymentAmount,
           payment_currency: updates.paymentCurrency,
           total_points: updates.rewardPoints,
-          base_points: updates.basePoints,
-          bonus_points: updates.bonusPoints,
+          base_points: updates.basePoints ?? 0,
+          bonus_points: updates.bonusPoints ?? 0,
           is_contactless: updates.isContactless,
           notes: updates.notes,
           reimbursement_amount: updates.reimbursementAmount,

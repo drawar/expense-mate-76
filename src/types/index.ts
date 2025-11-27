@@ -17,6 +17,7 @@ export type Transaction = {
   reimbursementAmount?: number;
   category?: string;
   is_deleted?: boolean;
+  deleted_at?: string;
 };
 
 export type PaymentMethodType =
