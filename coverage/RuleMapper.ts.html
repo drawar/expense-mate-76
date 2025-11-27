@@ -228,8 +228,32 @@
 <a name='L163'></a><a href='#L163'>163</a>
 <a name='L164'></a><a href='#L164'>164</a>
 <a name='L165'></a><a href='#L165'>165</a>
-<a name='L166'></a><a href='#L166'>166</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -371,6 +395,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -393,23 +443,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&nbsp;
-import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from "./types";
 &nbsp;
 /**
  * RuleMapper handles bidirectional mapping between database and application reward rule formats.
- * 
+ *
  * The mapper ensures type safety and data integrity when converting between:
  * - Database format (snake_case, JSON strings, nullable fields)
  * - Application format (camelCase, typed objects, optional fields)
- * 
+ *
  * @example
  * ```typescript
  * const mapper = new RuleMapper();
- * 
+ *
  * // Map from database to application
  * const appRule = mapper.mapDbRuleToRewardRule(dbRule);
- * 
+ *
  * // Map from application to database
  * const dbRule = mapper.mapRewardRuleToDbRule(appRule);
  * ```
@@ -417,17 +466,17 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
 <span class="cstat-no" title="statement not covered" >export class R</span>uleMapper {
   /**
    * Maps a database reward rule to an application reward rule.
-   * 
+   *
    * Handles:
    * - JSON parsing for conditions and bonus_tiers
    * - Null to undefined conversion
    * - Default values for missing fields
    * - Type coercion for numeric fields
    * - Date parsing for timestamps
-   * 
+   *
    * @param dbRule - The database reward rule to map
    * @returns The mapped application reward rule
-   * 
+   *
    * @example
    * ```typescript
    * const dbRule = {
@@ -437,7 +486,7 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
    *   conditions: '[{"type":"mcc","operation":"include","values":["5411"]}]',
    *   // ... other fields
    * };
-   * 
+   *
    * const appRule = mapper.mapDbRuleToRewardRule(dbRule);
    * // appRule.conditions is now a typed array
    * ```
@@ -446,26 +495,26 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
     // Parse conditions - handle both string and object formats
     let conditions: RuleCondition[] = <span class="cstat-no" title="statement not covered" >[];</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (dbRule.conditions) {</span>
-<span class="cstat-no" title="statement not covered" >      if (typeof dbRule.conditions === 'string') {</span>
+<span class="cstat-no" title="statement not covered" >      if (typeof dbRule.conditions === "string") {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
 <span class="cstat-no" title="statement not covered" >          conditions = JSON.parse(dbRule.conditions);</span>
         } catch (e) {
-<span class="cstat-no" title="statement not covered" >          console.error('Failed to parse conditions:', e);</span>
+<span class="cstat-no" title="statement not covered" >          console.error("Failed to parse conditions:", e);</span>
 <span class="cstat-no" title="statement not covered" >          conditions = [];</span>
         }
       } else {
 <span class="cstat-no" title="statement not covered" >        conditions = dbRule.conditions as RuleCondition[];</span>
       }
     }
-    
+&nbsp;
     // Parse bonus_tiers - handle both string and object formats
     let bonusTiers: BonusTier[] = <span class="cstat-no" title="statement not covered" >[];</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (dbRule.bonus_tiers) {</span>
-<span class="cstat-no" title="statement not covered" >      if (typeof dbRule.bonus_tiers === 'string') {</span>
+<span class="cstat-no" title="statement not covered" >      if (typeof dbRule.bonus_tiers === "string") {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
 <span class="cstat-no" title="statement not covered" >          bonusTiers = JSON.parse(dbRule.bonus_tiers);</span>
         } catch (e) {
-<span class="cstat-no" title="statement not covered" >          console.error('Failed to parse bonus_tiers:', e);</span>
+<span class="cstat-no" title="statement not covered" >          console.error("Failed to parse bonus_tiers:", e);</span>
 <span class="cstat-no" title="statement not covered" >          bonusTiers = [];</span>
         }
       } else {
@@ -474,9 +523,9 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
     }
 &nbsp;
     // Parse numeric fields safely
-    const parseNumeric = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(v</span>alue: any, defaultValue: number): number =&gt; {</span>
+    const parseNumeric = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(v</span>alue: unknown, defaultValue: number): number =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (value === null || value === undefined) <span class="cstat-no" title="statement not covered" >return defaultValue;</span></span>
-      const parsed = <span class="cstat-no" title="statement not covered" >parseFloat(value.toString());</span>
+      const parsed = <span class="cstat-no" title="statement not covered" >parseFloat(String(value));</span>
 <span class="cstat-no" title="statement not covered" >      return isNaN(parsed) ? defaultValue : parsed;</span>
     };
 &nbsp;
@@ -484,42 +533,66 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
       id: dbRule.id,
       cardTypeId: dbRule.card_type_id,
       name: dbRule.name,
-      description: dbRule.description || '',
+      description: dbRule.description || "",
       enabled: dbRule.enabled ?? true,
       priority: dbRule.priority ?? 0,
       conditions,
       reward: {
-        calculationMethod: (dbRule.calculation_method || 'standard') as 'standard' | 'tiered' | 'flat_rate' | 'direct',
+        calculationMethod: (dbRule.calculation_method || "standard") as
+          | "standard"
+          | "tiered"
+          | "flat_rate"
+          | "direct",
         baseMultiplier: parseNumeric(dbRule.base_multiplier, 1),
         bonusMultiplier: parseNumeric(dbRule.bonus_multiplier, 0),
-        pointsRoundingStrategy: (dbRule.points_rounding_strategy || 'nearest') as 'floor' | 'ceiling' | 'nearest',
-        amountRoundingStrategy: (dbRule.amount_rounding_strategy || 'floor') as 'floor' | 'ceiling' | 'nearest' | 'floor5' | 'none',
+        pointsRoundingStrategy: (dbRule.points_rounding_strategy ||
+          "nearest") as "floor" | "ceiling" | "nearest",
+        amountRoundingStrategy: (dbRule.amount_rounding_strategy || "floor") as
+          | "floor"
+          | "ceiling"
+          | "nearest"
+          | "floor5"
+          | "none",
         blockSize: parseNumeric(dbRule.block_size, 1),
         bonusTiers,
-        monthlyCap: dbRule.monthly_cap !== null &amp;&amp; dbRule.monthly_cap !== undefined ? parseNumeric(dbRule.monthly_cap, 0) : undefined,
-        monthlyMinSpend: dbRule.monthly_min_spend !== null &amp;&amp; dbRule.monthly_min_spend !== undefined ? parseNumeric(dbRule.monthly_min_spend, 0) : undefined,
-        monthlySpendPeriodType: dbRule.monthly_spend_period_type !== null &amp;&amp; dbRule.monthly_spend_period_type !== undefined ? dbRule.monthly_spend_period_type as 'calendar' | 'statement' | 'statement_month' : undefined,
-        pointsCurrency: dbRule.points_currency || 'points'
+        monthlyCap:
+          dbRule.monthly_cap !== null &amp;&amp; dbRule.monthly_cap !== undefined
+            ? parseNumeric(dbRule.monthly_cap, 0)
+            : undefined,
+        monthlyMinSpend:
+          dbRule.monthly_min_spend !== null &amp;&amp;
+          dbRule.monthly_min_spend !== undefined
+            ? parseNumeric(dbRule.monthly_min_spend, 0)
+            : undefined,
+        monthlySpendPeriodType:
+          dbRule.monthly_spend_period_type !== null &amp;&amp;
+          dbRule.monthly_spend_period_type !== undefined
+            ? (dbRule.monthly_spend_period_type as
+                | "calendar"
+                | "statement"
+                | "statement_month")
+            : undefined,
+        pointsCurrency: dbRule.points_currency || "points",
       },
       createdAt: new Date(dbRule.created_at),
-      updatedAt: new Date(dbRule.updated_at || dbRule.created_at)
+      updatedAt: new Date(dbRule.updated_at || dbRule.created_at),
     };
   }
 &nbsp;
   /**
    * Maps an application reward rule to a database reward rule.
-   * 
+   *
    * Handles:
    * - JSON serialization for conditions and bonus_tiers
    * - Undefined to null conversion
    * - Field name conversion (camelCase to snake_case)
    * - Type coercion for database compatibility
-   * 
+   *
    * Note: created_at and updated_at are omitted and should be added by the caller.
-   * 
+   *
    * @param rule - The application reward rule to map
    * @returns The mapped database reward rule (without timestamps)
-   * 
+   *
    * @example
    * ```typescript
    * const appRule = {
@@ -529,13 +602,15 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
    *   conditions: [{ type: 'mcc', operation: 'include', values: ['5411'] }],
    *   // ... other fields
    * };
-   * 
+   *
    * const dbRule = mapper.mapRewardRuleToDbRule(appRule);
    * // dbRule.conditions is now a JSON string
    * // Add timestamps before inserting to database
    * ```
    */
-<span class="fstat-no" title="function not covered" >  mapRewardRuleToDbRule(</span>rule: RewardRule): Omit&lt;DbRewardRule, 'created_at' | 'updated_at'&gt; {
+<span class="fstat-no" title="function not covered" >  mapRewardRuleToDbRule(</span>
+    rule: RewardRule
+  ): Omit&lt;DbRewardRule, "created_at" | "updated_at"&gt; {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       id: rule.id,
       card_type_id: rule.cardTypeId,
@@ -545,16 +620,16 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
       priority: rule.priority ?? 0,
       conditions: JSON.stringify(rule.conditions || []),
       bonus_tiers: JSON.stringify(rule.reward.bonusTiers || []),
-      calculation_method: rule.reward.calculationMethod || 'standard',
+      calculation_method: rule.reward.calculationMethod || "standard",
       base_multiplier: rule.reward.baseMultiplier ?? 1,
       bonus_multiplier: rule.reward.bonusMultiplier ?? 0,
-      points_rounding_strategy: rule.reward.pointsRoundingStrategy || 'nearest',
-      amount_rounding_strategy: rule.reward.amountRoundingStrategy || 'floor',
+      points_rounding_strategy: rule.reward.pointsRoundingStrategy || "nearest",
+      amount_rounding_strategy: rule.reward.amountRoundingStrategy || "floor",
       block_size: rule.reward.blockSize ?? 1,
       monthly_cap: rule.reward.monthlyCap ?? null,
       monthly_min_spend: rule.reward.monthlyMinSpend ?? null,
       monthly_spend_period_type: rule.reward.monthlySpendPeriodType ?? null,
-      points_currency: rule.reward.pointsCurrency || 'points'
+      points_currency: rule.reward.pointsCurrency || "points",
     };
   }
 }
@@ -565,7 +640,7 @@ import { RewardRule, DbRewardRule, RuleCondition, BonusTier } from './types';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-26T20:29:25.154Z
+                at 2025-11-27T05:10:55.405Z
             </div>
         <script src="prettify.js"></script>
         <script>

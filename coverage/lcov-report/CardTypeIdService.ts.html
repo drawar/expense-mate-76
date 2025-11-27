@@ -183,7 +183,12 @@
 <a name='L118'></a><a href='#L118'>118</a>
 <a name='L119'></a><a href='#L119'>119</a>
 <a name='L120'></a><a href='#L120'>120</a>
-<a name='L121'></a><a href='#L121'>121</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -218,10 +223,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -305,15 +315,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * CardTypeIdService
- * 
+ *
  * Centralized service for generating consistent card type IDs across the application.
  * Card type IDs are used to associate reward rules with payment methods.
- * 
+ *
  * Format: {issuer}-{name}
  * - Both issuer and name are converted to lowercase
  * - Spaces in the name are replaced with hyphens
  * - Special characters are preserved (except spaces)
- * 
+ *
  * Examples:
  * - issuer: "Chase", name: "Sapphire Reserve" -&gt; "chase-sapphire-reserve"
  * - issuer: "American Express", name: "Gold Card" -&gt; "american express-gold-card"
@@ -321,11 +331,11 @@
 <span class="cstat-no" title="statement not covered" >export class C</span>ardTypeIdService {
   /**
    * Generate a card type ID from issuer and name
-   * 
+   *
    * @param issuer - The card issuer (e.g., "Chase", "American Express")
    * @param name - The card name (e.g., "Sapphire Reserve", "Gold Card")
    * @returns A consistent card type ID in the format: {issuer}-{name}
-   * 
+   *
    * @example
    * ```typescript
    * const service = new CardTypeIdService();
@@ -335,21 +345,23 @@
    */
 <span class="fstat-no" title="function not covered" >  generateCardTypeId(</span>issuer: string, name: string): string {
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!issuer || !name) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error('Both issuer and name are required to generate a card type ID');</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(</span>
+        "Both issuer and name are required to generate a card type ID"
+      );
     }
 &nbsp;
     const normalizedIssuer = <span class="cstat-no" title="statement not covered" >issuer.toLowerCase().trim();</span>
-    const normalizedName = <span class="cstat-no" title="statement not covered" >name.toLowerCase().trim().replace(/\s+/g, '-');</span>
-    
+    const normalizedName = <span class="cstat-no" title="statement not covered" >name.toLowerCase().trim().replace(/\s+/g, "-");</span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    return `${normalizedIssuer}-${normalizedName}`;</span>
   }
 &nbsp;
   /**
    * Generate a card type ID from a payment method object
-   * 
+   *
    * @param paymentMethod - Payment method object with issuer and name properties
    * @returns A consistent card type ID
-   * 
+   *
    * @example
    * ```typescript
    * const service = new CardTypeIdService();
@@ -361,23 +373,26 @@
    * // Returns: "chase-sapphire-reserve"
    * ```
    */
-<span class="fstat-no" title="function not covered" >  generateCardTypeIdFromPaymentMethod(</span>paymentMethod: { issuer: string; name: string }): string {
+<span class="fstat-no" title="function not covered" >  generateCardTypeIdFromPaymentMethod(</span>paymentMethod: {
+    issuer: string;
+    name: string;
+  }): string {
 <span class="cstat-no" title="statement not covered" >    return this.generateCardTypeId(paymentMethod.issuer, paymentMethod.name);</span>
   }
 &nbsp;
   /**
    * Validate a card type ID format
-   * 
+   *
    * A valid card type ID:
    * - Must not be empty
    * - Must contain at least one hyphen (separating issuer and name)
    * - Must be lowercase
    * - Must not contain consecutive hyphens
    * - Must not start or end with a hyphen
-   * 
+   *
    * @param cardTypeId - The card type ID to validate
    * @returns true if the card type ID is valid, false otherwise
-   * 
+   *
    * @example
    * ```typescript
    * const service = new CardTypeIdService();
@@ -388,12 +403,12 @@
    * ```
    */
 <span class="fstat-no" title="function not covered" >  isValidCardTypeId(</span>cardTypeId: string): boolean {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!cardTypeId || typeof cardTypeId !== 'string') {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!cardTypeId || typeof cardTypeId !== "string") {</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
 &nbsp;
     // Must contain at least one hyphen
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!cardTypeId.includes('-')) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!cardTypeId.includes("-")) {</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
 &nbsp;
@@ -403,12 +418,12 @@
     }
 &nbsp;
     // Must not start or end with a hyphen
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (cardTypeId.startsWith('-') || cardTypeId.endsWith('-')) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (cardTypeId.startsWith("-") || cardTypeId.endsWith("-")) {</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
 &nbsp;
     // Must not contain consecutive hyphens
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (cardTypeId.includes('--')) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (cardTypeId.includes("--")) {</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
 &nbsp;
@@ -430,7 +445,7 @@ export const <span class="cstat-no" title="statement not covered" >cardTypeIdSer
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-26T20:29:25.141Z
+                at 2025-11-27T05:10:55.389Z
             </div>
         <script src="prettify.js"></script>
         <script>

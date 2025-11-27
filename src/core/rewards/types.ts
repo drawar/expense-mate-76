@@ -61,6 +61,7 @@ export interface BonusTier {
 }
 
 export interface PaymentMethodInput {
+  id?: string;
   issuer: string;
   name: string;
   pointsCurrency?: string;

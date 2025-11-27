@@ -201,7 +201,63 @@
 <a name='L136'></a><a href='#L136'>136</a>
 <a name='L137'></a><a href='#L137'>137</a>
 <a name='L138'></a><a href='#L138'>138</a>
-<a name='L139'></a><a href='#L139'>139</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -353,24 +409,39 @@
 }
 &nbsp;
 export interface RuleCondition {
-  type: 'mcc' | 'transaction_type' | 'currency' | 'merchant' | 'amount' | 'compound' | 'category';
-  operation: 'include' | 'exclude' | 'equals' | 'greater_than' | 'less_than' | 'range' | 'any' | 'all';
+  type:
+    | "mcc"
+    | "transaction_type"
+    | "currency"
+    | "merchant"
+    | "amount"
+    | "compound"
+    | "category";
+  operation:
+    | "include"
+    | "exclude"
+    | "equals"
+    | "greater_than"
+    | "less_than"
+    | "range"
+    | "any"
+    | "all";
   values: (string | number)[];
   displayName?: string;
   subConditions?: RuleCondition[];
 }
 &nbsp;
 export interface RewardConfig {
-  calculationMethod: 'standard' | 'tiered' | 'flat_rate' | 'direct';
+  calculationMethod: "standard" | "tiered" | "flat_rate" | "direct";
   baseMultiplier: number;
   bonusMultiplier: number;
-  pointsRoundingStrategy: 'floor' | 'ceiling' | 'nearest';
-  amountRoundingStrategy: 'floor' | 'ceiling' | 'nearest' | 'floor5' | 'none';
+  pointsRoundingStrategy: "floor" | "ceiling" | "nearest";
+  amountRoundingStrategy: "floor" | "ceiling" | "nearest" | "floor5" | "none";
   blockSize: number;
   bonusTiers: BonusTier[];
   monthlyCap?: number;
   monthlyMinSpend?: number;
-  monthlySpendPeriodType?: 'calendar' | 'statement' | 'statement_month';
+  monthlySpendPeriodType?: "calendar" | "statement" | "statement_month";
   pointsCurrency: string;
 }
 &nbsp;
@@ -386,16 +457,23 @@ export interface BonusTier {
   condition?: RuleCondition;
 }
 &nbsp;
+export interface PaymentMethodInput {
+  id?: string;
+  issuer: string;
+  name: string;
+  pointsCurrency?: string;
+}
+&nbsp;
 export interface CalculationInput {
   amount: number;
   currency: string;
-  paymentMethod: any;
+  paymentMethod: PaymentMethodInput;
   mcc?: string;
   merchantName?: string;
   transactionType: TransactionType;
   isOnline?: boolean;
   isContactless?: boolean;
-  date: any; // DateTime from luxon
+  date: Date | { toJSDate: () =&gt; Date }; // DateTime from luxon or Date
   monthlySpend?: number;
   usedBonusPoints?: number;
 }
@@ -412,16 +490,22 @@ export interface CalculationResult {
   messages: string[];
 }
 &nbsp;
-export type TransactionType = 'purchase' | 'refund' | 'adjustment' | 'online' | 'contactless' | 'in_store';
+export type TransactionType =
+  | "purchase"
+  | "refund"
+  | "adjustment"
+  | "online"
+  | "contactless"
+  | "in_store";
 &nbsp;
 // Constant values for transaction types
 export const <span class="cstat-no" title="statement not covered" >TransactionTypeValues = {</span>
-  purchase: 'purchase' as const,
-  refund: 'refund' as const,
-  adjustment: 'adjustment' as const,
-  online: 'online' as const,
-  contactless: 'contactless' as const,
-  in_store: 'in_store' as const,
+  purchase: "purchase" as const,
+  refund: "refund" as const,
+  adjustment: "adjustment" as const,
+  online: "online" as const,
+  contactless: "contactless" as const,
+  in_store: "in_store" as const,
 } as const;
 &nbsp;
 export interface CardType {
@@ -473,10 +557,10 @@ export interface DbRewardRule {
   updated_at: string | null;
 }
 &nbsp;
-export type SpendingPeriodType = 'calendar' | 'statement' | 'statement_month';
+export type SpendingPeriodType = "calendar" | "statement" | "statement_month";
 &nbsp;
 // Add missing CalculationMethod type alias
-export type CalculationMethod = 'standard' | 'tiered' | 'flat_rate' | 'direct';
+export type CalculationMethod = "standard" | "tiered" | "flat_rate" | "direct";
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -484,7 +568,7 @@ export type CalculationMethod = 'standard' | 'tiered' | 'flat_rate' | 'direct';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-26T20:29:25.154Z
+                at 2025-11-27T05:10:55.405Z
             </div>
         <script src="prettify.js"></script>
         <script>

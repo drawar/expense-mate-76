@@ -151,7 +151,18 @@
 <a name='L86'></a><a href='#L86'>86</a>
 <a name='L87'></a><a href='#L87'>87</a>
 <a name='L88'></a><a href='#L88'>88</a>
-<a name='L89'></a><a href='#L89'>89</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -177,6 +188,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -222,6 +239,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -245,10 +267,10 @@
  */
 &nbsp;
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum L</span>ogLevel {</span>
-<span class="cstat-no" title="statement not covered" >  DEBUG = 'debug',</span>
-<span class="cstat-no" title="statement not covered" >  INFO = 'info',</span>
-<span class="cstat-no" title="statement not covered" >  WARN = 'warn',</span>
-<span class="cstat-no" title="statement not covered" >  ERROR = 'error'</span>
+<span class="cstat-no" title="statement not covered" >  DEBUG = "debug",</span>
+<span class="cstat-no" title="statement not covered" >  INFO = "info",</span>
+<span class="cstat-no" title="statement not covered" >  WARN = "warn",</span>
+<span class="cstat-no" title="statement not covered" >  ERROR = "error",</span>
 }
 &nbsp;
 export interface LogEntry {
@@ -256,7 +278,7 @@ export interface LogEntry {
   level: LogLevel;
   operation: string;
   message: string;
-  data?: any;
+  data?: unknown;
   error?: Error;
 }
 &nbsp;
@@ -264,18 +286,24 @@ export interface LogEntry {
   private <span class="cstat-no" title="statement not covered" >logs: LogEntry[] = [];</span>
   private <span class="cstat-no" title="statement not covered" >maxLogs: number = 100;</span>
 &nbsp;
-<span class="fstat-no" title="function not covered" >  log(</span>level: LogLevel, operation: string, message: string, data?: any, error?: Error): void {
+<span class="fstat-no" title="function not covered" >  log(</span>
+    level: LogLevel,
+    operation: string,
+    message: string,
+    data?: unknown,
+    error?: Error
+  ): void {
     const entry: LogEntry = <span class="cstat-no" title="statement not covered" >{</span>
       timestamp: new Date(),
       level,
       operation,
       message,
       data,
-      error
+      error,
     };
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    this.logs.push(entry);</span>
-    
+&nbsp;
     // Keep only the most recent logs
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.logs.length &gt; this.maxLogs) {</span>
 <span class="cstat-no" title="statement not covered" >      this.logs.shift();</span>
@@ -283,36 +311,41 @@ export interface LogEntry {
 &nbsp;
     // Console output with appropriate formatting
     const prefix = <span class="cstat-no" title="statement not covered" >`[${entry.timestamp.toISOString()}] [${level.toUpperCase()}] [${operation}]`;</span>
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    switch (level) {</span>
       case LogLevel.DEBUG:
-<span class="cstat-no" title="statement not covered" >        console.debug(prefix, message, data || '');</span>
+<span class="cstat-no" title="statement not covered" >        console.debug(prefix, message, data || "");</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
       case LogLevel.INFO:
-<span class="cstat-no" title="statement not covered" >        console.info(prefix, message, data || '');</span>
+<span class="cstat-no" title="statement not covered" >        console.info(prefix, message, data || "");</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
       case LogLevel.WARN:
-<span class="cstat-no" title="statement not covered" >        console.warn(prefix, message, data || '');</span>
+<span class="cstat-no" title="statement not covered" >        console.warn(prefix, message, data || "");</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
       case LogLevel.ERROR:
-<span class="cstat-no" title="statement not covered" >        console.error(prefix, message, data || '', error || '');</span>
+<span class="cstat-no" title="statement not covered" >        console.error(prefix, message, data || "", error || "");</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
     }
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  debug(</span>operation: string, message: string, data?: any): void {
+<span class="fstat-no" title="function not covered" >  debug(</span>operation: string, message: string, data?: unknown): void {
 <span class="cstat-no" title="statement not covered" >    this.log(LogLevel.DEBUG, operation, message, data);</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  info(</span>operation: string, message: string, data?: any): void {
+<span class="fstat-no" title="function not covered" >  info(</span>operation: string, message: string, data?: unknown): void {
 <span class="cstat-no" title="statement not covered" >    this.log(LogLevel.INFO, operation, message, data);</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  warn(</span>operation: string, message: string, data?: any): void {
+<span class="fstat-no" title="function not covered" >  warn(</span>operation: string, message: string, data?: unknown): void {
 <span class="cstat-no" title="statement not covered" >    this.log(LogLevel.WARN, operation, message, data);</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  error(</span>operation: string, message: string, data?: any, error?: Error): void {
+<span class="fstat-no" title="function not covered" >  error(</span>
+    operation: string,
+    message: string,
+    data?: unknown,
+    error?: Error
+  ): void {
 <span class="cstat-no" title="statement not covered" >    this.log(LogLevel.ERROR, operation, message, data, error);</span>
   }
 &nbsp;
@@ -334,7 +367,7 @@ export const <span class="cstat-no" title="statement not covered" >logger = new 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-26T20:29:25.154Z
+                at 2025-11-27T05:10:55.405Z
             </div>
         <script src="prettify.js"></script>
         <script>

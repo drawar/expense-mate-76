@@ -259,7 +259,19 @@
 <a name='L194'></a><a href='#L194'>194</a>
 <a name='L195'></a><a href='#L195'>195</a>
 <a name='L196'></a><a href='#L196'>196</a>
-<a name='L197'></a><a href='#L197'>197</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -309,15 +321,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -325,6 +328,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -457,13 +481,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * BonusPointsTracker
- * 
+ *
  * Service for tracking bonus points used per rule per month to enforce monthly caps.
  * This ensures that rules with monthly bonus caps don't exceed their limits.
  */
 &nbsp;
-import { supabase } from '@/integrations/supabase/client';
-import { SpendingPeriodType } from './types';
+import { supabase } from "@/integrations/supabase/client";
+import { SpendingPeriodType } from "./types";
 &nbsp;
 interface BonusPointsUsage {
   ruleId: string;
@@ -475,9 +499,9 @@ interface BonusPointsUsage {
 <span class="cstat-no" title="statement not covered" >export class B</span>onusPointsTracker {
   private static instance: BonusPointsTracker;
   private <span class="cstat-no" title="statement not covered" >usageCache: Map&lt;string, number&gt; = new Map();</span>
-  
+&nbsp;
 <span class="fstat-no" title="function not covered" >  private constructor() {}</span>
-  
+&nbsp;
   /**
    * Get singleton instance
    */
@@ -487,10 +511,10 @@ interface BonusPointsUsage {
     }
 <span class="cstat-no" title="statement not covered" >    return BonusPointsTracker.instance;</span>
   }
-  
+&nbsp;
   /**
    * Get used bonus points for a rule in the current period
-   * 
+   *
    * Note: This currently uses an in-memory cache. In a production implementation,
    * you would query a database table that tracks bonus points usage per rule per period.
    * For now, this relies on trackBonusPointsUsage being called after each transaction.
@@ -498,16 +522,22 @@ interface BonusPointsUsage {
   public async <span class="fstat-no" title="function not covered" >getUsedBonusPoints(</span>
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >    ruleId: string,</span></span>
     paymentMethodId: string,
-    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >'calendar',</span>
+    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >"calendar",</span>
     date: Date = <span class="branch-0 cbranch-no" title="branch not covered" >new Date(),</span>
     statementDay: number = <span class="branch-0 cbranch-no" title="branch not covered" >1</span>
   ): Promise&lt;number&gt; {
-    const cacheKey = <span class="cstat-no" title="statement not covered" >this.createCacheKey(ruleId, paymentMethodId, periodType, date, statementDay);</span>
-    
+    const cacheKey = <span class="cstat-no" title="statement not covered" >this.createCacheKey(</span>
+      ruleId,
+      paymentMethodId,
+      periodType,
+      date,
+      statementDay
+    );
+&nbsp;
     // Return cached value or 0
 <span class="cstat-no" title="statement not covered" >    return this.usageCache.get(cacheKey) || 0;</span>
   }
-  
+&nbsp;
   /**
    * Track bonus points usage for a transaction
    * This should be called after a transaction is created
@@ -516,17 +546,23 @@ interface BonusPointsUsage {
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >    ruleId: string,</span></span>
     paymentMethodId: string,
     bonusPoints: number,
-    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >'calendar',</span>
+    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >"calendar",</span>
     date: Date = <span class="branch-0 cbranch-no" title="branch not covered" >new Date(),</span>
     statementDay: number = <span class="branch-0 cbranch-no" title="branch not covered" >1</span>
   ): Promise&lt;void&gt; {
-    const cacheKey = <span class="cstat-no" title="statement not covered" >this.createCacheKey(ruleId, paymentMethodId, periodType, date, statementDay);</span>
-    
+    const cacheKey = <span class="cstat-no" title="statement not covered" >this.createCacheKey(</span>
+      ruleId,
+      paymentMethodId,
+      periodType,
+      date,
+      statementDay
+    );
+&nbsp;
     // Update cache
     const currentUsage = <span class="cstat-no" title="statement not covered" >this.usageCache.get(cacheKey) || 0;</span>
 <span class="cstat-no" title="statement not covered" >    this.usageCache.set(cacheKey, currentUsage + bonusPoints);</span>
   }
-  
+&nbsp;
   /**
    * Calculate remaining bonus points available under the cap
    */
@@ -534,7 +570,7 @@ interface BonusPointsUsage {
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >    ruleId: string,</span></span>
     paymentMethodId: string,
     monthlyCap: number,
-    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >'calendar',</span>
+    periodType: SpendingPeriodType = <span class="branch-0 cbranch-no" title="branch not covered" >"calendar",</span>
     date: Date = <span class="branch-0 cbranch-no" title="branch not covered" >new Date(),</span>
     statementDay: number = <span class="branch-0 cbranch-no" title="branch not covered" >1</span>
   ): Promise&lt;number&gt; {
@@ -545,47 +581,47 @@ interface BonusPointsUsage {
       date,
       statementDay
     );
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    return Math.max(0, monthlyCap - usedPoints);</span>
   }
-  
+&nbsp;
   /**
    * Clear cache for a payment method
    */
   public <span class="fstat-no" title="function not covered" >clearCacheForPaymentMethod(</span>paymentMethodId: string): void {
     const keysToDelete: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    for (const key of this.usageCache.keys()) {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key.includes(`-${paymentMethodId}-`)) {</span>
 <span class="cstat-no" title="statement not covered" >        keysToDelete.push(key);</span>
       }
     }
-    
-<span class="cstat-no" title="statement not covered" >    keysToDelete.forEach(<span class="fstat-no" title="function not covered" >key </span>=&gt; <span class="cstat-no" title="statement not covered" >this.usageCache.delete(key))</span>;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    keysToDelete.forEach(<span class="fstat-no" title="function not covered" >(k</span>ey) =&gt; <span class="cstat-no" title="statement not covered" >this.usageCache.delete(key))</span>;</span>
   }
-  
+&nbsp;
   /**
    * Clear cache for a specific rule
    */
   public <span class="fstat-no" title="function not covered" >clearCacheForRule(</span>ruleId: string): void {
     const keysToDelete: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    for (const key of this.usageCache.keys()) {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (key.startsWith(`${ruleId}-`)) {</span>
 <span class="cstat-no" title="statement not covered" >        keysToDelete.push(key);</span>
       }
     }
-    
-<span class="cstat-no" title="statement not covered" >    keysToDelete.forEach(<span class="fstat-no" title="function not covered" >key </span>=&gt; <span class="cstat-no" title="statement not covered" >this.usageCache.delete(key))</span>;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    keysToDelete.forEach(<span class="fstat-no" title="function not covered" >(k</span>ey) =&gt; <span class="cstat-no" title="statement not covered" >this.usageCache.delete(key))</span>;</span>
   }
-  
+&nbsp;
   /**
    * Clear all cache
    */
   public <span class="fstat-no" title="function not covered" >clearCache(</span>): void {
 <span class="cstat-no" title="statement not covered" >    this.usageCache.clear();</span>
   }
-  
+&nbsp;
   /**
    * Create a cache key
    */
@@ -600,7 +636,7 @@ interface BonusPointsUsage {
     const month = <span class="cstat-no" title="statement not covered" >date.getMonth() + 1;</span>
 <span class="cstat-no" title="statement not covered" >    return `${ruleId}-${paymentMethodId}-${periodType}-${year}-${month}-${statementDay}`;</span>
   }
-  
+&nbsp;
   /**
    * Calculate date range for a period
    */
@@ -611,18 +647,18 @@ interface BonusPointsUsage {
   ): { startDate: Date; endDate: Date } {
     const year = <span class="cstat-no" title="statement not covered" >date.getFullYear();</span>
     const month = <span class="cstat-no" title="statement not covered" >date.getMonth();</span>
-    
-<span class="cstat-no" title="statement not covered" >    if (periodType === 'calendar') {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (periodType === "calendar") {</span>
       // Calendar month: 1st day of month to last day of month
       const startDate = <span class="cstat-no" title="statement not covered" >new Date(year, month, 1);</span>
       const endDate = <span class="cstat-no" title="statement not covered" >new Date(year, month + 1, 1);</span>
-      
+&nbsp;
 <span class="cstat-no" title="statement not covered" >      return { startDate, endDate };</span>
     } else {
       // Statement month: statementDay of month to statementDay of next month
       let startMonth = <span class="cstat-no" title="statement not covered" >month;</span>
       let startYear = <span class="cstat-no" title="statement not covered" >year;</span>
-      
+&nbsp;
       // If the current date is before statement day, use previous month's statement day
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (date.getDate() &lt; statementDay) {</span>
 <span class="cstat-no" title="statement not covered" >        startMonth = month - 1;</span>
@@ -631,9 +667,9 @@ interface BonusPointsUsage {
 <span class="cstat-no" title="statement not covered" >          startYear = year - 1;</span>
         }
       }
-      
+&nbsp;
       const startDate = <span class="cstat-no" title="statement not covered" >new Date(startYear, startMonth, statementDay);</span>
-      
+&nbsp;
       // End date is the next statement day
       let endMonth = <span class="cstat-no" title="statement not covered" >startMonth + 1;</span>
       let endYear = <span class="cstat-no" title="statement not covered" >startYear;</span>
@@ -641,9 +677,9 @@ interface BonusPointsUsage {
 <span class="cstat-no" title="statement not covered" >        endMonth = 0; </span>// January
 <span class="cstat-no" title="statement not covered" >        endYear += 1;</span>
       }
-      
+&nbsp;
       const endDate = <span class="cstat-no" title="statement not covered" >new Date(endYear, endMonth, statementDay);</span>
-      
+&nbsp;
 <span class="cstat-no" title="statement not covered" >      return { startDate, endDate };</span>
     }
   }
@@ -658,7 +694,7 @@ export const <span class="cstat-no" title="statement not covered" >bonusPointsTr
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-26T20:29:25.154Z
+                at 2025-11-27T05:10:55.405Z
             </div>
         <script src="prettify.js"></script>
         <script>

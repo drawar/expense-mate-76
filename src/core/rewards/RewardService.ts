@@ -5,6 +5,7 @@ import {
   CalculationResult,
   RewardRule,
   RuleCondition,
+  BonusTier,
 } from "./types";
 import { RuleRepository } from "./RuleRepository";
 import { cardTypeIdService } from "./CardTypeIdService";
@@ -151,7 +152,11 @@ export class RewardService {
             try {
               const periodType =
                 rule.reward.monthlySpendPeriodType || "calendar";
-              const date = input.date ? input.date.toJSDate() : new Date();
+              const date = input.date
+                ? input.date instanceof Date
+                  ? input.date
+                  : input.date.toJSDate()
+                : new Date();
 
               usedBonusPoints = await bonusPointsTracker.getUsedBonusPoints(
                 rule.id,
@@ -561,7 +566,7 @@ export const rewardService = (() => {
         "RuleRepository not initialized, creating mock RewardService"
       );
       // Create a mock repository for fallback
-      const mockRepository: RuleRepository = {
+      const mockRepository = {
         findApplicableRules: async () => [],
         getRulesForCardType: async () => [],
         updateRule: async () => {},
@@ -589,7 +594,7 @@ export const rewardService = (() => {
         deleteRule: async () => {},
         verifyConnection: async () => ({ isConnected: false, latencyMs: 0 }),
         verifyAuthentication: async () => ({ isAuthenticated: false }),
-      } as RuleRepository;
+      } as unknown as RuleRepository;
       rewardServiceInstance = new RewardService(mockRepository);
     }
   }

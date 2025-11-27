@@ -1,6 +1,5 @@
-
-import { z } from 'zod';
-import { MerchantCategoryCode, Currency } from '@/types';
+import { z } from "zod";
+import { MerchantCategoryCode, Currency } from "@/types";
 
 export const formSchema = z.object({
   merchantName: z.string().min(1, "Merchant name is required"),
@@ -14,6 +13,28 @@ export const formSchema = z.object({
   date: z.date(),
   notes: z.string().optional(),
   mcc: z.custom<MerchantCategoryCode | null>().optional(),
+  rewardPoints: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true; // Empty is valid (will be treated as 0)
+        const num = Number(val);
+        return !isNaN(num) && num >= 0;
+      },
+      { message: "Please enter a valid non-negative number" }
+    )
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true;
+        const num = Number(val);
+        if (isNaN(num)) return true; // Let the first refine handle this
+        // Check for up to 2 decimal places
+        const decimalPart = val.split(".")[1];
+        return !decimalPart || decimalPart.length <= 2;
+      },
+      { message: "Please enter a number with up to 2 decimal places" }
+    ),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
