@@ -1,6 +1,6 @@
 // pages/PaymentMethods.tsx
 import { useState, useEffect, useMemo } from "react";
-import { PaymentMethod } from "@/types";
+import { PaymentMethod, Currency } from "@/types";
 import { usePaymentMethodsQuery } from "@/hooks/queries/usePaymentMethodsQuery";
 import { useToast } from "@/hooks/use-toast";
 import { storageService } from "@/core/storage/StorageService"; // Updated import
@@ -96,7 +96,7 @@ const PaymentMethods = () => {
         id: editingMethod?.id || uuidv4(),
         name: formData.get("name") as string,
         type: formData.get("type") as "cash" | "credit_card",
-        currency: (formData.get("currency") as string) || "USD",
+        currency: (formData.get("currency") as Currency) || ("USD" as Currency),
         issuer: (formData.get("issuer") as string) || "Cash", // Provide default issuer
         rewardRules: [],
         active: formData.get("active") === "on",

@@ -73,6 +73,8 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
           isOnline={isOnline}
           isContactless={isContactless}
           isEditMode={isEditMode}
+          editablePoints={0}
+          onPointsChange={() => {}}
         />
       </CardContent>
       <CardFooter className="flex justify-end space-x-2">

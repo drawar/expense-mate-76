@@ -97,7 +97,7 @@ export interface DbPaymentMethod {
   color: string | null;
   image_url: string | null;
   points_currency: string | null;
-  active: boolean;
+  is_active: boolean | null;
   reward_rules: unknown | null;
   selected_categories: string[] | null;
   statement_start_day: number | null;

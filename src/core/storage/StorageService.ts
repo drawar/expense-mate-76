@@ -22,7 +22,7 @@ export class StorageService {
 
   private async initializeRewards() {
     try {
-      await initializeRewardSystem(this.useLocalStorage);
+      await initializeRewardSystem();
     } catch (error) {
       console.warn("Failed to initialize reward system:", error);
     }
@@ -63,10 +63,10 @@ export class StorageService {
         return local;
       }
 
-      return data.map((row: DbPaymentMethod) => ({
+      return data.map((row) => ({
         id: row.id,
         name: row.name,
-        type: row.type,
+        type: row.type as PaymentMethod['type'],
         issuer: row.issuer || "",
         lastFourDigits: row.last_four_digits || undefined,
         currency: row.currency as Currency,
@@ -74,12 +74,14 @@ export class StorageService {
         color: row.color || undefined,
         imageUrl: row.image_url || undefined,
         pointsCurrency: row.points_currency || undefined,
-        active: row.is_active,
-        rewardRules: row.reward_rules || [],
-        selectedCategories: row.selected_categories || [],
+        active: row.is_active ?? true,
+        rewardRules: (row.reward_rules as unknown[]) || [],
+        selectedCategories: Array.isArray(row.selected_categories) 
+          ? (row.selected_categories as string[])
+          : [],
         statementStartDay: row.statement_start_day || undefined,
         isMonthlyStatement: row.is_monthly_statement || undefined,
-        conversionRate: row.conversion_rate || undefined,
+        conversionRate: (row.conversion_rate as Record<string, number>) || undefined,
       }));
     } catch (error) {
       console.error("Error fetching payment methods:", error);
@@ -142,11 +144,11 @@ export class StorageService {
         image_url: pm.imageUrl,
         points_currency: pm.pointsCurrency || null,
         is_active: pm.active,
-        reward_rules: pm.rewardRules,
-        selected_categories: pm.selectedCategories,
+        reward_rules: pm.rewardRules as any,
+        selected_categories: pm.selectedCategories as any,
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate,
+        conversion_rate: pm.conversionRate as any,
         user_id: session.user.id,
       }));
 
@@ -281,15 +283,14 @@ export class StorageService {
     if (!coordinatesData) return undefined;
 
     // Handle different possible formats of coordinates data
-    if (
-      typeof coordinatesData === "object" &&
-      coordinatesData.lat &&
-      coordinatesData.lng
-    ) {
-      return {
-        lat: Number(coordinatesData.lat),
-        lng: Number(coordinatesData.lng),
-      };
+    if (typeof coordinatesData === "object" && coordinatesData !== null) {
+      const coords = coordinatesData as { lat?: unknown; lng?: unknown };
+      if (coords.lat !== undefined && coords.lng !== undefined) {
+        return {
+          lat: Number(coords.lat),
+          lng: Number(coords.lng),
+        };
+      }
     }
 
     return undefined;
@@ -416,7 +417,6 @@ export class StorageService {
             ? parseFloat(row.reimbursement_amount.toString())
             : undefined,
         category: row.category || undefined,
-        deleted_at: row.deleted_at || undefined,
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);

@@ -64,23 +64,23 @@ export function usePaymentMethodOptimization(
       
       // Check if the payment method has rewardRules defined
       if (method.rewardRules) {
-        method.rewardRules.forEach(rule => {
+        (method.rewardRules as any[]).forEach((rule: any) => {
           // Make sure the rule is enabled
           if (!rule.enabled) return;
           
           // Look for rules that would apply to categories or merchants
-          for (const condition of rule.conditions) {
+          for (const condition of (rule.conditions || [])) {
             // Check for category or merchant specific conditions
             if ((condition.type === 'mcc' || condition.type === 'merchant' || condition.type === 'category') && 
                 condition.values && 
                 Array.isArray(condition.values)) {
               
               // Store lowercase values for case-insensitive matching
-              condition.values.forEach(val => {
+              condition.values.forEach((val: any) => {
                 if (typeof val === 'string') {
                   const valLower = val.toLowerCase();
                   // Use the base multiplier from the reward as the points multiplier
-                  const multiplier = rule.reward.baseMultiplier;
+                  const multiplier = rule.reward?.baseMultiplier || 1;
                   categoryRules.set(valLower, Math.max(
                     categoryRules.get(valLower) || 0, 
                     multiplier
@@ -91,13 +91,13 @@ export function usePaymentMethodOptimization(
             // Look for generic conditions
             else if (condition.type === 'currency' || condition.type === 'spend_threshold') {
               // This is likely a generic rule for all transactions
-              defaultRate = Math.max(defaultRate, rule.reward.baseMultiplier);
+              defaultRate = Math.max(defaultRate, rule.reward?.baseMultiplier || 1);
             }
           }
           
           // If there are no specific conditions, treat as a default rule
-          if (rule.conditions.length === 0) {
-            defaultRate = Math.max(defaultRate, rule.reward.baseMultiplier);
+          if ((rule.conditions || []).length === 0) {
+            defaultRate = Math.max(defaultRate, rule.reward?.baseMultiplier || 1);
           }
         });
       }

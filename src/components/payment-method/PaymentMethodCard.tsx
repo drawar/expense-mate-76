@@ -129,8 +129,8 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
             
             {method.rewardRules && method.rewardRules.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {method.rewardRules.slice(0, 2).map((rule) => (
-                  <RewardRuleBadge key={rule.id} rule={rule} />
+                {method.rewardRules.slice(0, 2).map((rule: any) => (
+                  <RewardRuleBadge key={rule.id} rule={rule as any} />
                 ))}
                 {method.rewardRules.length > 2 && (
                   <span className="text-xs text-gray-500 self-center">
