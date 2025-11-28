@@ -42,6 +42,16 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
   const currency = form.watch("currency");
   const mcc = form.watch("mcc");
   const merchantName = form.watch("merchantName");
+  const paymentAmount = form.watch("paymentAmount");
+
+  // Calculate converted amount and currency if needed
+  const needsConversion =
+    selectedPaymentMethod && selectedPaymentMethod.currency !== currency;
+  const convertedAmount =
+    needsConversion && paymentAmount ? Number(paymentAmount) : undefined;
+  const convertedCurrency = needsConversion
+    ? selectedPaymentMethod?.currency
+    : undefined;
 
   return (
     <Card>
@@ -72,6 +82,8 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
           merchantName={merchantName}
           isOnline={isOnline}
           isContactless={isContactless}
+          convertedAmount={convertedAmount}
+          convertedCurrency={convertedCurrency}
           isEditMode={isEditMode}
           editablePoints={0}
           onPointsChange={() => {}}

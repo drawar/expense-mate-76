@@ -16,6 +16,8 @@ interface PointsDisplayProps {
   merchantName?: string;
   isOnline?: boolean;
   isContactless?: boolean;
+  convertedAmount?: number;
+  convertedCurrency?: string;
   // New props for edit mode
   isEditMode?: boolean;
   editablePoints?: number; // Current value in the editable field
@@ -30,6 +32,8 @@ export const PointsDisplay = ({
   merchantName,
   isOnline,
   isContactless,
+  convertedAmount,
+  convertedCurrency,
   isEditMode = false,
   editablePoints,
   onPointsChange,
@@ -55,14 +59,17 @@ export const PointsDisplay = ({
 
       setIsLoading(true);
       try {
-        console.log("PointsDisplay calculating for:", {
+        console.log("[PointsDisplay] Calculating for:", {
           amount,
           currency,
           paymentMethodId: paymentMethod.id,
+          paymentMethodName: paymentMethod.name,
           mcc,
           merchantName,
           isOnline,
           isContactless,
+          convertedAmount,
+          convertedCurrency,
         });
 
         const result = await rewardService.simulateRewards(
@@ -72,10 +79,12 @@ export const PointsDisplay = ({
           mcc,
           merchantName,
           isOnline,
-          isContactless
+          isContactless,
+          convertedAmount,
+          convertedCurrency
         );
 
-        console.log("PointsDisplay calculation result:", result);
+        console.log("[PointsDisplay] Calculation result:", result);
 
         setPoints({
           totalPoints: result.totalPoints,
@@ -101,6 +110,8 @@ export const PointsDisplay = ({
     merchantName,
     isOnline,
     isContactless,
+    convertedAmount,
+    convertedCurrency,
   ]);
 
   if (!paymentMethod || !amount || amount <= 0) {

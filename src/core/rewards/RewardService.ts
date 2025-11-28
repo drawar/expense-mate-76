@@ -114,9 +114,9 @@ export class RewardService {
         };
       }
 
-      // 4. Sort rules by priority (lower priority number = higher precedence)
+      // 4. Sort rules by priority (higher priority number = higher precedence)
       const sortedRules = applicableRules.sort(
-        (a, b) => a.priority - b.priority
+        (a, b) => b.priority - a.priority
       );
 
       // 5. Apply the first matching rule (highest priority)
@@ -248,15 +248,35 @@ export class RewardService {
           }
 
           const availableBonusPoints = Math.max(0, cap - usedBonusPoints);
+
+          // Calculate what the bonus would be without the monthly cap
+          // Apply the same amount rounding as used in the actual calculation
+          let roundedAmountForComparison = calculationAmount;
+          switch (rule.reward.amountRoundingStrategy) {
+            case "floor":
+              roundedAmountForComparison = Math.floor(calculationAmount);
+              break;
+            case "ceiling":
+              roundedAmountForComparison = Math.ceil(calculationAmount);
+              break;
+            case "nearest":
+              roundedAmountForComparison = Math.round(calculationAmount);
+              break;
+            case "floor5":
+              roundedAmountForComparison =
+                Math.floor(calculationAmount / 5) * 5;
+              break;
+          }
+          const uncappedBonusPoints = Math.floor(
+            roundedAmountForComparison * rule.reward.bonusMultiplier
+          );
+
           bonusPoints = Math.min(bonusPoints, availableBonusPoints);
           remainingMonthlyBonusPoints = availableBonusPoints - bonusPoints;
 
           if (availableBonusPoints <= 0) {
             messages.push("Monthly bonus points cap reached");
-          } else if (
-            bonusPoints <
-            Math.floor(calculationAmount * rule.reward.bonusMultiplier)
-          ) {
+          } else if (bonusPoints < uncappedBonusPoints) {
             messages.push(
               `Bonus points capped at ${bonusPoints} due to monthly limit`
             );
@@ -574,21 +594,40 @@ export class RewardService {
     mcc?: string
   ): boolean {
     if (!mcc) {
-      return condition.operation === "exclude";
+      const result = condition.operation === "exclude";
+      console.log("🔍 [evaluateMccCondition] No MCC provided", {
+        operation: condition.operation,
+        result,
+      });
+      return result;
     }
 
     const values = condition.values.map((v) => String(v));
 
+    let result: boolean;
     switch (condition.operation) {
       case "include":
-        return values.includes(mcc);
+        result = values.includes(mcc);
+        break;
       case "exclude":
-        return !values.includes(mcc);
+        result = !values.includes(mcc);
+        break;
       case "equals":
-        return values.length > 0 && values[0] === mcc;
+        result = values.length > 0 && values[0] === mcc;
+        break;
       default:
-        return true;
+        result = true;
     }
+
+    console.log("🔍 [evaluateMccCondition]", {
+      mcc,
+      operation: condition.operation,
+      valuesCount: values.length,
+      isInList: values.includes(mcc),
+      result,
+    });
+
+    return result;
   }
 
   private evaluateMerchantCondition(
@@ -637,16 +676,61 @@ export class RewardService {
       }
     };
 
+    let result: boolean;
     switch (condition.operation) {
       case "include":
         // Transaction matches if it matches ANY of the specified types
-        return values.some((type) => matchesType(type));
+        result = values.some((type) => matchesType(type));
+        break;
       case "exclude":
         // Transaction matches if it matches NONE of the specified types
-        return !values.some((type) => matchesType(type));
+        result = !values.some((type) => matchesType(type));
+        break;
       case "equals":
         // Transaction matches if it matches the single specified type
-        return values.length > 0 && matchesType(values[0]);
+        result = values.length > 0 && matchesType(values[0]);
+        break;
+      default:
+        result = true;
+    }
+
+    console.log("🔍 [evaluateTransactionTypeCondition]", {
+      values,
+      operation: condition.operation,
+      transactionType,
+      isOnline: input?.isOnline,
+      isContactless: input?.isContactless,
+      result,
+    });
+
+    return result;
+  }
+
+  private evaluateAmountCondition(
+    condition: RuleCondition,
+    amount: number
+  ): boolean {
+    const result = true; // Placeholder
+    return result;
+  }
+
+  private evaluateCompoundCondition(
+    condition: RuleCondition,
+    input: CalculationInput
+  ): boolean {
+    if (!condition.subConditions || condition.subConditions.length === 0) {
+      return true;
+    }
+
+    switch (condition.operation) {
+      case "all":
+        return condition.subConditions.every((subCondition) =>
+          this.evaluateCondition(subCondition, input)
+        );
+      case "any":
+        return condition.subConditions.some((subCondition) =>
+          this.evaluateCondition(subCondition, input)
+        );
       default:
         return true;
     }
@@ -775,14 +859,21 @@ import { getRuleRepository } from "./RuleRepository";
 
 let rewardServiceInstance: RewardService | null = null;
 
-export const rewardService = (() => {
+/**
+ * Get the RewardService singleton instance.
+ * Lazily initializes with the RuleRepository on first access.
+ *
+ * @returns The RewardService singleton instance
+ */
+function getRewardService(): RewardService {
   if (!rewardServiceInstance) {
     try {
       const ruleRepository = getRuleRepository();
       rewardServiceInstance = new RewardService(ruleRepository);
+      console.log("✅ RewardService initialized with real RuleRepository");
     } catch (error) {
       console.warn(
-        "RuleRepository not initialized, creating mock RewardService"
+        "⚠️ RuleRepository not initialized, creating mock RewardService"
       );
       // Create a mock repository for fallback
       const mockRepository = {
@@ -818,4 +909,13 @@ export const rewardService = (() => {
     }
   }
   return rewardServiceInstance;
-})();
+}
+
+// Export as a getter property to ensure lazy initialization
+export const rewardService = new Proxy({} as RewardService, {
+  get(_target, prop) {
+    const service = getRewardService();
+    const value = service[prop as keyof RewardService];
+    return typeof value === "function" ? value.bind(service) : value;
+  },
+});

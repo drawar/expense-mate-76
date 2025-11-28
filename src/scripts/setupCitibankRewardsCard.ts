@@ -1152,9 +1152,9 @@ async function setupCitibankRewardsCard() {
       priority: 10, // Lower than fashion, higher than base
       conditions: [
         {
-          type: "online",
+          type: "transaction_type",
           operation: "equals",
-          values: ["true"],
+          values: ["online"],
         },
         {
           type: "mcc",

@@ -112,13 +112,42 @@ export const useExpenseForm = ({
 
       try {
         // Determine if we need to pass converted amount
-        // If payment method currency differs from transaction currency, pass the payment amount as converted amount
+        // If payment method currency differs from transaction currency, we need to convert
         const needsConversion = selectedPaymentMethod.currency !== currency;
-        const convertedAmount =
-          needsConversion && paymentAmount > 0 ? paymentAmount : undefined;
-        const convertedCurrency = needsConversion
-          ? selectedPaymentMethod.currency
-          : undefined;
+
+        let convertedAmount: number | undefined;
+        let convertedCurrency: string | undefined;
+
+        if (needsConversion) {
+          convertedCurrency = selectedPaymentMethod.currency;
+
+          // Use paymentAmount if it's set (user manually entered or auto-calculated)
+          if (paymentAmount > 0) {
+            convertedAmount = paymentAmount;
+          } else if (
+            selectedPaymentMethod.conversionRate &&
+            selectedPaymentMethod.conversionRate[currency]
+          ) {
+            // Calculate using conversion rate if available
+            const rate = selectedPaymentMethod.conversionRate[currency];
+            convertedAmount = amount * rate;
+          } else {
+            // If no conversion rate and no payment amount, we can't convert
+            // The reward calculation will use the transaction amount
+            convertedAmount = undefined;
+            convertedCurrency = undefined;
+          }
+        }
+
+        console.log("🔍 [useExpenseForm] Calling simulateRewards with:", {
+          amount,
+          currency,
+          paymentAmount,
+          needsConversion,
+          convertedAmount,
+          convertedCurrency,
+          paymentMethodCurrency: selectedPaymentMethod.currency,
+        });
 
         const result = await rewardService.simulateRewards(
           amount, // Always pass the transaction amount
@@ -128,7 +157,7 @@ export const useExpenseForm = ({
           merchantName,
           isOnline,
           isContactless,
-          convertedAmount, // Pass converted amount if currencies differ and payment amount exists
+          convertedAmount, // Pass converted amount if available
           convertedCurrency
         );
 
