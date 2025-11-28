@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "prepare": "husky",
-    "test": "jest"
+    "test": "jest",
+    "diagnose:rewards": "npx tsx src/scripts/diagnoseRewardRulesIssue.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [

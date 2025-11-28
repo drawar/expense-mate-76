@@ -44,7 +44,9 @@ export async function simulateRewardPoints(
   mcc?: string,
   merchantName?: string,
   isOnline?: boolean,
-  isContactless?: boolean
+  isContactless?: boolean,
+  convertedAmount?: number,
+  convertedCurrency?: string
 ): Promise<CalculationResult> {
   return rewardService.simulateRewards(
     amount,
@@ -53,7 +55,9 @@ export async function simulateRewardPoints(
     mcc,
     merchantName,
     isOnline,
-    isContactless
+    isContactless,
+    convertedAmount,
+    convertedCurrency
   );
 }
 

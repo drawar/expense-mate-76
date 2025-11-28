@@ -10,12 +10,21 @@ import {
 import { RuleRepository } from "./RuleRepository";
 import { cardTypeIdService } from "./CardTypeIdService";
 import { bonusPointsTracker } from "./BonusPointsTracker";
+import { logger } from "./logger";
 
 export class RewardService {
   private ruleRepository: RuleRepository;
 
   constructor(ruleRepository: RuleRepository) {
     this.ruleRepository = ruleRepository;
+  }
+
+  /**
+   * Get the amount to use for calculations
+   * Uses converted amount if provided, otherwise falls back to transaction amount
+   */
+  private getCalculationAmount(input: CalculationInput): number {
+    return input.convertedAmount ?? input.amount;
   }
 
   async calculateRewards(input: CalculationInput): Promise<CalculationResult> {
@@ -28,17 +37,46 @@ export class RewardService {
     let appliedTier: BonusTier | undefined;
 
     try {
+      // Determine which amount to use for calculations
+      const calculationAmount = this.getCalculationAmount(input);
+
       // 1. Generate card type ID for the payment method
       const cardTypeId = cardTypeIdService.generateCardTypeIdFromPaymentMethod({
         issuer: input.paymentMethod.issuer,
         name: input.paymentMethod.name,
       });
 
+      // Log card type ID generation (Requirement 4.1)
+      logger.info("calculateRewards", "Generated card type ID", {
+        cardTypeId,
+        issuer: input.paymentMethod.issuer,
+        name: input.paymentMethod.name,
+        amount: input.amount,
+        currency: input.currency,
+        convertedAmount: input.convertedAmount,
+        convertedCurrency: input.convertedCurrency,
+        calculationAmount,
+        mcc: input.mcc,
+        merchantName: input.merchantName,
+        isOnline: input.isOnline,
+        isContactless: input.isContactless,
+      });
+
       // 2. Find rules for this card type
       const allRules =
         await this.ruleRepository.getRulesForCardType(cardTypeId);
 
+      // Log number of rules retrieved (Requirement 4.2)
+      logger.info("calculateRewards", "Retrieved rules from repository", {
+        cardTypeId,
+        totalRules: allRules?.length || 0,
+        enabledRules: allRules?.filter((r) => r.enabled).length || 0,
+      });
+
       if (!allRules || allRules.length === 0) {
+        logger.warn("calculateRewards", "No reward rules found", {
+          cardTypeId,
+        });
         return {
           totalPoints: 0,
           basePoints: 0,
@@ -54,7 +92,18 @@ export class RewardService {
         .filter((rule) => rule.enabled)
         .filter((rule) => this.evaluateConditions(rule.conditions, input));
 
+      logger.info("calculateRewards", "Filtered applicable rules", {
+        totalRules: allRules.length,
+        enabledRules: allRules.filter((r) => r.enabled).length,
+        applicableRules: applicableRules.length,
+      });
+
       if (applicableRules.length === 0) {
+        logger.warn("calculateRewards", "No applicable rules found", {
+          cardTypeId,
+          totalRules: allRules.length,
+          enabledRules: allRules.filter((r) => r.enabled).length,
+        });
         return {
           totalPoints: 0,
           basePoints: 0,
@@ -74,6 +123,13 @@ export class RewardService {
       for (const rule of sortedRules) {
         appliedRule = rule;
 
+        logger.debug("calculateRewards", "Attempting to apply rule", {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          priority: rule.priority,
+          calculationMethod: rule.reward.calculationMethod,
+        });
+
         // Check monthly minimum spend
         if (
           rule.reward.monthlyMinSpend &&
@@ -84,6 +140,16 @@ export class RewardService {
           messages.push(
             `Monthly minimum spend of ${rule.reward.monthlyMinSpend} not met`
           );
+          logger.debug(
+            "calculateRewards",
+            "Rule skipped - minimum spend not met",
+            {
+              ruleId: rule.id,
+              ruleName: rule.name,
+              requiredSpend: rule.reward.monthlyMinSpend,
+              actualSpend: input.monthlySpend,
+            }
+          );
           continue; // Skip to the next rule
         }
 
@@ -91,7 +157,7 @@ export class RewardService {
         switch (rule.reward.calculationMethod) {
           case "standard": {
             basePoints = this.calculateStandardPoints(
-              input.amount,
+              calculationAmount,
               rule.reward.baseMultiplier,
               rule.reward.pointsRoundingStrategy,
               rule.reward.blockSize,
@@ -101,7 +167,7 @@ export class RewardService {
           }
           case "tiered": {
             const { points: tieredPoints, tier } = this.calculateTieredPoints(
-              input.amount,
+              calculationAmount,
               rule.reward.bonusTiers,
               input.monthlySpend
             );
@@ -114,7 +180,7 @@ export class RewardService {
             break;
           }
           case "direct": {
-            basePoints = input.amount;
+            basePoints = calculationAmount;
             break;
           }
           default: {
@@ -127,13 +193,21 @@ export class RewardService {
 
         // 4. Calculate bonus points
         if (rule.reward.bonusMultiplier > 0) {
-          bonusPoints += this.calculateBonusPoints(
-            input.amount,
+          const calculatedBonusPoints = this.calculateBonusPoints(
+            calculationAmount,
             rule.reward.bonusMultiplier,
             rule.reward.pointsRoundingStrategy,
             rule.reward.blockSize,
             rule.reward.amountRoundingStrategy
           );
+          bonusPoints += calculatedBonusPoints;
+
+          logger.debug("calculateRewards", "Bonus points calculated", {
+            calculationAmount,
+            bonusMultiplier: rule.reward.bonusMultiplier,
+            calculatedBonusPoints,
+            totalBonusPoints: bonusPoints,
+          });
         }
 
         // 5. Apply monthly cap
@@ -180,7 +254,8 @@ export class RewardService {
           if (availableBonusPoints <= 0) {
             messages.push("Monthly bonus points cap reached");
           } else if (
-            bonusPoints < Math.floor(input.amount * rule.reward.bonusMultiplier)
+            bonusPoints <
+            Math.floor(calculationAmount * rule.reward.bonusMultiplier)
           ) {
             messages.push(
               `Bonus points capped at ${bonusPoints} due to monthly limit`
@@ -189,6 +264,24 @@ export class RewardService {
         }
 
         totalPoints = basePoints + bonusPoints;
+
+        // Log applied rule and calculated points (Requirement 4.4)
+        logger.info("calculateRewards", "Rule applied successfully", {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          priority: rule.priority,
+          calculationMethod: rule.reward.calculationMethod,
+          calculationAmount,
+          baseMultiplier: rule.reward.baseMultiplier,
+          bonusMultiplier: rule.reward.bonusMultiplier,
+          basePoints,
+          bonusPoints,
+          totalPoints,
+          pointsCurrency: rule.reward.pointsCurrency,
+          appliedTier: appliedTier?.name,
+          monthlyCap: rule.reward.monthlyCap,
+          remainingMonthlyBonusPoints,
+        });
 
         return {
           totalPoints,
@@ -204,6 +297,10 @@ export class RewardService {
       }
 
       // If no rule was successfully applied
+      logger.warn("calculateRewards", "No rule successfully applied", {
+        cardTypeId,
+        applicableRulesCount: applicableRules.length,
+      });
       return {
         totalPoints: 0,
         basePoints: 0,
@@ -213,7 +310,29 @@ export class RewardService {
         messages: ["No applicable reward rules applied"],
       };
     } catch (error) {
-      console.error("Error calculating rewards:", error);
+      // Log errors with full transaction context (Requirement 4.5)
+      logger.error(
+        "calculateRewards",
+        "Error calculating rewards",
+        {
+          paymentMethod: {
+            id: input.paymentMethod.id,
+            issuer: input.paymentMethod.issuer,
+            name: input.paymentMethod.name,
+          },
+          transaction: {
+            amount: input.amount,
+            currency: input.currency,
+            mcc: input.mcc,
+            merchantName: input.merchantName,
+            transactionType: input.transactionType,
+            isOnline: input.isOnline,
+            isContactless: input.isContactless,
+            date: input.date,
+          },
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -320,6 +439,50 @@ export class RewardService {
   }
 
   /**
+   * Normalize a condition to handle backward compatibility
+   * Converts legacy "online" condition type to "transaction_type"
+   */
+  private normalizeCondition(condition: RuleCondition): RuleCondition {
+    // Handle legacy "online" type that may exist in database
+    // Cast type to string to allow checking for legacy "online" value that isn't in the type definition
+    const conditionType = condition.type as string;
+
+    // If condition type is "online" (legacy), convert to transaction_type
+    if (conditionType === "online") {
+      // Handle equals operation with boolean values
+      if (condition.operation === "equals") {
+        const value = condition.values[0];
+        const valueStr = String(value);
+        if (valueStr === "true") {
+          // online = true → transaction_type include "online"
+          return {
+            ...condition,
+            type: "transaction_type",
+            operation: "include",
+            values: ["online"],
+          };
+        } else if (valueStr === "false") {
+          // online = false → transaction_type exclude "online"
+          return {
+            ...condition,
+            type: "transaction_type",
+            operation: "exclude",
+            values: ["online"],
+          };
+        }
+      }
+
+      // For other operations, convert type but keep operation and values
+      return {
+        ...condition,
+        type: "transaction_type",
+      };
+    }
+
+    return condition;
+  }
+
+  /**
    * Evaluate all conditions for a rule
    * All conditions must be true for the rule to apply
    */
@@ -329,13 +492,40 @@ export class RewardService {
   ): boolean {
     // If no conditions, rule applies to all transactions
     if (!conditions || conditions.length === 0) {
+      logger.debug("evaluateConditions", "No conditions to evaluate", {});
       return true;
     }
 
-    // All conditions must evaluate to true
-    return conditions.every((condition) =>
-      this.evaluateCondition(condition, input)
-    );
+    // Normalize and evaluate all conditions
+    const results = conditions.map((condition) => {
+      const normalizedCondition = this.normalizeCondition(condition);
+      const result = this.evaluateCondition(normalizedCondition, input);
+
+      // Log condition evaluation result (Requirement 4.3)
+      logger.debug(
+        "evaluateConditions",
+        `Condition ${result ? "PASSED" : "FAILED"}`,
+        {
+          conditionType: normalizedCondition.type,
+          operation: normalizedCondition.operation,
+          values: normalizedCondition.values,
+          result,
+          wasNormalized: condition.type !== normalizedCondition.type,
+        }
+      );
+
+      return result;
+    });
+
+    const allPassed = results.every((r) => r);
+    logger.debug("evaluateConditions", "All conditions evaluated", {
+      totalConditions: conditions.length,
+      passed: results.filter((r) => r).length,
+      failed: results.filter((r) => !r).length,
+      allPassed,
+    });
+
+    return allPassed;
   }
 
   /**
@@ -355,7 +545,8 @@ export class RewardService {
       case "transaction_type":
         return this.evaluateTransactionTypeCondition(
           condition,
-          input.transactionType
+          input.transactionType,
+          input
         );
 
       case "currency":
@@ -425,17 +616,37 @@ export class RewardService {
 
   private evaluateTransactionTypeCondition(
     condition: RuleCondition,
-    transactionType: string
+    transactionType: string,
+    input?: CalculationInput
   ): boolean {
     const values = condition.values.map((v) => String(v));
 
+    // Helper function to check if a transaction matches a specific type
+    const matchesType = (type: string): boolean => {
+      switch (type) {
+        case "online":
+          return input?.isOnline === true;
+        case "contactless":
+          return input?.isContactless === true;
+        case "in_store":
+          return input?.isOnline === false;
+        default:
+          // For other transaction types (purchase, refund, adjustment),
+          // check against the transactionType string
+          return transactionType === type;
+      }
+    };
+
     switch (condition.operation) {
       case "include":
-        return values.includes(transactionType);
+        // Transaction matches if it matches ANY of the specified types
+        return values.some((type) => matchesType(type));
       case "exclude":
-        return !values.includes(transactionType);
+        // Transaction matches if it matches NONE of the specified types
+        return !values.some((type) => matchesType(type));
       case "equals":
-        return values.length > 0 && values[0] === transactionType;
+        // Transaction matches if it matches the single specified type
+        return values.length > 0 && matchesType(values[0]);
       default:
         return true;
     }
@@ -509,11 +720,15 @@ export class RewardService {
     mcc?: string,
     merchantName?: string,
     isOnline?: boolean,
-    isContactless?: boolean
+    isContactless?: boolean,
+    convertedAmount?: number,
+    convertedCurrency?: string
   ): Promise<CalculationResult> {
     const input: CalculationInput = {
       amount,
       currency,
+      convertedAmount,
+      convertedCurrency,
       paymentMethod,
       mcc,
       merchantName,
@@ -533,7 +748,9 @@ export class RewardService {
     mcc?: string,
     merchantName?: string,
     isOnline?: boolean,
-    isContactless?: boolean
+    isContactless?: boolean,
+    convertedAmount?: number,
+    convertedCurrency?: string
   ): Promise<CalculationResult> {
     return this.simulateRewards(
       amount,
@@ -542,7 +759,9 @@ export class RewardService {
       mcc,
       merchantName,
       isOnline,
-      isContactless
+      isContactless,
+      convertedAmount,
+      convertedCurrency
     );
   }
 

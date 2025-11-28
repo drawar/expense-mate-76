@@ -70,6 +70,8 @@ export interface PaymentMethodInput {
 export interface CalculationInput {
   amount: number;
   currency: string;
+  convertedAmount?: number; // Amount in payment method currency (when different from transaction currency)
+  convertedCurrency?: string; // Payment method currency
   paymentMethod: PaymentMethodInput;
   mcc?: string;
   merchantName?: string;

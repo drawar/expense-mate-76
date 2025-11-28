@@ -80,7 +80,13 @@ export const useExpenseForm = ({
   );
 
   const { selectedPaymentMethod, shouldOverridePayment } =
-    usePaymentMethodLogic(form, paymentMethods, currency as Currency, amount, isOnline);
+    usePaymentMethodLogic(
+      form,
+      paymentMethods,
+      currency as Currency,
+      amount,
+      isOnline
+    );
 
   // Track changes to the reward points field
   useEffect(() => {
@@ -105,15 +111,25 @@ export const useExpenseForm = ({
       }
 
       try {
-        const effectiveAmount = shouldOverridePayment ? paymentAmount : amount;
+        // Determine if we need to pass converted amount
+        // If payment method currency differs from transaction currency, pass the payment amount as converted amount
+        const needsConversion = selectedPaymentMethod.currency !== currency;
+        const convertedAmount =
+          needsConversion && paymentAmount > 0 ? paymentAmount : undefined;
+        const convertedCurrency = needsConversion
+          ? selectedPaymentMethod.currency
+          : undefined;
+
         const result = await rewardService.simulateRewards(
-          effectiveAmount,
+          amount, // Always pass the transaction amount
           currency,
           selectedPaymentMethod,
           selectedMCC?.code,
           merchantName,
           isOnline,
-          isContactless
+          isContactless,
+          convertedAmount, // Pass converted amount if currencies differ and payment amount exists
+          convertedCurrency
         );
 
         // Format message text

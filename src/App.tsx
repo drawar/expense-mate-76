@@ -12,6 +12,7 @@ import PaymentMethods from "./pages/PaymentMethods";
 import RewardPoints from "./pages/RewardPoints";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import DiagnoseRewards from "./pages/DiagnoseRewards";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
@@ -105,6 +106,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <RewardPoints />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/diagnose-rewards"
+                  element={
+                    <ProtectedRoute>
+                      <DiagnoseRewards />
                     </ProtectedRoute>
                   }
                 />
