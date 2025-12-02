@@ -706,36 +706,6 @@ export class RewardService {
     return result;
   }
 
-  private evaluateAmountCondition(
-    condition: RuleCondition,
-    amount: number
-  ): boolean {
-    const result = true; // Placeholder
-    return result;
-  }
-
-  private evaluateCompoundCondition(
-    condition: RuleCondition,
-    input: CalculationInput
-  ): boolean {
-    if (!condition.subConditions || condition.subConditions.length === 0) {
-      return true;
-    }
-
-    switch (condition.operation) {
-      case "all":
-        return condition.subConditions.every((subCondition) =>
-          this.evaluateCondition(subCondition, input)
-        );
-      case "any":
-        return condition.subConditions.some((subCondition) =>
-          this.evaluateCondition(subCondition, input)
-        );
-      default:
-        return true;
-    }
-  }
-
   private evaluateCurrencyCondition(
     condition: RuleCondition,
     currency: string
