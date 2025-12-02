@@ -22,25 +22,11 @@ async function verifyFix() {
 
   console.log("✅ Authenticated as:", session.user.email, "\n");
 
-  // Step 2: Check card_type_id column type
+  // Step 2: Check card_type_id column type by testing insert
   console.log("2. Checking card_type_id column type...");
-  const { data: columnInfo, error: columnError } = await supabase.rpc(
-    "exec_sql",
-    {
-      sql: `
-        SELECT column_name, data_type 
-        FROM information_schema.columns 
-        WHERE table_name = 'reward_rules' AND column_name = 'card_type_id'
-      `,
-    }
-  );
 
-  if (columnError) {
-    // Try alternative method
-    console.log("   Using alternative verification method...");
-
-    // Try to insert a test rule with a string card_type_id
-    const testCardTypeId = "test-card-" + Date.now();
+  // Try to insert a test rule with a string card_type_id
+  const testCardTypeId = "test-card-" + Date.now();
     const { error: insertError } = await supabase
       .from("reward_rules")
       .insert({
@@ -79,9 +65,6 @@ async function verifyFix() {
       .eq("card_type_id", testCardTypeId);
 
     console.log("✅ card_type_id accepts text values (migration applied)\n");
-  } else {
-    console.log("✅ Column type verified\n");
-  }
 
   // Step 3: Check if reward_rules table is accessible
   console.log("3. Checking reward_rules table access...");
@@ -108,12 +91,12 @@ async function verifyFix() {
 
   // Step 4: Test creating a rule with string card_type_id
   console.log("4. Testing rule creation with string card_type_id...");
-  const testCardTypeId = "test-verification-" + Date.now();
+  const testCardTypeId2 = "test-verification-" + Date.now();
 
   const { data: createdRule, error: createError } = await supabase
     .from("reward_rules")
     .insert({
-      card_type_id: testCardTypeId,
+      card_type_id: testCardTypeId2,
       name: "Verification Test Rule",
       description: "This is a test rule to verify the fix",
       enabled: false,
@@ -140,7 +123,7 @@ async function verifyFix() {
   const { data: queriedRules, error: queryError } = await supabase
     .from("reward_rules")
     .select("*")
-    .eq("card_type_id", testCardTypeId);
+    .eq("card_type_id", testCardTypeId2);
 
   if (queryError) {
     console.error("❌ Failed to query by card_type_id:", queryError.message);
@@ -173,25 +156,6 @@ async function verifyFix() {
     console.log("   Please manually delete rule with ID:", createdRule.id);
   } else {
     console.log("✅ Test rule deleted\n");
-  }
-
-  // Step 7: Verify RLS policies
-  console.log("7. Checking RLS policies...");
-  const { data: policies, error: policiesError } = await supabase.rpc(
-    "exec_sql",
-    {
-      sql: `
-        SELECT policyname, cmd 
-        FROM pg_policies 
-        WHERE tablename = 'reward_rules'
-      `,
-    }
-  );
-
-  if (policiesError) {
-    console.log("⚠️  Could not verify RLS policies (this is okay)");
-  } else {
-    console.log("✅ RLS policies configured\n");
   }
 
   // Final summary

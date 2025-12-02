@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversion_rates: {
+        Row: {
+          conversion_rate: number
+          created_at: string | null
+          id: string
+          miles_currency: string
+          reward_currency: string
+          updated_at: string | null
+        }
+        Insert: {
+          conversion_rate: number
+          created_at?: string | null
+          id?: string
+          miles_currency: string
+          reward_currency: string
+          updated_at?: string | null
+        }
+        Update: {
+          conversion_rate?: number
+          created_at?: string | null
+          id?: string
+          miles_currency?: string
+          reward_currency?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           address: string | null
@@ -52,17 +79,14 @@ export type Database = {
       }
       payment_methods: {
         Row: {
-          annual_fee: number | null
           billing_cycle_day: number | null
           color: string | null
           conversion_rate: Json | null
           created_at: string | null
-          credit_limit: number | null
           currency: string | null
           icon: string | null
           id: string
           image_url: string | null
-          interest_rate: number | null
           is_active: boolean | null
           is_monthly_statement: boolean | null
           issuer: string | null
@@ -79,17 +103,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          annual_fee?: number | null
           billing_cycle_day?: number | null
           color?: string | null
           conversion_rate?: Json | null
           created_at?: string | null
-          credit_limit?: number | null
           currency?: string | null
           icon?: string | null
           id?: string
           image_url?: string | null
-          interest_rate?: number | null
           is_active?: boolean | null
           is_monthly_statement?: boolean | null
           issuer?: string | null
@@ -106,17 +127,14 @@ export type Database = {
           user_id: string
         }
         Update: {
-          annual_fee?: number | null
           billing_cycle_day?: number | null
           color?: string | null
           conversion_rate?: Json | null
           created_at?: string | null
-          credit_limit?: number | null
           currency?: string | null
           icon?: string | null
           id?: string
           image_url?: string | null
-          interest_rate?: number | null
           is_active?: boolean | null
           is_monthly_statement?: boolean | null
           issuer?: string | null
@@ -136,7 +154,12 @@ export type Database = {
       }
       reward_rules: {
         Row: {
+          amount_rounding_strategy: string | null
+          base_multiplier: number | null
+          block_size: number | null
+          bonus_multiplier: number | null
           bonus_tiers: Json | null
+          calculation_method: string | null
           card_type_id: string
           conditions: Json | null
           created_at: string | null
@@ -150,13 +173,23 @@ export type Database = {
           max_bonus_per_transaction: number | null
           min_spend: number | null
           monthly_bonus_cap: number | null
+          monthly_cap: number | null
+          monthly_min_spend: number | null
+          monthly_spend_period_type: string | null
           name: string
+          points_currency: string | null
+          points_rounding_strategy: string | null
           priority: number | null
           qualifying_period_days: number | null
           updated_at: string | null
         }
         Insert: {
+          amount_rounding_strategy?: string | null
+          base_multiplier?: number | null
+          block_size?: number | null
+          bonus_multiplier?: number | null
           bonus_tiers?: Json | null
+          calculation_method?: string | null
           card_type_id: string
           conditions?: Json | null
           created_at?: string | null
@@ -170,13 +203,23 @@ export type Database = {
           max_bonus_per_transaction?: number | null
           min_spend?: number | null
           monthly_bonus_cap?: number | null
+          monthly_cap?: number | null
+          monthly_min_spend?: number | null
+          monthly_spend_period_type?: string | null
           name: string
+          points_currency?: string | null
+          points_rounding_strategy?: string | null
           priority?: number | null
           qualifying_period_days?: number | null
           updated_at?: string | null
         }
         Update: {
+          amount_rounding_strategy?: string | null
+          base_multiplier?: number | null
+          block_size?: number | null
+          bonus_multiplier?: number | null
           bonus_tiers?: Json | null
+          calculation_method?: string | null
           card_type_id?: string
           conditions?: Json | null
           created_at?: string | null
@@ -190,7 +233,12 @@ export type Database = {
           max_bonus_per_transaction?: number | null
           min_spend?: number | null
           monthly_bonus_cap?: number | null
+          monthly_cap?: number | null
+          monthly_min_spend?: number | null
+          monthly_spend_period_type?: string | null
           name?: string
+          points_currency?: string | null
+          points_rounding_strategy?: string | null
           priority?: number | null
           qualifying_period_days?: number | null
           updated_at?: string | null

@@ -1125,11 +1125,12 @@ async function setupCitibankRewardsCard() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 9, // 9 bonus + 1 base = 10x total (4 mpd)
+        bonusMultiplier: 9,
         pointsCurrency: "Citi Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
-        monthlyCap: 9000, // 9,000 bonus points per statement month
+        blockSize: 1,
+        monthlyCap: 9000,
         monthlySpendPeriodType: "statement_month",
         bonusTiers: [],
       },
@@ -1165,11 +1166,12 @@ async function setupCitibankRewardsCard() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 9, // 9 bonus + 1 base = 10x total (4 mpd)
+        bonusMultiplier: 9,
         pointsCurrency: "Citi Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
-        monthlyCap: 9000, // 9,000 bonus points per statement month (shared cap)
+        blockSize: 1,
+        monthlyCap: 9000,
         monthlySpendPeriodType: "statement_month",
         bonusTiers: [],
       },
@@ -1188,11 +1190,11 @@ async function setupCitibankRewardsCard() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 0, // No bonus, just base
+        bonusMultiplier: 0,
         pointsCurrency: "Citi Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
-        monthlyCap: null,
+        blockSize: 1,
         bonusTiers: [],
       },
     });

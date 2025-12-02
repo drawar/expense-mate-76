@@ -95,8 +95,11 @@ export function Dashboard() {
     );
   }
 
-  // No transactions state
-  if (filteredTransactions.length === 0) {
+  // No transactions in current filter, but has transactions overall
+  const hasTransactionsButFiltered = filteredTransactions.length === 0 && transactions.length > 0;
+  
+  // No transactions at all
+  if (transactions.length === 0) {
     return (
       <div className="min-h-screen">
         <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
@@ -128,20 +131,31 @@ export function Dashboard() {
           <FilterBar filters={filterState} />
         </div>
 
-        <ErrorBoundary>
-          {/* Summary Section */}
-          <SummarySection />
+        {/* Show empty state for current period but allow filter changes */}
+        {hasTransactionsButFiltered ? (
+          <div className="mt-6 border border-dashed rounded-xl">
+            <EmptyState
+              title="No Transactions This Period"
+              description={`You have ${transactions.length} transaction${transactions.length > 1 ? 's' : ''} in other periods. Try changing the timeframe filter above.`}
+              icon={<PieChartIcon className="h-16 w-16 text-muted-foreground" />}
+            />
+          </div>
+        ) : (
+          <ErrorBoundary>
+            {/* Summary Section */}
+            <SummarySection />
 
-          {/* Insights Grid */}
-          <InsightsGrid 
-            dashboardData={dashboardData} 
-            paymentMethods={paymentMethods}
-            currency={displayCurrency} 
-          />
+            {/* Insights Grid */}
+            <InsightsGrid 
+              dashboardData={dashboardData} 
+              paymentMethods={paymentMethods}
+              currency={displayCurrency} 
+            />
 
-          {/* Recent Transactions */}
-          <RecentTransactions transactions={recentTransactions} />
-        </ErrorBoundary>
+            {/* Recent Transactions */}
+            <RecentTransactions transactions={recentTransactions} />
+          </ErrorBoundary>
+        )}
       </div>
     </div>
   );

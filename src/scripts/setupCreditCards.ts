@@ -63,9 +63,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 4, // 4 bonus + 1 base = 5x total
+        bonusMultiplier: 4,
         pointsCurrency: "MR",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -87,9 +89,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
+        bonusMultiplier: 2,
         pointsCurrency: "MR",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -111,9 +115,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
+        bonusMultiplier: 1,
         pointsCurrency: "MR",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -131,7 +137,9 @@ async function setupCreditCards() {
         baseMultiplier: 1,
         bonusMultiplier: 0,
         pointsCurrency: "MR",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -160,17 +168,20 @@ async function setupCreditCards() {
       priority: 10,
       conditions: [
         {
-          type: "online",
+          type: "transaction_type",
           operation: "equals",
-          values: ["true"],
+          values: ["online"],
         },
       ],
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 9, // 9 bonus + 1 base = 10x total
+        bonusMultiplier: 9,
         pointsCurrency: "Citi Points",
-        monthlyCap: 20000, // 2000 SGD * 10 points
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
+        monthlyCap: 20000,
         bonusTiers: [],
       },
     });
@@ -192,9 +203,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
+        bonusMultiplier: 1,
         pointsCurrency: "Citi Points",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -212,7 +225,9 @@ async function setupCreditCards() {
         baseMultiplier: 1,
         bonusMultiplier: 0,
         pointsCurrency: "Citi Points",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -248,9 +263,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
+        bonusMultiplier: 2,
         pointsCurrency: "Aeroplan",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -284,9 +301,11 @@ async function setupCreditCards() {
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
-        bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
+        bonusMultiplier: 1,
         pointsCurrency: "Aeroplan",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
@@ -304,7 +323,9 @@ async function setupCreditCards() {
         baseMultiplier: 1.25,
         bonusMultiplier: 0,
         pointsCurrency: "Aeroplan",
-        monthlyCap: null,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "floor",
+        blockSize: 1,
         bonusTiers: [],
       },
     });
