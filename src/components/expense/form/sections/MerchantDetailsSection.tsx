@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { MerchantCategoryCode } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storageService } from '@/core/storage/StorageService';
-import { Input } from '@/components/ui/input';
 import { StoreIcon } from 'lucide-react';
 import {
   FormControl,
@@ -13,12 +12,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+
+// Import Moss Dark UI components
+import { MossCard } from '@/components/ui/moss-card';
+import { MossInput } from '@/components/ui/moss-input';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 // Import sub-components
 import OnlineMerchantToggle from '../elements/OnlineMerchantToggle';
@@ -27,11 +26,13 @@ import MerchantCategorySelect from '../elements/MerchantCategorySelect';
 interface MerchantDetailsSectionProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
   selectedMCC?: MerchantCategoryCode | null;
+  minimal?: boolean; // Enable progressive disclosure mode
 }
 
 export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({ 
   onSelectMCC, 
-  selectedMCC 
+  selectedMCC,
+  minimal = true, // Default to minimal view with progressive disclosure
 }) => {
   const form = useFormContext();
   const { toast } = useToast();
@@ -96,14 +97,25 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
   }, [merchantName]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <StoreIcon className="h-5 w-5" />
-          Merchant Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <MossCard>
+      <h2 
+        className="flex items-center gap-2 font-semibold mb-4"
+        style={{
+          fontSize: 'var(--font-size-section-header)',
+          color: 'var(--color-text-primary)',
+        }}
+      >
+        <StoreIcon 
+          className="h-5 w-5" 
+          style={{
+            color: 'var(--color-icon-primary)',
+          }}
+        />
+        Merchant Details
+      </h2>
+      
+      {/* Essential fields - always visible */}
+      <div className="space-y-4">
         <FormField
           control={form.control}
           name="merchantName"
@@ -111,7 +123,7 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
             <FormItem>
               <FormLabel>Merchant Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter merchant name" {...field} />
+                <MossInput placeholder="Enter merchant name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -120,22 +132,6 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
         
         <OnlineMerchantToggle />
         
-        {!isOnline && (
-          <FormField
-            control={form.control}
-            name="merchantAddress"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Merchant Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter merchant address (optional)" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        
         <MerchantCategorySelect 
           selectedMCC={selectedMCC}
           onSelectMCC={(mcc) => {
@@ -143,7 +139,103 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
             setSuggestionsChecked(true); // Mark as checked when user manually selects
           }}
         />
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Optional fields - collapsible when minimal mode is enabled */}
+      {minimal ? (
+        <CollapsibleSection 
+          trigger="Add more merchant details"
+          id="merchant-details-advanced"
+          persistState={true}
+        >
+          <div className="space-y-4">
+            {!isOnline && (
+              <FormField
+                control={form.control}
+                name="merchantAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Merchant Address</FormLabel>
+                    <FormControl>
+                      <MossInput placeholder="Enter merchant address (optional)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Additional merchant information" 
+                      {...field} 
+                      className="moss-input"
+                      style={{
+                        backgroundColor: 'var(--color-surface)',
+                        borderRadius: 'var(--radius-input)',
+                        fontSize: 'var(--font-size-body)',
+                        color: 'var(--color-text-primary)',
+                        border: '1px solid var(--color-border-subtle)',
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </CollapsibleSection>
+      ) : (
+        // Non-minimal mode: show all fields
+        <div className="space-y-4 mt-4">
+          {!isOnline && (
+            <FormField
+              control={form.control}
+              name="merchantAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Merchant Address</FormLabel>
+                  <FormControl>
+                    <MossInput placeholder="Enter merchant address (optional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Additional merchant information" 
+                    {...field} 
+                    className="moss-input"
+                    style={{
+                      backgroundColor: 'var(--color-surface)',
+                      borderRadius: 'var(--radius-input)',
+                      fontSize: 'var(--font-size-body)',
+                      color: 'var(--color-text-primary)',
+                      border: '1px solid var(--color-border-subtle)',
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+    </MossCard>
   );
 };

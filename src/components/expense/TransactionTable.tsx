@@ -106,7 +106,10 @@ const TransactionTable = ({
           className="flex items-center gap-1"
           onClick={handleExportCSV}
         >
-          <DownloadIcon className="h-4 w-4" />
+          <DownloadIcon 
+            className="h-4 w-4" 
+            style={{ strokeWidth: 2.5 }}
+          />
           Export CSV
         </Button>
       </div>
@@ -191,7 +194,13 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onView(transaction)}
                       >
-                        <EyeIcon className="h-4 w-4" />
+                        <EyeIcon 
+                          className="h-4 w-4" 
+                          style={{ 
+                            color: 'var(--color-icon-secondary)',
+                            strokeWidth: 2.5,
+                          }}
+                        />
                         <span className="sr-only">View</span>
                       </Button>
                       <Button
@@ -199,7 +208,13 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onEdit(transaction)}
                       >
-                        <EditIcon className="h-4 w-4" />
+                        <EditIcon 
+                          className="h-4 w-4" 
+                          style={{ 
+                            color: 'var(--color-icon-secondary)',
+                            strokeWidth: 2.5,
+                          }}
+                        />
                         <span className="sr-only">Edit</span>
                       </Button>
                       <Button
@@ -207,7 +222,13 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onDelete(transaction)}
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon 
+                          className="h-4 w-4" 
+                          style={{ 
+                            color: 'var(--color-icon-secondary)',
+                            strokeWidth: 2.5,
+                          }}
+                        />
                         <span className="sr-only">Delete</span>
                       </Button>
                     </div>

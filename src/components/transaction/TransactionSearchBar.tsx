@@ -13,7 +13,10 @@ const TransactionSearchBar = ({
 }: TransactionSearchBarProps) => {
   return (
     <div className="relative flex-grow">
-      <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <SearchIcon 
+        className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" 
+        style={{ strokeWidth: 2.5 }}
+      />
       <Input
         placeholder="Search transactions..."
         className="pl-9"

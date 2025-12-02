@@ -18,7 +18,10 @@ const EmptyPaymentMethodsCard: React.FC<EmptyPaymentMethodsCardProps> = ({ type,
         }
       </p>
       <Button onClick={onAddClick}>
-        <PlusCircleIcon className="mr-2 h-4 w-4" />
+        <PlusCircleIcon 
+          className="mr-2 h-4 w-4" 
+          style={{ strokeWidth: 2.5 }}
+        />
         Add {type === 'credit_cards' ? 'Credit Card' : 'Cash Method'}
       </Button>
     </div>

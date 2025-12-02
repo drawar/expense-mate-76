@@ -13,6 +13,10 @@ import RewardPoints from "./pages/RewardPoints";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import DiagnoseRewards from "./pages/DiagnoseRewards";
+import CardOptimizerSimulator from "./pages/CardOptimizerSimulator";
+import SeedConversionRates from "./pages/SeedConversionRates";
+import DeleteMembershipRewards from "./pages/DeleteMembershipRewards";
+import Settings from "./pages/Settings";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
@@ -114,6 +118,38 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DiagnoseRewards />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/card-optimizer"
+                  element={
+                    <ProtectedRoute>
+                      <CardOptimizerSimulator />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/seed-conversion-rates"
+                  element={
+                    <ProtectedRoute>
+                      <SeedConversionRates />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delete-membership-rewards"
+                  element={
+                    <ProtectedRoute>
+                      <DeleteMembershipRewards />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
                     </ProtectedRoute>
                   }
                 />

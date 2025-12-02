@@ -74,9 +74,21 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
         <h2 className="text-xl font-semibold flex items-center">
           {paymentMethod.type === 'credit_card' ? (
-            <CreditCardIcon className="h-5 w-5 mr-2 text-primary/70" />
+            <CreditCardIcon 
+              className="h-5 w-5 mr-2" 
+              style={{ 
+                color: 'var(--color-icon-primary)',
+                strokeWidth: 2.5,
+              }}
+            />
           ) : (
-            <BanknoteIcon className="h-5 w-5 mr-2 text-primary/70" />
+            <BanknoteIcon 
+              className="h-5 w-5 mr-2" 
+              style={{ 
+                color: 'var(--color-icon-primary)',
+                strokeWidth: 2.5,
+              }}
+            />
           )}
           {paymentMethod.type === 'credit_card' 
             ? `${paymentMethod.issuer} ${paymentMethod.name}` 
@@ -91,9 +103,18 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
           onClick={() => onToggleActive(paymentMethod.id)}
         >
           {paymentMethod.active ? (
-            <ToggleRightIcon className="h-4 w-4 mr-2 text-green-500" />
+            <ToggleRightIcon 
+              className="h-4 w-4 mr-2 text-green-500" 
+              style={{ strokeWidth: 2.5 }}
+            />
           ) : (
-            <ToggleLeftIcon className="h-4 w-4 mr-2" />
+            <ToggleLeftIcon 
+              className="h-4 w-4 mr-2" 
+              style={{ 
+                color: 'var(--color-icon-secondary)',
+                strokeWidth: 2.5,
+              }}
+            />
           )}
           {paymentMethod.active ? "Active" : "Inactive"}
         </Button>
@@ -136,13 +157,25 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                onClick={() => onEdit(paymentMethod)}>
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <EditIcon className="h-4 w-4 mr-3 text-muted-foreground" />
+                <EditIcon 
+                  className="h-4 w-4 mr-3" 
+                  style={{ 
+                    color: 'var(--color-icon-secondary)',
+                    strokeWidth: 2.5,
+                  }}
+                />
                 <div>
                   <h3 className="font-medium">Edit Payment Method</h3>
                   <p className="text-sm text-muted-foreground">Update name, currency, and other details</p>
                 </div>
               </div>
-              <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+              <ChevronRightIcon 
+                className="h-5 w-5" 
+                style={{ 
+                  color: 'var(--color-icon-secondary)',
+                  strokeWidth: 2.5,
+                }}
+              />
             </div>
           </div>
 
@@ -152,7 +185,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                  onClick={() => onImageUpload(paymentMethod)}>
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <ImageIcon className="h-4 w-4 mr-3 text-muted-foreground" />
+                  <ImageIcon 
+                    className="h-4 w-4 mr-3" 
+                    style={{ 
+                      color: 'var(--color-icon-secondary)',
+                      strokeWidth: 2.5,
+                    }}
+                  />
                   <div>
                     <h3 className="font-medium">Upload Card Image</h3>
                     <p className="text-sm text-muted-foreground">
@@ -160,7 +199,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                     </p>
                   </div>
                 </div>
-                <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                <ChevronRightIcon 
+                  className="h-5 w-5" 
+                  style={{ 
+                    color: 'var(--color-icon-secondary)',
+                    strokeWidth: 2.5,
+                  }}
+                />
               </div>
             </div>
           )}
@@ -170,7 +215,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <div className="p-4 hover:bg-muted/50 transition-colors">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <CalendarIcon className="h-4 w-4 mr-3 text-muted-foreground" />
+                  <CalendarIcon 
+                    className="h-4 w-4 mr-3" 
+                    style={{ 
+                      color: 'var(--color-icon-secondary)',
+                      strokeWidth: 2.5,
+                    }}
+                  />
                   <div>
                     <h3 className="font-medium">Statement Details</h3>
                     <p className="text-sm text-muted-foreground">
@@ -190,7 +241,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                  onClick={() => setIsRulesDialogOpen(true)}>
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <ShieldIcon className="h-4 w-4 mr-3 text-muted-foreground" />
+                  <ShieldIcon 
+                    className="h-4 w-4 mr-3" 
+                    style={{ 
+                      color: 'var(--color-icon-secondary)',
+                      strokeWidth: 2.5,
+                    }}
+                  />
                   <div>
                     <h3 className="font-medium">Manage Reward Rules</h3>
                     <p className="text-sm text-muted-foreground">
@@ -200,7 +257,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                     </p>
                   </div>
                 </div>
-                <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                <ChevronRightIcon 
+                  className="h-5 w-5" 
+                  style={{ 
+                    color: 'var(--color-icon-secondary)',
+                    strokeWidth: 2.5,
+                  }}
+                />
               </div>
             </div>
           )}
@@ -213,7 +276,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
           <AccordionItem value="reward-rules">
             <AccordionTrigger className="px-4 py-3">
               <div className="flex items-center">
-                <CoinsIcon className="h-4 w-4 mr-2 text-amber-500" />
+                <CoinsIcon 
+                  className="h-4 w-4 mr-2 text-amber-500" 
+                  style={{ strokeWidth: 2.5 }}
+                />
                 <span className="font-medium">Reward Rules</span>
               </div>
             </AccordionTrigger>

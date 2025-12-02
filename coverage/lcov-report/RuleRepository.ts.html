@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">6.56% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>13/198</span>
+                <span class='fraction'>0/198</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.91% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/109</span>
+                <span class='fraction'>0/109</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.76% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.61% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/196</span>
+                <span class='fraction'>0/196</span>
             </div>
         
             
@@ -1046,16 +1046,16 @@
 <a name='L981'></a><a href='#L981'>981</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1158,12 +1158,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1981,7 +1981,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -2019,23 +2019,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { RewardRule, DbRewardRule, CalculationInput } from "./types";
-import { RuleMapper } from "./RuleMapper";
-import { logger } from "./logger";
-import {
+<span class="cstat-no" title="statement not covered" >import { RuleMapper } from "./RuleMapper";</span>
+<span class="cstat-no" title="statement not covered" >import { logger } from "./logger";</span>
+<span class="cstat-no" title="statement not covered" >import {</span>
   RepositoryError,
   AuthenticationError,
   ValidationError,
   PersistenceError,
 } from "./errors";
 &nbsp;
-export class RuleRepository {
+<span class="cstat-no" title="statement not covered" >export class R</span>uleRepository {
   private supabase: SupabaseClient;
   private static instance: RuleRepository;
   private ruleMapper: RuleMapper;
@@ -2137,13 +2137,13 @@ export class RuleRepository {
     });
   }
 &nbsp;
-  public static getInstance(): RuleRepository {
-    if (!RuleRepository.instance) {
-      logger.error("getInstance", "RuleRepository not initialized", {
+  public <span class="fstat-no" title="function not covered" >static </span>getInstance(): RuleRepository {
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!RuleRepository.instance) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error("getInstance", "RuleRepository not initialized", {</span>
         message:
           "Call initializeRuleRepository() before accessing the repository",
       });
-      throw new Error(
+<span class="cstat-no" title="statement not covered" >      throw new Error(</span>
         "RuleRepository has not been initialized. Call initializeRuleRepository() with a Supabase client before accessing the repository."
       );
     }
@@ -2961,7 +2961,7 @@ export class RuleRepository {
  * }, []);
  * ```
  */
-export const initializeRuleRepository = <span class="fstat-no" title="function not covered" >(</span>
+export const <span class="cstat-no" title="statement not covered" >initializeRuleRepository = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span></span></span>
   supabaseClient: SupabaseClient
 ): RuleRepository =&gt; {
 <span class="cstat-no" title="statement not covered" >  logger.info("initializeRuleRepository", "Initializing rule repository", {</span>
@@ -2999,9 +2999,9 @@ export const initializeRuleRepository = <span class="fstat-no" title="function n
  * const rules = await repository.getRulesForCardType(cardTypeId);
  * ```
  */
-export const getRuleRepository = (): RuleRepository =&gt; {
-  logger.debug("getRuleRepository", "Getting rule repository instance");
-  return RuleRepository.getInstance();
+export const <span class="cstat-no" title="statement not covered" >getRuleRepository = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>): RuleRepository =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  logger.debug("getRuleRepository", "Getting rule repository instance");</span>
+<span class="cstat-no" title="statement not covered" >  return RuleRepository.getInstance();</span>
 };
 &nbsp;</pre></td></tr></table></pre>
 
@@ -3010,7 +3010,7 @@ export const getRuleRepository = (): RuleRepository =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-28T01:19:48.505Z
+                at 2025-11-30T00:23:43.255Z
             </div>
         <script src="prettify.js"></script>
         <script>

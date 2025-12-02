@@ -57,7 +57,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                <HelpCircle 
+                  className="h-4 w-4 text-muted-foreground cursor-help" 
+                  style={{ strokeWidth: 2.5 }}
+                />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>
@@ -94,7 +97,13 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 size="sm"
                 onClick={() => removeTier(index)}
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon 
+                  className="h-4 w-4" 
+                  style={{ 
+                    color: 'var(--color-icon-secondary)',
+                    strokeWidth: 2.5,
+                  }}
+                />
               </Button>
             </div>
           </CardHeader>
@@ -106,7 +115,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        <HelpCircle 
+                          className="h-3 w-3 text-muted-foreground cursor-help" 
+                          style={{ strokeWidth: 2.5 }}
+                        />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-xs">
@@ -136,7 +148,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        <HelpCircle 
+                          className="h-3 w-3 text-muted-foreground cursor-help" 
+                          style={{ strokeWidth: 2.5 }}
+                        />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-xs">
@@ -171,7 +186,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        <HelpCircle 
+                          className="h-3 w-3 text-muted-foreground cursor-help" 
+                          style={{ strokeWidth: 2.5 }}
+                        />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-xs">
@@ -204,7 +222,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        <HelpCircle 
+                          className="h-3 w-3 text-muted-foreground cursor-help" 
+                          style={{ strokeWidth: 2.5 }}
+                        />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-xs">
@@ -238,7 +259,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      <HelpCircle 
+                        className="h-3 w-3 text-muted-foreground cursor-help" 
+                        style={{ strokeWidth: 2.5 }}
+                      />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p className="text-xs">

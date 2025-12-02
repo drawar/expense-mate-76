@@ -1,0 +1,556 @@
+/**
+ * Moss Dark Theme Styles
+ * 
+ * This file contains theme-specific component styles and utilities
+ * that build on top of the design tokens.
+ */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+  font-family: var(--font-family-base);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   CARD COMPONENTS
+   ============================================ */
+
+.moss-card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--radius-card);
+  padding: var(--space-xl);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-card-mobile);
+  transition: transform var(--duration-fast) var(--transition-smooth),
+              box-shadow var(--duration-fast) var(--transition-smooth);
+}
+
+@media (min-width: 1024px) {
+  .moss-card {
+    box-shadow: var(--shadow-card-desktop);
+  }
+  
+  .moss-card-hover:hover {
+    transform: translateY(var(--card-hover-lift));
+    box-shadow: var(--shadow-card-lift);
+  }
+}
+
+/* ============================================
+   INPUT COMPONENTS
+   ============================================ */
+
+.moss-input {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-input);
+  padding: var(--space-md);
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  width: 100%;
+  min-height: 44px;
+  transition: border-color var(--duration-fast) var(--transition-smooth),
+              box-shadow var(--duration-fast) var(--transition-smooth);
+}
+
+.moss-input::placeholder {
+  color: var(--color-text-helper);
+}
+
+.moss-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle);
+}
+
+.moss-input:disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================
+   BUTTON COMPONENTS
+   ============================================ */
+
+.moss-button {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+  border-radius: var(--radius-input);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--transition-smooth),
+              opacity var(--duration-fast) var(--transition-smooth),
+              background-color var(--duration-fast) var(--transition-smooth);
+}
+
+.moss-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.moss-button:active:not(:disabled) {
+  transform: scale(var(--button-press-scale));
+}
+
+.moss-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   COLLAPSIBLE SECTIONS
+   ============================================ */
+
+.collapsible-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-accent);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  padding-top: var(--space-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--transition-smooth);
+}
+
+.collapsible-trigger:hover {
+  opacity: 0.8;
+}
+
+.collapsible-chevron {
+  transition: transform var(--duration-fast) var(--transition-smooth);
+}
+
+.collapsible-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  transition: max-height var(--duration-fast) var(--transition-smooth),
+              opacity var(--duration-fast) var(--transition-smooth);
+  transition-timing-function: var(--transition-smooth);
+}
+
+.collapsible-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.collapsible-content.expanded {
+  max-height: 1000px;
+  opacity: 1;
+  margin-top: var(--space-lg);
+}
+
+/* ============================================
+   BAR CHART COMPONENTS
+   ============================================ */
+
+.card-bar-row {
+  padding: var(--space-md);
+  border-radius: var(--radius-input);
+  background-color: var(--color-surface);
+  margin-bottom: var(--space-sm);
+  transition: box-shadow var(--duration-fast) var(--transition-smooth);
+}
+
+.card-bar-row-best {
+  box-shadow: var(--shadow-glow-accent);
+}
+
+.bar-track {
+  height: 6px;
+  background-color: var(--color-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background-color: var(--color-accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-normal) var(--transition-smooth);
+}
+
+.best-badge {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   TOGGLE COMPONENTS (SWITCH)
+   ============================================ */
+
+/* Base switch styling - applies to all platforms */
+.moss-switch {
+  transition: background-color var(--duration-fast) var(--transition-smooth);
+}
+
+.moss-switch-thumb {
+  transition: transform var(--duration-fast) var(--transition-smooth);
+}
+
+/* Desktop/Web styling - custom switches matching Apple style */
+@media (hover: hover) and (pointer: fine) {
+  .moss-switch {
+    /* Inactive state: neutral gray */
+    background-color: rgba(120, 120, 128, 0.16);
+  }
+  
+  .moss-switch[data-state="checked"] {
+    /* Active state: moss-green */
+    background-color: var(--color-accent);
+  }
+  
+  .moss-switch:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+}
+
+/* iOS/iPadOS styling - native iOS-style switches */
+@media (hover: none) and (pointer: coarse) {
+  .moss-switch {
+    /* iOS inactive state */
+    background-color: rgba(120, 120, 128, 0.16);
+  }
+  
+  .moss-switch[data-state="checked"] {
+    /* iOS active state: moss-green */
+    background-color: var(--color-accent);
+  }
+  
+  /* iOS-specific thumb styling */
+  .moss-switch-thumb {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Legacy toggle component (if needed) */
+.moss-toggle {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+}
+
+.moss-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.moss-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(120, 120, 128, 0.16);
+  transition: background-color var(--duration-fast) var(--transition-smooth);
+  border-radius: var(--radius-pill);
+}
+
+.moss-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 27px;
+  width: 27px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: transform var(--duration-fast) var(--transition-smooth);
+  border-radius: 50%;
+}
+
+.moss-toggle input:checked + .moss-toggle-slider {
+  background-color: var(--color-accent);
+}
+
+.moss-toggle input:checked + .moss-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   ============================================ */
+
+.text-title-1 {
+  font-size: var(--font-size-title-1);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.text-title-2 {
+  font-size: var(--font-size-title-2);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.text-section-header {
+  font-size: var(--font-size-section-header);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+}
+
+.text-body {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+}
+
+.text-label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.text-helper {
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-helper);
+}
+
+/* ============================================
+   FORM COMPONENTS
+   ============================================ */
+
+/* Form labels should use text-secondary color */
+label,
+[role="label"],
+.form-label {
+  color: var(--color-text-secondary);
+}
+
+/* Form descriptions and helper text should use text-helper color */
+.form-description,
+[role="description"],
+.text-muted-foreground {
+  color: var(--color-text-helper);
+}
+
+/* ============================================
+   SPACING UTILITIES
+   ============================================ */
+
+.space-section {
+  margin-bottom: var(--space-xl);
+}
+
+.space-field {
+  margin-bottom: var(--space-md);
+}
+
+.space-label {
+  margin-bottom: var(--space-xs);
+}
+
+/* ============================================
+   LAYOUT UTILITIES
+   ============================================ */
+
+.container-mobile {
+  width: 100%;
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+}
+
+@media (min-width: 768px) {
+  .container-tablet {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-desktop {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ============================================
+   INTERACTION UTILITIES
+   ============================================ */
+
+.interactive-element {
+  min-height: var(--tap-target-min);
+  display: flex;
+  align-items: center;
+}
+
+/* Button press scale effect - applies to all buttons */
+.button-press {
+  transition: transform var(--duration-fast) var(--transition-smooth),
+              opacity var(--duration-fast) var(--transition-smooth);
+}
+
+.button-press:active:not(:disabled) {
+  transform: scale(var(--button-press-scale));
+}
+
+/* Card hover lift effect - desktop only */
+.hover-lift {
+  transition: transform var(--duration-fast) var(--transition-smooth),
+              box-shadow var(--duration-fast) var(--transition-smooth);
+}
+
+@media (min-width: 1024px) {
+  .hover-lift:hover {
+    transform: translateY(var(--card-hover-lift));
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.focus-visible:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   REWARD POINTS PANEL
+   ============================================ */
+
+.reward-points-panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  padding: var(--space-md) var(--space-lg);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.reward-points-panel .points-badge,
+.reward-points-panel .bonus-badge {
+  background-color: var(--color-accent-subtle);
+  border-radius: var(--radius-pill-full);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--duration-fast) var(--transition-smooth);
+}
+
+.reward-points-panel .points-badge {
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: calc(var(--space-xs) + 2px) var(--space-md);
+  font-size: var(--font-size-body);
+}
+
+.reward-points-panel .bonus-badge {
+  border: 1px solid var(--color-accent-soft);
+  color: var(--color-accent-soft);
+  padding: calc(var(--space-xs) + 2px) var(--space-md);
+  font-size: var(--font-size-label);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 767px) {
+  .reward-points-panel {
+    padding: calc(var(--space-sm) + 2px) calc(var(--space-md) + 2px);
+  }
+  
+  .reward-points-panel .points-badge,
+  .reward-points-panel .bonus-badge {
+    font-size: 14px;
+    padding: var(--space-xs) calc(var(--space-sm) + 2px);
+  }
+}
+
+/* Tablet responsive adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .reward-points-panel {
+    padding: var(--space-md) var(--space-lg);
+  }
+  
+  .reward-points-panel .points-badge {
+    font-size: var(--font-size-body);
+    padding: calc(var(--space-xs) + 2px) var(--space-md);
+  }
+  
+  .reward-points-panel .bonus-badge {
+    font-size: var(--font-size-label);
+    padding: calc(var(--space-xs) + 2px) var(--space-md);
+  }
+}
+
+/* Desktop responsive adjustments */
+@media (min-width: 1024px) {
+  .reward-points-panel {
+    padding: var(--space-md) var(--space-lg);
+  }
+  
+  .reward-points-panel .points-badge {
+    font-size: var(--font-size-body);
+    padding: calc(var(--space-xs) + 2px) var(--space-md);
+  }
+  
+  .reward-points-panel .bonus-badge {
+    font-size: var(--font-size-label);
+    padding: calc(var(--space-xs) + 2px) var(--space-md);
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-fast) var(--transition-smooth);
+}
+
+.animate-slide-down {
+  animation: slideDown var(--duration-fast) var(--transition-smooth);
+}

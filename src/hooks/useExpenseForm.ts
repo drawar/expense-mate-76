@@ -26,6 +26,7 @@ export interface PointsCalculationResult {
   remainingMonthlyBonusPoints?: number;
   pointsCurrency?: string;
   messageText?: string;
+  messages?: string[];
 }
 
 export const useExpenseForm = ({
@@ -183,6 +184,7 @@ export const useExpenseForm = ({
           remainingMonthlyBonusPoints: result.remainingMonthlyBonusPoints,
           pointsCurrency: result.pointsCurrency,
           messageText,
+          messages: result.messages,
         });
 
         // If creating a new transaction (no rewardPoints in defaultValues),

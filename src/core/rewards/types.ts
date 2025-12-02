@@ -91,7 +91,10 @@ export interface CalculationResult {
   remainingMonthlyBonusPoints?: number;
   minSpendMet: boolean;
   appliedRule?: RewardRule;
+  appliedRuleId?: string;
   appliedTier?: BonusTier;
+  monthlyCap?: number;
+  periodType?: SpendingPeriodType;
   messages: string[];
 }
 

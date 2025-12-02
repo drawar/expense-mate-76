@@ -50,37 +50,53 @@ const AddExpense = () => {
   }, [paymentMethods]);
 
   return (
-    <div className="min-h-screen">
-      <div className="container max-w-7xl mx-auto pb-16">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gradient">
-              Add Expense
-            </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm">
-              Record a new expense transaction
-            </p>
-          </div>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+      {/* Responsive container: full-width on mobile with padding, centered with max-width on tablet/desktop */}
+      <div className="w-full px-4 md:px-0 md:max-w-[600px] lg:max-w-[640px] mx-auto pb-16">
+        {/* Page header with new typography scale */}
+        <div className="flex flex-col mt-6 mb-6">
+          <h1 
+            className="font-semibold tracking-tight"
+            style={{
+              fontSize: 'var(--font-size-title-1)',
+              lineHeight: 'var(--line-height-tight)',
+              color: 'var(--color-text)',
+            }}
+          >
+            Add Expense
+          </h1>
+          <p 
+            className="mt-2"
+            style={{
+              fontSize: 'var(--font-size-body)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            Record a new expense transaction
+          </p>
         </div>
 
-        <StorageModeAlert useLocalStorage={useLocalStorage} />
-        <ErrorAlert error={saveError} />
+        {/* Spacing between header and content: 24px (xl) */}
+        <div style={{ marginTop: 'var(--space-xl)' }}>
+          <StorageModeAlert useLocalStorage={useLocalStorage} />
+          <ErrorAlert error={saveError} />
 
-        {(isLoading && paymentMethods.length === 0) ||
-        initializationStatus === "loading" ? (
-          <div className="animate-pulse text-center py-10">Loading...</div>
-        ) : initializationStatus === "error" ? (
-          <div className="text-center py-10 text-red-500">
-            Error initializing reward system. Please try refreshing the page.
-          </div>
-        ) : (
-          <ExpenseForm
-            paymentMethods={paymentMethods}
-            onSubmit={handleSubmit}
-            useLocalStorage={useLocalStorage}
-            isSaving={isSaving}
-          />
-        )}
+          {(isLoading && paymentMethods.length === 0) ||
+          initializationStatus === "loading" ? (
+            <div className="animate-pulse text-center py-10">Loading...</div>
+          ) : initializationStatus === "error" ? (
+            <div className="text-center py-10 text-red-500">
+              Error initializing reward system. Please try refreshing the page.
+            </div>
+          ) : (
+            <ExpenseForm
+              paymentMethods={paymentMethods}
+              onSubmit={handleSubmit}
+              useLocalStorage={useLocalStorage}
+              isSaving={isSaving}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

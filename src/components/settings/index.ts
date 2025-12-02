@@ -1,0 +1,1 @@
+export { ConversionRateManager } from "./ConversionRateManager";

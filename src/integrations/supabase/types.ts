@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversion_rates: {
+        Row: {
+          id: string
+          reward_currency: string
+          miles_currency: string
+          conversion_rate: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reward_currency: string
+          miles_currency: string
+          conversion_rate: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reward_currency?: string
+          miles_currency?: string
+          conversion_rate?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           address: string | null

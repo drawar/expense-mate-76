@@ -35,35 +35,54 @@ export class StorageService {
   }
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
+    console.log('StorageService.getPaymentMethods: Starting...');
+    console.log('StorageService.getPaymentMethods: useLocalStorage =', this.useLocalStorage);
+    
     if (this.useLocalStorage) {
-      return this.getPaymentMethodsFromLocalStorage();
+      const local = this.getPaymentMethodsFromLocalStorage();
+      console.log('StorageService.getPaymentMethods: Using localStorage, found', local.length, 'methods');
+      return local;
     }
 
     // If not authenticated, fall back to local storage
     const { data: authData } = await supabase.auth.getSession();
     const session = authData?.session;
+    console.log('StorageService.getPaymentMethods: Auth check - authenticated:', !!session?.user);
+    
     if (!session?.user) {
-      return this.getPaymentMethodsFromLocalStorage();
+      const local = this.getPaymentMethodsFromLocalStorage();
+      console.log('StorageService.getPaymentMethods: Not authenticated, using localStorage, found', local.length, 'methods');
+      return local;
     }
 
     try {
+      console.log('StorageService.getPaymentMethods: Querying Supabase for active payment methods...');
       const { data, error } = await supabase
         .from("payment_methods")
         .select("*")
         .eq("is_active", true)
         .order("name");
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return this.getPaymentMethodsFromLocalStorage();
-      }
+      console.log('StorageService.getPaymentMethods: Supabase query result:', {
+        dataCount: data?.length || 0,
+        error: error?.message || null
+      });
 
-      if (!data || data.length === 0) {
+      if (error) {
+        console.error("StorageService.getPaymentMethods: Supabase error:", error);
         const local = this.getPaymentMethodsFromLocalStorage();
+        console.log('StorageService.getPaymentMethods: Falling back to localStorage, found', local.length, 'methods');
         return local;
       }
 
-      return data.map((row) => ({
+      if (!data || data.length === 0) {
+        console.log('StorageService.getPaymentMethods: No data from Supabase, checking localStorage...');
+        const local = this.getPaymentMethodsFromLocalStorage();
+        console.log('StorageService.getPaymentMethods: Found', local.length, 'methods in localStorage');
+        return local;
+      }
+
+      const mappedData = data.map((row) => ({
         id: row.id,
         name: row.name,
         type: row.type as PaymentMethod['type'],
@@ -83,9 +102,14 @@ export class StorageService {
         isMonthlyStatement: row.is_monthly_statement || undefined,
         conversionRate: (row.conversion_rate as Record<string, number>) || undefined,
       }));
+      
+      console.log('StorageService.getPaymentMethods: Returning', mappedData.length, 'payment methods from Supabase');
+      return mappedData;
     } catch (error) {
-      console.error("Error fetching payment methods:", error);
-      return this.getPaymentMethodsFromLocalStorage();
+      console.error("StorageService.getPaymentMethods: Caught error:", error);
+      const local = this.getPaymentMethodsFromLocalStorage();
+      console.log('StorageService.getPaymentMethods: Falling back to localStorage, found', local.length, 'methods');
+      return local;
     }
   }
 
@@ -554,6 +578,46 @@ export class StorageService {
       }
 
       console.log("Transaction inserted successfully:", data);
+
+      // Track bonus points usage if applicable
+      if (bonusPoints > 0) {
+        try {
+          // We need to find which rule was applied to track it properly
+          // For now, we'll import and use the reward service to get the rule info
+          const { rewardService } = await import("@/core/rewards/RewardService");
+          const { bonusPointsTracker } = await import("@/core/rewards/BonusPointsTracker");
+          
+          // Calculate rewards to get the applied rule
+          const result = await rewardService.calculateRewards({
+            amount: transactionData.amount,
+            currency: transactionData.currency,
+            convertedAmount: transactionData.paymentAmount,
+            convertedCurrency: transactionData.paymentCurrency,
+            paymentMethod: transactionData.paymentMethod,
+            mcc: transactionData.merchant.mcc?.code,
+            merchantName: transactionData.merchant.name,
+            transactionType: "purchase",
+            isOnline: transactionData.merchant.isOnline,
+            isContactless: transactionData.isContactless,
+            date: new Date(transactionData.date),
+          });
+
+          // Track the bonus points if a rule was applied
+          if (result.appliedRuleId && result.monthlyCap) {
+            await bonusPointsTracker.trackBonusPointsUsage(
+              result.appliedRuleId,
+              transactionData.paymentMethod.id,
+              bonusPoints,
+              result.periodType || "calendar",
+              new Date(transactionData.date),
+              1 // Default statement day
+            );
+          }
+        } catch (error) {
+          console.error("Error tracking bonus points:", error);
+          // Don't fail the transaction if tracking fails
+        }
+      }
 
       // Return the complete transaction object
       const newTransaction: Transaction = {

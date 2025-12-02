@@ -8,7 +8,8 @@ import {
   CreditCardIcon, 
   PlusCircleIcon,
   ActivityIcon,
-  MenuIcon
+  MenuIcon,
+  SettingsIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +64,8 @@ const Sidebar = ({
     { path: '/reward-points', label: 'Reward Points', icon: <CoinsIcon size={20} /> },
     { path: '/payment-methods', label: 'Payment Methods', icon: <CreditCardIcon size={20} /> },
     { path: '/add-expense', label: 'Add Expense', icon: <PlusCircleIcon size={20} /> },
+    { path: '/card-optimizer', label: 'Card Optimizer', icon: <ActivityIcon size={20} /> },
+    { path: '/settings', label: 'Settings', icon: <SettingsIcon size={20} /> },
   ];
 
   // Render horizontal navbar for mobile

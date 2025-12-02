@@ -311,7 +311,10 @@ export class RewardService {
           remainingMonthlyBonusPoints,
           minSpendMet,
           appliedRule,
+          appliedRuleId: rule.id,
           appliedTier,
+          monthlyCap: rule.reward.monthlyCap,
+          periodType: rule.reward.monthlySpendPeriodType,
           messages,
         };
       }
@@ -706,36 +709,6 @@ export class RewardService {
     return result;
   }
 
-  private evaluateAmountCondition(
-    condition: RuleCondition,
-    amount: number
-  ): boolean {
-    const result = true; // Placeholder
-    return result;
-  }
-
-  private evaluateCompoundCondition(
-    condition: RuleCondition,
-    input: CalculationInput
-  ): boolean {
-    if (!condition.subConditions || condition.subConditions.length === 0) {
-      return true;
-    }
-
-    switch (condition.operation) {
-      case "all":
-        return condition.subConditions.every((subCondition) =>
-          this.evaluateCondition(subCondition, input)
-        );
-      case "any":
-        return condition.subConditions.some((subCondition) =>
-          this.evaluateCondition(subCondition, input)
-        );
-      default:
-        return true;
-    }
-  }
-
   private evaluateCurrencyCondition(
     condition: RuleCondition,
     currency: string
@@ -808,6 +781,22 @@ export class RewardService {
     convertedAmount?: number,
     convertedCurrency?: string
   ): Promise<CalculationResult> {
+    // Get monthly spending for accurate bonus point calculations
+    let monthlySpend = 0;
+    try {
+      const { MonthlySpendingTracker } = await import("./MonthlySpendingTracker");
+      const tracker = MonthlySpendingTracker.getInstance();
+      monthlySpend = await tracker.getMonthlySpending(
+        paymentMethod.id,
+        "calendar",
+        new Date(),
+        1
+      );
+    } catch (error) {
+      console.warn("Failed to get monthly spending for simulation:", error);
+      // Continue with monthlySpend = 0
+    }
+
     const input: CalculationInput = {
       amount,
       currency,
@@ -820,6 +809,7 @@ export class RewardService {
       isOnline,
       isContactless,
       date: DateTime.now(),
+      monthlySpend,
     };
 
     return this.calculateRewards(input);

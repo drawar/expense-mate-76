@@ -133,7 +133,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(handleFormSubmit)}
-        className="space-y-8"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-xl)', // 24px spacing between sections
+        }}
       >
         <MerchantDetailsSection
           onSelectMCC={setSelectedMCC}

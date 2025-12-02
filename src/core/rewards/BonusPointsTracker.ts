@@ -33,10 +33,7 @@ export class BonusPointsTracker {
 
   /**
    * Get used bonus points for a rule in the current period
-   *
-   * Note: This currently uses an in-memory cache. In a production implementation,
-   * you would query a database table that tracks bonus points usage per rule per period.
-   * For now, this relies on trackBonusPointsUsage being called after each transaction.
+   * Queries the database for actual usage
    */
   public async getUsedBonusPoints(
     ruleId: string,
@@ -53,13 +50,56 @@ export class BonusPointsTracker {
       statementDay
     );
 
-    // Return cached value or 0
-    return this.usageCache.get(cacheKey) || 0;
+    // Check cache first
+    const cached = this.usageCache.get(cacheKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    // Query database
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // No user logged in, return 0
+        return 0;
+      }
+
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+
+      const { data, error } = await (supabase as any)
+        .from("bonus_points_tracking")
+        .select("used_bonus_points")
+        .eq("user_id", session.user.id)
+        .eq("rule_id", ruleId)
+        .eq("payment_method_id", paymentMethodId)
+        .eq("period_type", periodType)
+        .eq("period_year", year)
+        .eq("period_month", month)
+        .eq("statement_day", statementDay)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching bonus points usage:", error);
+        return 0;
+      }
+
+      const usedPoints = (data as any)?.used_bonus_points || 0;
+      
+      // Cache the result
+      this.usageCache.set(cacheKey, usedPoints);
+      
+      return usedPoints;
+    } catch (error) {
+      console.error("Error in getUsedBonusPoints:", error);
+      return 0;
+    }
   }
 
   /**
    * Track bonus points usage for a transaction
    * This should be called after a transaction is created
+   * Persists to database and updates cache
    */
   public async trackBonusPointsUsage(
     ruleId: string,
@@ -69,17 +109,66 @@ export class BonusPointsTracker {
     date: Date = new Date(),
     statementDay: number = 1
   ): Promise<void> {
-    const cacheKey = this.createCacheKey(
-      ruleId,
-      paymentMethodId,
-      periodType,
-      date,
-      statementDay
-    );
+    if (bonusPoints <= 0) {
+      return; // Nothing to track
+    }
 
-    // Update cache
-    const currentUsage = this.usageCache.get(cacheKey) || 0;
-    this.usageCache.set(cacheKey, currentUsage + bonusPoints);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.warn("Cannot track bonus points: user not authenticated");
+        return;
+      }
+
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+
+      // Get current usage
+      const currentUsage = await this.getUsedBonusPoints(
+        ruleId,
+        paymentMethodId,
+        periodType,
+        date,
+        statementDay
+      );
+
+      const newUsage = currentUsage + bonusPoints;
+
+      // Upsert to database
+      const { error } = await (supabase as any)
+        .from("bonus_points_tracking")
+        .upsert({
+          user_id: session.user.id,
+          rule_id: ruleId,
+          payment_method_id: paymentMethodId,
+          period_type: periodType,
+          period_year: year,
+          period_month: month,
+          statement_day: statementDay,
+          used_bonus_points: newUsage,
+        }, {
+          onConflict: "user_id,rule_id,payment_method_id,period_type,period_year,period_month,statement_day"
+        });
+
+      if (error) {
+        console.error("Error tracking bonus points usage:", error);
+        return;
+      }
+
+      // Update cache
+      const cacheKey = this.createCacheKey(
+        ruleId,
+        paymentMethodId,
+        periodType,
+        date,
+        statementDay
+      );
+      this.usageCache.set(cacheKey, newUsage);
+
+      console.log(`✅ Tracked ${bonusPoints} bonus points for rule ${ruleId}. Total: ${newUsage}`);
+    } catch (error) {
+      console.error("Error in trackBonusPointsUsage:", error);
+    }
   }
 
   /**

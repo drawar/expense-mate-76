@@ -60,7 +60,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>
@@ -100,7 +103,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Match transactions from specific merchants. Examples:</p>
@@ -137,7 +143,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Filter by how the transaction was made:</p>
@@ -184,7 +193,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Match transactions in specific currencies. Examples:</p>
@@ -224,7 +236,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Filter by transaction amount. Use with operations:</p>
@@ -260,7 +275,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Match transactions by category. Examples:</p>
@@ -313,7 +331,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>Choose what aspect of the transaction to match:</p>
@@ -352,7 +373,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <HelpCircle 
+                      className="h-4 w-4 text-muted-foreground cursor-help" 
+                      style={{ strokeWidth: 2.5 }}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>How to match the condition:</p>

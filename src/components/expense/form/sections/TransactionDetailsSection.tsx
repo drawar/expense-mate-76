@@ -1,6 +1,5 @@
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { Input } from "@/components/ui/input";
 import { CalendarIcon } from "lucide-react";
 import {
   FormControl,
@@ -17,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
@@ -27,35 +25,60 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { MossCard } from "@/components/ui/moss-card";
+import { MossInput } from "@/components/ui/moss-input";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import ContactlessToggle from "@/components/expense/form/elements/ContactlessToggle";
 
 // Import from our centralized currency service
 import { CurrencyService } from "@/core/currency/CurrencyService";
 
-export const TransactionDetailsSection: React.FC = () => {
+interface TransactionDetailsSectionProps {
+  minimal?: boolean; // Enable progressive disclosure mode
+}
+
+export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps> = ({ 
+  minimal = true, // Default to minimal view with progressive disclosure
+}) => {
   const form = useFormContext();
   const currency = form.watch("currency");
+  const isOnline = form.watch("isOnline") || false;
+  const paymentMethodId = form.watch("paymentMethodId");
   
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
+  // Determine if payment is cash (for ContactlessToggle)
+  const isCash = paymentMethodId === "cash" || paymentMethodId === "Cash";
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-        <CalendarIcon className="h-5 w-5" />
-          Transaction Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <MossCard>
+      <h2 
+        className="section-header flex items-center gap-2"
+        style={{
+          fontSize: 'var(--font-size-section-header)',
+          fontWeight: 600,
+          color: 'var(--color-text-primary)',
+          marginBottom: 'var(--space-lg)',
+        }}
+      >
+        <CalendarIcon className="h-5 w-5" style={{ color: 'var(--color-icon-primary)' }} />
+        Transaction Details
+      </h2>
+      
+      {/* Essential fields - always visible */}
+      <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Transaction Amount</FormLabel>
+                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  Transaction Amount
+                </FormLabel>
                 <FormControl>
-                  <Input
+                  <MossInput
                     type="number"
                     min="0.01"
                     step="0.01"
@@ -81,7 +104,9 @@ export const TransactionDetailsSection: React.FC = () => {
             name="currency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Currency</FormLabel>
+                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  Currency
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value) => {
@@ -108,36 +133,14 @@ export const TransactionDetailsSection: React.FC = () => {
           />
         </div>
 
-        {/* Reimbursement Amount Field */}
-        <FormField
-          control={form.control}
-          name="reimbursementAmount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reimbursement Amount</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Amount reimbursed for this expense (in {currency})
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
+              <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                Date
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -172,25 +175,123 @@ export const TransactionDetailsSection: React.FC = () => {
             </FormItem>
           )}
         />
+      </div>
+      
+      {/* Optional fields - collapsible */}
+      {minimal && (
+        <CollapsibleSection 
+          trigger="Show advanced fields"
+          id="transaction-advanced"
+          persistState={true}
+        >
+          <div className="space-y-4">
+            {/* Reimbursement Amount Field */}
+            <FormField
+              control={form.control}
+              name="reimbursementAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                    Reimbursement Amount
+                  </FormLabel>
+                  <FormControl>
+                    <MossInput
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription style={{ color: 'var(--color-text-helper)' }}>
+                    Amount reimbursed for this expense (in {currency})
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Add any notes about this transaction"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </CardContent>
-    </Card>
+            {/* Contactless Toggle */}
+            <ContactlessToggle isOnline={isOnline} isCash={isCash} />
+
+            {/* Notes Field */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                    Notes (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add any notes about this transaction"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </CollapsibleSection>
+      )}
+      
+      {/* Non-minimal mode - show all fields */}
+      {!minimal && (
+        <div className="space-y-4 mt-4">
+          {/* Reimbursement Amount Field */}
+          <FormField
+            control={form.control}
+            name="reimbursementAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  Reimbursement Amount
+                </FormLabel>
+                <FormControl>
+                  <MossInput
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription style={{ color: 'var(--color-text-helper)' }}>
+                  Amount reimbursed for this expense (in {currency})
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Contactless Toggle */}
+          <ContactlessToggle isOnline={isOnline} isCash={isCash} />
+
+          {/* Notes Field */}
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  Notes (Optional)
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Add any notes about this transaction"
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+    </MossCard>
   );
 };

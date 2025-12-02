@@ -1,5 +1,5 @@
 /**
- * Script to set up accurate reward rules for Citibank Rewards Visa Signature (Singapore)
+ * Script to set up accurate reward rules for Citibank Rewards World MasterCard (Singapore)
  *
  * Rules:
  * 1. 4 mpd (10x total) on online transactions (excluding travel and in-app mobile wallet)
@@ -19,7 +19,7 @@ import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 
 async function setupCitibankRewardsCard() {
   console.log(
-    "=== Setting Up Citibank Rewards Visa Signature (Singapore) ===\n"
+    "=== Setting Up Citibank Rewards World MasterCard (Singapore) ===\n"
   );
 
   // Initialize repository
@@ -46,7 +46,7 @@ async function setupCitibankRewardsCard() {
   // Generate card type ID
   const cardTypeId = cardTypeIdService.generateCardTypeId(
     "Citibank",
-    "Rewards Visa Signature"
+    "Rewards World MasterCard"
   );
   console.log("Card Type ID:", cardTypeId, "\n");
 
@@ -1126,7 +1126,7 @@ async function setupCitibankRewardsCard() {
         calculationMethod: "standard",
         baseMultiplier: 1,
         bonusMultiplier: 9, // 9 bonus + 1 base = 10x total (4 mpd)
-        pointsCurrency: "Citi Points",
+        pointsCurrency: "Citi ThankYou Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
         monthlyCap: 9000, // 9,000 bonus points per statement month
@@ -1166,7 +1166,7 @@ async function setupCitibankRewardsCard() {
         calculationMethod: "standard",
         baseMultiplier: 1,
         bonusMultiplier: 9, // 9 bonus + 1 base = 10x total (4 mpd)
-        pointsCurrency: "Citi Points",
+        pointsCurrency: "Citi ThankYou Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
         monthlyCap: 9000, // 9,000 bonus points per statement month (shared cap)
@@ -1189,7 +1189,7 @@ async function setupCitibankRewardsCard() {
         calculationMethod: "standard",
         baseMultiplier: 1,
         bonusMultiplier: 0, // No bonus, just base
-        pointsCurrency: "Citi Points",
+        pointsCurrency: "Citi ThankYou Points",
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
         monthlyCap: null,
@@ -1200,7 +1200,7 @@ async function setupCitibankRewardsCard() {
 
     console.log("=== Setup Complete ===\n");
     console.log(
-      "✅ All rules created successfully for Citibank Rewards Visa Signature\n"
+      "✅ All rules created successfully for Citibank Rewards World MasterCard\n"
     );
     console.log("Summary:");
     console.log(

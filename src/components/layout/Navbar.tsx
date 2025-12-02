@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -68,6 +67,22 @@ const Navbar = () => {
                 }`}
               >
                 Reward Points
+              </Link>
+              <Link
+                to="/card-optimizer"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/card-optimizer') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                Card Optimizer
+              </Link>
+              <Link
+                to="/settings"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive('/settings') ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                Settings
               </Link>
             </div>
           </div>

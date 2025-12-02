@@ -48,7 +48,10 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="p-6 border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800/40 rounded-lg">
           <div className="flex items-center mb-4">
-            <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+            <AlertTriangle 
+              className="h-6 w-6 text-red-500 mr-2" 
+              style={{ strokeWidth: 2.5 }}
+            />
             <h3 className="text-lg font-medium text-red-800 dark:text-red-200">Something went wrong</h3>
           </div>
           <div className="text-red-600 dark:text-red-300">

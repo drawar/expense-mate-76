@@ -87,7 +87,10 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
       networkName = "JCB";
       badgeClasses += " text-green-700";
     } else {
-      return <CreditCardIcon className="h-10 w-10 text-white opacity-80" />;
+      return <CreditCardIcon 
+        className="h-10 w-10 text-white opacity-80" 
+        style={{ strokeWidth: 2.5 }}
+      />;
     }
 
     return <div className={badgeClasses}>{networkName}</div>;
@@ -108,7 +111,10 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({ paymentMethod 
       {/* Card Type Icon (for cash) */}
       {paymentMethod.type === 'cash' && (
         <div className="absolute top-4 right-4">
-          <BanknoteIcon className="h-10 w-10 opacity-80" />
+          <BanknoteIcon 
+            className="h-10 w-10 opacity-80" 
+            style={{ strokeWidth: 2.5 }}
+          />
         </div>
       )}
       

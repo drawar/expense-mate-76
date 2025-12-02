@@ -2,15 +2,12 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 import { PaymentMethod } from "@/types";
 import { CreditCardIcon } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PointsCalculationResult } from "@/hooks/useExpenseForm";
+
+// Import Moss Dark UI components
+import { MossCard } from "@/components/ui/moss-card";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 // Import sub-components
 import PaymentMethodSelect from "../elements/PaymentMethodSelect";
@@ -25,6 +22,7 @@ interface PaymentDetailsSectionProps {
   pointsCalculation: PointsCalculationResult;
   isSubmitting?: boolean;
   isEditMode?: boolean;
+  minimal?: boolean; // Enable progressive disclosure mode
 }
 
 export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
@@ -34,6 +32,7 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
   pointsCalculation,
   isSubmitting = false,
   isEditMode = false,
+  minimal = true, // Default to minimal view with progressive disclosure
 }) => {
   const form = useFormContext();
   const isOnline = form.watch("isOnline");
@@ -54,42 +53,79 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
     : undefined;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCardIcon className="h-5 w-5" />
-          Payment Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <MossCard>
+      <h2 
+        className="flex items-center gap-2 font-semibold mb-4"
+        style={{
+          fontSize: 'var(--font-size-section-header)',
+          color: 'var(--color-text-primary)',
+          fontWeight: 'var(--font-weight-semibold)',
+        }}
+      >
+        <CreditCardIcon 
+          className="h-5 w-5" 
+          style={{ color: 'var(--color-icon-primary)' }}
+        />
+        Payment Details
+      </h2>
+      
+      {/* Essential field - always visible */}
+      <div className="space-y-4">
         <PaymentMethodSelect paymentMethods={paymentMethods} />
+      </div>
 
-        <ContactlessToggle
-          isOnline={isOnline}
-          isCash={selectedPaymentMethod?.type === "cash" || false}
-        />
+      {/* Optional fields - collapsible when minimal mode is enabled */}
+      {minimal ? (
+        <CollapsibleSection 
+          trigger="Show payment details"
+          id="payment-details-advanced"
+          persistState={true}
+        >
+          <div className="space-y-4">
+            <ContactlessToggle
+              isOnline={isOnline}
+              isCash={selectedPaymentMethod?.type === "cash" || false}
+            />
 
-        <ConvertedAmountField
-          shouldOverridePayment={shouldOverridePayment}
-          selectedPaymentMethod={selectedPaymentMethod}
-        />
+            <ConvertedAmountField
+              shouldOverridePayment={shouldOverridePayment}
+              selectedPaymentMethod={selectedPaymentMethod}
+            />
 
-        <PointsDisplay
-          amount={amount || 0}
-          currency={currency || "CAD"}
-          paymentMethod={selectedPaymentMethod || null}
-          mcc={mcc?.code}
-          merchantName={merchantName}
-          isOnline={isOnline}
-          isContactless={isContactless}
-          convertedAmount={convertedAmount}
-          convertedCurrency={convertedCurrency}
-          isEditMode={isEditMode}
-          editablePoints={0}
-          onPointsChange={() => {}}
-        />
-      </CardContent>
-      <CardFooter className="flex justify-end space-x-2">
+            <PointsDisplay
+              paymentMethod={selectedPaymentMethod || null}
+              calculationResult={pointsCalculation}
+              isEditMode={isEditMode}
+              editablePoints={0}
+              onPointsChange={() => {}}
+            />
+          </div>
+        </CollapsibleSection>
+      ) : (
+        // Non-minimal mode: show all fields
+        <div className="space-y-4 mt-4">
+          <ContactlessToggle
+            isOnline={isOnline}
+            isCash={selectedPaymentMethod?.type === "cash" || false}
+          />
+
+          <ConvertedAmountField
+            shouldOverridePayment={shouldOverridePayment}
+            selectedPaymentMethod={selectedPaymentMethod}
+          />
+
+          <PointsDisplay
+            paymentMethod={selectedPaymentMethod || null}
+            calculationResult={pointsCalculation}
+            isEditMode={isEditMode}
+            editablePoints={0}
+            onPointsChange={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Submit button */}
+      <div className="flex justify-end space-x-2 mt-6">
         <Button
           type="submit"
           className="w-full md:w-auto"
@@ -97,7 +133,7 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
         >
           {isSubmitting ? "Saving..." : "Save Transaction"}
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </MossCard>
   );
 };

@@ -84,7 +84,10 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
             className="w-full justify-between mt-1"
           >
             {isValidMCC ? `${selectedMCC.description} (${selectedMCC.code})` : "Select merchant category"}
-            <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <SearchIcon 
+              className="ml-2 h-4 w-4 shrink-0 opacity-50" 
+              style={{ strokeWidth: 2.5 }}
+            />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0">
@@ -115,7 +118,13 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
       <p className="text-sm text-muted-foreground mt-1">
         {isValidMCC ? (
           <span className="flex items-center">
-            <TagIcon className="h-3.5 w-3.5 mr-1.5" />
+            <TagIcon 
+              className="h-3.5 w-3.5 mr-1.5" 
+              style={{ 
+                color: 'var(--color-icon-secondary)',
+                strokeWidth: 2.5,
+              }}
+            />
             {selectedMCC.description} ({selectedMCC.code})
           </span>
         ) : (
