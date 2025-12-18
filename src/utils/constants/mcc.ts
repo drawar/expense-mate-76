@@ -160,6 +160,7 @@ export const MCC_CODES = (() => {
     { code: '6051', description: 'Non-Financial Institutions - Foreign Currency, Money Orders' },
     { code: '6211', description: 'Securities Brokers/Dealers' },
     { code: '6300', description: 'Insurance Sales, Underwriting, and Premiums' },
+    { code: '6540', description: 'POI (Point of Interaction) Funding Transactions (Excluding MoneySend)' },
     
     // Charitable & Social Service
     { code: '8398', description: 'Charitable and Social Service Organizations' },

@@ -35,6 +35,46 @@ export const formSchema = z.object({
       },
       { message: "Please enter a number with up to 2 decimal places" }
     ),
+}).superRefine((data, ctx) => {
+  // Validate amount field based on MCC
+  const amount = Number(data.amount);
+  const mccCode = data.mcc?.code;
+  
+  if (isNaN(amount)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please enter a valid number",
+      path: ["amount"],
+    });
+    return;
+  }
+  
+  // Allow negative values only for MCC 6540 (POI Funding Transactions)
+  if (mccCode !== "6540" && amount < 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Amount must be positive (negative values only allowed for MCC 6540)",
+      path: ["amount"],
+    });
+  }
+  
+  // For MCC 6540, allow any non-zero value (positive or negative)
+  if (mccCode === "6540" && amount === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Amount cannot be zero",
+      path: ["amount"],
+    });
+  }
+  
+  // For other MCCs, require positive values
+  if (mccCode !== "6540" && amount <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Amount must be greater than zero",
+      path: ["amount"],
+    });
+  }
 });
 
 export type FormValues = z.infer<typeof formSchema>;

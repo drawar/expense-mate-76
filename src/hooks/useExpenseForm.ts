@@ -80,6 +80,11 @@ export const useExpenseForm = ({
     defaultValues?.mcc || null
   );
 
+  // Sync selectedMCC to form's mcc field whenever it changes
+  useEffect(() => {
+    form.setValue("mcc", selectedMCC);
+  }, [selectedMCC, form]);
+
   const { selectedPaymentMethod, shouldOverridePayment } =
     usePaymentMethodLogic(
       form,

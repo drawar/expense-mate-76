@@ -136,6 +136,7 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
           selectedMCC={selectedMCC}
           onSelectMCC={(mcc) => {
             onSelectMCC(mcc);
+            form.setValue('mcc', mcc); // Sync to form field
             setSuggestionsChecked(true); // Mark as checked when user manually selects
           }}
         />

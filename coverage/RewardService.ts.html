@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/191</span>
+                <span class='fraction'>0/194</span>
             </div>
         
             
@@ -974,7 +974,19 @@
 <a name='L909'></a><a href='#L909'>909</a>
 <a name='L910'></a><a href='#L910'>910</a>
 <a name='L911'></a><a href='#L911'>911</a>
-<a name='L912'></a><a href='#L912'>912</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L912'></a><a href='#L912'>912</a>
+<a name='L913'></a><a href='#L913'>913</a>
+<a name='L914'></a><a href='#L914'>914</a>
+<a name='L915'></a><a href='#L915'>915</a>
+<a name='L916'></a><a href='#L916'>916</a>
+<a name='L917'></a><a href='#L917'>917</a>
+<a name='L918'></a><a href='#L918'>918</a>
+<a name='L919'></a><a href='#L919'>919</a>
+<a name='L920'></a><a href='#L920'>920</a>
+<a name='L921'></a><a href='#L921'>921</a>
+<a name='L922'></a><a href='#L922'>922</a>
+<a name='L923'></a><a href='#L923'>923</a>
+<a name='L924'></a><a href='#L924'>924</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1147,6 +1159,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1385,6 +1400,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1430,6 +1448,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2056,7 +2080,10 @@ import { RuleRepository } from "./RuleRepository";
             const { points: tieredPoints, tier } = <span class="cstat-no" title="statement not covered" >this.calculateTieredPoints(</span>
               calculationAmount,
               rule.reward.bonusTiers,
-              input.monthlySpend
+              input.monthlySpend,
+              rule.reward.pointsRoundingStrategy,
+              rule.reward.blockSize,
+              rule.reward.amountRoundingStrategy
             );
 <span class="cstat-no" title="statement not covered" >            bonusPoints = tieredPoints;</span>
 <span class="cstat-no" title="statement not covered" >            appliedTier = tier;</span>
@@ -2307,7 +2334,10 @@ import { RuleRepository } from "./RuleRepository";
   private <span class="fstat-no" title="function not covered" >calculateTieredPoints(</span>
     amount: number,
     tiers: BonusTier[],
-    monthlySpend?: number
+    monthlySpend?: number,
+    roundingStrategy: string = <span class="branch-0 cbranch-no" title="branch not covered" >"floor",</span>
+    blockSize: number = <span class="branch-0 cbranch-no" title="branch not covered" >1,</span>
+    amountRoundingStrategy: string = <span class="branch-0 cbranch-no" title="branch not covered" >"none"</span>
   ): { points: number; tier: BonusTier | null } {
     let appliedTier: BonusTier | null = <span class="cstat-no" title="statement not covered" >null;</span>
 &nbsp;
@@ -2340,7 +2370,13 @@ import { RuleRepository } from "./RuleRepository";
 <span class="cstat-no" title="statement not covered" >        continue;</span>
       }
 &nbsp;
-      const points = <span class="cstat-no" title="statement not covered" >this.calculateStandardPoints(amount, tier.multiplier);</span>
+      const points = <span class="cstat-no" title="statement not covered" >this.calculateStandardPoints(</span>
+        amount,
+        tier.multiplier,
+        roundingStrategy,
+        blockSize,
+        amountRoundingStrategy
+      );
 <span class="cstat-no" title="statement not covered" >      appliedTier = tier;</span>
 <span class="cstat-no" title="statement not covered" >      return { points, tier: appliedTier };</span>
     }
@@ -2803,7 +2839,7 @@ export const <span class="cstat-no" title="statement not covered" >rewardService
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T00:23:43.272Z
+                at 2025-12-02T09:11:06.311Z
             </div>
         <script src="prettify.js"></script>
         <script>

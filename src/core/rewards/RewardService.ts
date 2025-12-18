@@ -169,7 +169,10 @@ export class RewardService {
             const { points: tieredPoints, tier } = this.calculateTieredPoints(
               calculationAmount,
               rule.reward.bonusTiers,
-              input.monthlySpend
+              input.monthlySpend,
+              rule.reward.pointsRoundingStrategy,
+              rule.reward.blockSize,
+              rule.reward.amountRoundingStrategy
             );
             bonusPoints = tieredPoints;
             appliedTier = tier;
@@ -420,7 +423,10 @@ export class RewardService {
   private calculateTieredPoints(
     amount: number,
     tiers: BonusTier[],
-    monthlySpend?: number
+    monthlySpend?: number,
+    roundingStrategy: string = "floor",
+    blockSize: number = 1,
+    amountRoundingStrategy: string = "none"
   ): { points: number; tier: BonusTier | null } {
     let appliedTier: BonusTier | null = null;
 
@@ -453,7 +459,13 @@ export class RewardService {
         continue;
       }
 
-      const points = this.calculateStandardPoints(amount, tier.multiplier);
+      const points = this.calculateStandardPoints(
+        amount,
+        tier.multiplier,
+        roundingStrategy,
+        blockSize,
+        amountRoundingStrategy
+      );
       appliedTier = tier;
       return { points, tier: appliedTier };
     }

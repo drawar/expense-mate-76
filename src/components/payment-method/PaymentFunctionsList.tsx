@@ -90,7 +90,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
               }}
             />
           )}
-          {paymentMethod.type === 'credit_card' 
+          {paymentMethod.type === 'credit_card'
             ? `${paymentMethod.issuer} ${paymentMethod.name}` 
             : paymentMethod.name
           }

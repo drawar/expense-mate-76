@@ -720,6 +720,7 @@ export class StorageService {
           merchant_id: (updates.merchant?.id && updates.merchant.id.trim() !== "") ? updates.merchant.id : null,
           amount: updates.amount,
           currency: updates.currency,
+          payment_method_id: updates.paymentMethod?.id,
           payment_amount: updates.paymentAmount,
           payment_currency: updates.paymentCurrency,
           total_points: updates.rewardPoints,

@@ -44,12 +44,16 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
   const currency = form.watch("currency");
   const isOnline = form.watch("isOnline") || false;
   const paymentMethodId = form.watch("paymentMethodId");
+  const mcc = form.watch("mcc");
   
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
   // Determine if payment is cash (for ContactlessToggle)
   const isCash = paymentMethodId === "cash" || paymentMethodId === "Cash";
+  
+  // Allow negative values only for MCC 6540 (POI Funding Transactions)
+  const allowNegativeAmount = mcc?.code === "6540";
 
   return (
     <MossCard>
@@ -76,13 +80,23 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
               <FormItem>
                 <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
                   Transaction Amount
+                  {allowNegativeAmount && (
+                    <span style={{ 
+                      fontSize: 'var(--font-size-helper)', 
+                      color: 'var(--color-text-helper)',
+                      marginLeft: '8px',
+                      fontWeight: 'normal'
+                    }}>
+                      (positive or negative)
+                    </span>
+                  )}
                 </FormLabel>
                 <FormControl>
                   <MossInput
                     type="number"
-                    min="0.01"
+                    min={allowNegativeAmount ? undefined : "0.01"}
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder={allowNegativeAmount ? "0.00 (+ or -)" : "0.00"}
                     {...field}
                     onChange={(e) => {
                       field.onChange(e);

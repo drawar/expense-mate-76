@@ -32,11 +32,22 @@ interface SpendingTrendCardProps {
 const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   transactions,
   currency = "SGD",
-  initialPeriod = "month",
+  initialPeriod = "week",
   className = "",
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
   const { formatCurrency } = useCurrencyFormatter(currency);
+
+  // Map period values to display labels
+  const getPeriodLabel = (period: string) => {
+    const labels: Record<string, string> = {
+      week: "Daily",
+      month: "Weekly",
+      quarter: "Monthly",
+      year: "Quarterly"
+    };
+    return labels[period] || "Daily";
+  };
 
   // Process data for chart
   const chartResult = React.useMemo(() => {
@@ -57,7 +68,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const periodSelector = (
     <Select value={selectedPeriod} onValueChange={(value: string) => setSelectedPeriod(value as any)}>
       <SelectTrigger className="w-32 h-8">
-        <SelectValue placeholder="Select period" />
+        <span className="text-sm">{getPeriodLabel(selectedPeriod)}</span>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="week">Daily</SelectItem>

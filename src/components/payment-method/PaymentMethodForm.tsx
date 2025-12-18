@@ -84,6 +84,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="credit_card">Credit Card</SelectItem>
+                  <SelectItem value="prepaid_card">Prepaid Card</SelectItem>
                   <SelectItem value="cash">Cash</SelectItem>
                 </SelectContent>
               </Select>

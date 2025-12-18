@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "prepare": "husky",
     "test": "jest",
-    "diagnose:rewards": "npx tsx src/scripts/diagnoseRewardRulesIssue.ts"
+    "diagnose:rewards": "npx tsx src/scripts/diagnoseRewardRulesIssue.ts",
+    "add:payment-methods": "npx tsx src/scripts/addCashAndPrepaidMethods.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [
