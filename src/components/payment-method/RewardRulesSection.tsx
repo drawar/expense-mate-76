@@ -52,7 +52,8 @@ type QuickSetupType =
   | "amex-platinum"
   | "amex-aeroplan-reserve"
   | "neo-cathay"
-  | "hsbc-revolution";
+  | "hsbc-revolution"
+  | "brim-afklm";
 
 interface QuickSetupConfig {
   type: QuickSetupType;
@@ -118,6 +119,15 @@ function getQuickSetupConfig(
       name: "HSBC Revolution",
       description:
         "10x online travel & contactless (promo until Feb 2026), 1x other",
+    };
+  }
+
+  if (issuer.includes("brim") && name.includes("air france")) {
+    return {
+      type: "brim-afklm",
+      name: "Brim Air France KLM",
+      description:
+        "6x AF/KLM (EUR), ~4.09x AF/KLM (CAD), 2x restaurants, 1x other",
     };
   }
 
@@ -1014,6 +1024,222 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
     }
   };
 
+  const runBrimAFKLMSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "Brim Financial",
+        "Air France KLM World Elite"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // Air France (MCC 3007) and KLM (MCC 3010)
+      const afklmMCCs = ["3007", "3010"];
+      const afklmMerchants = [
+        "Air France",
+        "AIR FRANCE",
+        "AIRFRANCE",
+        "KLM",
+        "KLM AIRLINE",
+        "KLM ROYAL DUTCH",
+        "FLYING BLUE",
+      ];
+
+      // Restaurant MCCs (5812 = Eating Places/Restaurants, 5814 = Fast Food)
+      const restaurantMCCs = ["5812", "5814"];
+
+      // EUR/CAD conversion rate for bonus calculation
+      // Bonus is 5 miles per EUR, so for CAD: 5 / 1.62 = 3.086 bonus per CAD
+      const eurCadRate = 1.62;
+      const cadBonusMultiplier = 5 / eurCadRate; // ~3.086
+
+      // Rule 1a: 6x on Air France/KLM EUR transactions (MCC match)
+      addSetupLog("Creating 6x Air France/KLM rule (EUR, MCC)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "6x Flying Blue Miles on Air France/KLM (EUR)",
+        description:
+          "Earn 6 Flying Blue Miles per €1 on Air France and KLM flights in EUR (5 bonus + 1 base)",
+        enabled: true,
+        priority: 6,
+        conditions: [
+          { type: "mcc", operation: "include", values: afklmMCCs },
+          { type: "currency", operation: "equals", values: ["EUR"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 5,
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 6x rule created (EUR, MCC 3007/3010)");
+
+      // Rule 1b: 6x on Air France/KLM EUR transactions (Merchant match)
+      addSetupLog("Creating 6x Air France/KLM rule (EUR, Merchant)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "6x Flying Blue Miles on Air France/KLM (EUR, Merchant)",
+        description:
+          "Earn 6 Flying Blue Miles per €1 on Air France and KLM flights in EUR (matched by merchant)",
+        enabled: true,
+        priority: 5,
+        conditions: [
+          { type: "merchant", operation: "include", values: afklmMerchants },
+          { type: "currency", operation: "equals", values: ["EUR"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 5,
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 6x rule created (EUR, merchant match)");
+
+      // Rule 1c: ~4.09x on Air France/KLM CAD transactions (MCC match)
+      // 5 bonus per EUR = 3.086 bonus per CAD (at 1.62 EUR/CAD) + 1 base
+      addSetupLog("Creating ~4.09x Air France/KLM rule (CAD, MCC)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "~4.09x Flying Blue Miles on Air France/KLM (CAD)",
+        description: `Earn ~4.09 Flying Blue Miles per $1 CAD on Air France and KLM flights (5 bonus/€ ÷ ${eurCadRate} + 1 base)`,
+        enabled: true,
+        priority: 4,
+        conditions: [
+          { type: "mcc", operation: "include", values: afklmMCCs },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: cadBonusMultiplier, // ~3.086
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog(
+        `✅ ~4.09x rule created (CAD, MCC) - bonus: ${cadBonusMultiplier.toFixed(3)}/CAD`
+      );
+
+      // Rule 1d: ~4.09x on Air France/KLM CAD transactions (Merchant match)
+      addSetupLog("Creating ~4.09x Air France/KLM rule (CAD, Merchant)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "~4.09x Flying Blue Miles on Air France/KLM (CAD, Merchant)",
+        description: `Earn ~4.09 Flying Blue Miles per $1 CAD on Air France and KLM flights (matched by merchant)`,
+        enabled: true,
+        priority: 3,
+        conditions: [
+          { type: "merchant", operation: "include", values: afklmMerchants },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: cadBonusMultiplier, // ~3.086
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ ~4.09x rule created (CAD, merchant match)");
+
+      // Rule 2: 2x on Restaurants
+      addSetupLog("Creating 2x Restaurants rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Flying Blue Miles on Restaurants",
+        description:
+          "Earn 2 Flying Blue Miles per $1 at eating places, restaurants, and fast food (MCC 5812/5814)",
+        enabled: true,
+        priority: 2,
+        conditions: [
+          { type: "mcc", operation: "include", values: restaurantMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x rule created (restaurants)");
+
+      // Rule 3: 1x on Everything Else
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Flying Blue Miles on All Other Purchases",
+        description:
+          "Earn 1 Flying Blue Mile per $1 on all other eligible purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Brim Air France KLM rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
   const handleQuickSetup = () => {
     if (!quickSetupConfig) return;
 
@@ -1032,6 +1258,9 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         break;
       case "hsbc-revolution":
         runHSBCRevolutionSetup();
+        break;
+      case "brim-afklm":
+        runBrimAFKLMSetup();
         break;
     }
   };

@@ -1,80 +1,84 @@
 import { z } from "zod";
 import { MerchantCategoryCode, Currency } from "@/types";
 
-export const formSchema = z.object({
-  merchantName: z.string().min(1, "Merchant name is required"),
-  merchantAddress: z.string().optional(),
-  isOnline: z.boolean().default(false),
-  isContactless: z.boolean().default(false),
-  amount: z.string().min(1, "Amount is required"),
-  currency: z.string().min(1, "Currency is required"),
-  paymentMethodId: z.string().min(1, "Payment method is required"),
-  paymentAmount: z.string().optional(),
-  date: z.date(),
-  notes: z.string().optional(),
-  mcc: z.custom<MerchantCategoryCode | null>().optional(),
-  rewardPoints: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val.trim() === "") return true; // Empty is valid (will be treated as 0)
-        const num = Number(val);
-        return !isNaN(num) && num >= 0;
-      },
-      { message: "Please enter a valid non-negative number" }
-    )
-    .refine(
-      (val) => {
-        if (!val || val.trim() === "") return true;
-        const num = Number(val);
-        if (isNaN(num)) return true; // Let the first refine handle this
-        // Check for up to 2 decimal places
-        const decimalPart = val.split(".")[1];
-        return !decimalPart || decimalPart.length <= 2;
-      },
-      { message: "Please enter a number with up to 2 decimal places" }
-    ),
-}).superRefine((data, ctx) => {
-  // Validate amount field based on MCC
-  const amount = Number(data.amount);
-  const mccCode = data.mcc?.code;
-  
-  if (isNaN(amount)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Please enter a valid number",
-      path: ["amount"],
-    });
-    return;
-  }
-  
-  // Allow negative values only for MCC 6540 (POI Funding Transactions)
-  if (mccCode !== "6540" && amount < 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Amount must be positive (negative values only allowed for MCC 6540)",
-      path: ["amount"],
-    });
-  }
-  
-  // For MCC 6540, allow any non-zero value (positive or negative)
-  if (mccCode === "6540" && amount === 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Amount cannot be zero",
-      path: ["amount"],
-    });
-  }
-  
-  // For other MCCs, require positive values
-  if (mccCode !== "6540" && amount <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Amount must be greater than zero",
-      path: ["amount"],
-    });
-  }
-});
+export const formSchema = z
+  .object({
+    merchantName: z.string().min(1, "Merchant name is required"),
+    merchantAddress: z.string().optional(),
+    isOnline: z.boolean().default(false),
+    isContactless: z.boolean().default(false),
+    amount: z.string().min(1, "Amount is required"),
+    currency: z.string().min(1, "Currency is required"),
+    paymentMethodId: z.string().min(1, "Payment method is required"),
+    paymentAmount: z.string().optional(),
+    eurFareAmount: z.string().optional(), // For Brim AF/KLM special case: EUR fare amount for bonus calculation
+    date: z.date(),
+    notes: z.string().optional(),
+    mcc: z.custom<MerchantCategoryCode | null>().optional(),
+    rewardPoints: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true; // Empty is valid (will be treated as 0)
+          const num = Number(val);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: "Please enter a valid non-negative number" }
+      )
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          const num = Number(val);
+          if (isNaN(num)) return true; // Let the first refine handle this
+          // Check for up to 2 decimal places
+          const decimalPart = val.split(".")[1];
+          return !decimalPart || decimalPart.length <= 2;
+        },
+        { message: "Please enter a number with up to 2 decimal places" }
+      ),
+  })
+  .superRefine((data, ctx) => {
+    // Validate amount field based on MCC
+    const amount = Number(data.amount);
+    const mccCode = data.mcc?.code;
+
+    if (isNaN(amount)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please enter a valid number",
+        path: ["amount"],
+      });
+      return;
+    }
+
+    // Allow negative values only for MCC 6540 (POI Funding Transactions)
+    if (mccCode !== "6540" && amount < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Amount must be positive (negative values only allowed for MCC 6540)",
+        path: ["amount"],
+      });
+    }
+
+    // For MCC 6540, allow any non-zero value (positive or negative)
+    if (mccCode === "6540" && amount === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Amount cannot be zero",
+        path: ["amount"],
+      });
+    }
+
+    // For other MCCs, require positive values
+    if (mccCode !== "6540" && amount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Amount must be greater than zero",
+        path: ["amount"],
+      });
+    }
+  });
 
 export type FormValues = z.infer<typeof formSchema>;

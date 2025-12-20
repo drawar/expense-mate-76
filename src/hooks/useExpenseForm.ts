@@ -11,6 +11,43 @@ import { usePaymentMethodLogic } from "@/hooks/expense/expense-form/usePaymentMe
 import { useState, useEffect } from "react";
 import { rewardService } from "@/core/rewards/RewardService";
 
+// Air France (MCC 3007) and KLM (MCC 3010) detection for Brim AF/KLM special case
+const AFKLM_MCCS = ["3007", "3010"];
+const AFKLM_MERCHANTS = [
+  "air france",
+  "airfrance",
+  "klm",
+  "klm airline",
+  "klm royal dutch",
+  "flying blue",
+];
+
+/**
+ * Detect if this is a Brim AF/KLM card + AF/KLM merchant transaction
+ */
+function isBrimAFKLMSpecialCase(
+  paymentMethod: PaymentMethod | undefined,
+  merchantName: string | undefined,
+  mcc: MerchantCategoryCode | null | undefined
+): boolean {
+  if (!paymentMethod) return false;
+
+  const issuer = paymentMethod.issuer?.toLowerCase() || "";
+  const name = paymentMethod.name?.toLowerCase() || "";
+  const isBrimAFKLMCard =
+    issuer.includes("brim") && name.includes("air france");
+
+  if (!isBrimAFKLMCard) return false;
+
+  const merchantLower = merchantName?.toLowerCase() || "";
+  const isAFKLMMerchant = AFKLM_MERCHANTS.some((m) =>
+    merchantLower.includes(m)
+  );
+  const isAFKLMMCC = mcc?.code && AFKLM_MCCS.includes(mcc.code);
+
+  return isAFKLMMerchant || isAFKLMMCC;
+}
+
 interface UseExpenseFormProps {
   paymentMethods: PaymentMethod[];
   defaultValues?: Partial<FormValues>;
@@ -59,6 +96,7 @@ export const useExpenseForm = ({
       currency: defaultValues?.currency || "CAD",
       paymentMethodId: defaultValues?.paymentMethodId || "",
       paymentAmount: defaultValues?.paymentAmount || "",
+      eurFareAmount: defaultValues?.eurFareAmount || "",
       date: defaultValues?.date || new Date(),
       notes: defaultValues?.notes || "",
       mcc: defaultValues?.mcc || null,
@@ -70,6 +108,7 @@ export const useExpenseForm = ({
   const currency = form.watch("currency");
   const amount = Number(form.watch("amount")) || 0;
   const paymentAmount = Number(form.watch("paymentAmount")) || 0;
+  const eurFareAmount = Number(form.watch("eurFareAmount")) || 0;
   const isOnline = form.watch("isOnline");
   const isContactless = form.watch("isContactless");
   const paymentMethodId = form.watch("paymentMethodId");
@@ -117,6 +156,51 @@ export const useExpenseForm = ({
       }
 
       try {
+        // Check for Brim AF/KLM special case with EUR fare amount
+        const isBrimAFKLM = isBrimAFKLMSpecialCase(
+          selectedPaymentMethod,
+          merchantName,
+          selectedMCC
+        );
+
+        if (isBrimAFKLM && currency === "CAD" && eurFareAmount > 0) {
+          // Special calculation for Brim AF/KLM:
+          // Bonus: EUR fare × 5
+          // Base: CAD amount × 1
+          const bonusPoints = Math.floor(eurFareAmount * 5);
+          const basePoints = Math.floor(amount * 1);
+          const totalPoints = bonusPoints + basePoints;
+
+          console.log("🔍 [useExpenseForm] Brim AF/KLM special calculation:", {
+            eurFareAmount,
+            cadAmount: amount,
+            bonusPoints,
+            basePoints,
+            totalPoints,
+          });
+
+          const messageText = `Earning ${bonusPoints} bonus miles (€${eurFareAmount.toFixed(2)} × 5)`;
+
+          setPointsCalculation({
+            totalPoints,
+            basePoints,
+            bonusPoints,
+            pointsCurrency: "Flying Blue Miles",
+            messageText,
+            messages: [
+              `EUR fare: €${eurFareAmount.toFixed(2)} × 5 = ${bonusPoints} bonus`,
+              `CAD amount: $${amount.toFixed(2)} × 1 = ${basePoints} base`,
+            ],
+          });
+
+          // Update form field with calculated value
+          if (!defaultValues?.rewardPoints) {
+            form.setValue("rewardPoints", totalPoints.toString());
+          }
+          return;
+        }
+
+        // Standard calculation flow
         // Determine if we need to pass converted amount
         // If payment method currency differs from transaction currency, we need to convert
         const needsConversion = selectedPaymentMethod.currency !== currency;
@@ -209,11 +293,13 @@ export const useExpenseForm = ({
     currency,
     selectedPaymentMethod,
     selectedMCC?.code,
+    selectedMCC,
     merchantName,
     isOnline,
     isContactless,
     shouldOverridePayment,
     paymentAmount,
+    eurFareAmount,
     defaultValues?.rewardPoints,
     form,
   ]);

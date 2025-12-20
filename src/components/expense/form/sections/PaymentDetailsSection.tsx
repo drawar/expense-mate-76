@@ -54,21 +54,21 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
 
   return (
     <MossCard>
-      <h2 
+      <h2
         className="flex items-center gap-2 font-semibold mb-4"
         style={{
-          fontSize: 'var(--font-size-section-header)',
-          color: 'var(--color-text-primary)',
-          fontWeight: 'var(--font-weight-semibold)',
+          fontSize: "var(--font-size-section-header)",
+          color: "var(--color-text-primary)",
+          fontWeight: "var(--font-weight-semibold)",
         }}
       >
-        <CreditCardIcon 
-          className="h-5 w-5" 
-          style={{ color: 'var(--color-icon-primary)' }}
+        <CreditCardIcon
+          className="h-5 w-5"
+          style={{ color: "var(--color-icon-primary)" }}
         />
         Payment Details
       </h2>
-      
+
       {/* Essential field - always visible */}
       <div className="space-y-4">
         <PaymentMethodSelect paymentMethods={paymentMethods} />
@@ -76,7 +76,7 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
 
       {/* Optional fields - collapsible when minimal mode is enabled */}
       {minimal ? (
-        <CollapsibleSection 
+        <CollapsibleSection
           trigger="Show payment details"
           id="payment-details-advanced"
           persistState={true}
@@ -90,6 +90,8 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
             <ConvertedAmountField
               shouldOverridePayment={shouldOverridePayment}
               selectedPaymentMethod={selectedPaymentMethod}
+              merchantName={merchantName}
+              mcc={mcc}
             />
 
             <PointsDisplay
@@ -112,6 +114,8 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
           <ConvertedAmountField
             shouldOverridePayment={shouldOverridePayment}
             selectedPaymentMethod={selectedPaymentMethod}
+            merchantName={merchantName}
+            mcc={mcc}
           />
 
           <PointsDisplay
