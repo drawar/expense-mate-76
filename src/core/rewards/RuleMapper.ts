@@ -132,7 +132,11 @@ export class RuleMapper {
                 | "statement"
                 | "statement_month")
             : undefined,
-        pointsCurrency: dbRule.points_currency || "points",
+        // pointsCurrency is not stored in reward_rules table (removed in migration 20251219100000).
+        // The actual points currency comes from the payment method's pointsCurrency field.
+        // This placeholder value is used only for type compatibility - RewardService uses
+        // input.paymentMethod.pointsCurrency for the actual currency in calculations.
+        pointsCurrency: "points",
         capGroupId: dbRule.cap_group_id || undefined,
       },
       validFrom: dbRule.valid_from ? new Date(dbRule.valid_from) : undefined,
@@ -193,7 +197,6 @@ export class RuleMapper {
       monthly_cap_type: rule.reward.monthlyCapType ?? null,
       monthly_min_spend: rule.reward.monthlyMinSpend ?? null,
       monthly_spend_period_type: rule.reward.monthlySpendPeriodType ?? null,
-      points_currency: rule.reward.pointsCurrency || "points",
       cap_group_id: rule.reward.capGroupId ?? null,
       valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
       valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,

@@ -51,7 +51,12 @@ export interface RewardConfig {
   monthlyCapType?: "bonus_points" | "spend_amount";
   monthlyMinSpend?: number;
   monthlySpendPeriodType?: "calendar" | "statement" | "statement_month";
-  pointsCurrency: string;
+  /**
+   * @deprecated Points currency is no longer stored per rule.
+   * Use PaymentMethod.pointsCurrency instead.
+   * This field is kept for backwards compatibility but ignored in new rules.
+   */
+  pointsCurrency?: string;
   /** Optional cap group ID for sharing monthly cap across multiple rules */
   capGroupId?: string;
 }
@@ -160,7 +165,6 @@ export interface DbRewardRule {
   monthly_cap_type: string | null;
   monthly_min_spend: number | null;
   monthly_spend_period_type: string | null;
-  points_currency: string | null;
   cap_group_id: string | null;
   /** Optional start date for time-limited/promotional rules (ISO string) */
   valid_from: string | null;

@@ -349,6 +349,10 @@ export class RewardService {
 
         totalPoints = basePoints + bonusPoints;
 
+        // Points currency comes from the payment method, not the rule
+        const resolvedPointsCurrency =
+          input.paymentMethod.pointsCurrency || "points";
+
         // Log applied rule and calculated points (Requirement 4.4)
         logger.info("calculateRewards", "Rule applied successfully", {
           ruleId: rule.id,
@@ -361,7 +365,7 @@ export class RewardService {
           basePoints,
           bonusPoints,
           totalPoints,
-          pointsCurrency: rule.reward.pointsCurrency,
+          pointsCurrency: resolvedPointsCurrency,
           appliedTier: appliedTier?.name,
           monthlyCap: rule.reward.monthlyCap,
           remainingMonthlyBonusPoints,
@@ -371,7 +375,7 @@ export class RewardService {
           totalPoints,
           basePoints,
           bonusPoints,
-          pointsCurrency: rule.reward.pointsCurrency,
+          pointsCurrency: resolvedPointsCurrency,
           remainingMonthlyBonusPoints,
           minSpendMet,
           appliedRule,

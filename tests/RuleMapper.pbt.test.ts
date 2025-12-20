@@ -164,9 +164,9 @@ describe("RuleMapper Property-Based Tests", () => {
         );
         expect(mappedRule.reward.blockSize).toBe(rule.reward.blockSize);
         expect(mappedRule.reward.bonusTiers).toEqual(rule.reward.bonusTiers);
-        expect(mappedRule.reward.pointsCurrency).toBe(
-          rule.reward.pointsCurrency
-        );
+        // Note: pointsCurrency is no longer stored in the database (removed in migration 20251219100000)
+        // The mapper returns a placeholder value "points" - actual currency comes from PaymentMethod
+        expect(mappedRule.reward.pointsCurrency).toBe("points");
 
         // Verify optional fields
         if (rule.reward.monthlyCap !== undefined) {
