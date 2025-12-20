@@ -1354,10 +1354,10 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                           const total =
                             rule.reward.bonusMultiplier +
                             rule.reward.baseMultiplier;
-                          // Round to 2 decimal places, but show as integer if it's a whole number
+                          // Round to nearest 2 decimal places, but show as integer if it's a whole number
                           return Number.isInteger(total)
                             ? total
-                            : Math.floor(total * 100) / 100;
+                            : Math.round(total * 100) / 100;
                         })()}
                         x
                       </Badge>
