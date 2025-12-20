@@ -114,7 +114,7 @@ export const PointsDisplay = ({
   // Display mode: show calculated points only
   return (
     <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-800">
-      <CardContent className="p-4">
+      <CardContent className="p-4 h-fit">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <CoinsIcon
