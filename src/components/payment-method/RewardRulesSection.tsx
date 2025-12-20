@@ -1034,10 +1034,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "Brim Financial",
-        "Air France KLM World Elite"
-      );
+      // Use the cardTypeId from the actual payment method (defined at component level)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
