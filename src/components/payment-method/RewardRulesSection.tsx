@@ -1350,8 +1350,15 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         variant="secondary"
                         className="bg-primary/10 text-primary text-xs"
                       >
-                        {rule.reward.bonusMultiplier +
-                          rule.reward.baseMultiplier}
+                        {(() => {
+                          const total =
+                            rule.reward.bonusMultiplier +
+                            rule.reward.baseMultiplier;
+                          // Round to 2 decimal places, but show as integer if it's a whole number
+                          return Number.isInteger(total)
+                            ? total
+                            : Math.floor(total * 100) / 100;
+                        })()}
                         x
                       </Badge>
                       {rule.reward.monthlyCap && (
