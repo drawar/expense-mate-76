@@ -1,15 +1,31 @@
 // utils/dashboard/chartUtils.ts
-import { Transaction, Currency } from '@/types';
-import { CurrencyService } from '@/core/currency';
-import { format } from 'date-fns';
-import { CHART_COLORS } from './constants';
-import { 
-  ChartProcessingOptions, 
-  ProcessedChartItem, 
-  TimeSeriesResult 
-} from './types';
-import { metricsUtils } from './metricsUtils';
+import { Transaction, Currency } from "@/types";
+import { CurrencyService } from "@/core/currency";
+import { format } from "date-fns";
+import { CHART_COLORS } from "./constants";
+import {
+  ChartProcessingOptions,
+  ProcessedChartItem,
+  TimeSeriesResult,
+} from "./types";
+import { metricsUtils } from "./metricsUtils";
 import { ChartDataItem } from "@/types/dashboard";
+
+/**
+ * Parse a YYYY-MM-DD date string as a local date (not UTC)
+ * This avoids timezone shift issues when formatting dates
+ */
+function parseLocalDate(dateString: string): Date {
+  const parts = dateString.split("-");
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // 0-based month
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+  // Fallback: return date parsed normally
+  return new Date(dateString);
+}
 
 /**
  * Utility functions for processing transaction data into chart-friendly formats
@@ -26,7 +42,7 @@ export const chartUtils = {
   generatePieChartData(
     transactions: Transaction[],
     options: {
-      groupBy: 'category' | 'paymentMethod';
+      groupBy: "category" | "paymentMethod";
       displayCurrency: Currency;
       includeReimbursements?: boolean;
       topItemsLimit?: number;
@@ -36,13 +52,13 @@ export const chartUtils = {
       return [];
     }
 
-    const { 
-      groupBy = 'category', 
-      displayCurrency, 
-      includeReimbursements = true, 
-      topItemsLimit = 0 
+    const {
+      groupBy = "category",
+      displayCurrency,
+      includeReimbursements = true,
+      topItemsLimit = 0,
     } = options;
-    
+
     const groups = new Map<string, number>();
 
     // Aggregate values by the specified grouping field
@@ -93,28 +109,31 @@ export const chartUtils = {
         percentage: total > 0 ? (value / total) * 100 : 0,
       }))
       .sort((a, b) => b.value - a.value);
-    
+
     // Limit the number of items if specified
     if (topItemsLimit > 0 && result.length > topItemsLimit) {
       // Take top N-1 items and group the rest as "Other"
       const topItems = result.slice(0, topItemsLimit - 1);
       const otherItems = result.slice(topItemsLimit - 1);
-      
+
       if (otherItems.length > 0) {
-        const otherTotal = otherItems.reduce((sum, item) => sum + item.value, 0);
+        const otherTotal = otherItems.reduce(
+          (sum, item) => sum + item.value,
+          0
+        );
         const otherPercentage = total > 0 ? (otherTotal / total) * 100 : 0;
-        
+
         topItems.push({
           name: "Other",
           value: otherTotal,
           color: "#9e9e9e", // Gray for "Other"
-          percentage: otherPercentage
+          percentage: otherPercentage,
         });
       }
-      
+
       return topItems;
     }
-    
+
     return result;
   },
 
@@ -124,7 +143,7 @@ export const chartUtils = {
   generateTimeSeriesData(
     transactions: Transaction[],
     options: {
-      period?: 'day' | 'week' | 'month' | 'quarter' | 'year';
+      period?: "day" | "week" | "month" | "quarter" | "year";
       displayCurrency: Currency;
       includeReimbursements?: boolean;
       includeTrend?: boolean;
@@ -132,24 +151,24 @@ export const chartUtils = {
       maxTopCategories?: number;
     }
   ): TimeSeriesResult {
-    const { 
-      period = 'month', 
-      displayCurrency, 
-      includeReimbursements = true, 
+    const {
+      period = "month",
+      displayCurrency,
+      includeReimbursements = true,
       includeTrend = true,
       includeCategoryBreakdown = true,
-      maxTopCategories = 3
+      maxTopCategories = 3,
     } = options;
-    
+
     if (!transactions || transactions.length === 0) {
-      return { 
+      return {
         data: [],
         trend: 0,
         average: 0,
-        topCategories: []
+        topCategories: [],
       };
     }
-    
+
     // Map period to grouping granularity
     const periodMapping: Record<string, "day" | "week" | "month" | "year"> = {
       day: "day",
@@ -158,23 +177,23 @@ export const chartUtils = {
       quarter: "month",
       year: "month",
     };
-    
+
     const groupBy = periodMapping[period] || "month";
-    
+
     // Group transactions by date
     const groupedTransactions = this.groupTransactionsByPeriod(
-      transactions, 
+      transactions,
       groupBy
     );
-    
+
     // Get sorted keys for date ordering
     const sortedKeys = Array.from(groupedTransactions.keys()).sort();
-    
+
     // Process data for each time period
     const processedData = sortedKeys.map((key): ProcessedChartItem => {
       const periodTransactions = groupedTransactions.get(key) || [];
       const keyString = String(key); // Ensure key is treated as string
-      
+
       // Calculate total for the period with reimbursement adjustments
       const total = periodTransactions.reduce((sum, tx) => {
         // Convert to display currency
@@ -199,7 +218,7 @@ export const chartUtils = {
 
         return sum + finalAmount;
       }, 0);
-      
+
       // Get top categories for this period if requested
       const topCategories = includeCategoryBreakdown
         ? this.getTopCategoriesForPeriod(
@@ -209,24 +228,26 @@ export const chartUtils = {
             includeReimbursements
           )
         : [];
-      
+
       // Format time period for display
       let displayPeriod = keyString;
-      
+
       try {
         if (groupBy === "day") {
           // Format day: Oct 15
-          const date = new Date(keyString);
+          // Use parseLocalDate to avoid timezone shift issues
+          const date = parseLocalDate(keyString);
           if (!isNaN(date.getTime())) {
-            displayPeriod = format(date, 'MMM d');
+            displayPeriod = format(date, "MMM d");
           }
         } else if (groupBy === "week") {
           // For weeks, show date range: Oct 1-7
-          const startDate = new Date(keyString);
+          // Use parseLocalDate to avoid timezone shift issues
+          const startDate = parseLocalDate(keyString);
           if (!isNaN(startDate.getTime())) {
             const endDate = new Date(startDate);
             endDate.setDate(startDate.getDate() + 6);
-            displayPeriod = `${format(startDate, 'MMM d')}-${format(endDate, 'd')}`;
+            displayPeriod = `${format(startDate, "MMM d")}-${format(endDate, "d")}`;
           }
         } else if (groupBy === "month") {
           // For months, show month name: Oct 2023
@@ -236,7 +257,7 @@ export const chartUtils = {
             const month = parseInt(parts[1], 10) - 1; // 0-based month
             const date = new Date(year, month, 1);
             if (!isNaN(date.getTime())) {
-              displayPeriod = format(date, 'MMM yyyy');
+              displayPeriod = format(date, "MMM yyyy");
             }
           }
         }
@@ -244,7 +265,7 @@ export const chartUtils = {
         console.error("Error formatting date for chart:", e);
         // Fallback to the original key if date formatting fails
       }
-      
+
       return {
         period: displayPeriod,
         amount: total,
@@ -252,46 +273,51 @@ export const chartUtils = {
         name: displayPeriod, // For consistency with ChartDataItem
         value: total, // For consistency with ChartDataItem
         color: CHART_COLORS[0], // Default color
-        topCategories
+        topCategories,
       };
     });
-    
+
     // Calculate trend (period-over-period change)
     let calculatedTrend = 0;
     if (includeTrend && processedData.length >= 2) {
       const currentAmount = processedData[processedData.length - 1].amount;
       const previousAmount = processedData[processedData.length - 2].amount;
-      
-      calculatedTrend = metricsUtils.calculatePercentageChange(currentAmount, previousAmount);
+
+      calculatedTrend = metricsUtils.calculatePercentageChange(
+        currentAmount,
+        previousAmount
+      );
     }
-    
+
     // Calculate average
     const calculatedAverage =
       processedData.length > 0
-        ? processedData.reduce((sum, item) => sum + item.amount, 0) / processedData.length
+        ? processedData.reduce((sum, item) => sum + item.amount, 0) /
+          processedData.length
         : 0;
-    
+
     // Get top categories across all periods
-    const latestKey = sortedKeys.length > 0 ? sortedKeys[sortedKeys.length - 1] : null;
+    const latestKey =
+      sortedKeys.length > 0 ? sortedKeys[sortedKeys.length - 1] : null;
     const latestTransactions = latestKey
       ? groupedTransactions.get(latestKey) || []
       : [];
-    
+
     const topCategories = this.getTopCategoriesForPeriod(
       latestTransactions,
       maxTopCategories,
       displayCurrency,
       includeReimbursements
     );
-    
+
     return {
       data: processedData,
       trend: includeTrend ? calculatedTrend : undefined,
       average: calculatedAverage,
-      topCategories
+      topCategories,
     };
   },
-  
+
   /**
    * Group transactions by time period
    */
@@ -338,7 +364,7 @@ export const chartUtils = {
 
     return grouped;
   },
-  
+
   /**
    * Get top spending categories for a set of transactions
    */
@@ -384,5 +410,5 @@ export const chartUtils = {
       .sort((a, b) => b.amount - a.amount);
 
     return categories.slice(0, maxCategories);
-  }
+  },
 };

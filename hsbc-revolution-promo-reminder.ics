@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Clairo App//HSBC Revolution Reminder//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:20260225T090000
+DTEND:20260225T093000
+DTSTAMP:20241219T120000Z
+UID:hsbc-revolution-promo-2026@clairoapp.com
+SUMMARY:HSBC Revolution 10x Promo Ends in 3 Days
+DESCRIPTION:Your HSBC Revolution Visa Platinum 10x promotional rate ends on February 28, 2026.\n\nPromotion Details:\n- 10x points on online travel (airlines, car rental, lodging, cruise)\n- 10x points on contactless (travel, retail, dining, transport)\n- Monthly cap: 13,500 bonus points shared\n\nAction Items:\n1. Make planned purchases before promo ends\n2. Update reward rules in the app after expiry\n3. Check HSBC Singapore for new promotions
+LOCATION:
+STATUS:CONFIRMED
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:HSBC Revolution 10x Promo Ends in 3 Days
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

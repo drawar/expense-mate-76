@@ -5,7 +5,11 @@
 
 import { RewardService } from "../src/core/rewards/RewardService";
 import { RuleRepository } from "../src/core/rewards/RuleRepository";
-import { CalculationInput, RewardRule, RuleCondition } from "../src/core/rewards/types";
+import {
+  CalculationInput,
+  RewardRule,
+  RuleCondition,
+} from "../src/core/rewards/types";
 import { DateTime } from "luxon";
 
 describe("RewardService - Transaction Type Evaluation", () => {
@@ -16,7 +20,7 @@ describe("RewardService - Transaction Type Evaluation", () => {
     // Create a mock repository
     mockRepository = {
       getRulesForCardType: jest.fn(),
-    } as any;
+    } as jest.Mocked<RuleRepository>;
 
     rewardService = new RewardService(mockRepository);
   });

@@ -48,31 +48,31 @@ const PaymentMethods = () => {
   }, [paymentMethods, selectedMethod]);
 
   // Load rules for each payment method from the reward_rules table
-  useEffect(() => {
-    const fetchRulesForPaymentMethods = async () => {
-      if (!paymentMethods.length) return;
+  const fetchRulesForPaymentMethods = async () => {
+    if (!paymentMethods.length) return;
 
-      const rulesMap: Record<string, RewardRule[]> = {};
+    const rulesMap: Record<string, RewardRule[]> = {};
 
-      // For each payment method, fetch its rules from the reward_rules table
-      for (const method of paymentMethods) {
-        // Use CardTypeIdService to generate consistent card type ID
-        let cardTypeId = method.id;
-        if (method.issuer && method.name) {
-          cardTypeId = cardTypeIdService.generateCardTypeId(
-            method.issuer,
-            method.name
-          );
-        }
-
-        // Use RuleRepository to get rules from Supabase reward_rules table
-        const rules = await ruleRepository.getRulesForCardType(cardTypeId);
-        rulesMap[method.id] = rules;
+    // For each payment method, fetch its rules from the reward_rules table
+    for (const method of paymentMethods) {
+      // Use CardTypeIdService to generate consistent card type ID
+      let cardTypeId = method.id;
+      if (method.issuer && method.name) {
+        cardTypeId = cardTypeIdService.generateCardTypeId(
+          method.issuer,
+          method.name
+        );
       }
 
-      setPaymentMethodRules(rulesMap);
-    };
+      // Use RuleRepository to get rules from Supabase reward_rules table
+      const rules = await ruleRepository.getRulesForCardType(cardTypeId);
+      rulesMap[method.id] = rules;
+    }
 
+    setPaymentMethodRules(rulesMap);
+  };
+
+  useEffect(() => {
     fetchRulesForPaymentMethods();
   }, [paymentMethods, ruleRepository]);
 
@@ -278,6 +278,7 @@ const PaymentMethods = () => {
                 onToggleActive={handleToggleActive}
                 onEdit={handleEditMethod}
                 onImageUpload={handleOpenImageUpload}
+                onRulesChanged={fetchRulesForPaymentMethods}
               />
             )}
           </div>

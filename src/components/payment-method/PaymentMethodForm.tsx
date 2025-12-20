@@ -41,6 +41,17 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   onSubmit,
   isOpen, // Use this prop to control the dialog
 }) => {
+  const [selectedType, setSelectedType] = useState<string>(
+    currentMethod?.type || "credit_card"
+  );
+
+  // Reset type when dialog opens with different method
+  React.useEffect(() => {
+    setSelectedType(currentMethod?.type || "credit_card");
+  }, [currentMethod, isOpen]);
+
+  const isCreditCard = selectedType === "credit_card";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -77,7 +88,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </Label>
               <Select
                 name="type"
-                defaultValue={currentMethod?.type || "credit_card"}
+                value={selectedType}
+                onValueChange={setSelectedType}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select payment type" />
@@ -111,7 +123,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </Select>
             </div>
 
-            {currentMethod?.type === "credit_card" || !currentMethod ? (
+            {isCreditCard ? (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="issuer" className="text-right">

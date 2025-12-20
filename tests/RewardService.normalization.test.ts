@@ -20,7 +20,7 @@ describe("RewardService - Condition Normalization", () => {
       deleteRule: jest.fn(),
       verifyConnection: jest.fn(),
       verifyAuthentication: jest.fn(),
-    } as any;
+    } as jest.Mocked<RuleRepository>;
 
     rewardService = new RewardService(mockRepository);
   });
@@ -37,7 +37,7 @@ describe("RewardService - Condition Normalization", () => {
         priority: 1,
         conditions: [
           {
-            type: "online" as any, // Legacy type
+            type: "online" as unknown as "transaction_type", // Legacy type
             operation: "equals" as const,
             values: ["true"],
           },
@@ -89,7 +89,7 @@ describe("RewardService - Condition Normalization", () => {
         priority: 1,
         conditions: [
           {
-            type: "online" as any, // Legacy type
+            type: "online" as unknown as "transaction_type", // Legacy type
             operation: "equals" as const,
             values: ["false"],
           },
@@ -140,7 +140,7 @@ describe("RewardService - Condition Normalization", () => {
         priority: 1,
         conditions: [
           {
-            type: "online" as any,
+            type: "online" as unknown as "transaction_type",
             operation: "equals" as const,
             values: ["true"],
           },
@@ -194,7 +194,7 @@ describe("RewardService - Condition Normalization", () => {
         priority: 1,
         conditions: [
           {
-            type: "online" as any,
+            type: "online" as unknown as "transaction_type",
             operation: "equals" as const,
             values: ["true"],
           },

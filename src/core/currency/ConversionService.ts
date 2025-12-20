@@ -57,7 +57,10 @@ export class ConversionService {
   /**
    * Generate cache key for a conversion rate
    */
-  private getCacheKey(rewardCurrency: string, milesCurrency: MilesCurrency): string {
+  private getCacheKey(
+    rewardCurrency: string,
+    milesCurrency: MilesCurrency
+  ): string {
     return `${rewardCurrency}:${milesCurrency}`;
   }
 
@@ -78,7 +81,7 @@ export class ConversionService {
 
   /**
    * Convert reward points to miles currency
-   * 
+   *
    * @param points - Number of reward points to convert
    * @param rewardCurrency - Source reward currency (e.g., "Citi ThankYou Points")
    * @param milesCurrency - Target miles currency (e.g., "KrisFlyer")
@@ -90,7 +93,7 @@ export class ConversionService {
     milesCurrency: MilesCurrency
   ): Promise<{ miles: number | null; rate: number | null }> {
     const rate = await this.getConversionRate(rewardCurrency, milesCurrency);
-    
+
     if (rate === null) {
       return { miles: null, rate: null };
     }
@@ -101,7 +104,7 @@ export class ConversionService {
 
   /**
    * Get conversion rate for a specific reward currency to miles currency pair
-   * 
+   *
    * @param rewardCurrency - Source reward currency
    * @param milesCurrency - Target miles currency
    * @returns Conversion rate or null if not found
@@ -118,8 +121,9 @@ export class ConversionService {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("conversion_rates" as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("conversion_rates")
         .select("conversion_rate")
         .eq("reward_currency", rewardCurrency)
         .eq("miles_currency", milesCurrency)
@@ -137,7 +141,7 @@ export class ConversionService {
       }
 
       // Cache the result
-      const conversionRate = (data as any).conversion_rate;
+      const conversionRate = (data as DbConversionRate).conversion_rate;
       this.conversionRateCache.set(cacheKey, conversionRate);
       this.cacheTimestamp = Date.now();
 
@@ -150,7 +154,7 @@ export class ConversionService {
 
   /**
    * Get all conversion rates for a specific reward currency
-   * 
+   *
    * @param rewardCurrency - Source reward currency
    * @returns Partial record of miles currencies to conversion rates
    */
@@ -158,13 +162,17 @@ export class ConversionService {
     rewardCurrency: string
   ): Promise<Partial<Record<MilesCurrency, number>>> {
     try {
-      const { data, error } = await supabase
-        .from("conversion_rates" as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("conversion_rates")
         .select("miles_currency, conversion_rate")
         .eq("reward_currency", rewardCurrency);
 
       if (error) {
-        console.error("Error fetching conversion rates for reward currency:", error);
+        console.error(
+          "Error fetching conversion rates for reward currency:",
+          error
+        );
         return {};
       }
 
@@ -174,10 +182,10 @@ export class ConversionService {
 
       // Build the result object and update cache
       const result: Partial<Record<MilesCurrency, number>> = {};
-      data.forEach((row: any) => {
+      data.forEach((row: DbConversionRate) => {
         const milesCurrency = row.miles_currency as MilesCurrency;
         result[milesCurrency] = row.conversion_rate;
-        
+
         // Update cache
         const cacheKey = this.getCacheKey(rewardCurrency, milesCurrency);
         this.conversionRateCache.set(cacheKey, row.conversion_rate);
@@ -193,13 +201,14 @@ export class ConversionService {
 
   /**
    * Get all conversion rates (for management UI)
-   * 
+   *
    * @returns Complete conversion rate matrix
    */
   public async getAllConversionRates(): Promise<ConversionRateMatrix> {
     try {
-      const { data, error } = await supabase
-        .from("conversion_rates" as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("conversion_rates")
         .select("reward_currency, miles_currency, conversion_rate");
 
       if (error) {
@@ -213,7 +222,7 @@ export class ConversionService {
 
       // Build the matrix and update cache
       const matrix: ConversionRateMatrix = {};
-      data.forEach((row: any) => {
+      data.forEach((row: DbConversionRate) => {
         if (!matrix[row.reward_currency]) {
           matrix[row.reward_currency] = {};
         }
@@ -235,7 +244,7 @@ export class ConversionService {
 
   /**
    * Update a conversion rate
-   * 
+   *
    * @param rewardCurrency - Source reward currency
    * @param milesCurrency - Target miles currency
    * @param rate - New conversion rate (must be positive)
@@ -252,18 +261,17 @@ export class ConversionService {
     }
 
     try {
-      const { error } = await supabase
-        .from("conversion_rates" as any)
-        .upsert(
-          {
-            reward_currency: rewardCurrency,
-            miles_currency: milesCurrency,
-            conversion_rate: rate,
-          },
-          {
-            onConflict: "reward_currency,miles_currency",
-          }
-        );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("conversion_rates").upsert(
+        {
+          reward_currency: rewardCurrency,
+          miles_currency: milesCurrency,
+          conversion_rate: rate,
+        },
+        {
+          onConflict: "reward_currency,miles_currency",
+        }
+      );
 
       if (error) {
         console.error("Error updating conversion rate:", error);
@@ -282,7 +290,7 @@ export class ConversionService {
 
   /**
    * Batch update conversion rates
-   * 
+   *
    * @param updates - Array of conversion rate updates
    * @throws Error if any rate is not positive
    */
@@ -296,7 +304,9 @@ export class ConversionService {
     // Validate all rates are positive
     for (const update of updates) {
       if (update.rate <= 0) {
-        throw new Error(`Conversion rate must be a positive number: ${update.rewardCurrency} -> ${update.milesCurrency}`);
+        throw new Error(
+          `Conversion rate must be a positive number: ${update.rewardCurrency} -> ${update.milesCurrency}`
+        );
       }
     }
 
@@ -307,15 +317,18 @@ export class ConversionService {
         conversion_rate: update.rate,
       }));
 
-      const { error } = await supabase
-        .from("conversion_rates" as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("conversion_rates")
         .upsert(upsertData, {
           onConflict: "reward_currency,miles_currency",
         });
 
       if (error) {
         console.error("Error batch updating conversion rates:", error);
-        throw new Error(`Failed to batch update conversion rates: ${error.message}`);
+        throw new Error(
+          `Failed to batch update conversion rates: ${error.message}`
+        );
       }
 
       // Clear cache to force refresh on next read

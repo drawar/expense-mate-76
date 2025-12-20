@@ -87,9 +87,17 @@ export class RewardService {
         };
       }
 
-      // 3. Filter rules by enabled status and evaluate conditions
+      // Get transaction date for validity check
+      const transactionDate = input.date
+        ? input.date instanceof Date
+          ? input.date
+          : input.date.toJSDate()
+        : new Date();
+
+      // 3. Filter rules by enabled status, date validity, and evaluate conditions
       const applicableRules = allRules
         .filter((rule) => rule.enabled)
+        .filter((rule) => this.isRuleValidForDate(rule, transactionDate))
         .filter((rule) => this.evaluateConditions(rule.conditions, input));
 
       logger.info("calculateRewards", "Filtered applicable rules", {
@@ -213,76 +221,129 @@ export class RewardService {
           });
         }
 
-        // 5. Apply monthly cap
+        // 5. Apply monthly cap (supports both bonus_points and spend_amount cap types)
         let remainingMonthlyBonusPoints: number | undefined;
         if (rule.reward.monthlyCap !== undefined) {
           const cap = rule.reward.monthlyCap;
+          const capType = rule.reward.monthlyCapType || "bonus_points";
+          const capGroupId = rule.reward.capGroupId;
 
-          // Get used bonus points from input or tracker
-          let usedBonusPoints = 0;
+          const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+          const date = input.date
+            ? input.date instanceof Date
+              ? input.date
+              : input.date.toJSDate()
+            : new Date();
 
-          // If usedBonusPoints is provided in input, use that (for testing or when caller knows the value)
-          if (input.usedBonusPoints !== undefined) {
-            usedBonusPoints = input.usedBonusPoints;
-          } else if (rule.id && input.paymentMethod.id) {
-            // Otherwise, try to get actual usage from tracker
-            try {
-              const periodType =
-                rule.reward.monthlySpendPeriodType || "calendar";
-              const date = input.date
-                ? input.date instanceof Date
-                  ? input.date
-                  : input.date.toJSDate()
-                : new Date();
+          if (capType === "spend_amount") {
+            // Cap is on spend amount - track how much has been spent
+            let usedSpendAmount = 0;
 
-              usedBonusPoints = await bonusPointsTracker.getUsedBonusPoints(
-                rule.id,
-                input.paymentMethod.id,
-                periodType,
-                date,
-                1 // Default statement day - could be made configurable
+            if (rule.id && input.paymentMethod.id) {
+              try {
+                usedSpendAmount = await bonusPointsTracker.getUsedBonusPoints(
+                  rule.id,
+                  input.paymentMethod.id,
+                  periodType,
+                  date,
+                  1,
+                  capGroupId,
+                  "spend_amount"
+                );
+              } catch (error) {
+                console.warn(
+                  "Failed to get spend amount usage from tracker",
+                  error
+                );
+              }
+            }
+
+            const availableSpendAmount = Math.max(0, cap - usedSpendAmount);
+
+            if (availableSpendAmount <= 0) {
+              // No more eligible spend - no bonus points
+              bonusPoints = 0;
+              messages.push("Monthly spend cap reached for bonus category");
+            } else if (calculationAmount > availableSpendAmount) {
+              // Partial eligibility - recalculate bonus for eligible portion only
+              const eligibleAmount = availableSpendAmount;
+              bonusPoints = this.calculateBonusPoints(
+                eligibleAmount,
+                rule.reward.bonusMultiplier,
+                rule.reward.pointsRoundingStrategy,
+                rule.reward.blockSize,
+                rule.reward.amountRoundingStrategy
               );
-            } catch (error) {
-              console.warn(
-                "Failed to get bonus points usage from tracker",
-                error
+              messages.push(
+                `Only $${eligibleAmount.toFixed(2)} of $${calculationAmount.toFixed(2)} eligible for bonus (monthly spend cap)`
               );
             }
-          }
-
-          const availableBonusPoints = Math.max(0, cap - usedBonusPoints);
-
-          // Calculate what the bonus would be without the monthly cap
-          // Apply the same amount rounding as used in the actual calculation
-          let roundedAmountForComparison = calculationAmount;
-          switch (rule.reward.amountRoundingStrategy) {
-            case "floor":
-              roundedAmountForComparison = Math.floor(calculationAmount);
-              break;
-            case "ceiling":
-              roundedAmountForComparison = Math.ceil(calculationAmount);
-              break;
-            case "nearest":
-              roundedAmountForComparison = Math.round(calculationAmount);
-              break;
-            case "floor5":
-              roundedAmountForComparison =
-                Math.floor(calculationAmount / 5) * 5;
-              break;
-          }
-          const uncappedBonusPoints = Math.floor(
-            roundedAmountForComparison * rule.reward.bonusMultiplier
-          );
-
-          bonusPoints = Math.min(bonusPoints, availableBonusPoints);
-          remainingMonthlyBonusPoints = availableBonusPoints - bonusPoints;
-
-          if (availableBonusPoints <= 0) {
-            messages.push("Monthly bonus points cap reached");
-          } else if (bonusPoints < uncappedBonusPoints) {
-            messages.push(
-              `Bonus points capped at ${bonusPoints} due to monthly limit`
+            // For spend_amount cap, remainingMonthlyBonusPoints represents remaining eligible spend
+            remainingMonthlyBonusPoints = Math.max(
+              0,
+              availableSpendAmount -
+                Math.min(calculationAmount, availableSpendAmount)
             );
+          } else {
+            // Cap is on bonus points (default behavior)
+            let usedBonusPoints = 0;
+
+            // If usedBonusPoints is provided in input, use that (for testing or when caller knows the value)
+            if (input.usedBonusPoints !== undefined) {
+              usedBonusPoints = input.usedBonusPoints;
+            } else if (rule.id && input.paymentMethod.id) {
+              try {
+                usedBonusPoints = await bonusPointsTracker.getUsedBonusPoints(
+                  rule.id,
+                  input.paymentMethod.id,
+                  periodType,
+                  date,
+                  1,
+                  capGroupId,
+                  "bonus_points"
+                );
+              } catch (error) {
+                console.warn(
+                  "Failed to get bonus points usage from tracker",
+                  error
+                );
+              }
+            }
+
+            const availableBonusPoints = Math.max(0, cap - usedBonusPoints);
+
+            // Calculate what the bonus would be without the monthly cap
+            // Apply the same amount rounding as used in the actual calculation
+            let roundedAmountForComparison = calculationAmount;
+            switch (rule.reward.amountRoundingStrategy) {
+              case "floor":
+                roundedAmountForComparison = Math.floor(calculationAmount);
+                break;
+              case "ceiling":
+                roundedAmountForComparison = Math.ceil(calculationAmount);
+                break;
+              case "nearest":
+                roundedAmountForComparison = Math.round(calculationAmount);
+                break;
+              case "floor5":
+                roundedAmountForComparison =
+                  Math.floor(calculationAmount / 5) * 5;
+                break;
+            }
+            const uncappedBonusPoints = Math.floor(
+              roundedAmountForComparison * rule.reward.bonusMultiplier
+            );
+
+            bonusPoints = Math.min(bonusPoints, availableBonusPoints);
+            remainingMonthlyBonusPoints = availableBonusPoints - bonusPoints;
+
+            if (availableBonusPoints <= 0) {
+              messages.push("Monthly bonus points cap reached");
+            } else if (bonusPoints < uncappedBonusPoints) {
+              messages.push(
+                `Bonus points capped at ${bonusPoints} due to monthly limit`
+              );
+            }
           }
         }
 
@@ -471,6 +532,46 @@ export class RewardService {
     }
 
     return { points: 0, tier: appliedTier };
+  }
+
+  /**
+   * Check if a rule is valid for a given transaction date
+   * Returns true if the date falls within the rule's validFrom/validUntil range
+   */
+  private isRuleValidForDate(rule: RewardRule, transactionDate: Date): boolean {
+    // If no date restrictions, rule is always valid
+    if (!rule.validFrom && !rule.validUntil) {
+      return true;
+    }
+
+    // Check validFrom - transaction must be on or after this date
+    if (rule.validFrom && transactionDate < rule.validFrom) {
+      logger.debug("isRuleValidForDate", "Rule not yet valid", {
+        ruleId: rule.id,
+        ruleName: rule.name,
+        validFrom: rule.validFrom.toISOString(),
+        transactionDate: transactionDate.toISOString(),
+      });
+      return false;
+    }
+
+    // Check validUntil - transaction must be on or before this date
+    // We compare with end of day to include the entire last day
+    if (rule.validUntil) {
+      const endOfValidDay = new Date(rule.validUntil);
+      endOfValidDay.setHours(23, 59, 59, 999);
+      if (transactionDate > endOfValidDay) {
+        logger.debug("isRuleValidForDate", "Rule has expired", {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          validUntil: rule.validUntil.toISOString(),
+          transactionDate: transactionDate.toISOString(),
+        });
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -796,7 +897,9 @@ export class RewardService {
     // Get monthly spending for accurate bonus point calculations
     let monthlySpend = 0;
     try {
-      const { MonthlySpendingTracker } = await import("./MonthlySpendingTracker");
+      const { MonthlySpendingTracker } = await import(
+        "./MonthlySpendingTracker"
+      );
       const tracker = MonthlySpendingTracker.getInstance();
       monthlySpend = await tracker.getMonthlySpending(
         paymentMethod.id,

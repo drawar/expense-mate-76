@@ -1,328 +1,510 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5";
+  };
   public: {
     Tables: {
-      payment_methods: {
+      conversion_rates: {
         Row: {
-          id: string;
-          name: string;
-          type: string;
-          issuer: string | null;
-          last_four_digits: string | null;
-          currency: string;
-          icon: string | null;
-          color: string | null;
-          image_url: string | null;
-          points_currency: string | null;
-          active: boolean;
-          reward_rules: any | null;
-          selected_categories: any | null;
-          statement_start_day: number | null;
-          is_monthly_statement: boolean | null;
-          conversion_rate: any | null;
+          conversion_rate: number;
           created_at: string | null;
+          id: string;
+          miles_currency: string;
+          reward_currency: string;
           updated_at: string | null;
-          is_deleted: boolean;
         };
         Insert: {
-          id?: string;
-          name: string;
-          type: string;
-          issuer?: string | null;
-          last_four_digits?: string | null;
-          currency: string;
-          icon?: string | null;
-          color?: string | null;
-          image_url?: string | null;
-          points_currency?: string | null;
-          active?: boolean;
-          reward_rules?: any | null;
-          selected_categories?: any | null;
-          statement_start_day?: number | null;
-          is_monthly_statement?: boolean | null;
-          conversion_rate?: any | null;
+          conversion_rate: number;
           created_at?: string | null;
+          id?: string;
+          miles_currency: string;
+          reward_currency: string;
           updated_at?: string | null;
-          is_deleted?: boolean;
         };
         Update: {
-          id?: string;
-          name?: string;
-          type?: string;
-          issuer?: string | null;
-          last_four_digits?: string | null;
-          currency?: string;
-          icon?: string | null;
-          color?: string | null;
-          image_url?: string | null;
-          points_currency?: string | null;
-          active?: boolean;
-          reward_rules?: any | null;
-          selected_categories?: any | null;
-          statement_start_day?: number | null;
-          is_monthly_statement?: boolean | null;
-          conversion_rate?: any | null;
+          conversion_rate?: number;
           created_at?: string | null;
-          updated_at?: string | null;
-          is_deleted?: boolean;
-        };
-      };
-      transactions: {
-        Row: {
-          id: string;
-          date: string;
-          merchant_id: string;
-          amount: string;
-          currency: string;
-          payment_method_id: string;
-          payment_amount: string;
-          payment_currency: string;
-          total_points: number | null;
-          base_points: number | null;
-          bonus_points: number | null;
-          is_contactless: boolean | null;
-          notes: string | null;
-          reimbursement_amount: string | null;
-          category: string | null;
-          is_deleted: boolean | null;
-          created_at: string | null;
-          updated_at: string | null;
-          deleted_at: string | null;
-        };
-        Insert: {
           id?: string;
-          date: string;
-          merchant_id: string;
-          amount: string;
-          currency: string;
-          payment_method_id: string;
-          payment_amount: string;
-          payment_currency: string;
-          total_points?: number | null;
-          base_points?: number | null;
-          bonus_points?: number | null;
-          is_contactless?: boolean | null;
-          notes?: string | null;
-          reimbursement_amount?: string | null;
-          category?: string | null;
-          is_deleted?: boolean | null;
-          created_at?: string | null;
+          miles_currency?: string;
+          reward_currency?: string;
           updated_at?: string | null;
-          deleted_at?: string | null;
         };
-        Update: {
-          id?: string;
-          date?: string;
-          merchant_id?: string;
-          amount?: string;
-          currency?: string;
-          payment_method_id?: string;
-          payment_amount?: string;
-          payment_currency?: string;
-          total_points?: number | null;
-          base_points?: number | null;
-          bonus_points?: number | null;
-          is_contactless?: boolean | null;
-          notes?: string | null;
-          reimbursement_amount?: string | null;
-          category?: string | null;
-          is_deleted?: boolean | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-        };
+        Relationships: [];
       };
       merchants: {
         Row: {
-          id: string;
-          name: string;
           address: string | null;
-          mcc: any | null;
-          is_online: boolean | null;
-          coordinates: any | null;
-          is_deleted: boolean | null;
+          coordinates: Json | null;
           created_at: string | null;
-          deleted_at: string | null;
+          id: string;
+          is_deleted: boolean | null;
+          is_online: boolean | null;
+          mcc: string | null;
+          name: string;
+          updated_at: string | null;
         };
         Insert: {
-          id?: string;
-          name: string;
           address?: string | null;
-          mcc?: any | null;
-          is_online?: boolean | null;
-          coordinates?: any | null;
-          is_deleted?: boolean | null;
+          coordinates?: Json | null;
           created_at?: string | null;
-          deleted_at?: string | null;
+          id?: string;
+          is_deleted?: boolean | null;
+          is_online?: boolean | null;
+          mcc?: string | null;
+          name: string;
+          updated_at?: string | null;
         };
         Update: {
-          id?: string;
-          name?: string;
           address?: string | null;
-          mcc?: any | null;
-          is_online?: boolean | null;
-          coordinates?: any | null;
-          is_deleted?: boolean | null;
+          coordinates?: Json | null;
           created_at?: string | null;
-          deleted_at?: string | null;
+          id?: string;
+          is_deleted?: boolean | null;
+          is_online?: boolean | null;
+          mcc?: string | null;
+          name?: string;
+          updated_at?: string | null;
         };
+        Relationships: [];
+      };
+      payment_methods: {
+        Row: {
+          billing_cycle_day: number | null;
+          color: string | null;
+          conversion_rate: Json | null;
+          created_at: string | null;
+          currency: string | null;
+          icon: string | null;
+          id: string;
+          image_url: string | null;
+          is_active: boolean | null;
+          is_monthly_statement: boolean | null;
+          issuer: string | null;
+          last_four_digits: string | null;
+          name: string;
+          network: string | null;
+          notes: string | null;
+          points_currency: string | null;
+          reward_rules: Json | null;
+          selected_categories: Json | null;
+          statement_start_day: number | null;
+          type: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          billing_cycle_day?: number | null;
+          color?: string | null;
+          conversion_rate?: Json | null;
+          created_at?: string | null;
+          currency?: string | null;
+          icon?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_active?: boolean | null;
+          is_monthly_statement?: boolean | null;
+          issuer?: string | null;
+          last_four_digits?: string | null;
+          name: string;
+          network?: string | null;
+          notes?: string | null;
+          points_currency?: string | null;
+          reward_rules?: Json | null;
+          selected_categories?: Json | null;
+          statement_start_day?: number | null;
+          type: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          billing_cycle_day?: number | null;
+          color?: string | null;
+          conversion_rate?: Json | null;
+          created_at?: string | null;
+          currency?: string | null;
+          icon?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_active?: boolean | null;
+          is_monthly_statement?: boolean | null;
+          issuer?: string | null;
+          last_four_digits?: string | null;
+          name?: string;
+          network?: string | null;
+          notes?: string | null;
+          points_currency?: string | null;
+          reward_rules?: Json | null;
+          selected_categories?: Json | null;
+          statement_start_day?: number | null;
+          type?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       reward_rules: {
         Row: {
-          id: string;
+          amount_rounding_strategy: string | null;
+          base_multiplier: number | null;
+          block_size: number | null;
+          bonus_multiplier: number | null;
+          bonus_tiers: Json | null;
+          calculation_method: string | null;
+          cap_group_id: string | null;
           card_type_id: string;
-          name: string;
+          conditions: Json | null;
+          created_at: string | null;
           description: string | null;
           enabled: boolean | null;
-          priority: number | null;
-          conditions: any | null;
-          bonus_tiers: any | null;
-          calculation_method: string;
-          base_multiplier: string;
-          bonus_multiplier: string;
-          points_rounding_strategy: string;
-          amount_rounding_strategy: string;
-          block_size: string;
+          excluded_categories: string[] | null;
+          excluded_merchants: string[] | null;
+          id: string;
+          included_categories: string[] | null;
+          included_merchants: string[] | null;
+          max_bonus_per_transaction: number | null;
+          min_spend: number | null;
+          monthly_bonus_cap: number | null;
           monthly_cap: number | null;
+          monthly_cap_type: string | null;
           monthly_min_spend: number | null;
           monthly_spend_period_type: string | null;
-          points_currency: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          card_type_id: string;
           name: string;
-          description?: string | null;
-          enabled?: boolean | null;
-          priority?: number | null;
-          conditions?: any | null;
-          bonus_tiers?: any | null;
-          calculation_method: string;
-          base_multiplier: string;
-          bonus_multiplier: string;
-          points_rounding_strategy: string;
-          amount_rounding_strategy: string;
-          block_size: string;
-          monthly_cap?: number | null;
-          monthly_min_spend?: number | null;
-          monthly_spend_period_type?: string | null;
-          points_currency?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          card_type_id?: string;
-          name?: string;
-          description?: string | null;
-          enabled?: boolean | null;
-          priority?: number | null;
-          conditions?: any | null;
-          bonus_tiers?: any | null;
-          calculation_method?: string;
-          base_multiplier?: string;
-          bonus_multiplier?: string;
-          points_rounding_strategy?: string;
-          amount_rounding_strategy?: string;
-          block_size?: string;
-          monthly_cap?: number | null;
-          monthly_min_spend?: number | null;
-          monthly_spend_period_type?: string | null;
-          points_currency?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      merchant_category_mappings: {
-        Row: {
-          id: string;
-          merchant_name: string;
-          occurrence_count: number;
-          most_common_mcc: any | null;
-          is_deleted: boolean;
-          created_at: string | null;
+          points_currency: string | null;
+          points_rounding_strategy: string | null;
+          priority: number | null;
+          qualifying_period_days: number | null;
           updated_at: string | null;
-          modified_at: string | null;
-          deleted_at: string | null;
+          valid_from: string | null;
+          valid_until: string | null;
         };
         Insert: {
-          id?: string;
-          merchant_name: string;
-          occurrence_count?: number;
-          most_common_mcc?: any | null;
-          is_deleted?: boolean;
+          amount_rounding_strategy?: string | null;
+          base_multiplier?: number | null;
+          block_size?: number | null;
+          bonus_multiplier?: number | null;
+          bonus_tiers?: Json | null;
+          calculation_method?: string | null;
+          cap_group_id?: string | null;
+          card_type_id: string;
+          conditions?: Json | null;
           created_at?: string | null;
+          description?: string | null;
+          enabled?: boolean | null;
+          excluded_categories?: string[] | null;
+          excluded_merchants?: string[] | null;
+          id?: string;
+          included_categories?: string[] | null;
+          included_merchants?: string[] | null;
+          max_bonus_per_transaction?: number | null;
+          min_spend?: number | null;
+          monthly_bonus_cap?: number | null;
+          monthly_cap?: number | null;
+          monthly_cap_type?: string | null;
+          monthly_min_spend?: number | null;
+          monthly_spend_period_type?: string | null;
+          name: string;
+          points_currency?: string | null;
+          points_rounding_strategy?: string | null;
+          priority?: number | null;
+          qualifying_period_days?: number | null;
           updated_at?: string | null;
-          modified_at?: string | null;
-          deleted_at?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
         };
         Update: {
-          id?: string;
-          merchant_name?: string;
-          occurrence_count?: number;
-          most_common_mcc?: any | null;
-          is_deleted?: boolean;
+          amount_rounding_strategy?: string | null;
+          base_multiplier?: number | null;
+          block_size?: number | null;
+          bonus_multiplier?: number | null;
+          bonus_tiers?: Json | null;
+          calculation_method?: string | null;
+          cap_group_id?: string | null;
+          card_type_id?: string;
+          conditions?: Json | null;
           created_at?: string | null;
+          description?: string | null;
+          enabled?: boolean | null;
+          excluded_categories?: string[] | null;
+          excluded_merchants?: string[] | null;
+          id?: string;
+          included_categories?: string[] | null;
+          included_merchants?: string[] | null;
+          max_bonus_per_transaction?: number | null;
+          min_spend?: number | null;
+          monthly_bonus_cap?: number | null;
+          monthly_cap?: number | null;
+          monthly_cap_type?: string | null;
+          monthly_min_spend?: number | null;
+          monthly_spend_period_type?: string | null;
+          name?: string;
+          points_currency?: string | null;
+          points_rounding_strategy?: string | null;
+          priority?: number | null;
+          qualifying_period_days?: number | null;
           updated_at?: string | null;
-          modified_at?: string | null;
-          deleted_at?: string | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
         };
+        Relationships: [];
       };
-      points_movements: {
+      transactions: {
         Row: {
-          id: string;
-          transaction_id: string | null;
-          payment_method_id: string | null;
+          amount: number;
           base_points: number | null;
-          bonus_points: number;
-          created_at: string;
+          bonus_points: number | null;
+          category: string | null;
+          created_at: string | null;
+          currency: string | null;
+          date: string;
+          id: string;
+          is_contactless: boolean | null;
+          is_deleted: boolean | null;
+          merchant_id: string | null;
+          notes: string | null;
+          payment_amount: number | null;
+          payment_currency: string | null;
+          payment_method_id: string | null;
+          reimbursement_amount: number | null;
+          total_points: number | null;
+          updated_at: string | null;
+          user_id: string;
         };
         Insert: {
-          id?: string;
-          transaction_id?: string | null;
-          payment_method_id?: string | null;
+          amount: number;
           base_points?: number | null;
-          bonus_points: number;
-          created_at?: string;
+          bonus_points?: number | null;
+          category?: string | null;
+          created_at?: string | null;
+          currency?: string | null;
+          date: string;
+          id?: string;
+          is_contactless?: boolean | null;
+          is_deleted?: boolean | null;
+          merchant_id?: string | null;
+          notes?: string | null;
+          payment_amount?: number | null;
+          payment_currency?: string | null;
+          payment_method_id?: string | null;
+          reimbursement_amount?: number | null;
+          total_points?: number | null;
+          updated_at?: string | null;
+          user_id: string;
         };
         Update: {
-          id?: string;
-          transaction_id?: string | null;
-          payment_method_id?: string | null;
+          amount?: number;
           base_points?: number | null;
-          bonus_points?: number;
-          created_at?: string;
+          bonus_points?: number | null;
+          category?: string | null;
+          created_at?: string | null;
+          currency?: string | null;
+          date?: string;
+          id?: string;
+          is_contactless?: boolean | null;
+          is_deleted?: boolean | null;
+          merchant_id?: string | null;
+          notes?: string | null;
+          payment_amount?: number | null;
+          payment_currency?: string | null;
+          payment_method_id?: string | null;
+          reimbursement_amount?: number | null;
+          total_points?: number | null;
+          updated_at?: string | null;
+          user_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "transactions_merchant_id_fkey";
+            columns: ["merchant_id"];
+            isOneToOne: false;
+            referencedRelation: "merchants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_payment_method_id_fkey";
+            columns: ["payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      profiles: {
+      user_roles: {
         Row: {
+          created_at: string | null;
           id: string;
-          username: string;
-          avatar_url: string | null;
-          created_at: string;
-          updated_at: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
         };
         Insert: {
-          id: string;
-          username: string;
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
+          created_at?: string | null;
+          id?: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
         };
         Update: {
+          created_at?: string | null;
           id?: string;
-          username?: string;
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id?: string;
         };
+        Relationships: [];
       };
     };
-    Views: {};
-    Functions: {};
-    Enums: {};
-    CompositeTypes: {};
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+    };
+    Enums: {
+      app_role: "admin" | "moderator" | "user";
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
+};
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
 }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never;
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
+  },
+} as const;

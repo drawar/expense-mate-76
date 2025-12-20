@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import MainLayout from "@/components/layout/MainLayout";
 import Index from "./pages/Index";
 import Transactions from "./pages/Transactions";
 import AddExpense from "./pages/AddExpense";
@@ -77,7 +78,9 @@ function App() {
                   path="/"
                   element={
                     <ProtectedRoute>
-                      <Index />
+                      <MainLayout>
+                        <Index />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -85,7 +88,9 @@ function App() {
                   path="/transactions"
                   element={
                     <ProtectedRoute>
-                      <Transactions />
+                      <MainLayout>
+                        <Transactions />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -93,7 +98,9 @@ function App() {
                   path="/add-expense"
                   element={
                     <ProtectedRoute>
-                      <AddExpense />
+                      <MainLayout>
+                        <AddExpense />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -101,7 +108,9 @@ function App() {
                   path="/payment-methods"
                   element={
                     <ProtectedRoute>
-                      <PaymentMethods />
+                      <MainLayout>
+                        <PaymentMethods />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -109,7 +118,9 @@ function App() {
                   path="/reward-points"
                   element={
                     <ProtectedRoute>
-                      <RewardPoints />
+                      <MainLayout>
+                        <RewardPoints />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -117,7 +128,9 @@ function App() {
                   path="/diagnose-rewards"
                   element={
                     <ProtectedRoute>
-                      <DiagnoseRewards />
+                      <MainLayout>
+                        <DiagnoseRewards />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -125,7 +138,9 @@ function App() {
                   path="/card-optimizer"
                   element={
                     <ProtectedRoute>
-                      <CardOptimizerSimulator />
+                      <MainLayout>
+                        <CardOptimizerSimulator />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -133,7 +148,9 @@ function App() {
                   path="/seed-conversion-rates"
                   element={
                     <ProtectedRoute>
-                      <SeedConversionRates />
+                      <MainLayout>
+                        <SeedConversionRates />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -141,7 +158,9 @@ function App() {
                   path="/delete-membership-rewards"
                   element={
                     <ProtectedRoute>
-                      <DeleteMembershipRewards />
+                      <MainLayout>
+                        <DeleteMembershipRewards />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />
@@ -149,7 +168,9 @@ function App() {
                   path="/settings"
                   element={
                     <ProtectedRoute>
-                      <Settings />
+                      <MainLayout>
+                        <Settings />
+                      </MainLayout>
                     </ProtectedRoute>
                   }
                 />

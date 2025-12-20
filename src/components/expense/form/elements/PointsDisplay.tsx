@@ -46,15 +46,17 @@ export const PointsDisplay = ({
     const error = form.formState.errors.rewardPoints;
 
     return (
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-800">
         <CardContent className="p-4 space-y-3">
           <div className="space-y-2">
             <Label htmlFor="rewardPoints" className="flex items-center gap-2">
-              <CoinsIcon 
-                className="h-4 w-4 text-blue-600" 
+              <CoinsIcon
+                className="h-4 w-4 text-emerald-600"
                 style={{ strokeWidth: 2.5 }}
               />
-              <span className="font-medium text-blue-900">Reward Points</span>
+              <span className="font-medium text-emerald-900 dark:text-emerald-100">
+                Reward Points
+              </span>
             </Label>
 
             <Input
@@ -82,11 +84,13 @@ export const PointsDisplay = ({
                   (Base: {points.basePoints} + Bonus: {points.bonusPoints})
                 </p>
               )}
-              {points.remainingMonthlyBonusPoints !== undefined && points.remainingMonthlyBonusPoints < 1000 && (
-                <p className="text-xs text-amber-600 font-medium">
-                  ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points remaining this month
-                </p>
-              )}
+              {points.remainingMonthlyBonusPoints !== undefined &&
+                points.remainingMonthlyBonusPoints < 1000 && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points
+                    remaining this month
+                  </p>
+                )}
               {points.remainingMonthlyBonusPoints === 0 && (
                 <p className="text-xs text-red-600 font-medium">
                   🚫 Monthly bonus cap reached
@@ -109,20 +113,25 @@ export const PointsDisplay = ({
 
   // Display mode: show calculated points only
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+    <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-800">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <CoinsIcon 
-              className="h-5 w-5 text-blue-600" 
+            <CoinsIcon
+              className="h-5 w-5 text-emerald-600"
               style={{ strokeWidth: 2.5 }}
             />
-            <span className="font-medium text-blue-900">Reward Points</span>
+            <span className="font-medium text-emerald-900 dark:text-emerald-100">
+              Reward Points
+            </span>
           </div>
 
           {points ? (
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Badge
+                variant="secondary"
+                className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+              >
                 {points.totalPoints.toLocaleString()} {points.pointsCurrency}
               </Badge>
               {points.bonusPoints > 0 && (
@@ -148,11 +157,14 @@ export const PointsDisplay = ({
                 ))}
               </div>
             )}
-            {points.remainingMonthlyBonusPoints !== undefined && points.remainingMonthlyBonusPoints < 1000 && points.remainingMonthlyBonusPoints > 0 && (
-              <div className="text-xs text-amber-600 font-medium">
-                ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points remaining this month
-              </div>
-            )}
+            {points.remainingMonthlyBonusPoints !== undefined &&
+              points.remainingMonthlyBonusPoints < 1000 &&
+              points.remainingMonthlyBonusPoints > 0 && (
+                <div className="text-xs text-amber-600 font-medium">
+                  ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points
+                  remaining this month
+                </div>
+              )}
             {points.remainingMonthlyBonusPoints === 0 && (
               <div className="text-xs text-red-600 font-medium">
                 🚫 Monthly bonus cap reached

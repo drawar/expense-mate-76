@@ -1,6 +1,6 @@
 /**
  * Diagnostic script to simulate the exact expense calculation flow
- * 
+ *
  * This simulates what happens when you add an expense with the Citibank card
  */
 
@@ -38,7 +38,9 @@ async function simulateExpenseCalculation() {
   console.log(`  Issuer: "${paymentMethods.issuer}"`);
   console.log(`  Name: "${paymentMethods.name}"`);
   console.log(`  Currency: ${paymentMethods.currency}`);
-  console.log(`  Points Currency: ${paymentMethods.points_currency || 'N/A'}\n`);
+  console.log(
+    `  Points Currency: ${paymentMethods.points_currency || "N/A"}\n`
+  );
 
   // Simulate the exact transaction from your error log
   const transactionData = {
@@ -62,44 +64,58 @@ async function simulateExpenseCalculation() {
   };
 
   console.log("🔄 Simulating reward calculation with:");
-  console.log(`  Amount: ${transactionData.amount} ${transactionData.currency}`);
-  console.log(`  Converted: ${transactionData.convertedAmount} ${transactionData.convertedCurrency}`);
+  console.log(
+    `  Amount: ${transactionData.amount} ${transactionData.currency}`
+  );
+  console.log(
+    `  Converted: ${transactionData.convertedAmount} ${transactionData.convertedCurrency}`
+  );
   console.log(`  Merchant: ${transactionData.merchantName}`);
   console.log(`  MCC: ${transactionData.mcc}`);
   console.log(`  Online: ${transactionData.isOnline}`);
-  console.log(`  Payment Method: ${transactionData.paymentMethod.issuer} ${transactionData.paymentMethod.name}`);
-  console.log(`  Payment Method Issuer (raw): "${transactionData.paymentMethod.issuer}"`);
-  console.log(`  Payment Method Name (raw): "${transactionData.paymentMethod.name}"\n`);
+  console.log(
+    `  Payment Method: ${transactionData.paymentMethod.issuer} ${transactionData.paymentMethod.name}`
+  );
+  console.log(
+    `  Payment Method Issuer (raw): "${transactionData.paymentMethod.issuer}"`
+  );
+  console.log(
+    `  Payment Method Name (raw): "${transactionData.paymentMethod.name}"\n`
+  );
 
   try {
     // First, let's manually check if the repository can find rules
     console.log("🔍 Manual Repository Check:");
     const { getRuleRepository } = await import("@/core/rewards/RuleRepository");
-    const { cardTypeIdService } = await import("@/core/rewards/CardTypeIdService");
-    
+    const { cardTypeIdService } = await import(
+      "@/core/rewards/CardTypeIdService"
+    );
+
     const repository = getRuleRepository();
     const cardTypeId = cardTypeIdService.generateCardTypeId(
       transactionData.paymentMethod.issuer,
       transactionData.paymentMethod.name
     );
-    
+
     console.log(`  Generated Card Type ID: "${cardTypeId}"`);
-    
+
     const manualRules = await repository.getRulesForCardType(cardTypeId);
     console.log(`  Rules found by repository: ${manualRules.length}`);
     if (manualRules.length > 0) {
-      manualRules.forEach(rule => {
-        console.log(`    - ${rule.name} (Priority: ${rule.priority}, Enabled: ${rule.enabled})`);
+      manualRules.forEach((rule) => {
+        console.log(
+          `    - ${rule.name} (Priority: ${rule.priority}, Enabled: ${rule.enabled})`
+        );
       });
     }
     console.log();
-    
+
     console.log("🔍 Now calling rewardService.simulateRewards...\n");
-    
+
     const result = await rewardService.simulateRewards(
       transactionData.amount,
       transactionData.currency,
-      transactionData.paymentMethod as any,
+      transactionData.paymentMethod,
       transactionData.mcc,
       transactionData.merchantName,
       transactionData.isOnline,
@@ -114,21 +130,25 @@ async function simulateExpenseCalculation() {
     console.log(`  Bonus Points: ${result.bonusPoints}`);
     console.log(`  Points Currency: ${result.pointsCurrency}`);
     console.log(`  Min Spend Met: ${result.minSpendMet}`);
-    
+
     if (result.appliedRule) {
-      console.log(`  Applied Rule: ${result.appliedRule.name} (Priority: ${result.appliedRule.priority})`);
+      console.log(
+        `  Applied Rule: ${result.appliedRule.name} (Priority: ${result.appliedRule.priority})`
+      );
     } else {
       console.log(`  Applied Rule: None`);
     }
-    
+
     if (result.messages && result.messages.length > 0) {
       console.log(`  Messages:`);
-      result.messages.forEach(msg => console.log(`    - ${msg}`));
+      result.messages.forEach((msg) => console.log(`    - ${msg}`));
     }
 
     if (result.totalPoints === 0) {
       console.log("\n⚠️  WARNING: No points calculated!");
-      console.log("This suggests the rules aren't being found or applied correctly.");
+      console.log(
+        "This suggests the rules aren't being found or applied correctly."
+      );
     }
   } catch (error) {
     console.error("❌ Error calculating rewards:", error);

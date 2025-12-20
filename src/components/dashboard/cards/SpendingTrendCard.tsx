@@ -44,7 +44,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       week: "Daily",
       month: "Weekly",
       quarter: "Monthly",
-      year: "Quarterly"
+      year: "Quarterly",
     };
     return labels[period] || "Daily";
   };
@@ -55,7 +55,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       period: selectedPeriod,
       displayCurrency: currency,
       includeTrend: true,
-      includeReimbursements: true
+      includeReimbursements: true,
     });
   }, [transactions, selectedPeriod, currency]);
 
@@ -63,10 +63,15 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const chartData = chartResult?.data || [];
   const trend = chartResult?.trend || 0;
   const average = chartResult?.average || 0;
-  
+
   // Create period selector
   const periodSelector = (
-    <Select value={selectedPeriod} onValueChange={(value: string) => setSelectedPeriod(value as any)}>
+    <Select
+      value={selectedPeriod}
+      onValueChange={(value) =>
+        setSelectedPeriod(value as "day" | "week" | "month" | "quarter")
+      }
+    >
       <SelectTrigger className="w-32 h-8">
         <span className="text-sm">{getPeriodLabel(selectedPeriod)}</span>
       </SelectTrigger>
@@ -78,7 +83,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       </SelectContent>
     </Select>
   );
-  
+
   // Display trend and average section
   const TrendAndAverage = () => (
     <div className="flex items-center justify-between mb-4">
@@ -104,15 +109,21 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
 
       <div className="text-right">
         <p className="text-sm text-muted-foreground">Average</p>
-        <p className="font-medium mt-1">
-          {formatCurrency(average)}
-        </p>
+        <p className="font-medium mt-1">{formatCurrency(average)}</p>
       </div>
     </div>
   );
-  
+
   // Define custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: Array<{ value: number }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-md">
@@ -135,11 +146,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       emptyState={{
         title: "No Spending Data",
         description: "There's no spending data available for this period",
-        icon: <TrendingUpIcon className="h-8 w-8 text-muted-foreground mb-2" />
+        icon: <TrendingUpIcon className="h-8 w-8 text-muted-foreground mb-2" />,
       }}
     >
       {chartData.length >= 2 && <TrendAndAverage />}
-      
+
       {chartData.length > 0 && (
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -148,21 +159,21 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
               margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis 
-                dataKey="period" 
+              <XAxis
+                dataKey="period"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 12 }}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 12 }}
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                dataKey="amount" 
+              <Bar
+                dataKey="amount"
                 fill="#8884d8"
                 activeBar={{ fill: "#7171d6" }}
                 radius={[4, 4, 0, 0]}
@@ -171,7 +182,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
           </ResponsiveContainer>
         </div>
       )}
-      
+
       {chartData.length >= 2 && (
         <div className="mt-2 text-sm space-y-1">
           <div className="flex items-center gap-1">
@@ -181,8 +192,8 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
               <TrendingDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
             )}
             <span>
-              Your spending {trend >= 0 ? "increased" : "decreased"} by {Math.abs(trend).toFixed(1)}% compared
-              to last period
+              Your spending {trend >= 0 ? "increased" : "decreased"} by{" "}
+              {Math.abs(trend).toFixed(1)}% compared to last period
             </span>
           </div>
         </div>

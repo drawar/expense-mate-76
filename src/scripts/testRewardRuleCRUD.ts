@@ -461,5 +461,9 @@ export async function runRewardRuleCRUDTests(): Promise<void> {
 
 // If running in browser console, expose globally
 if (typeof window !== "undefined") {
-  (window as any).runRewardRuleCRUDTests = runRewardRuleCRUDTests;
+  (
+    window as Window & {
+      runRewardRuleCRUDTests?: typeof runRewardRuleCRUDTests;
+    }
+  ).runRewardRuleCRUDTests = runRewardRuleCRUDTests;
 }

@@ -35,57 +35,86 @@ export class StorageService {
   }
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    console.log('StorageService.getPaymentMethods: Starting...');
-    console.log('StorageService.getPaymentMethods: useLocalStorage =', this.useLocalStorage);
-    
+    console.log("StorageService.getPaymentMethods: Starting...");
+    console.log(
+      "StorageService.getPaymentMethods: useLocalStorage =",
+      this.useLocalStorage
+    );
+
     if (this.useLocalStorage) {
       const local = this.getPaymentMethodsFromLocalStorage();
-      console.log('StorageService.getPaymentMethods: Using localStorage, found', local.length, 'methods');
+      console.log(
+        "StorageService.getPaymentMethods: Using localStorage, found",
+        local.length,
+        "methods"
+      );
       return local;
     }
 
     // If not authenticated, fall back to local storage
     const { data: authData } = await supabase.auth.getSession();
     const session = authData?.session;
-    console.log('StorageService.getPaymentMethods: Auth check - authenticated:', !!session?.user);
-    
+    console.log(
+      "StorageService.getPaymentMethods: Auth check - authenticated:",
+      !!session?.user
+    );
+
     if (!session?.user) {
       const local = this.getPaymentMethodsFromLocalStorage();
-      console.log('StorageService.getPaymentMethods: Not authenticated, using localStorage, found', local.length, 'methods');
+      console.log(
+        "StorageService.getPaymentMethods: Not authenticated, using localStorage, found",
+        local.length,
+        "methods"
+      );
       return local;
     }
 
     try {
-      console.log('StorageService.getPaymentMethods: Querying Supabase for active payment methods...');
+      console.log(
+        "StorageService.getPaymentMethods: Querying Supabase for active payment methods..."
+      );
       const { data, error } = await supabase
         .from("payment_methods")
         .select("*")
         .eq("is_active", true)
         .order("name");
 
-      console.log('StorageService.getPaymentMethods: Supabase query result:', {
+      console.log("StorageService.getPaymentMethods: Supabase query result:", {
         dataCount: data?.length || 0,
-        error: error?.message || null
+        error: error?.message || null,
       });
 
       if (error) {
-        console.error("StorageService.getPaymentMethods: Supabase error:", error);
+        console.error(
+          "StorageService.getPaymentMethods: Supabase error:",
+          error
+        );
         const local = this.getPaymentMethodsFromLocalStorage();
-        console.log('StorageService.getPaymentMethods: Falling back to localStorage, found', local.length, 'methods');
+        console.log(
+          "StorageService.getPaymentMethods: Falling back to localStorage, found",
+          local.length,
+          "methods"
+        );
         return local;
       }
 
       if (!data || data.length === 0) {
-        console.log('StorageService.getPaymentMethods: No data from Supabase, checking localStorage...');
+        console.log(
+          "StorageService.getPaymentMethods: No data from Supabase, checking localStorage..."
+        );
         const local = this.getPaymentMethodsFromLocalStorage();
-        console.log('StorageService.getPaymentMethods: Found', local.length, 'methods in localStorage');
+        console.log(
+          "StorageService.getPaymentMethods: Found",
+          local.length,
+          "methods in localStorage"
+        );
         return local;
       }
 
       const mappedData = data.map((row) => ({
         id: row.id,
         name: row.name,
-        type: row.type as PaymentMethod['type'],
+        type: row.type as PaymentMethod["type"],
         issuer: row.issuer || "",
         lastFourDigits: row.last_four_digits || undefined,
         currency: row.currency as Currency,
@@ -95,20 +124,29 @@ export class StorageService {
         pointsCurrency: row.points_currency || undefined,
         active: row.is_active ?? true,
         rewardRules: (row.reward_rules as unknown[]) || [],
-        selectedCategories: Array.isArray(row.selected_categories) 
+        selectedCategories: Array.isArray(row.selected_categories)
           ? (row.selected_categories as string[])
           : [],
         statementStartDay: row.statement_start_day || undefined,
         isMonthlyStatement: row.is_monthly_statement || undefined,
-        conversionRate: (row.conversion_rate as Record<string, number>) || undefined,
+        conversionRate:
+          (row.conversion_rate as Record<string, number>) || undefined,
       }));
-      
-      console.log('StorageService.getPaymentMethods: Returning', mappedData.length, 'payment methods from Supabase');
+
+      console.log(
+        "StorageService.getPaymentMethods: Returning",
+        mappedData.length,
+        "payment methods from Supabase"
+      );
       return mappedData;
     } catch (error) {
       console.error("StorageService.getPaymentMethods: Caught error:", error);
       const local = this.getPaymentMethodsFromLocalStorage();
-      console.log('StorageService.getPaymentMethods: Falling back to localStorage, found', local.length, 'methods');
+      console.log(
+        "StorageService.getPaymentMethods: Falling back to localStorage, found",
+        local.length,
+        "methods"
+      );
       return local;
     }
   }
@@ -168,11 +206,11 @@ export class StorageService {
         image_url: pm.imageUrl,
         points_currency: pm.pointsCurrency || null,
         is_active: pm.active,
-        reward_rules: pm.rewardRules as any,
-        selected_categories: pm.selectedCategories as any,
+        reward_rules: pm.rewardRules as unknown,
+        selected_categories: pm.selectedCategories as unknown,
         statement_start_day: pm.statementStartDay,
         is_monthly_statement: pm.isMonthlyStatement,
-        conversion_rate: pm.conversionRate as any,
+        conversion_rate: pm.conversionRate as unknown,
         user_id: session.user.id,
       }));
 
@@ -584,9 +622,13 @@ export class StorageService {
         try {
           // We need to find which rule was applied to track it properly
           // For now, we'll import and use the reward service to get the rule info
-          const { rewardService } = await import("@/core/rewards/RewardService");
-          const { bonusPointsTracker } = await import("@/core/rewards/BonusPointsTracker");
-          
+          const { rewardService } = await import(
+            "@/core/rewards/RewardService"
+          );
+          const { bonusPointsTracker } = await import(
+            "@/core/rewards/BonusPointsTracker"
+          );
+
           // Calculate rewards to get the applied rule
           const result = await rewardService.calculateRewards({
             amount: transactionData.amount,
@@ -683,7 +725,10 @@ export class StorageService {
     try {
       // If merchant data is being updated, upsert the merchant first
       if (updates.merchant) {
-        const merchantId = updates.merchant.id && updates.merchant.id.trim() !== "" ? updates.merchant.id : crypto.randomUUID();
+        const merchantId =
+          updates.merchant.id && updates.merchant.id.trim() !== ""
+            ? updates.merchant.id
+            : crypto.randomUUID();
         const merchantData = {
           id: merchantId,
           name: updates.merchant.name,
@@ -717,7 +762,10 @@ export class StorageService {
         .from("transactions")
         .update({
           date: updates.date,
-          merchant_id: (updates.merchant?.id && updates.merchant.id.trim() !== "") ? updates.merchant.id : null,
+          merchant_id:
+            updates.merchant?.id && updates.merchant.id.trim() !== ""
+              ? updates.merchant.id
+              : null,
           amount: updates.amount,
           currency: updates.currency,
           payment_method_id: updates.paymentMethod?.id,

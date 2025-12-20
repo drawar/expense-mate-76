@@ -5,7 +5,10 @@ async function checkPaymentMethods() {
 
   // Check auth status
   const { data: authData } = await supabase.auth.getSession();
-  console.log("Auth status:", authData.session ? "Authenticated" : "Not authenticated");
+  console.log(
+    "Auth status:",
+    authData.session ? "Authenticated" : "Not authenticated"
+  );
   console.log("User ID:", authData.session?.user?.id || "None");
   console.log();
 
@@ -48,8 +51,10 @@ async function checkPaymentMethods() {
     return;
   }
 
-  console.log(`Active payment methods (is_active = true): ${activeMethods?.length || 0}`);
-  
+  console.log(
+    `Active payment methods (is_active = true): ${activeMethods?.length || 0}`
+  );
+
   if (activeMethods && activeMethods.length > 0) {
     activeMethods.forEach((pm, index) => {
       console.log(`${index + 1}. ${pm.name}`);
@@ -59,26 +64,30 @@ async function checkPaymentMethods() {
   // Check localStorage as fallback
   console.log("\n---\n");
   console.log("Checking localStorage...");
-  
+
   const localStorageKey1 = "expense-tracker-payment-methods";
   const localStorageKey2 = "paymentMethods";
-  
+
   const stored1 = localStorage.getItem(localStorageKey1);
   const stored2 = localStorage.getItem(localStorageKey2);
-  
+
   if (stored1) {
     const methods = JSON.parse(stored1);
-    console.log(`Found ${methods.length} payment methods in localStorage (${localStorageKey1})`);
-    methods.forEach((pm: any, index: number) => {
+    console.log(
+      `Found ${methods.length} payment methods in localStorage (${localStorageKey1})`
+    );
+    methods.forEach((pm: { name: string; active: boolean }, index: number) => {
       console.log(`${index + 1}. ${pm.name} (active: ${pm.active})`);
     });
   } else {
     console.log(`No payment methods in localStorage (${localStorageKey1})`);
   }
-  
+
   if (stored2) {
     const methods = JSON.parse(stored2);
-    console.log(`Found ${methods.length} payment methods in localStorage (${localStorageKey2})`);
+    console.log(
+      `Found ${methods.length} payment methods in localStorage (${localStorageKey2})`
+    );
   } else {
     console.log(`No payment methods in localStorage (${localStorageKey2})`);
   }

@@ -140,7 +140,7 @@ async function setupAmexCobaltCard() {
       description:
         "Earn 5 points per $1 CAD at restaurants, groceries, and food delivery (up to $2,500 CAD monthly spend)",
       enabled: true,
-      priority: 40, // Highest priority
+      priority: 4, // Highest priority
       conditions: [
         {
           type: "mcc",
@@ -158,8 +158,8 @@ async function setupAmexCobaltCard() {
         baseMultiplier: 1,
         bonusMultiplier: 4, // 4 bonus + 1 base = 5x total
         pointsCurrency: "Membership Rewards",
-        pointsRoundingStrategy: "floor",
-        amountRoundingStrategy: "floor",
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
         blockSize: 1,
         monthlyCap: 10000, // $2,500 × 4 bonus multiplier = 10,000 bonus points
         monthlySpendPeriodType: "calendar",
@@ -176,7 +176,7 @@ async function setupAmexCobaltCard() {
       description:
         "Earn 3 points per $1 CAD on eligible streaming subscriptions (matched by merchant name)",
       enabled: true,
-      priority: 30,
+      priority: 3,
       conditions: [
         {
           type: "merchant",
@@ -194,8 +194,8 @@ async function setupAmexCobaltCard() {
         baseMultiplier: 1,
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards",
-        pointsRoundingStrategy: "floor",
-        amountRoundingStrategy: "floor",
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -211,7 +211,7 @@ async function setupAmexCobaltCard() {
       description:
         "Earn 2 points per $1 CAD at gas stations and local commuter transportation",
       enabled: true,
-      priority: 20,
+      priority: 2,
       conditions: [
         {
           type: "mcc",
@@ -229,8 +229,8 @@ async function setupAmexCobaltCard() {
         baseMultiplier: 1,
         bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
         pointsCurrency: "Membership Rewards",
-        pointsRoundingStrategy: "floor",
-        amountRoundingStrategy: "floor",
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -253,8 +253,8 @@ async function setupAmexCobaltCard() {
         baseMultiplier: 1,
         bonusMultiplier: 0, // No bonus, just base
         pointsCurrency: "Membership Rewards",
-        pointsRoundingStrategy: "floor",
-        amountRoundingStrategy: "floor",
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -268,13 +268,13 @@ async function setupAmexCobaltCard() {
     );
     console.log("Summary:");
     console.log(
-      "- Priority 40: 5x on restaurants, groceries & food delivery (CAD only, $2,500 monthly spend cap)"
+      "- Priority 4: 5x on restaurants, groceries & food delivery (CAD only, $2,500 monthly spend cap)"
     );
-    console.log("- Priority 30: 3x on streaming subscriptions (CAD only)");
+    console.log("- Priority 3: 3x on streaming subscriptions (CAD only)");
     console.log(
-      "- Priority 20: 2x on gas stations & local transportation (CAD only)"
+      "- Priority 2: 2x on gas stations & local transportation (CAD only)"
     );
-    console.log("- Priority 1:  1x on everything else (all currencies)");
+    console.log("- Priority 1: 1x on everything else (all currencies)");
     console.log("\nImportant Notes:");
     console.log("1. Monthly spend cap: $2,500 CAD on 5x categories");
     console.log(

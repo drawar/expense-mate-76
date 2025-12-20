@@ -37,7 +37,7 @@ export const analyzeTransactions = (
       methodUsage[methodId] = (methodUsage[methodId] || 0) + 1;
     });
 
-    let currentMethodId = Object.keys(methodUsage).reduce((a, b) =>
+    const currentMethodId = Object.keys(methodUsage).reduce((a, b) =>
       methodUsage[a] > methodUsage[b] ? a : b
     );
     const currentMethod = paymentMethods.find(
@@ -74,76 +74,76 @@ export const analyzeTransactions = (
 export const getMockTransactions = (): Transaction[] => {
   const mockPaymentMethods: PaymentMethod[] = [
     {
-      id: 'dbs-live-fresh',
-      name: 'DBS Live Fresh',
-      type: 'credit_card',
-      currency: 'SGD',
-      issuer: 'DBS',
+      id: "dbs-live-fresh",
+      name: "DBS Live Fresh",
+      type: "credit_card",
+      currency: "SGD",
+      issuer: "DBS",
       rewardRules: [],
       active: true,
     },
     {
-      id: 'uob-one', 
-      name: 'UOB One Card',
-      type: 'credit_card',
-      currency: 'SGD',
-      issuer: 'UOB',
+      id: "uob-one",
+      name: "UOB One Card",
+      type: "credit_card",
+      currency: "SGD",
+      issuer: "UOB",
       rewardRules: [],
       active: true,
     },
     {
-      id: 'citi-rewards',
-      name: 'Citi Rewards Card', 
-      type: 'credit_card',
-      currency: 'SGD',
-      issuer: 'Citi',
+      id: "citi-rewards",
+      name: "Citi Rewards Card",
+      type: "credit_card",
+      currency: "SGD",
+      issuer: "Citi",
       rewardRules: [],
       active: true,
-    }
+    },
   ];
 
   const mockTransactions: Transaction[] = [
     {
-      id: '1',
-      date: '2024-01-15',
+      id: "1",
+      date: "2024-01-15",
       amount: 50,
-      currency: 'SGD',
-      category: 'Dining',
+      currency: "SGD",
+      category: "Dining",
       merchant: {
-        id: 'mcd-001',
-        name: 'McDonald\'s',
+        id: "mcd-001",
+        name: "McDonald's",
         isOnline: false,
       },
       paymentAmount: 50,
-      paymentCurrency: 'SGD',
+      paymentCurrency: "SGD",
       paymentMethod: mockPaymentMethods[0],
       rewardPoints: 1,
       basePoints: 1,
       bonusPoints: 0,
       isContactless: false,
-    }
+    },
   ];
 
   return [
     ...mockTransactions,
     {
-      id: '2', 
-      date: '2024-01-16',
+      id: "2",
+      date: "2024-01-16",
       amount: 100,
-      currency: 'SGD',
-      category: 'Groceries',
+      currency: "SGD",
+      category: "Groceries",
       merchant: {
-        id: 'ntuc-001',
-        name: 'NTUC FairPrice',
+        id: "ntuc-001",
+        name: "NTUC FairPrice",
         isOnline: false,
       },
       paymentAmount: 100,
-      paymentCurrency: 'SGD', 
+      paymentCurrency: "SGD",
       paymentMethod: mockPaymentMethods[1],
       rewardPoints: 2,
       basePoints: 2,
       bonusPoints: 0,
       isContactless: false,
-    }
+    },
   ];
 };

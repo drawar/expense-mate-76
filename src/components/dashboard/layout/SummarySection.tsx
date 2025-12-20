@@ -1,4 +1,3 @@
-
 // components/dashboard/layout/SummarySection.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
@@ -50,9 +49,13 @@ const SummarySection: React.FC = () => {
           title="Net Expenses"
           icon={<BarChartIcon className="h-5 w-5 text-primary" />}
           value={formatCurrency(netExpenses)}
-          trend={metrics?.percentageChange !== undefined ? metrics.percentageChange : 0}
-          cardColor="bg-gradient-to-br from-violet-500/10 to-purple-600/10"
-          valueColor="text-violet-800 dark:text-violet-300"
+          trend={
+            metrics?.percentageChange !== undefined
+              ? metrics.percentageChange
+              : 0
+          }
+          cardColor="bg-gradient-to-br from-emerald-500/10 to-teal-600/10"
+          valueColor="text-emerald-800 dark:text-emerald-300"
         />
 
         {/* Reimbursements Card */}

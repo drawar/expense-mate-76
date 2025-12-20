@@ -1,12 +1,12 @@
 // components/dashboard/Dashboard.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { 
-  DashboardHeader, 
-  SummarySection, 
-  InsightsGrid, 
-  RecentTransactions, 
-  EmptyState 
+import {
+  DashboardHeader,
+  SummarySection,
+  InsightsGrid,
+  RecentTransactions,
+  EmptyState,
 } from "./layout";
 import { FilterBar } from "./filters";
 import { PieChartIcon } from "lucide-react";
@@ -52,7 +52,8 @@ export function Dashboard() {
     displayCurrency,
     useStatementMonth,
     statementCycleDay,
-    handleTimeframeChange: (value: string) => setActiveTab(value as TimeframeTab),
+    handleTimeframeChange: (value: string) =>
+      setActiveTab(value as TimeframeTab),
     handleCurrencyChange: (currency: Currency) => setDisplayCurrency(currency),
     handleStatementMonthToggle: (value: boolean) => setUseStatementMonth(value),
     handleStatementCycleDayChange: (day: number) => setStatementCycleDay(day),
@@ -68,7 +69,9 @@ export function Dashboard() {
             <EmptyState
               title="Error Loading Dashboard"
               description={error}
-              icon={<PieChartIcon className="h-16 w-16 text-muted-foreground" />}
+              icon={
+                <PieChartIcon className="h-16 w-16 text-muted-foreground" />
+              }
             />
           </div>
         </div>
@@ -105,7 +108,9 @@ export function Dashboard() {
             <EmptyState
               title="No Transactions Found"
               description="Add your first transaction to start tracking your expenses."
-              icon={<PieChartIcon className="h-16 w-16 text-muted-foreground" />}
+              icon={
+                <PieChartIcon className="h-16 w-16 text-muted-foreground" />
+              }
             />
           </div>
         </div>
@@ -120,7 +125,7 @@ export function Dashboard() {
 
         {/* Dashboard Title and Global Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
+          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
             Expense Summary
           </h2>
 
@@ -133,10 +138,10 @@ export function Dashboard() {
           <SummarySection />
 
           {/* Insights Grid */}
-          <InsightsGrid 
-            dashboardData={dashboardData} 
+          <InsightsGrid
+            dashboardData={dashboardData}
             paymentMethods={paymentMethods}
-            currency={displayCurrency} 
+            currency={displayCurrency}
           />
 
           {/* Recent Transactions */}

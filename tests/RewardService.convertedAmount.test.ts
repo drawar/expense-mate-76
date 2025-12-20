@@ -11,7 +11,7 @@ describe("RewardService - Converted Amount", () => {
     // Create mock rule repository
     mockRuleRepository = {
       getRulesForCardType: jest.fn(),
-    } as any;
+    } as jest.Mocked<RuleRepository>;
 
     rewardService = new RewardService(mockRuleRepository);
   });

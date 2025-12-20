@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx tsx:*)",
+      "Bash(cat:*)",
+      "Bash(lsof:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo:*)",
+      "WebSearch",
+      "Bash(npm run lint:*)"
+    ]
+  }
+}

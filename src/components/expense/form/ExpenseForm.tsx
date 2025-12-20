@@ -12,7 +12,7 @@ import { PaymentDetailsSection } from "./sections/PaymentDetailsSection";
 interface ExpenseFormProps {
   paymentMethods: PaymentMethod[];
   onSubmit: (transaction: Omit<Transaction, "id">) => void;
-  defaultValues?: any; // Use any to accept both Transaction and FormValues formats
+  defaultValues?: Partial<Transaction> | Record<string, unknown>; // Accept both Transaction and FormValues formats
   useLocalStorage?: boolean;
   isSaving?: boolean;
   isEditMode?: boolean;
@@ -42,7 +42,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const handleFormSubmit = (values: Record<string, unknown>) => {
     try {
-      if (!values.merchantName || (values.merchantName as string).trim() === "") {
+      if (
+        !values.merchantName ||
+        (values.merchantName as string).trim() === ""
+      ) {
         toast({
           title: "Error",
           description: "Merchant name is required",
@@ -73,9 +76,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       }
 
       const merchantData = {
-        id: (isEditMode && defaultValues?.merchantId) ? defaultValues.merchantId : "", // Preserve merchant ID when editing
+        id:
+          isEditMode && defaultValues?.merchantId
+            ? defaultValues.merchantId
+            : "", // Preserve merchant ID when editing
         name: (values.merchantName as string).trim(),
-        address: values.merchantAddress ? (values.merchantAddress as string).trim() : undefined,
+        address: values.merchantAddress
+          ? (values.merchantAddress as string).trim()
+          : undefined,
         isOnline: values.isOnline as boolean,
         mcc: selectedMCC,
       };
@@ -102,9 +110,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       // This maintains the breakdown for reference even when total is edited
       const transactionData: Omit<Transaction, "id"> = {
         date: (values.date as Date).toISOString().split("T")[0], // YYYY-MM-DD format
-        merchant: merchantData as any,
+        merchant: merchantData,
         amount: Number(values.amount),
-        currency: values.currency as any,
+        currency: values.currency as Transaction["currency"],
         paymentMethod: paymentMethod,
         paymentAmount: paymentAmount,
         paymentCurrency: paymentMethod.currency,
@@ -112,7 +120,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         basePoints: pointsCalculation?.basePoints || 0,
         bonusPoints: pointsCalculation?.bonusPoints || 0,
         notes: values.notes as string,
-        isContactless: !(values.isOnline as boolean) && (values.isContactless as boolean),
+        isContactless:
+          !(values.isOnline as boolean) && (values.isContactless as boolean),
         reimbursementAmount: reimbursementAmount,
         category: selectedMCC?.description || selectedMCC?.code || undefined,
       };
@@ -134,9 +143,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       <form
         onSubmit={form.handleSubmit(handleFormSubmit)}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-xl)', // 24px spacing between sections
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-xl)", // 24px spacing between sections
         }}
       >
         <MerchantDetailsSection

@@ -1,0 +1,1244 @@
+import React, { useState, useCallback } from "react";
+import { PaymentMethod } from "@/types";
+import { RewardRule } from "@/core/rewards/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  CoinsIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  Settings2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { RuleRepository } from "@/core/rewards/RuleRepository";
+import { RewardRuleEditor } from "@/components/rewards/RewardRuleEditor";
+import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  initializeRuleRepository,
+  getRuleRepository,
+} from "@/core/rewards/RuleRepository";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+interface RewardRulesSectionProps {
+  paymentMethod: PaymentMethod;
+  rewardRules: RewardRule[];
+  onRulesChanged?: () => void;
+}
+
+type QuickSetupType =
+  | "amex-cobalt"
+  | "amex-platinum"
+  | "amex-aeroplan-reserve"
+  | "neo-cathay"
+  | "hsbc-revolution";
+
+interface QuickSetupConfig {
+  type: QuickSetupType;
+  name: string;
+  description: string;
+}
+
+/**
+ * Determines if a payment method has a quick setup available
+ */
+function getQuickSetupConfig(
+  paymentMethod: PaymentMethod
+): QuickSetupConfig | null {
+  const issuer = paymentMethod.issuer?.toLowerCase() || "";
+  const name = paymentMethod.name?.toLowerCase() || "";
+
+  if (
+    (issuer.includes("american express") || issuer.includes("amex")) &&
+    name.includes("cobalt")
+  ) {
+    return {
+      type: "amex-cobalt",
+      name: "Amex Cobalt",
+      description:
+        "5x food ($2.5K cap), 3x streaming, 2x gas/transit, 1x other",
+    };
+  }
+
+  if (
+    (issuer.includes("american express") || issuer.includes("amex")) &&
+    name.includes("platinum")
+  ) {
+    return {
+      type: "amex-platinum",
+      name: "Amex Platinum",
+      description: "2x dining (CAD), 2x travel (worldwide), 1x other",
+    };
+  }
+
+  if (
+    (issuer.includes("american express") || issuer.includes("amex")) &&
+    name.includes("aeroplan") &&
+    name.includes("reserve")
+  ) {
+    return {
+      type: "amex-aeroplan-reserve",
+      name: "Amex Aeroplan Reserve",
+      description: "3x Air Canada, 2x dining/food delivery (CAD), 1.25x other",
+    };
+  }
+
+  if (issuer.includes("neo") && name.includes("cathay")) {
+    return {
+      type: "neo-cathay",
+      name: "Neo Cathay World Elite",
+      description: "4x Cathay Pacific, 2x foreign currency, 1x other",
+    };
+  }
+
+  if (issuer.includes("hsbc") && name.includes("revolution")) {
+    return {
+      type: "hsbc-revolution",
+      name: "HSBC Revolution",
+      description:
+        "10x online travel & contactless (promo until Feb 2026), 1x other",
+    };
+  }
+
+  return null;
+}
+
+export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
+  paymentMethod,
+  rewardRules,
+  onRulesChanged,
+}) => {
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<RewardRule | null>(null);
+  const [deleteConfirmRule, setDeleteConfirmRule] = useState<RewardRule | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRunningSetup, setIsRunningSetup] = useState(false);
+  const [setupLog, setSetupLog] = useState<string[]>([]);
+  const [showSetupLog, setShowSetupLog] = useState(false);
+
+  const cardTypeId =
+    paymentMethod.issuer && paymentMethod.name
+      ? cardTypeIdService.generateCardTypeId(
+          paymentMethod.issuer,
+          paymentMethod.name
+        )
+      : paymentMethod.id;
+
+  const quickSetupConfig = getQuickSetupConfig(paymentMethod);
+
+  const handleAddRule = () => {
+    setEditingRule(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditRule = (rule: RewardRule) => {
+    setEditingRule(rule);
+    setIsEditorOpen(true);
+  };
+
+  const handleSaveRule = async (rule: RewardRule) => {
+    try {
+      const repository = RuleRepository.getInstance();
+
+      if (editingRule) {
+        await repository.updateRule(rule.id, rule);
+        toast.success("Rule updated successfully");
+      } else {
+        await repository.createRule({
+          ...rule,
+          cardTypeId,
+        });
+        toast.success("Rule created successfully");
+      }
+
+      setIsEditorOpen(false);
+      setEditingRule(null);
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to save rule", { description: message });
+    }
+  };
+
+  const handleDeleteRule = async () => {
+    if (!deleteConfirmRule) return;
+
+    setIsDeleting(true);
+    try {
+      const repository = RuleRepository.getInstance();
+      await repository.deleteRule(deleteConfirmRule.id);
+      toast.success("Rule deleted successfully");
+      setDeleteConfirmRule(null);
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to delete rule", { description: message });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const addSetupLog = useCallback((message: string) => {
+    setSetupLog((prev) => [...prev, message]);
+  }, []);
+
+  const runAmexCobaltSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "American Express",
+        "Cobalt"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // MCCs and merchants
+      const fiveXMCCs = [
+        "5811",
+        "5812",
+        "5813",
+        "5814",
+        "5411",
+        "5422",
+        "5441",
+        "5451",
+        "5499",
+      ];
+      const streamingMerchants = [
+        "Netflix",
+        "Spotify",
+        "Apple Music",
+        "Disney+",
+        "Disney Plus",
+        "Amazon Prime Video",
+        "Prime Video",
+        "Crave",
+        "HBO Max",
+        "Paramount+",
+        "Paramount Plus",
+        "YouTube Premium",
+        "Apple TV+",
+        "Apple TV Plus",
+        "Deezer",
+        "Tidal",
+        "SiriusXM Canada",
+        "Audible",
+      ];
+      const twoXMCCs = ["5541", "5542", "4111", "4121", "4131", "4789", "4011"];
+
+      // Create rules
+      addSetupLog("Creating 5x Food & Groceries rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "5x Points on Food & Groceries",
+        description:
+          "Earn 5 points per $1 CAD at restaurants, groceries, and food delivery (up to $2,500/month spend)",
+        enabled: true,
+        priority: 4,
+        conditions: [
+          { type: "mcc", operation: "include", values: fiveXMCCs },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 4,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: 2500,
+          monthlyCapType: "spend_amount",
+          monthlySpendPeriodType: "calendar",
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 5x rule created ($2,500 monthly spend cap)");
+
+      addSetupLog("Creating 3x Streaming rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Streaming",
+        description:
+          "Earn 3 points per $1 CAD on eligible streaming subscriptions (no cap)",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: streamingMerchants,
+          },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x rule created (no cap)");
+
+      addSetupLog("Creating 2x Gas & Transit rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Points on Gas & Transit",
+        description:
+          "Earn 2 points per $1 CAD at gas stations and local transit (no cap)",
+        enabled: true,
+        priority: 2,
+        conditions: [
+          { type: "mcc", operation: "include", values: twoXMCCs },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x rule created (no cap)");
+
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Points on All Other Purchases",
+        description: "Earn 1 point per $1 on all other purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Amex Cobalt rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
+  const runAmexPlatinumSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "American Express",
+        "Platinum"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // MCCs for dining (restaurants, coffee shops, bars, food delivery - NOT groceries)
+      const diningMCCs = ["5811", "5812", "5813", "5814", "5499"];
+
+      // MCCs for travel (airlines, hotels, rail, car rental, tours - NOT local transit)
+      const travelMCCs = [
+        // Airlines (3000-3299 range + 4511)
+        ...Array.from({ length: 300 }, (_, i) => String(3000 + i)),
+        "4511",
+        // Hotels (3501-3799 range + 7011)
+        ...Array.from({ length: 299 }, (_, i) => String(3501 + i)),
+        "7011",
+        // Car Rentals (3351-3441 range + 7512)
+        ...Array.from({ length: 91 }, (_, i) => String(3351 + i)),
+        "7512",
+        // Rail and Water Transport (long-distance, not local)
+        "4011",
+        "4112",
+        "4411",
+        "4457",
+        // Travel Agencies and Tour Operators
+        "4722",
+        "4723",
+        // Other Travel
+        "7032",
+        "7033",
+        "7513",
+        "7519",
+      ];
+
+      // Rule 1: 2x on Dining in Canada (CAD only)
+      addSetupLog("Creating 2x Dining in Canada rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Points on Dining in Canada",
+        description:
+          "Earn 2 points per $1 CAD at restaurants, coffee shops, bars, and food delivery (excludes groceries)",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          { type: "mcc", operation: "include", values: diningMCCs },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x Dining rule created (CAD only, no cap)");
+
+      // Rule 2: 2x on Travel Worldwide (all currencies)
+      addSetupLog("Creating 2x Travel Worldwide rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Points on Travel",
+        description:
+          "Earn 2 points per $1 on travel services including airlines, hotels, rail, car rental, and tour operators (worldwide)",
+        enabled: true,
+        priority: 2,
+        conditions: [{ type: "mcc", operation: "include", values: travelMCCs }],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x Travel rule created (worldwide, no cap)");
+
+      // Rule 3: 1x on Everything Else
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Points on All Other Purchases",
+        description: "Earn 1 point per $1 on all other eligible purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsCurrency: "Membership Rewards",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Amex Platinum rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
+  const runAmexAeroplanReserveSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "American Express",
+        "Aeroplan Reserve"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // MCCs for dining (restaurants, coffee shops, bars, food delivery - NOT groceries)
+      const diningMCCs = ["5811", "5812", "5813", "5814", "5499"];
+
+      // Rule 1: 3x on Air Canada Direct Purchases (merchant match)
+      addSetupLog("Creating 3x Air Canada rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Air Canada",
+        description:
+          "Earn 3 points per $1 on purchases made directly with Air Canada",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: ["Air Canada", "AIR CANADA", "AIRCANADA", "AC VACATIONS"],
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsCurrency: "Aeroplan",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x Air Canada rule created (merchant match)");
+
+      // Rule 2: 2x on Dining & Food Delivery (CAD only)
+      addSetupLog("Creating 2x Dining & Food Delivery rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Points on Dining & Food Delivery",
+        description:
+          "Earn 2 points per $1 CAD at restaurants, coffee shops, bars, and food delivery (excludes groceries)",
+        enabled: true,
+        priority: 2,
+        conditions: [
+          { type: "mcc", operation: "include", values: diningMCCs },
+          { type: "currency", operation: "equals", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsCurrency: "Aeroplan",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x Dining rule created (CAD only, no cap)");
+
+      // Rule 3: 1.25x on Everything Else
+      addSetupLog("Creating 1.25x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1.25x Points on All Other Purchases",
+        description: "Earn 1.25 points per $1 on all other eligible purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1.25,
+          bonusMultiplier: 0,
+          pointsCurrency: "Aeroplan",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1.25x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Amex Aeroplan Reserve rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
+  const runNeoCathaySetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "Neo Financial",
+        "Cathay World Elite"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // Cathay Pacific MCC code and merchant names
+      const cathayPacificMCC = "3099";
+      const cathayPacificMerchants = [
+        "Cathay Pacific",
+        "CATHAY PACIFIC",
+        "CATHAYPACIFIC",
+        "CATHAYPACAIR",
+      ];
+
+      // Rule 1a: 4x on Cathay Pacific (MCC match)
+      addSetupLog("Creating 4x Cathay Pacific rule (MCC)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "4x Asia Miles on Cathay Pacific (MCC)",
+        description:
+          "Earn 4 Asia Miles per $1 on Cathay Pacific flights (matched by MCC 3099)",
+        enabled: true,
+        priority: 4,
+        conditions: [
+          { type: "mcc", operation: "include", values: [cathayPacificMCC] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 3,
+          pointsCurrency: "Asia Miles",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "ceiling",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 4x rule created (MCC 3099)");
+
+      // Rule 1b: 4x on Cathay Pacific (Merchant match)
+      addSetupLog("Creating 4x Cathay Pacific rule (Merchant)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "4x Asia Miles on Cathay Pacific (Merchant)",
+        description:
+          "Earn 4 Asia Miles per $1 on Cathay Pacific flights (matched by merchant name)",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: cathayPacificMerchants,
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 3,
+          pointsCurrency: "Asia Miles",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "ceiling",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 4x rule created (merchant match)");
+
+      // Rule 2: 2x on Foreign Currency
+      addSetupLog("Creating 2x Foreign Currency rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2x Asia Miles on Foreign Currency",
+        description:
+          "Earn 2 Asia Miles per $1 on transactions in foreign currencies (non-CAD)",
+        enabled: true,
+        priority: 2,
+        conditions: [
+          { type: "currency", operation: "exclude", values: ["CAD"] },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1,
+          pointsCurrency: "Asia Miles",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "ceiling",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 2x rule created (foreign currency)");
+
+      // Rule 3: 1x on Everything Else
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Asia Miles on All Other Purchases",
+        description: "Earn 1 Asia Mile per $1 on all other eligible purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsCurrency: "Asia Miles",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "ceiling",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Neo Cathay World Elite rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
+  const runHSBCRevolutionSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "HSBC",
+        "Revolution Visa Platinum"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // Promotional period end date: February 28, 2026
+      const promoEndDate = new Date("2026-02-28T23:59:59+08:00");
+
+      // Shared cap group ID for the 13,500 bonus points monthly cap
+      const sharedCapGroupId = "hsbc-revolution-10x-bonus-cap";
+
+      // Travel MCCs (for both Online and Contactless)
+      const airlineMCCs = [
+        ...Array.from({ length: 351 }, (_, i) => String(3000 + i)), // 3000-3350
+        "4511",
+      ];
+      const carRentalMCCs = Array.from({ length: 150 }, (_, i) =>
+        String(3351 + i)
+      ); // 3351-3500
+      const lodgingMCCs = [
+        ...Array.from({ length: 499 }, (_, i) => String(3501 + i)), // 3501-3999
+        "7011",
+      ];
+      const cruiseMCCs = ["4411"];
+      const travelMCCs = [
+        ...airlineMCCs,
+        ...carRentalMCCs,
+        ...lodgingMCCs,
+        ...cruiseMCCs,
+      ];
+
+      // Contactless-only MCCs (in addition to travel)
+      const retailMCCs = [
+        "4816",
+        "5045",
+        "5262",
+        "5309",
+        "5310",
+        "5311",
+        "5331",
+        "5399",
+        "5611",
+        "5621",
+        "5631",
+        "5641",
+        "5651",
+        "5655",
+        "5661",
+        "5691",
+        "5699",
+        "5732",
+        "5733",
+        "5734",
+        "5735",
+        "5912",
+        "5942",
+        "5944",
+        "5945",
+        "5946",
+        "5947",
+        "5948",
+        "5949",
+        "5964",
+        "5965",
+        "5966",
+        "5967",
+        "5968",
+        "5969",
+        "5970",
+        "5992",
+        "5999",
+      ];
+      const diningMCCs = ["5441", "5462", "5811", "5812", "5813"];
+      const otherMCCs = ["4121", "7997"];
+      const contactlessMCCs = [
+        ...travelMCCs,
+        ...retailMCCs,
+        ...diningMCCs,
+        ...otherMCCs,
+      ];
+
+      // Rule 1: 10x on Online Travel (Promotional)
+      addSetupLog("Creating 10x Online Travel rule (promo)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "10x Points on Online Travel (Promo)",
+        description:
+          "Earn 10 points per SGD1 on online travel transactions. Valid until Feb 28, 2026.",
+        enabled: true,
+        priority: 3,
+        validUntil: promoEndDate,
+        conditions: [
+          {
+            type: "transaction_type",
+            operation: "include",
+            values: ["online"],
+          },
+          { type: "mcc", operation: "include", values: travelMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 9,
+          pointsCurrency: "HSBC Rewards Points",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "floor",
+          blockSize: 1,
+          monthlyCap: 13500,
+          monthlyCapType: "bonus_points",
+          monthlySpendPeriodType: "calendar",
+          capGroupId: sharedCapGroupId,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 10x Online Travel rule created (13,500 bonus pts cap)");
+
+      // Rule 2: 10x on Contactless (Promotional)
+      addSetupLog("Creating 10x Contactless rule (promo)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "10x Points on Contactless (Promo)",
+        description:
+          "Earn 10 points per SGD1 on contactless transactions. Valid until Feb 28, 2026.",
+        enabled: true,
+        priority: 2,
+        validUntil: promoEndDate,
+        conditions: [
+          {
+            type: "transaction_type",
+            operation: "include",
+            values: ["contactless"],
+          },
+          { type: "mcc", operation: "include", values: contactlessMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 9,
+          pointsCurrency: "HSBC Rewards Points",
+          pointsRoundingStrategy: "floor",
+          amountRoundingStrategy: "floor",
+          blockSize: 1,
+          monthlyCap: 13500,
+          monthlyCapType: "bonus_points",
+          monthlySpendPeriodType: "calendar",
+          capGroupId: sharedCapGroupId,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog(
+        "✅ 10x Contactless rule created (shared 13,500 bonus pts cap)"
+      );
+
+      // Rule 3: 1x on Everything Else (Base Rate)
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Points on All Other Purchases",
+        description:
+          "Earn 1 point per SGD1 on all other eligible purchases (base rate)",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsCurrency: "HSBC Rewards Points",
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "nearest",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      addSetupLog("⚠️ Promo ends Feb 28, 2026");
+      toast.success("HSBC Revolution rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
+  const handleQuickSetup = () => {
+    if (!quickSetupConfig) return;
+
+    switch (quickSetupConfig.type) {
+      case "amex-cobalt":
+        runAmexCobaltSetup();
+        break;
+      case "amex-platinum":
+        runAmexPlatinumSetup();
+        break;
+      case "amex-aeroplan-reserve":
+        runAmexAeroplanReserveSetup();
+        break;
+      case "neo-cathay":
+        runNeoCathaySetup();
+        break;
+      case "hsbc-revolution":
+        runHSBCRevolutionSetup();
+        break;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg">
+            <CoinsIcon className="h-5 w-5 mr-2 text-amber-500" />
+            Reward Rules
+          </CardTitle>
+          <div className="flex gap-2">
+            {quickSetupConfig && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleQuickSetup}
+                disabled={isRunningSetup}
+                className="text-[#00A651] border-[#00A651]/30 hover:bg-[#00A651]/10"
+              >
+                {isRunningSetup ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Settings2 className="h-4 w-4 mr-1" />
+                )}
+                Quick Setup
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleAddRule}>
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Add Rule
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Setup log */}
+        {showSetupLog && setupLog.length > 0 && (
+          <div className="p-3 bg-muted rounded-lg font-mono text-xs space-y-1 max-h-32 overflow-y-auto">
+            {setupLog.map((line, i) => (
+              <div
+                key={i}
+                className={cn(
+                  line.startsWith("✅") && "text-green-600 dark:text-green-400",
+                  line.startsWith("❌") && "text-red-600 dark:text-red-400"
+                )}
+              >
+                {line}
+              </div>
+            ))}
+            {!isRunningSetup && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 h-6 text-xs"
+                onClick={() => setShowSetupLog(false)}
+              >
+                Dismiss
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Rules list */}
+        {rewardRules.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No reward rules configured</p>
+            <p className="text-xs mt-1">
+              {quickSetupConfig
+                ? `Use "Quick Setup" for ${quickSetupConfig.name} defaults, or add rules manually.`
+                : "Add rules to track reward points for this card."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {rewardRules
+              .sort((a, b) => b.priority - a.priority)
+              .map((rule) => (
+                <div
+                  key={rule.id}
+                  className="flex items-start justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{rule.name}</span>
+                      <Badge
+                        variant="secondary"
+                        className="bg-primary/10 text-primary text-xs"
+                      >
+                        {rule.reward.bonusMultiplier +
+                          rule.reward.baseMultiplier}
+                        x
+                      </Badge>
+                      {rule.reward.monthlyCap && (
+                        <Badge variant="outline" className="text-xs">
+                          Cap:{" "}
+                          {rule.reward.monthlyCapType === "spend_amount"
+                            ? `$${rule.reward.monthlyCap.toLocaleString()}`
+                            : `${rule.reward.monthlyCap.toLocaleString()} pts`}
+                        </Badge>
+                      )}
+                      {!rule.enabled && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-yellow-100 text-yellow-800"
+                        >
+                          Disabled
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {rule.description}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleEditRule(rule)}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => setDeleteConfirmRule(rule)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+      </CardContent>
+
+      {/* Rule Editor Dialog */}
+      <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingRule ? "Edit Reward Rule" : "Create Reward Rule"}
+            </DialogTitle>
+          </DialogHeader>
+          <RewardRuleEditor
+            rule={editingRule || undefined}
+            ruleCount={rewardRules.length}
+            onSave={handleSaveRule}
+            onCancel={() => {
+              setIsEditorOpen(false);
+              setEditingRule(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deleteConfirmRule}
+        onOpenChange={() => setDeleteConfirmRule(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Reward Rule</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteConfirmRule?.name}"? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRule}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+};
+
+export default RewardRulesSection;

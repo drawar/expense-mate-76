@@ -52,7 +52,13 @@ const paymentMethodArbitrary = (): fc.Arbitrary<PaymentMethod> => {
   return fc.record({
     id: fc.uuid(),
     name: fc.string({ minLength: 1, maxLength: 100 }),
-    type: fc.constantFrom("credit_card", "debit_card", "cash", "bank_account", "other"),
+    type: fc.constantFrom(
+      "credit_card",
+      "debit_card",
+      "cash",
+      "bank_account",
+      "other"
+    ),
     issuer: fc.string({ maxLength: 50 }),
     lastFourDigits: fc.option(fc.string({ minLength: 4, maxLength: 4 }), {
       nil: undefined,
@@ -127,7 +133,12 @@ const dbTransactionRowArbitrary = (): fc.Arbitrary<DbTransactionRow> => {
       fc.integer({ min: 1, max: 12 }),
       fc.integer({ min: 1, max: 28 }), // Use 28 to avoid invalid dates
       merchantArbitrary(),
-      fc.double({ min: 0.01, max: 100000, noNaN: true, noDefaultInfinity: true }),
+      fc.double({
+        min: 0.01,
+        max: 100000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
       currencyArbitrary(),
       paymentMethodArbitrary(),
       fc.boolean(),
@@ -223,7 +234,7 @@ function parseTransactionFromDb(row: DbTransactionRow): Transaction {
     paymentMethod: {
       id: row.payment_methods.id,
       name: row.payment_methods.name,
-      type: row.payment_methods.type as any,
+      type: row.payment_methods.type as PaymentMethod["type"],
       issuer: row.payment_methods.issuer,
       lastFourDigits: row.payment_methods.last_four_digits || undefined,
       currency: row.payment_methods.currency as Currency,
@@ -245,9 +256,10 @@ function parseTransactionFromDb(row: DbTransactionRow): Transaction {
     bonusPoints: row.bonus_points || 0,
     isContactless: row.is_contactless,
     notes: row.notes || undefined,
-    reimbursementAmount: row.reimbursement_amount != null
-      ? parseFloat(row.reimbursement_amount.toString())
-      : undefined,
+    reimbursementAmount:
+      row.reimbursement_amount != null
+        ? parseFloat(row.reimbursement_amount.toString())
+        : undefined,
     category: row.category || undefined,
     deleted_at: row.deleted_at || undefined,
   };
@@ -348,9 +360,24 @@ describe("NULL Value Handling Property-Based Tests", () => {
         fc.asyncProperty(
           dbTransactionRowArbitrary(),
           fc.record({
-            total_points: fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
-            base_points: fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
-            bonus_points: fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
+            total_points: fc.double({
+              min: 0,
+              max: 100000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
+            base_points: fc.double({
+              min: 0,
+              max: 100000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
+            bonus_points: fc.double({
+              min: 0,
+              max: 100000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
             reimbursement_amount: fc.double({
               min: 0,
               max: 100000,
@@ -369,10 +396,16 @@ describe("NULL Value Handling Property-Based Tests", () => {
             const transaction = parseTransactionFromDb(dbRow);
 
             // Verify all values are preserved
-            expect(transaction.rewardPoints).toBeCloseTo(values.total_points, 2);
+            expect(transaction.rewardPoints).toBeCloseTo(
+              values.total_points,
+              2
+            );
             expect(transaction.basePoints).toBeCloseTo(values.base_points, 2);
             expect(transaction.bonusPoints).toBeCloseTo(values.bonus_points, 2);
-            expect(transaction.reimbursementAmount).toBeCloseTo(values.reimbursement_amount, 2);
+            expect(transaction.reimbursementAmount).toBeCloseTo(
+              values.reimbursement_amount,
+              2
+            );
           }
         ),
         { numRuns: 100 }

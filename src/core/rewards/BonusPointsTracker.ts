@@ -1,12 +1,19 @@
 /**
  * BonusPointsTracker
  *
- * Service for tracking bonus points used per rule per month to enforce monthly caps.
- * This ensures that rules with monthly bonus caps don't exceed their limits.
+ * Service for tracking bonus points or spend amounts per rule per month to enforce monthly caps.
+ * This ensures that rules with monthly caps don't exceed their limits.
+ *
+ * Supports two cap types:
+ * - "bonus_points": Tracks accumulated bonus points (default)
+ * - "spend_amount": Tracks accumulated spend amounts
  */
 
 import { supabase } from "@/integrations/supabase/client";
 import { SpendingPeriodType } from "./types";
+
+/** What type of value is being capped */
+export type CapType = "bonus_points" | "spend_amount";
 
 interface BonusPointsUsage {
   ruleId: string;
@@ -32,18 +39,28 @@ export class BonusPointsTracker {
   }
 
   /**
-   * Get used bonus points for a rule in the current period
+   * Get used value (bonus points or spend amount) for a rule in the current period
    * Queries the database for actual usage
+   * If capGroupId is provided, tracks against the shared cap group instead of individual rule
+   * @param capType - "bonus_points" (default) or "spend_amount"
    */
   public async getUsedBonusPoints(
     ruleId: string,
     paymentMethodId: string,
     periodType: SpendingPeriodType = "calendar",
     date: Date = new Date(),
-    statementDay: number = 1
+    statementDay: number = 1,
+    capGroupId?: string,
+    capType: CapType = "bonus_points"
   ): Promise<number> {
+    // Use capGroupId if provided, otherwise use ruleId
+    // Include capType in tracking ID to separate bonus points from spend amounts
+    const baseTrackingId = capGroupId || ruleId;
+    const trackingId =
+      capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
+
     const cacheKey = this.createCacheKey(
-      ruleId,
+      trackingId,
       paymentMethodId,
       periodType,
       date,
@@ -58,7 +75,9 @@ export class BonusPointsTracker {
 
     // Query database
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) {
         // No user logged in, return 0
         return 0;
@@ -67,11 +86,12 @@ export class BonusPointsTracker {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("bonus_points_tracking")
         .select("used_bonus_points")
         .eq("user_id", session.user.id)
-        .eq("rule_id", ruleId)
+        .eq("rule_id", trackingId)
         .eq("payment_method_id", paymentMethodId)
         .eq("period_type", periodType)
         .eq("period_year", year)
@@ -84,11 +104,12 @@ export class BonusPointsTracker {
         return 0;
       }
 
-      const usedPoints = (data as any)?.used_bonus_points || 0;
-      
+      const usedPoints =
+        (data as { used_bonus_points?: number } | null)?.used_bonus_points || 0;
+
       // Cache the result
       this.usageCache.set(cacheKey, usedPoints);
-      
+
       return usedPoints;
     } catch (error) {
       console.error("Error in getUsedBonusPoints:", error);
@@ -97,24 +118,36 @@ export class BonusPointsTracker {
   }
 
   /**
-   * Track bonus points usage for a transaction
+   * Track usage (bonus points or spend amount) for a transaction
    * This should be called after a transaction is created
    * Persists to database and updates cache
+   * If capGroupId is provided, tracks against the shared cap group instead of individual rule
+   * @param capType - "bonus_points" (default) or "spend_amount"
    */
   public async trackBonusPointsUsage(
     ruleId: string,
     paymentMethodId: string,
-    bonusPoints: number,
+    value: number,
     periodType: SpendingPeriodType = "calendar",
     date: Date = new Date(),
-    statementDay: number = 1
+    statementDay: number = 1,
+    capGroupId?: string,
+    capType: CapType = "bonus_points"
   ): Promise<void> {
-    if (bonusPoints <= 0) {
+    if (value <= 0) {
       return; // Nothing to track
     }
 
+    // Use capGroupId if provided, otherwise use ruleId
+    // Include capType in tracking ID to separate bonus points from spend amounts
+    const baseTrackingId = capGroupId || ruleId;
+    const trackingId =
+      capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) {
         console.warn("Cannot track bonus points: user not authenticated");
         return;
@@ -129,26 +162,33 @@ export class BonusPointsTracker {
         paymentMethodId,
         periodType,
         date,
-        statementDay
+        statementDay,
+        capGroupId,
+        capType
       );
 
-      const newUsage = currentUsage + bonusPoints;
+      const newUsage = currentUsage + value;
 
       // Upsert to database
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("bonus_points_tracking")
-        .upsert({
-          user_id: session.user.id,
-          rule_id: ruleId,
-          payment_method_id: paymentMethodId,
-          period_type: periodType,
-          period_year: year,
-          period_month: month,
-          statement_day: statementDay,
-          used_bonus_points: newUsage,
-        }, {
-          onConflict: "user_id,rule_id,payment_method_id,period_type,period_year,period_month,statement_day"
-        });
+        .upsert(
+          {
+            user_id: session.user.id,
+            rule_id: trackingId,
+            payment_method_id: paymentMethodId,
+            period_type: periodType,
+            period_year: year,
+            period_month: month,
+            statement_day: statementDay,
+            used_bonus_points: newUsage,
+          },
+          {
+            onConflict:
+              "user_id,rule_id,payment_method_id,period_type,period_year,period_month,statement_day",
+          }
+        );
 
       if (error) {
         console.error("Error tracking bonus points usage:", error);
@@ -157,7 +197,7 @@ export class BonusPointsTracker {
 
       // Update cache
       const cacheKey = this.createCacheKey(
-        ruleId,
+        trackingId,
         paymentMethodId,
         periodType,
         date,
@@ -165,14 +205,19 @@ export class BonusPointsTracker {
       );
       this.usageCache.set(cacheKey, newUsage);
 
-      console.log(`✅ Tracked ${bonusPoints} bonus points for rule ${ruleId}. Total: ${newUsage}`);
+      const valueType = capType === "spend_amount" ? "spend" : "bonus points";
+      console.log(
+        `✅ Tracked ${value} ${valueType} for ${capGroupId ? `cap group ${capGroupId}` : `rule ${ruleId}`}. Total: ${newUsage}`
+      );
     } catch (error) {
       console.error("Error in trackBonusPointsUsage:", error);
     }
   }
 
   /**
-   * Calculate remaining bonus points available under the cap
+   * Calculate remaining value (bonus points or spend amount) available under the cap
+   * If capGroupId is provided, calculates based on the shared cap group
+   * @param capType - "bonus_points" (default) or "spend_amount"
    */
   public async getRemainingBonusPoints(
     ruleId: string,
@@ -180,17 +225,21 @@ export class BonusPointsTracker {
     monthlyCap: number,
     periodType: SpendingPeriodType = "calendar",
     date: Date = new Date(),
-    statementDay: number = 1
+    statementDay: number = 1,
+    capGroupId?: string,
+    capType: CapType = "bonus_points"
   ): Promise<number> {
-    const usedPoints = await this.getUsedBonusPoints(
+    const usedValue = await this.getUsedBonusPoints(
       ruleId,
       paymentMethodId,
       periodType,
       date,
-      statementDay
+      statementDay,
+      capGroupId,
+      capType
     );
 
-    return Math.max(0, monthlyCap - usedPoints);
+    return Math.max(0, monthlyCap - usedValue);
   }
 
   /**

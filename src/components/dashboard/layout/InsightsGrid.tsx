@@ -2,12 +2,12 @@
 import React from "react";
 import { DashboardData } from "@/types/dashboard";
 import { Currency, PaymentMethod } from "@/types";
-import { 
-  SpendingTrendCard, 
+import {
+  SpendingTrendCard,
   CardOptimizationCard,
   SavingsPotentialCard,
   UnusualSpendingCard,
-  SpendingDistributionCard 
+  SpendingDistributionCard,
 } from "@/components/dashboard/cards";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { EmptyState } from ".";
@@ -22,10 +22,10 @@ interface InsightsGridProps {
 /**
  * Grid layout for dashboard insights and visualizations
  */
-const InsightsGrid: React.FC<InsightsGridProps> = ({ 
-  dashboardData, 
-  paymentMethods = [], 
-  currency 
+const InsightsGrid: React.FC<InsightsGridProps> = ({
+  dashboardData,
+  paymentMethods = [],
+  currency,
 }) => {
   // Ensure dashboardData is defined before destructuring
   const filteredTransactions = dashboardData?.filteredTransactions || [];
@@ -51,7 +51,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   if (!hasData) {
     return (
       <div className="my-6 space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
+        <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
           Financial Insights
         </h2>
         <div className="p-6 text-center border border-dashed rounded-xl">
@@ -67,7 +67,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
 
   return (
     <div className="my-6 space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#a855f7]">
+      <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
         Financial Insights
       </h2>
 
@@ -99,7 +99,9 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         />
 
         {/* Container for optimization cards */}
-        <div className={`grid grid-cols-1 gap-4 ${isMobile ? "" : "col-span-1"}`}>
+        <div
+          className={`grid grid-cols-1 gap-4 ${isMobile ? "" : "col-span-1"}`}
+        >
           <div className="grid grid-cols-1 gap-4">
             {/* Card Optimization Card */}
             <CardOptimizationCard

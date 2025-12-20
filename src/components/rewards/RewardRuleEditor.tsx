@@ -6,11 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConditionEditor } from "./ConditionEditor";
 import { BonusTierEditor } from "./BonusTierEditor";
 
 export interface RewardRuleEditorProps {
   rule?: RewardRule | null;
+  ruleCount?: number; // Total number of rules for this card (for priority dropdown)
   onSave: (rule: RewardRule) => void;
   onCancel: () => void;
 }
@@ -28,6 +36,7 @@ interface ValidationErrors {
 
 export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
   rule,
+  ruleCount = 1,
   onSave,
   onCancel,
 }) => {
@@ -55,8 +64,14 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
   const [monthlyCap, setMonthlyCap] = useState<number | undefined>(
     rule?.reward?.monthlyCap
   );
+  const [monthlyCapType, setMonthlyCapType] = useState<
+    "bonus_points" | "spend_amount"
+  >(rule?.reward?.monthlyCapType || "bonus_points");
   const [monthlyMinSpend, setMonthlyMinSpend] = useState<number | undefined>(
     rule?.reward?.monthlyMinSpend
+  );
+  const [capGroupId, setCapGroupId] = useState<string>(
+    rule?.reward?.capGroupId || ""
   );
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {}
@@ -80,7 +95,9 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
       setBonusMultiplier(rule.reward?.bonusMultiplier || 0);
       setBlockSize(rule.reward?.blockSize || 1);
       setMonthlyCap(rule.reward?.monthlyCap);
+      setMonthlyCapType(rule.reward?.monthlyCapType || "bonus_points");
       setMonthlyMinSpend(rule.reward?.monthlyMinSpend);
+      setCapGroupId(rule.reward?.capGroupId || "");
     }
   }, [rule]);
 
@@ -154,9 +171,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
         blockSize,
         bonusTiers: bonusTiers,
         monthlyCap,
+        monthlyCapType: monthlyCap ? monthlyCapType : undefined,
         monthlyMinSpend,
         monthlySpendPeriodType: rule?.reward?.monthlySpendPeriodType,
         pointsCurrency: rule?.reward?.pointsCurrency || "points",
+        capGroupId: capGroupId || undefined,
       },
       createdAt: rule?.createdAt || new Date(),
       updatedAt: new Date(),
@@ -209,12 +228,10 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           </div>
           <div>
             <Label htmlFor="priority">Priority *</Label>
-            <Input
-              type="number"
-              id="priority"
-              value={priority}
-              onChange={(e) => {
-                setPriority(parseInt(e.target.value) || 0);
+            <Select
+              value={String(priority)}
+              onValueChange={(value) => {
+                setPriority(parseInt(value) || 1);
                 if (validationErrors.priority) {
                   setValidationErrors({
                     ...validationErrors,
@@ -222,15 +239,40 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                   });
                 }
               }}
-              className={validationErrors.priority ? "border-red-500" : ""}
-            />
+            >
+              <SelectTrigger
+                id="priority"
+                className={validationErrors.priority ? "border-red-500" : ""}
+              >
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                {(() => {
+                  // For new rules, allow inserting at any position (1 to ruleCount + 1)
+                  // For existing rules, show current positions (1 to ruleCount)
+                  const maxPriority = rule ? ruleCount : ruleCount + 1;
+                  const options = [];
+                  for (let i = maxPriority; i >= 1; i--) {
+                    let label = String(i);
+                    if (i === maxPriority) label += " (Highest)";
+                    else if (i === 1) label += " (Lowest)";
+                    options.push(
+                      <SelectItem key={i} value={String(i)}>
+                        {label}
+                      </SelectItem>
+                    );
+                  }
+                  return options;
+                })()}
+              </SelectContent>
+            </Select>
             {validationErrors.priority && (
               <p className="text-sm text-red-500 mt-1">
                 {validationErrors.priority}
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Lower numbers have higher priority (e.g., 1 is applied before 2)
+              Higher priority rules are applied first
             </p>
           </div>
         </CardContent>
@@ -326,7 +368,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Minimum spend amount to earn points (e.g., 1 = per dollar)
+                Earn points per $X spent (e.g., 1 = per $1, 5 = per $5)
               </p>
             </div>
             <div>
@@ -354,8 +396,42 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                   {validationErrors.monthlyCap}
                 </p>
               )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="monthlyCapType">Cap Type</Label>
+              <Select
+                value={monthlyCapType}
+                onValueChange={(value: "bonus_points" | "spend_amount") =>
+                  setMonthlyCapType(value)
+                }
+              >
+                <SelectTrigger id="monthlyCapType">
+                  <SelectValue placeholder="Select cap type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bonus_points">Bonus Points</SelectItem>
+                  <SelectItem value="spend_amount">Spend Amount</SelectItem>
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Maximum bonus points per month (optional)
+                {monthlyCapType === "bonus_points"
+                  ? "Cap limits total bonus points earned"
+                  : "Cap limits eligible spend amount ($)"}
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="capGroupId">Cap Group ID</Label>
+              <Input
+                type="text"
+                id="capGroupId"
+                value={capGroupId}
+                onChange={(e) => setCapGroupId(e.target.value)}
+                placeholder="e.g., 5x-food-cap"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Rules with the same Cap Group ID share a single monthly cap
               </p>
             </div>
           </div>

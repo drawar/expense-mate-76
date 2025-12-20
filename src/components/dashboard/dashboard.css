@@ -15,8 +15,10 @@
 
 /* Apply the exact same gradient as the Add Expense button */
 .component-hover-box:hover {
-  background: linear-gradient(to right, #6366f1, #a855f7);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3), 0 4px 6px -4px rgba(168, 85, 247, 0.3);
+  background: linear-gradient(to right, #00a651, #10b981);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 166, 81, 0.3),
+    0 4px 6px -4px rgba(16, 185, 129, 0.3);
   transform: translateY(-1px);
 }
 
@@ -82,7 +84,9 @@
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .glass-card-elevated {
@@ -91,17 +95,21 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .glass-card-elevated:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Enhanced text gradients */
 .text-gradient {
-  background-image: linear-gradient(to right, #6366f1, #a855f7);
+  background-image: linear-gradient(to right, #00a651, #10b981);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -121,7 +129,9 @@
   background-color: currentColor;
   border-radius: 1px;
   opacity: 0.5;
-  transition: height 0.3s ease, opacity 0.3s ease;
+  transition:
+    height 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .sparkline-bar:last-child {

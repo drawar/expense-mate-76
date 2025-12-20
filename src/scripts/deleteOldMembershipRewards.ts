@@ -27,7 +27,11 @@ async function deleteOldMembershipRewards() {
 
 // Run in browser console
 if (typeof window !== "undefined") {
-  (window as any).deleteOldMembershipRewards = deleteOldMembershipRewards;
+  (
+    window as Window & {
+      deleteOldMembershipRewards?: typeof deleteOldMembershipRewards;
+    }
+  ).deleteOldMembershipRewards = deleteOldMembershipRewards;
   console.log("Run: deleteOldMembershipRewards()");
 }
 

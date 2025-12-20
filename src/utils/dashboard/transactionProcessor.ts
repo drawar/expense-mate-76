@@ -1,20 +1,32 @@
 // utils/dashboard/transactionProcessor.ts
-import { Transaction } from '@/types';
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import { Transaction } from "@/types";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  startOfYear,
+  endOfYear,
+  subYears,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isWithinInterval,
+} from "date-fns";
 
 /**
  * Available time frame options for filtering transactions
  */
 export type TimeframeTab =
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'lastThreeMonths'
-  | 'thisYear'
-  | 'lastYear'
-  | 'thisWeek'
-  | 'lastWeek'
-  | 'allTime'
-  | 'custom';
+  | "thisMonth"
+  | "lastMonth"
+  | "lastThreeMonths"
+  | "thisYear"
+  | "lastYear"
+  | "thisWeek"
+  | "lastWeek"
+  | "allTime"
+  | "custom";
 
 /**
  * Filters transactions based on the selected timeframe.
@@ -39,7 +51,7 @@ export function filterTransactionsByTimeframe(
   let startDate: Date;
   let endDate: Date;
 
-  if (timeframe === 'allTime') {
+  if (timeframe === "allTime") {
     return transactions;
   }
 
@@ -61,14 +73,14 @@ export function filterTransactionsByTimeframe(
 
     // Adjust dates based on the selected timeframe
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         // If previousPeriod is true, shift back one month
         if (previousPeriod) {
           startDate = subMonths(startDate, 1);
           endDate = subMonths(endDate, 1);
         }
         break;
-      case 'lastMonth':
+      case "lastMonth":
         // For last month, we already shifted one month back
         if (previousPeriod) {
           startDate = subMonths(startDate, 1);
@@ -78,7 +90,7 @@ export function filterTransactionsByTimeframe(
           endDate = subMonths(endDate, 1);
         }
         break;
-      case 'lastThreeMonths':
+      case "lastThreeMonths":
         if (previousPeriod) {
           startDate = subMonths(startDate, 6);
           endDate = subMonths(startDate, 3);
@@ -87,7 +99,7 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(); // Current date
         }
         break;
-      case 'thisYear':
+      case "thisYear":
         if (previousPeriod) {
           startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of previous year
           endDate = new Date(currentYear - 1, 11, 31); // End of previous year
@@ -96,7 +108,7 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(currentYear, 11, 31); // End of current year
         }
         break;
-      case 'lastYear':
+      case "lastYear":
         if (previousPeriod) {
           startDate = new Date(currentYear - 2, 0, statementCycleDay); // Start of year before last
           endDate = new Date(currentYear - 2, 11, 31); // End of year before last
@@ -105,7 +117,7 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(currentYear - 1, 11, 31); // End of last year
         }
         break;
-      case 'thisWeek':
+      case "thisWeek":
         // For statement month, we adjust the week based on the current statement cycle
         if (previousPeriod) {
           const lastWeek = new Date(today);
@@ -117,7 +129,7 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(today, { weekStartsOn: 0 });
         }
         break;
-      case 'lastWeek':
+      case "lastWeek": {
         const lastWeekStart = new Date(today);
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
         if (previousPeriod) {
@@ -130,6 +142,7 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
         }
         break;
+      }
       default:
         break;
     }
@@ -138,27 +151,27 @@ export function filterTransactionsByTimeframe(
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
-    
+
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
-        
+
         if (previousPeriod) {
           startDate = startOfMonth(subMonths(today, 1));
           endDate = endOfMonth(subMonths(today, 1));
         }
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = startOfMonth(subMonths(today, 1));
         endDate = endOfMonth(subMonths(today, 1));
-        
+
         if (previousPeriod) {
           startDate = startOfMonth(subMonths(today, 2));
           endDate = endOfMonth(subMonths(today, 2));
         }
         break;
-      case 'lastThreeMonths':
+      case "lastThreeMonths":
         if (previousPeriod) {
           startDate = startOfMonth(subMonths(today, 6));
           endDate = endOfMonth(subMonths(today, 3));
@@ -167,28 +180,28 @@ export function filterTransactionsByTimeframe(
           endDate = endOfMonth(today);
         }
         break;
-      case 'thisYear':
+      case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
-        
+
         if (previousPeriod) {
           startDate = startOfYear(subYears(today, 1));
           endDate = endOfYear(subYears(today, 1));
         }
         break;
-      case 'lastYear':
+      case "lastYear":
         startDate = startOfYear(subYears(today, 1));
         endDate = endOfYear(subYears(today, 1));
-        
+
         if (previousPeriod) {
           startDate = startOfYear(subYears(today, 2));
           endDate = endOfYear(subYears(today, 2));
         }
         break;
-      case 'thisWeek':
+      case "thisWeek":
         startDate = startOfWeek(today, { weekStartsOn: 0 });
         endDate = endOfWeek(today, { weekStartsOn: 0 });
-        
+
         if (previousPeriod) {
           const lastWeek = new Date(today);
           lastWeek.setDate(lastWeek.getDate() - 7);
@@ -196,12 +209,12 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(lastWeek, { weekStartsOn: 0 });
         }
         break;
-      case 'lastWeek':
+      case "lastWeek": {
         const lastWeekStart = new Date(today);
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
         startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        
+
         if (previousPeriod) {
           const twoWeeksAgo = new Date(today);
           twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -209,6 +222,7 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
         }
         break;
+      }
       default:
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
@@ -254,20 +268,20 @@ export function getDaysInPeriod(
     }
 
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = subMonths(startDate, 1);
         endDate = subMonths(endDate, 1);
         break;
-      case 'lastThreeMonths':
+      case "lastThreeMonths":
         startDate = subMonths(startDate, 3);
         break;
-      case 'thisYear':
+      case "thisYear":
         startDate = new Date(currentYear, 0, statementCycleDay);
         endDate = new Date(currentYear, 11, 31);
         break;
-      case 'lastYear':
+      case "lastYear":
         startDate = new Date(currentYear - 1, 0, statementCycleDay);
         endDate = new Date(currentYear - 1, 11, 31);
         break;
@@ -278,36 +292,37 @@ export function getDaysInPeriod(
     const today = new Date();
 
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = startOfMonth(subMonths(today, 1));
         endDate = endOfMonth(subMonths(today, 1));
         break;
-      case 'lastThreeMonths':
+      case "lastThreeMonths":
         startDate = startOfMonth(subMonths(today, 3));
         endDate = endOfMonth(today);
         break;
-      case 'thisYear':
+      case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
         break;
-      case 'lastYear':
+      case "lastYear":
         startDate = startOfYear(subYears(today, 1));
         endDate = endOfYear(subYears(today, 1));
         break;
-      case 'thisWeek':
+      case "thisWeek":
         startDate = startOfWeek(today, { weekStartsOn: 0 });
         endDate = endOfWeek(today, { weekStartsOn: 0 });
         break;
-      case 'lastWeek':
+      case "lastWeek": {
         const lastWeekStart = new Date(today);
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
         startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
         break;
+      }
       default:
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
@@ -328,7 +343,7 @@ export function getDaysInPeriod(
  */
 export function groupTransactionsByPeriod(
   transactions: Transaction[],
-  period: 'day' | 'week' | 'month' | 'year'
+  period: "day" | "week" | "month" | "year"
 ): Map<string, Transaction[]> {
   const grouped = new Map<string, Transaction[]>();
 
@@ -337,24 +352,24 @@ export function groupTransactionsByPeriod(
     let key: string;
 
     switch (period) {
-      case 'day':
-        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      case "day":
+        key = date.toISOString().split("T")[0]; // YYYY-MM-DD
         break;
-      case 'week': {
+      case "week": {
         // Get the start of the week (Sunday)
         const startOfWeek = new Date(date);
         startOfWeek.setDate(date.getDate() - date.getDay());
-        key = startOfWeek.toISOString().split('T')[0];
+        key = startOfWeek.toISOString().split("T")[0];
         break;
       }
-      case 'month':
-        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      case "month":
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
         break;
-      case 'year':
+      case "year":
         key = `${date.getFullYear()}`;
         break;
       default:
-        key = date.toISOString().split('T')[0]; // Default to day
+        key = date.toISOString().split("T")[0]; // Default to day
     }
 
     if (!grouped.has(key)) {
@@ -372,7 +387,7 @@ export function groupTransactionsByPeriod(
  * @param dateObj Date object or date range object
  * @returns Object containing start and end dates
  */
-export function getDateRangeValues(dateObj: Date | { start: Date, end: Date }) {
+export function getDateRangeValues(dateObj: Date | { start: Date; end: Date }) {
   // Check if the date is a Date object or a DateRange object
   if (dateObj instanceof Date) {
     // If it's a Date, use the same date for both start and end
@@ -389,37 +404,40 @@ export function getDateRangeValues(dateObj: Date | { start: Date, end: Date }) {
  * @param period Period format (day, week, month, year)
  * @returns Formatted period label
  */
-export function formatPeriodLabel(key: string, period: 'day' | 'week' | 'month' | 'year'): string {
+export function formatPeriodLabel(
+  key: string,
+  period: "day" | "week" | "month" | "year"
+): string {
   let displayPeriod = key;
-  
+
   try {
-    if (period === 'day') {
+    if (period === "day") {
       // Format day: Oct 15
       const date = new Date(key);
-      displayPeriod = format(date, 'MMM d');
-    } else if (period === 'week') {
+      displayPeriod = format(date, "MMM d");
+    } else if (period === "week") {
       // For weeks, show date range: Oct 1-7
       const startDate = new Date(key);
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
-      displayPeriod = `${format(startDate, 'MMM d')}-${format(endDate, 'd')}`;
-    } else if (period === 'month') {
+      displayPeriod = `${format(startDate, "MMM d")}-${format(endDate, "d")}`;
+    } else if (period === "month") {
       // For months, show month name: Oct 2023
       const [year, month] = key.split("-");
       if (year && month) {
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-        displayPeriod = format(date, 'MMM yyyy');
+        displayPeriod = format(date, "MMM yyyy");
       }
-    } else if (period === 'year') {
+    } else if (period === "year") {
       // Just show the year as is
       displayPeriod = key;
     }
   } catch (error) {
-    console.error('Error formatting period label:', error);
+    console.error("Error formatting period label:", error);
     // Return original key if formatting fails
     return key;
   }
-  
+
   return displayPeriod;
 }
 
@@ -429,5 +447,5 @@ export const transactionProcessor = {
   getDaysInPeriod,
   groupTransactionsByPeriod,
   getDateRangeValues,
-  formatPeriodLabel
+  formatPeriodLabel,
 };

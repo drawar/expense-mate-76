@@ -1,17 +1,17 @@
 // components/dashboard/layout/DashboardHeader.tsx
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { PlusCircleIcon } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { PlusCircleIcon } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 /**
  * Component that displays the dashboard header with title and actions
  */
 const DashboardHeader: React.FC = () => {
-  const isMobile = useMediaQuery('(max-width: 640px)');
-  
+  const isMobile = useMediaQuery("(max-width: 640px)");
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-10 mt-4">
       <div className="mb-4 sm:mb-0">
@@ -22,11 +22,13 @@ const DashboardHeader: React.FC = () => {
           Track and manage your expenses
         </p>
       </div>
-      
+
       <div className="flex items-center gap-3">
         <ThemeToggle />
         <Link to="/add-expense">
-          <Button className={`btn-hover-effect bg-gradient-to-r from-[#6366f1] to-[#a855f7] ${!isMobile ? 'gap-2' : 'w-10 h-10 p-0'}`}>
+          <Button
+            className={`btn-hover-effect bg-gradient-to-r from-[#00A651] to-[#10B981] ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
+          >
             <PlusCircleIcon className="h-4 w-4" />
             {!isMobile && <span>Add Expense</span>}
           </Button>

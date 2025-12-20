@@ -114,6 +114,11 @@ export class RuleMapper {
           dbRule.monthly_cap !== null && dbRule.monthly_cap !== undefined
             ? parseNumeric(dbRule.monthly_cap, 0)
             : undefined,
+        monthlyCapType:
+          dbRule.monthly_cap_type !== null &&
+          dbRule.monthly_cap_type !== undefined
+            ? (dbRule.monthly_cap_type as "bonus_points" | "spend_amount")
+            : undefined,
         monthlyMinSpend:
           dbRule.monthly_min_spend !== null &&
           dbRule.monthly_min_spend !== undefined
@@ -128,7 +133,10 @@ export class RuleMapper {
                 | "statement_month")
             : undefined,
         pointsCurrency: dbRule.points_currency || "points",
+        capGroupId: dbRule.cap_group_id || undefined,
       },
+      validFrom: dbRule.valid_from ? new Date(dbRule.valid_from) : undefined,
+      validUntil: dbRule.valid_until ? new Date(dbRule.valid_until) : undefined,
       createdAt: new Date(dbRule.created_at),
       updatedAt: new Date(dbRule.updated_at || dbRule.created_at),
     };
@@ -182,9 +190,13 @@ export class RuleMapper {
       amount_rounding_strategy: rule.reward.amountRoundingStrategy || "floor",
       block_size: rule.reward.blockSize ?? 1,
       monthly_cap: rule.reward.monthlyCap ?? null,
+      monthly_cap_type: rule.reward.monthlyCapType ?? null,
       monthly_min_spend: rule.reward.monthlyMinSpend ?? null,
       monthly_spend_period_type: rule.reward.monthlySpendPeriodType ?? null,
       points_currency: rule.reward.pointsCurrency || "points",
+      cap_group_id: rule.reward.capGroupId ?? null,
+      valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
+      valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,
     };
   }
 }

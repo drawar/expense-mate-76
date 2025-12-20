@@ -1,27 +1,27 @@
 // utils/dashboard/filterUtils.ts
-import { Transaction } from '@/types';
-import { TimeframeTab } from './types';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  subMonths, 
-  startOfYear, 
-  endOfYear, 
-  subYears, 
-  startOfWeek, 
-  endOfWeek, 
+import { Transaction } from "@/types";
+import { TimeframeTab } from "./types";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  startOfYear,
+  endOfYear,
+  subYears,
+  startOfWeek,
+  endOfWeek,
   eachDayOfInterval,
   parseISO,
   isValid,
   isBefore,
   isAfter,
-  isSameDay
-} from 'date-fns';
+  isSameDay,
+} from "date-fns";
 
 /**
  * Filters transactions based on the selected timeframe.
- * 
+ *
  * @param transactions An array of transactions to filter.
  * @param timeframe The timeframe to filter by.
  * @param useStatementMonth Whether to use the statement month for filtering.
@@ -37,15 +37,15 @@ export function filterTransactionsByTimeframe(
   previousPeriod: boolean = false
 ): Transaction[] {
   if (!transactions || transactions.length === 0) {
-    console.log('No transactions to filter');
+    console.log("No transactions to filter");
     return [];
   }
 
   let startDate: Date;
   let endDate: Date;
 
-  if (timeframe === 'allTime') {
-    console.log('Returning all transactions for allTime filter');
+  if (timeframe === "allTime") {
+    console.log("Returning all transactions for allTime filter");
     return transactions;
   }
 
@@ -67,14 +67,14 @@ export function filterTransactionsByTimeframe(
 
     // Adjust dates based on the selected timeframe
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         // If previousPeriod is true, shift back one month
         if (previousPeriod) {
           startDate = subMonths(startDate, 1);
           endDate = subMonths(endDate, 1);
         }
         break;
-      case 'lastMonth':
+      case "lastMonth":
         // For last month, we already shifted one month back
         if (previousPeriod) {
           startDate = subMonths(startDate, 1);
@@ -84,7 +84,7 @@ export function filterTransactionsByTimeframe(
           endDate = subMonths(endDate, 1);
         }
         break;
-      case 'thisYear':
+      case "thisYear":
         if (previousPeriod) {
           startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of previous year
           endDate = new Date(currentYear - 1, 11, 31); // End of previous year
@@ -93,7 +93,7 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(currentYear, 11, 31); // End of current year
         }
         break;
-      case 'lastYear':
+      case "lastYear":
         if (previousPeriod) {
           startDate = new Date(currentYear - 2, 0, statementCycleDay); // Start of year before last
           endDate = new Date(currentYear - 2, 11, 31); // End of year before last
@@ -102,7 +102,7 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(currentYear - 1, 11, 31); // End of last year
         }
         break;
-      case 'lastThreeMonths':
+      case "lastThreeMonths":
         if (previousPeriod) {
           // Previous 3 months before the current 3 months
           startDate = subMonths(startDate, 6);
@@ -118,48 +118,48 @@ export function filterTransactionsByTimeframe(
   } else {
     // Use calendar month
     const today = new Date();
-    
+
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
-        
+
         if (previousPeriod) {
           startDate = startOfMonth(subMonths(today, 1));
           endDate = endOfMonth(subMonths(today, 1));
         }
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = startOfMonth(subMonths(today, 1));
         endDate = endOfMonth(subMonths(today, 1));
-        
+
         if (previousPeriod) {
           startDate = startOfMonth(subMonths(today, 2));
           endDate = endOfMonth(subMonths(today, 2));
         }
         break;
-      case 'thisYear':
+      case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
-        
+
         if (previousPeriod) {
           startDate = startOfYear(subYears(today, 1));
           endDate = endOfYear(subYears(today, 1));
         }
         break;
-      case 'lastYear':
+      case "lastYear":
         startDate = startOfYear(subYears(today, 1));
         endDate = endOfYear(subYears(today, 1));
-        
+
         if (previousPeriod) {
           startDate = startOfYear(subYears(today, 2));
           endDate = endOfYear(subYears(today, 2));
         }
         break;
-      case 'thisWeek':
+      case "thisWeek":
         startDate = startOfWeek(today, { weekStartsOn: 0 });
         endDate = endOfWeek(today, { weekStartsOn: 0 });
-        
+
         if (previousPeriod) {
           const lastWeek = new Date(today);
           lastWeek.setDate(lastWeek.getDate() - 7);
@@ -167,12 +167,12 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(lastWeek, { weekStartsOn: 0 });
         }
         break;
-      case 'lastWeek':
+      case "lastWeek": {
         const lastWeekStart = new Date(today);
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
         startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        
+
         if (previousPeriod) {
           const twoWeeksAgo = new Date(today);
           twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -180,10 +180,11 @@ export function filterTransactionsByTimeframe(
           endDate = endOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
         }
         break;
-      case 'lastThreeMonths':
+      }
+      case "lastThreeMonths":
         endDate = endOfMonth(today);
         startDate = startOfMonth(subMonths(today, 2));
-        
+
         if (previousPeriod) {
           endDate = endOfMonth(subMonths(today, 3));
           startDate = startOfMonth(subMonths(today, 5));
@@ -197,13 +198,16 @@ export function filterTransactionsByTimeframe(
   }
 
   // Log filtering details for debugging
-  console.log(`Filtering for ${previousPeriod ? 'previous' : 'current'} period:`, {
-    timeframe,
-    startDate: format(startDate, 'yyyy-MM-dd'),
-    endDate: format(endDate, 'yyyy-MM-dd'),
-    useStatementMonth,
-    originalTransactionCount: transactions.length
-  });
+  console.log(
+    `Filtering for ${previousPeriod ? "previous" : "current"} period:`,
+    {
+      timeframe,
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+      useStatementMonth,
+      originalTransactionCount: transactions.length,
+    }
+  );
 
   // Track how many comparisons we've logged
   let comparisonLogCount = 0;
@@ -211,17 +215,17 @@ export function filterTransactionsByTimeframe(
   // Filter transactions based on date range with improved date parsing
   const filtered = transactions.filter((transaction) => {
     if (!transaction.date) {
-      console.warn('Transaction missing date:', transaction.id);
+      console.warn("Transaction missing date:", transaction.id);
       return false;
     }
 
     let transactionDate: Date;
-    
+
     // Handle both string and Date objects
-    if (typeof transaction.date === 'string') {
+    if (typeof transaction.date === "string") {
       // Try parsing ISO string first
       transactionDate = parseISO(transaction.date);
-      
+
       // If that fails, try creating a new Date
       if (!isValid(transactionDate)) {
         transactionDate = new Date(transaction.date);
@@ -232,24 +236,30 @@ export function filterTransactionsByTimeframe(
 
     // Check if the parsed date is valid
     if (!isValid(transactionDate)) {
-      console.warn('Invalid transaction date:', transaction.date, 'for transaction:', transaction.id);
+      console.warn(
+        "Invalid transaction date:",
+        transaction.date,
+        "for transaction:",
+        transaction.id
+      );
       return false;
     }
 
     // Check if transaction date is within range (inclusive)
-    const isInRange = (
-      (isSameDay(transactionDate, startDate) || isAfter(transactionDate, startDate)) &&
-      (isSameDay(transactionDate, endDate) || isBefore(transactionDate, endDate))
-    );
+    const isInRange =
+      (isSameDay(transactionDate, startDate) ||
+        isAfter(transactionDate, startDate)) &&
+      (isSameDay(transactionDate, endDate) ||
+        isBefore(transactionDate, endDate));
 
     // Log first few comparisons for debugging
     if (comparisonLogCount < 3) {
-      console.log('Transaction date comparison:', {
+      console.log("Transaction date comparison:", {
         transactionId: transaction.id,
-        transactionDate: format(transactionDate, 'yyyy-MM-dd'),
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
-        isInRange
+        transactionDate: format(transactionDate, "yyyy-MM-dd"),
+        startDate: format(startDate, "yyyy-MM-dd"),
+        endDate: format(endDate, "yyyy-MM-dd"),
+        isInRange,
       });
       comparisonLogCount++;
     }
@@ -257,14 +267,16 @@ export function filterTransactionsByTimeframe(
     return isInRange;
   });
 
-  console.log(`Found ${filtered.length} transactions for ${previousPeriod ? 'previous' : 'current'} period (${timeframe})`);
-  
+  console.log(
+    `Found ${filtered.length} transactions for ${previousPeriod ? "previous" : "current"} period (${timeframe})`
+  );
+
   return filtered;
 }
 
 /**
  * Calculates the number of days in the selected timeframe.
- * 
+ *
  * @param timeframe The timeframe to calculate days for.
  * @param useStatementMonth Whether to use the statement month.
  * @param statementCycleDay The day of the month when the statement cycle starts.
@@ -292,19 +304,27 @@ export function getDaysInPeriod(
     }
 
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = subMonths(startDate, 1);
         endDate = subMonths(endDate, 1);
         break;
-      case 'thisYear':
-        startDate = startOfMonth(new Date(currentYear, currentMonth, statementCycleDay));
-        endDate = endOfMonth(new Date(currentYear, currentMonth + 1, statementCycleDay - 1));
+      case "thisYear":
+        startDate = startOfMonth(
+          new Date(currentYear, currentMonth, statementCycleDay)
+        );
+        endDate = endOfMonth(
+          new Date(currentYear, currentMonth + 1, statementCycleDay - 1)
+        );
         break;
-      case 'lastYear':
-        startDate = startOfMonth(new Date(currentYear - 1, currentMonth, statementCycleDay));
-        endDate = endOfMonth(new Date(currentYear, currentMonth, statementCycleDay - 1));
+      case "lastYear":
+        startDate = startOfMonth(
+          new Date(currentYear - 1, currentMonth, statementCycleDay)
+        );
+        endDate = endOfMonth(
+          new Date(currentYear, currentMonth, statementCycleDay - 1)
+        );
         break;
       default:
         break;
@@ -313,32 +333,36 @@ export function getDaysInPeriod(
     const today = new Date();
 
     switch (timeframe) {
-      case 'thisMonth':
+      case "thisMonth":
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
         break;
-      case 'lastMonth':
+      case "lastMonth":
         startDate = startOfMonth(subMonths(today, 1));
         endDate = endOfMonth(subMonths(today, 1));
         break;
-      case 'thisYear':
+      case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
         break;
-      case 'lastYear':
+      case "lastYear":
         startDate = startOfYear(subYears(today, 1));
         endDate = endOfYear(subYears(today, 1));
         break;
-      case 'thisWeek':
+      case "thisWeek":
         startDate = startOfWeek(today, { weekStartsOn: 0 });
         endDate = endOfWeek(today, { weekStartsOn: 0 });
         break;
-      case 'lastWeek':
-        const lastWeekStart = subMonths(startOfWeek(today, { weekStartsOn: 0 }), 1);
+      case "lastWeek": {
+        const lastWeekStart = subMonths(
+          startOfWeek(today, { weekStartsOn: 0 }),
+          1
+        );
         startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
         break;
-      case 'lastThreeMonths':
+      }
+      case "lastThreeMonths":
         startDate = startOfMonth(subMonths(today, 2));
         endDate = endOfMonth(today);
         break;

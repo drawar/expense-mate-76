@@ -7,6 +7,10 @@ export interface RewardRule {
   priority: number;
   conditions: RuleCondition[];
   reward: RewardConfig;
+  /** Optional start date for time-limited/promotional rules */
+  validFrom?: Date;
+  /** Optional end date for time-limited/promotional rules */
+  validUntil?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,9 +47,13 @@ export interface RewardConfig {
   blockSize: number;
   bonusTiers: BonusTier[];
   monthlyCap?: number;
+  /** What the monthly cap refers to: "bonus_points" (default) or "spend_amount" */
+  monthlyCapType?: "bonus_points" | "spend_amount";
   monthlyMinSpend?: number;
   monthlySpendPeriodType?: "calendar" | "statement" | "statement_month";
   pointsCurrency: string;
+  /** Optional cap group ID for sharing monthly cap across multiple rules */
+  capGroupId?: string;
 }
 
 export interface BonusTier {
@@ -149,9 +157,15 @@ export interface DbRewardRule {
   amount_rounding_strategy: string | null;
   block_size: number | null;
   monthly_cap: number | null;
+  monthly_cap_type: string | null;
   monthly_min_spend: number | null;
   monthly_spend_period_type: string | null;
   points_currency: string | null;
+  cap_group_id: string | null;
+  /** Optional start date for time-limited/promotional rules (ISO string) */
+  valid_from: string | null;
+  /** Optional end date for time-limited/promotional rules (ISO string) */
+  valid_until: string | null;
   // Legacy fields (kept for backward compatibility)
   monthly_bonus_cap?: number | null;
   min_spend?: number | null;

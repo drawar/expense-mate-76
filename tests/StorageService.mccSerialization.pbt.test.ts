@@ -12,7 +12,9 @@ import { MerchantCategoryCode, Merchant } from "../src/types";
 
 const mccArbitrary = (): fc.Arbitrary<MerchantCategoryCode> => {
   return fc.record({
-    code: fc.string({ minLength: 4, maxLength: 4 }).filter((s) => /^\d{4}$/.test(s)),
+    code: fc
+      .string({ minLength: 4, maxLength: 4 })
+      .filter((s) => /^\d{4}$/.test(s)),
     description: fc.string({ minLength: 1, maxLength: 100 }),
   });
 };
@@ -62,7 +64,16 @@ function createMockMerchantStorage(): MockMerchantStorage {
       merchants.set(merchant.id, serialized);
     },
     async getMerchant(id: string): Promise<Merchant | null> {
-      const stored = merchants.get(id) as any;
+      const stored = merchants.get(id) as
+        | {
+            id: string;
+            name: string;
+            address?: string;
+            mcc?: { code: string; description: string };
+            coordinates?: unknown;
+            is_online: boolean;
+          }
+        | undefined;
       if (!stored) return null;
 
       // Simulate parsing JSONB back to MCC object
@@ -128,7 +139,9 @@ describe("MCC Serialization Property-Based Tests", () => {
           fc.record({
             id: fc.uuid(),
             name: fc.string({ minLength: 1, maxLength: 100 }),
-            address: fc.option(fc.string({ maxLength: 200 }), { nil: undefined }),
+            address: fc.option(fc.string({ maxLength: 200 }), {
+              nil: undefined,
+            }),
             mcc: fc.constant(undefined),
             isOnline: fc.boolean(),
             coordinates: fc.option(
