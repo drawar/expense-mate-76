@@ -1,6 +1,25 @@
-export { CurrencyService } from './CurrencyService';
-export { ConversionService, type MilesCurrency, type ConversionRateMatrix, type DbConversionRate } from './ConversionService';
-export { SimulatorService, type SimulationInput, type CardCalculationResult } from './SimulatorService';
+export { CurrencyService } from "./CurrencyService";
+export {
+  ConversionService,
+  type MilesCurrency,
+  type ConversionRateMatrix,
+  type DbConversionRate,
+} from "./ConversionService";
+export {
+  SimulatorService,
+  type SimulationInput,
+  type CardCalculationResult,
+} from "./SimulatorService";
+export {
+  type RewardCurrency,
+  type DbRewardCurrency,
+  type MilesCurrencyType,
+  type DbMilesCurrency,
+  type ConversionRate,
+  type DbConversionRateNew,
+  toRewardCurrency,
+  toMilesCurrency,
+} from "./types";
 export {
   type ChartTheme,
   DARK_MODE_THEME,
@@ -16,4 +35,4 @@ export {
   getBarFillAnimation,
   getCurrencyChangeTransition,
   getGlowPulseAnimation,
-} from './SimulatorTheme';
+} from "./SimulatorTheme";

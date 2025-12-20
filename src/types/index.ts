@@ -55,6 +55,7 @@ export interface PaymentMethod {
   color?: string;
   imageUrl?: string;
   pointsCurrency?: string;
+  rewardCurrencyId?: string;
   active: boolean;
   rewardRules?: unknown[];
   conversionRate?: Record<string, number>;
@@ -98,6 +99,7 @@ export interface DbPaymentMethod {
   color: string | null;
   image_url: string | null;
   points_currency: string | null;
+  reward_currency_id: string | null;
   is_active: boolean | null;
   reward_rules: unknown | null;
   selected_categories: string[] | null;

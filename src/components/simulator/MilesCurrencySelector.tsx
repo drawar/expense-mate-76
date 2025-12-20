@@ -1,96 +1,110 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { MilesCurrency } from '@/core/currency';
-
-/**
- * Available miles currency options
- */
-export const MILES_CURRENCIES: MilesCurrency[] = [
-  'KrisFlyer',
-  'AsiaMiles',
-  'Avios',
-  'FlyingBlue',
-  'Aeroplan',
-  'Velocity',
-];
-
-/**
- * Display names for miles currencies
- */
-const MILES_CURRENCY_LABELS: Record<MilesCurrency, string> = {
-  KrisFlyer: 'KrisFlyer',
-  AsiaMiles: 'Asia Miles',
-  Avios: 'Avios',
-  FlyingBlue: 'Flying Blue',
-  Aeroplan: 'Aeroplan',
-  Velocity: 'Velocity',
-};
+} from "@/components/ui/select";
+import { ConversionService } from "@/core/currency";
+import type { MilesCurrencyType } from "@/core/currency/types";
 
 interface MilesCurrencySelectorProps {
   /**
-   * Currently selected miles currency
+   * Currently selected miles currency ID
    */
-  value: MilesCurrency;
-  
+  value: string;
+
   /**
-   * Callback when selection changes
+   * Callback when selection changes - passes the miles currency ID
    */
-  onChange: (currency: MilesCurrency) => void;
-  
+  onChange: (currencyId: string) => void;
+
   /**
-   * Available currency options (defaults to all)
+   * Optional: specific currencies to show (by ID). If not provided, fetches all from DB.
    */
-  availableCurrencies?: MilesCurrency[];
+  availableCurrencyIds?: string[];
 }
 
 /**
  * Compact single-line dropdown for selecting miles currency
- * 
+ *
  * Features:
+ * - Fetches currencies from database
  * - Compact single-line layout with "Miles currency:" label
- * - Default selection: Aeroplan
  * - Moss-green highlight for selected item
  * - Supports all major miles programs
- * 
+ *
  * @component
  */
 export function MilesCurrencySelector({
   value,
   onChange,
-  availableCurrencies = MILES_CURRENCIES,
+  availableCurrencyIds,
 }: MilesCurrencySelectorProps) {
+  const [currencies, setCurrencies] = useState<MilesCurrencyType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      setIsLoading(true);
+      try {
+        const conversionService = ConversionService.getInstance();
+        const allCurrencies = await conversionService.getMilesCurrencies();
+
+        // Filter if specific IDs provided
+        if (availableCurrencyIds && availableCurrencyIds.length > 0) {
+          setCurrencies(
+            allCurrencies.filter((c) => availableCurrencyIds.includes(c.id))
+          );
+        } else {
+          setCurrencies(allCurrencies);
+        }
+
+        // If no value set and we have currencies, select the first one
+        if (!value && allCurrencies.length > 0) {
+          onChange(allCurrencies[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching miles currencies:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCurrencies();
+  }, [availableCurrencyIds]);
+
+  // Find the display name for the current value
+  const selectedCurrency = currencies.find((c) => c.id === value);
+
   return (
     <div className="flex items-center gap-2">
-      <label 
-        htmlFor="miles-currency-select" 
+      <label
+        htmlFor="miles-currency-select"
         className="text-sm font-medium whitespace-nowrap"
       >
         Miles currency:
       </label>
-      <Select
-        value={value}
-        onValueChange={(newValue) => onChange(newValue as MilesCurrency)}
-      >
-        <SelectTrigger 
+      <Select value={value} onValueChange={onChange} disabled={isLoading}>
+        <SelectTrigger
           id="miles-currency-select"
-          className="w-[180px] h-9 focus:ring-[#a3b18a] dark:focus:ring-[#a3b18a]"
+          className="w-[200px] h-9 focus:ring-[#a3b18a] dark:focus:ring-[#a3b18a]"
         >
-          <SelectValue placeholder="Select currency" />
+          <SelectValue
+            placeholder={isLoading ? "Loading..." : "Select currency"}
+          >
+            {selectedCurrency?.displayName || "Select currency"}
+          </SelectValue>
         </SelectTrigger>
-        <SelectContent>
-          {availableCurrencies.map((currency) => (
+        <SelectContent className="min-w-[200px]">
+          {currencies.map((currency) => (
             <SelectItem
-              key={currency}
-              value={currency}
+              key={currency.id}
+              value={currency.id}
               className="data-[state=checked]:bg-[#a3b18a]/10 data-[state=checked]:text-[#a3b18a] dark:data-[state=checked]:bg-[#a3b18a]/20 dark:data-[state=checked]:text-[#a3b18a]"
             >
-              {MILES_CURRENCY_LABELS[currency]}
+              {currency.displayName}
             </SelectItem>
           ))}
         </SelectContent>
@@ -98,3 +112,6 @@ export function MilesCurrencySelector({
     </div>
   );
 }
+
+// Re-export for backward compatibility during transition
+export type { MilesCurrencyType };

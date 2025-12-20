@@ -7,7 +7,7 @@ import {
   SimulationInput,
   CardCalculationResult,
 } from "@/core/currency/SimulatorService";
-import { ConversionService, MilesCurrency } from "@/core/currency/ConversionService";
+import { ConversionService } from "@/core/currency/ConversionService";
 import { rewardService } from "@/core/rewards/RewardService";
 import { monthlySpendingTracker } from "@/core/rewards/MonthlySpendingTracker";
 import { initializeRewardSystem } from "@/core/rewards";
@@ -18,20 +18,24 @@ import { AlertCircle, RefreshCw, CreditCard } from "lucide-react";
 
 /**
  * CardOptimizerSimulator page component
- * 
+ *
  * Main page component that orchestrates the simulator functionality.
  * Allows users to input transaction details and see reward calculations
  * for all active cards, converted to a common miles currency.
- * 
+ *
  * Requirements: 1.1, 2.1, 2.2, 2.4, 3.1, 3.5, 4.1, 4.5, 10.1, 10.3, 10.4, 10.5
  */
 export default function CardOptimizerSimulator() {
   const navigate = useNavigate();
-  
+
   // State management
-  const [transactionInput, setTransactionInput] = useState<SimulationInput | null>(null);
-  const [calculationResults, setCalculationResults] = useState<CardCalculationResult[]>([]);
-  const [selectedMilesCurrency, setSelectedMilesCurrency] = useState<MilesCurrency>("Aeroplan");
+  const [transactionInput, setTransactionInput] =
+    useState<SimulationInput | null>(null);
+  const [calculationResults, setCalculationResults] = useState<
+    CardCalculationResult[]
+  >([]);
+  const [selectedMilesCurrencyId, setSelectedMilesCurrencyId] =
+    useState<string>("");
   const [isCalculating, setIsCalculating] = useState(false);
   const [initializationStatus, setInitializationStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -39,22 +43,27 @@ export default function CardOptimizerSimulator() {
   const [initError, setInitError] = useState<string | null>(null);
 
   // Load payment methods
-  const { paymentMethods, isLoading: isLoadingPaymentMethods, error: paymentMethodsError } = usePaymentMethods();
-  
+  const {
+    paymentMethods,
+    isLoading: isLoadingPaymentMethods,
+    error: paymentMethodsError,
+  } = usePaymentMethods();
+
   // Use refs to avoid dependency issues in callbacks
   const paymentMethodsRef = useRef<PaymentMethod[]>([]);
-  const selectedMilesCurrencyRef = useRef<MilesCurrency>(selectedMilesCurrency);
-  
+  const selectedMilesCurrencyIdRef = useRef<string>(selectedMilesCurrencyId);
+
   useEffect(() => {
     paymentMethodsRef.current = paymentMethods;
   }, [paymentMethods]);
-  
+
   useEffect(() => {
-    selectedMilesCurrencyRef.current = selectedMilesCurrency;
-  }, [selectedMilesCurrency]);
+    selectedMilesCurrencyIdRef.current = selectedMilesCurrencyId;
+  }, [selectedMilesCurrencyId]);
 
   // Initialize services
-  const [simulatorService, setSimulatorService] = useState<SimulatorService | null>(null);
+  const [simulatorService, setSimulatorService] =
+    useState<SimulatorService | null>(null);
 
   /**
    * Initialize reward system on mount (Requirement 10.3)
@@ -78,7 +87,9 @@ export default function CardOptimizerSimulator() {
       } catch (error) {
         console.error("Failed to initialize reward system:", error);
         setInitError(
-          error instanceof Error ? error.message : "Unknown initialization error"
+          error instanceof Error
+            ? error.message
+            : "Unknown initialization error"
         );
         setInitializationStatus("error");
       }
@@ -91,15 +102,18 @@ export default function CardOptimizerSimulator() {
    * Handle transaction input changes with debouncing (Requirement 1.1)
    * Debouncing is handled in SimulatorForm component
    */
-  const handleTransactionChange = useCallback(async (input: SimulationInput) => {
-    setTransactionInput(input);
-  }, []);
+  const handleTransactionChange = useCallback(
+    async (input: SimulationInput) => {
+      setTransactionInput(input);
+    },
+    []
+  );
 
   /**
    * Handle miles currency changes (Requirement 3.5)
    */
-  const handleMilesCurrencyChange = useCallback(async (currency: MilesCurrency) => {
-    setSelectedMilesCurrency(currency);
+  const handleMilesCurrencyChange = useCallback((currencyId: string) => {
+    setSelectedMilesCurrencyId(currencyId);
   }, []);
 
   /**
@@ -107,18 +121,33 @@ export default function CardOptimizerSimulator() {
    * Use JSON.stringify to detect actual changes in transactionInput object
    */
   useEffect(() => {
-    if (!simulatorService || !transactionInput || paymentMethodsRef.current.length === 0) {
+    if (
+      !simulatorService ||
+      !transactionInput ||
+      paymentMethodsRef.current.length === 0
+    ) {
       return;
     }
 
     const calculateRewards = async () => {
+      // Skip if no miles currency selected yet
+      if (!selectedMilesCurrencyId) return;
+
       setIsCalculating(true);
+      console.log(
+        "[CardOptimizerSimulator] Payment methods:",
+        paymentMethodsRef.current.map((pm) => ({
+          name: pm.name,
+          issuer: pm.issuer,
+          rewardCurrencyId: pm.rewardCurrencyId,
+        }))
+      );
 
       try {
-        const results = await simulatorService.simulateAllCards(
+        const results = await simulatorService.simulateAllCardsById(
           transactionInput,
           paymentMethodsRef.current,
-          selectedMilesCurrency
+          selectedMilesCurrencyId
         );
 
         setCalculationResults(results);
@@ -131,7 +160,11 @@ export default function CardOptimizerSimulator() {
 
     calculateRewards();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [simulatorService, JSON.stringify(transactionInput), selectedMilesCurrency]);
+  }, [
+    simulatorService,
+    JSON.stringify(transactionInput),
+    selectedMilesCurrencyId,
+  ]);
 
   /**
    * Retry initialization (Requirement 10.4)
@@ -208,7 +241,7 @@ export default function CardOptimizerSimulator() {
   }
 
   // Show empty state when no active payment methods (Requirement 10.5)
-  const activePaymentMethods = paymentMethods.filter(pm => pm.active);
+  const activePaymentMethods = paymentMethods.filter((pm) => pm.active);
   if (!isLoadingPaymentMethods && activePaymentMethods.length === 0) {
     return (
       <div className="min-h-screen">
@@ -230,7 +263,8 @@ export default function CardOptimizerSimulator() {
               No Active Payment Methods
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md px-4">
-              You need to add at least one active payment method to use the Card Optimizer Simulator.
+              You need to add at least one active payment method to use the Card
+              Optimizer Simulator.
             </p>
             <Button onClick={() => navigate("/payment-methods")} size="lg">
               <CreditCard className="w-4 h-4 mr-2" />
@@ -247,30 +281,18 @@ export default function CardOptimizerSimulator() {
     <div className="min-h-screen px-4 md:px-0">
       {/* Responsive container: full-width on mobile, centered with max-width on tablet/desktop */}
       <div className="mx-auto w-full md:max-w-[600px] lg:max-w-[640px] pb-16">
-        {/* Page Header - Updated typography scale (Requirements 13.1, 13.2) */}
+        {/* Page Header */}
         <div className="mb-6 md:mb-8 mt-4 md:mt-6">
-          <h1 
-            className="font-semibold mb-2"
-            style={{
-              fontSize: 'var(--font-size-title-1)',
-              color: 'var(--color-text)',
-              lineHeight: '1.2',
-            }}
-          >
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">
             Card Optimizer Simulator
           </h1>
-          <p 
-            className="text-sm md:text-base"
-            style={{
-              color: 'var(--color-text-secondary)',
-            }}
-          >
+          <p className="text-muted-foreground mt-1.5 text-sm">
             Compare rewards across all your cards
           </p>
         </div>
 
         {/* Simulator Form - Updated spacing (Requirements 13.3, 4.1-4.3) */}
-        <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <div style={{ marginBottom: "var(--space-xl)" }}>
           <SimulatorForm
             onInputChange={handleTransactionChange}
             initialValues={transactionInput || undefined}
@@ -280,7 +302,7 @@ export default function CardOptimizerSimulator() {
         {/* Card Comparison Chart (Requirement 4.1) */}
         <CardComparisonChart
           results={calculationResults}
-          selectedMilesCurrency={selectedMilesCurrency}
+          selectedMilesCurrencyId={selectedMilesCurrencyId}
           onMilesCurrencyChange={handleMilesCurrencyChange}
           isLoading={isCalculating}
         />

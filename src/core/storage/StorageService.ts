@@ -122,6 +122,7 @@ export class StorageService {
         color: row.color || undefined,
         imageUrl: row.image_url || undefined,
         pointsCurrency: row.points_currency || undefined,
+        rewardCurrencyId: row.reward_currency_id || undefined,
         active: row.is_active ?? true,
         rewardRules: (row.reward_rules as unknown[]) || [],
         selectedCategories: Array.isArray(row.selected_categories)
@@ -205,6 +206,7 @@ export class StorageService {
         color: pm.color,
         image_url: pm.imageUrl,
         points_currency: pm.pointsCurrency || null,
+        reward_currency_id: pm.rewardCurrencyId || null,
         is_active: pm.active,
         reward_rules: pm.rewardRules as unknown,
         selected_categories: pm.selectedCategories as unknown,
