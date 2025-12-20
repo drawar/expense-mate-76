@@ -25,8 +25,10 @@ const CARD_IMAGES: Record<string, string> = {
     "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/MY/MY-Rewards-Visa-20Signature2-480x305.png",
   "citibank:rewards world mastercard":
     "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/ID/Citi%20ID_Rewards_Mastercard-480x305.png/jcr:content/renditions/cq5dam.crop.900.600.png",
-  // Neo Financial cards
-  "neo financial:cathay world elite":
+  // Neo Financial Cathay World Elite
+  "mastercard:cathay world elite":
+    "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
+  "neo financial:cathay world elite mastercard":
     "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
   // HSBC cards
   "hsbc:revolution visa platinum":

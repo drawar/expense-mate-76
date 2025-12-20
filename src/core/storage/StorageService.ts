@@ -127,8 +127,8 @@ export class StorageService {
         selectedCategories: Array.isArray(row.selected_categories)
           ? (row.selected_categories as string[])
           : [],
-        statementStartDay: row.statement_start_day || undefined,
-        isMonthlyStatement: row.is_monthly_statement || undefined,
+        statementStartDay: row.statement_start_day ?? undefined,
+        isMonthlyStatement: row.is_monthly_statement ?? undefined,
         conversionRate:
           (row.conversion_rate as Record<string, number>) || undefined,
       }));
@@ -325,7 +325,23 @@ export class StorageService {
   private parseMCC(mccData: unknown): MerchantCategoryCode | undefined {
     if (!mccData) return undefined;
 
-    // Handle JSONB format from database
+    // Handle JSON string format from database
+    if (typeof mccData === "string") {
+      try {
+        const parsed = JSON.parse(mccData);
+        if (parsed && parsed.code && parsed.description) {
+          return {
+            code: String(parsed.code),
+            description: String(parsed.description),
+          };
+        }
+      } catch {
+        // Not valid JSON, return undefined
+        return undefined;
+      }
+    }
+
+    // Handle JSONB object format from database
     if (typeof mccData === "object" && mccData !== null) {
       const obj = mccData as Record<string, unknown>;
       if (obj.code && obj.description) {
@@ -460,9 +476,9 @@ export class StorageService {
           rewardRules: row.payment_methods?.reward_rules || [],
           selectedCategories: row.payment_methods?.selected_categories || [],
           statementStartDay:
-            row.payment_methods?.statement_start_day || undefined,
+            row.payment_methods?.statement_start_day ?? undefined,
           isMonthlyStatement:
-            row.payment_methods?.is_monthly_statement || undefined,
+            row.payment_methods?.is_monthly_statement ?? undefined,
           conversionRate: row.payment_methods?.conversion_rate || undefined,
         } as PaymentMethod,
         paymentAmount: parseFloat(
