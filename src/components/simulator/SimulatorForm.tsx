@@ -8,7 +8,6 @@ import { SimulationInput } from "@/core/currency/SimulatorService";
 // Import reused form sections
 import { MerchantDetailsSection } from "@/components/expense/form/sections/MerchantDetailsSection";
 import { SimulatorTransactionDetails } from "./SimulatorTransactionDetails";
-import { MossCard } from "@/components/ui/moss-card";
 
 // Define form schema for simulator (similar to expense form but without payment method)
 // Includes optional fields that TransactionDetailsSection may render
@@ -72,8 +71,8 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
 
       // Only trigger calculation if form is valid and amount is positive
       if (isValid && amount > 0 && formValues.merchantName.trim()) {
-        const convertedAmount = formValues.convertedAmount 
-          ? Number(formValues.convertedAmount) 
+        const convertedAmount = formValues.convertedAmount
+          ? Number(formValues.convertedAmount)
           : undefined;
 
         const simulationInput: SimulationInput = {
@@ -104,25 +103,20 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
 
   return (
     <FormProvider {...form}>
-      <MossCard>
-        <h2 
-          className="font-semibold mb-4"
-          style={{
-            fontSize: 'var(--font-size-section-header)',
-            color: 'var(--color-text)',
-          }}
-        >
-          Transaction Details
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
-          <MerchantDetailsSection
-            onSelectMCC={setSelectedMCC}
-            selectedMCC={selectedMCC}
-          />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-xl)", // 24px spacing between sections (same as ExpenseForm)
+        }}
+      >
+        <MerchantDetailsSection
+          onSelectMCC={setSelectedMCC}
+          selectedMCC={selectedMCC}
+        />
 
-          <SimulatorTransactionDetails />
-        </div>
-      </MossCard>
+        <SimulatorTransactionDetails />
+      </div>
     </FormProvider>
   );
 };

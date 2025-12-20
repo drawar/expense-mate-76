@@ -1,7 +1,8 @@
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
 import { MossInput } from "@/components/ui/moss-input";
-import { CalendarIcon, AlertCircle } from "lucide-react";
+import { MossCard } from "@/components/ui/moss-card";
+import { CalendarIcon, AlertCircle, Receipt } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -36,7 +37,7 @@ export const SimulatorTransactionDetails: React.FC = () => {
   const currency = form.watch("currency");
   const amount = form.watch("amount");
   const convertedAmount = form.watch("convertedAmount");
-  
+
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
@@ -46,27 +47,44 @@ export const SimulatorTransactionDetails: React.FC = () => {
   const showWarning = isForeignCurrency && amount && !convertedAmount;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Transaction Amount</FormLabel>
-              <FormControl>
-                <MossInput
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <MossCard>
+      <h2
+        className="section-header flex items-center gap-2"
+        style={{
+          fontSize: "var(--font-size-section-header)",
+          fontWeight: 600,
+          color: "var(--color-text-primary)",
+          marginBottom: "var(--space-lg)",
+        }}
+      >
+        <Receipt
+          className="h-5 w-5"
+          style={{ color: "var(--color-icon-primary)" }}
         />
+        Transaction Details
+      </h2>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Transaction Amount</FormLabel>
+                <FormControl>
+                  <MossInput
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -133,14 +151,18 @@ export const SimulatorTransactionDetails: React.FC = () => {
 
         {/* Warning when conversion not provided */}
         {showWarning && (
-          <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
-            <AlertCircle 
-              className="h-4 w-4 text-yellow-600 dark:text-yellow-500" 
+          <Alert
+            variant="default"
+            className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+          >
+            <AlertCircle
+              className="h-4 w-4 text-yellow-600 dark:text-yellow-500"
               style={{ strokeWidth: 2.5 }}
             />
             <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-              Foreign currency detected. Enter the converted amount in CAD for accurate reward calculations. 
-              Without this, conversion rates may affect actual rewards earned.
+              Foreign currency detected. Enter the converted amount in CAD for
+              accurate reward calculations. Without this, conversion rates may
+              affect actual rewards earned.
             </AlertDescription>
           </Alert>
         )}
@@ -166,8 +188,8 @@ export const SimulatorTransactionDetails: React.FC = () => {
                       ) : (
                         <span>Pick a date</span>
                       )}
-                      <CalendarIcon 
-                        className="ml-auto h-4 w-4 opacity-50" 
+                      <CalendarIcon
+                        className="ml-auto h-4 w-4 opacity-50"
                         style={{ strokeWidth: 2.5 }}
                       />
                     </Button>
@@ -206,6 +228,7 @@ export const SimulatorTransactionDetails: React.FC = () => {
             </FormItem>
           )}
         />
-    </div>
+      </div>
+    </MossCard>
   );
 };
