@@ -646,6 +646,36 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       });
       addSetupLog("✅ 1.25x rule created");
 
+      // Update payment method's reward currency to Aeroplan Points
+      addSetupLog("Setting reward currency to Aeroplan Points...");
+      const { data: aeroplanCurrency } = await supabase
+        .from("reward_currencies")
+        .select("id, display_name")
+        .eq("code", "aeroplan")
+        .single();
+
+      if (aeroplanCurrency) {
+        const { error: updateError } = await supabase
+          .from("payment_methods")
+          .update({
+            reward_currency_id: aeroplanCurrency.id,
+            points_currency: aeroplanCurrency.display_name,
+          })
+          .eq("id", paymentMethod.id);
+
+        if (updateError) {
+          addSetupLog(
+            `⚠️ Warning: Could not set reward currency: ${updateError.message}`
+          );
+        } else {
+          addSetupLog(
+            `✅ Reward currency set to ${aeroplanCurrency.display_name}`
+          );
+        }
+      } else {
+        addSetupLog("⚠️ Warning: Aeroplan currency not found in database");
+      }
+
       addSetupLog("");
       addSetupLog("✅ Setup complete!");
       toast.success("Amex Aeroplan Reserve rules configured successfully!");
@@ -798,6 +828,36 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         },
       });
       addSetupLog("✅ 1x rule created");
+
+      // Update payment method's reward currency to Asia Miles
+      addSetupLog("Setting reward currency to Asia Miles...");
+      const { data: asiaMilesCurrency } = await supabase
+        .from("reward_currencies")
+        .select("id, display_name")
+        .eq("code", "asia_miles")
+        .single();
+
+      if (asiaMilesCurrency) {
+        const { error: updateError } = await supabase
+          .from("payment_methods")
+          .update({
+            reward_currency_id: asiaMilesCurrency.id,
+            points_currency: asiaMilesCurrency.display_name,
+          })
+          .eq("id", paymentMethod.id);
+
+        if (updateError) {
+          addSetupLog(
+            `⚠️ Warning: Could not set reward currency: ${updateError.message}`
+          );
+        } else {
+          addSetupLog(
+            `✅ Reward currency set to ${asiaMilesCurrency.display_name}`
+          );
+        }
+      } else {
+        addSetupLog("⚠️ Warning: Asia Miles currency not found in database");
+      }
 
       addSetupLog("");
       addSetupLog("✅ Setup complete!");
@@ -1224,6 +1284,36 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         },
       });
       addSetupLog("✅ 1x rule created");
+
+      // Update payment method's reward currency to Flying Blue Points
+      addSetupLog("Setting reward currency to Flying Blue Points...");
+      const { data: flyingBlueCurrency } = await supabase
+        .from("reward_currencies")
+        .select("id, display_name")
+        .eq("code", "flying_blue")
+        .single();
+
+      if (flyingBlueCurrency) {
+        const { error: updateError } = await supabase
+          .from("payment_methods")
+          .update({
+            reward_currency_id: flyingBlueCurrency.id,
+            points_currency: flyingBlueCurrency.display_name,
+          })
+          .eq("id", paymentMethod.id);
+
+        if (updateError) {
+          addSetupLog(
+            `⚠️ Warning: Could not set reward currency: ${updateError.message}`
+          );
+        } else {
+          addSetupLog(
+            `✅ Reward currency set to ${flyingBlueCurrency.display_name}`
+          );
+        }
+      } else {
+        addSetupLog("⚠️ Warning: Flying Blue currency not found in database");
+      }
 
       addSetupLog("");
       addSetupLog("✅ Setup complete!");

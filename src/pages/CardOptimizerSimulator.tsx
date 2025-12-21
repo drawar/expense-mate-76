@@ -134,9 +134,14 @@ export default function CardOptimizerSimulator() {
       if (!selectedMilesCurrencyId) return;
 
       setIsCalculating(true);
+      // Filter to only active credit cards
+      const creditCards = paymentMethodsRef.current.filter(
+        (pm) => pm.active && pm.type === "credit_card"
+      );
+
       console.log(
-        "[CardOptimizerSimulator] Payment methods:",
-        paymentMethodsRef.current.map((pm) => ({
+        "[CardOptimizerSimulator] Credit cards for simulation:",
+        creditCards.map((pm) => ({
           name: pm.name,
           issuer: pm.issuer,
           rewardCurrencyId: pm.rewardCurrencyId,
@@ -146,7 +151,7 @@ export default function CardOptimizerSimulator() {
       try {
         const results = await simulatorService.simulateAllCardsById(
           transactionInput,
-          paymentMethodsRef.current,
+          creditCards,
           selectedMilesCurrencyId
         );
 
@@ -240,8 +245,11 @@ export default function CardOptimizerSimulator() {
     );
   }
 
-  // Show empty state when no active payment methods (Requirement 10.5)
-  const activePaymentMethods = paymentMethods.filter((pm) => pm.active);
+  // Show empty state when no active credit cards (Requirement 10.5)
+  // Filter to only credit cards since other payment types don't earn rewards
+  const activePaymentMethods = paymentMethods.filter(
+    (pm) => pm.active && pm.type === "credit_card"
+  );
   if (!isLoadingPaymentMethods && activePaymentMethods.length === 0) {
     return (
       <div className="min-h-screen">
