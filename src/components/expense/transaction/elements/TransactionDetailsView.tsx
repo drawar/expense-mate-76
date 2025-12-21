@@ -10,7 +10,13 @@ import {
 import { BUDGET_CATEGORIES } from "@/utils/constants/categories";
 import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 
-import { CreditCardIcon, CoinsIcon, TagIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  CreditCardIcon,
+  CoinsIcon,
+  TagIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 
 interface TransactionDetailsViewProps {
   transaction: Transaction;
@@ -71,9 +77,22 @@ const TransactionDetailsView = ({
             )}
           </div>
           {isRecategorized && mccCategory !== "Uncategorized" && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Merchant type: {mccCategory}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-muted-foreground">
+                Merchant type: {mccCategory}
+              </p>
+              {onCategoryChange && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => onCategoryChange(mccCategory)}
+                >
+                  <RotateCcwIcon className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
