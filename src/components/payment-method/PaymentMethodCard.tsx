@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { PaymentMethod } from "@/types";
 import {
-  ToggleLeftIcon,
-  ToggleRightIcon,
   EditIcon,
   ImageIcon,
   ShieldIcon,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   CreditCardIcon,
@@ -28,11 +28,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import PaymentCardDisplay from "../expense/PaymentCardDisplay";
 import { RewardRuleManager } from "@/components/rewards/RewardRuleManager";
 import RewardRuleBadge from "./RewardRuleBadge";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
+
+// Storage key for the first-visit tooltip hint
+const STATUS_DOT_HINT_KEY = "expense-tracker-status-dot-hint-shown";
 
 interface PaymentMethodCardProps {
   method: PaymentMethod;
@@ -48,6 +57,38 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   onImageUpload,
 }) => {
   const [isRulesDialogOpen, setIsRulesDialogOpen] = useState(false);
+  const [isTitleExpanded, setIsTitleExpanded] = useState(false);
+  const [isTitleTruncated, setIsTitleTruncated] = useState(false);
+  const [showStatusTooltip, setShowStatusTooltip] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Check if title is truncated on mount and window resize
+  useLayoutEffect(() => {
+    const checkTruncation = () => {
+      if (titleRef.current && !isTitleExpanded) {
+        const { scrollWidth, clientWidth } = titleRef.current;
+        setIsTitleTruncated(scrollWidth > clientWidth);
+      }
+    };
+
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [method.name, isTitleExpanded]);
+
+  // First-visit tooltip hint
+  useEffect(() => {
+    const hasSeenHint = localStorage.getItem(STATUS_DOT_HINT_KEY);
+    if (!hasSeenHint) {
+      const timer = setTimeout(() => {
+        setShowStatusTooltip(true);
+        localStorage.setItem(STATUS_DOT_HINT_KEY, "true");
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => setShowStatusTooltip(false), 3000);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const icon =
     method.type === "credit_card" ? (
@@ -64,6 +105,24 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     return method.id;
   };
 
+  // Get status dot color based on card state
+  const getStatusDotColor = () => {
+    if (!method.active) {
+      return "var(--color-danger)"; // #a86f64 - rust/terracotta for inactive
+    }
+    return "var(--color-success)"; // #7c9885 - sage green for active
+  };
+
+  const getStatusLabel = () => {
+    return method.active ? "Active" : "Inactive";
+  };
+
+  const handleTitleClick = () => {
+    if (isTitleTruncated || isTitleExpanded) {
+      setIsTitleExpanded(!isTitleExpanded);
+    }
+  };
+
   return (
     <Card
       className={cn(
@@ -72,36 +131,99 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
       )}
     >
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <div
-              className="p-2 rounded-full"
+              className="p-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: `${method.color}20` }}
             >
               {icon}
             </div>
-            <div>
-              <CardTitle className="text-lg">{method.name}</CardTitle>
+            <div className="min-w-0 flex-1">
+              {/* Clickable title row with truncation and expand */}
+              <div
+                className={cn(
+                  "flex items-center gap-1 cursor-pointer",
+                  (isTitleTruncated || isTitleExpanded) && "active:opacity-70"
+                )}
+                onClick={handleTitleClick}
+                role={
+                  isTitleTruncated || isTitleExpanded ? "button" : undefined
+                }
+                tabIndex={isTitleTruncated || isTitleExpanded ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (
+                    (e.key === "Enter" || e.key === " ") &&
+                    (isTitleTruncated || isTitleExpanded)
+                  ) {
+                    e.preventDefault();
+                    handleTitleClick();
+                  }
+                }}
+                aria-expanded={isTitleTruncated ? isTitleExpanded : undefined}
+              >
+                <CardTitle
+                  ref={titleRef}
+                  className={cn(
+                    "text-lg min-w-0 transition-all duration-200",
+                    !isTitleExpanded && "truncate"
+                  )}
+                >
+                  {method.name}
+                </CardTitle>
+                {/* Chevron indicator for truncated names */}
+                {(isTitleTruncated || isTitleExpanded) && (
+                  <span className="flex-shrink-0 text-[var(--color-text-tertiary)]">
+                    {isTitleExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </span>
+                )}
+              </div>
               <CardDescription>
                 {method.type === "credit_card"
                   ? `${method.issuer} ${method.lastFourDigits ? `•••• ${method.lastFourDigits}` : ""}`
                   : `${method.currency}`}
               </CardDescription>
             </div>
+            {/* Status dot indicator */}
+            <TooltipProvider>
+              <Tooltip
+                open={showStatusTooltip}
+                onOpenChange={setShowStatusTooltip}
+              >
+                <TooltipTrigger asChild>
+                  <button
+                    className="flex-shrink-0 p-2 -m-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleActive(method.id);
+                    }}
+                    aria-label={`Card status: ${getStatusLabel()}. Click to ${method.active ? "deactivate" : "activate"}`}
+                    style={{ minWidth: "44px", minHeight: "44px" }}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full mx-auto transition-colors duration-200"
+                      style={{ backgroundColor: getStatusDotColor() }}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="end"
+                  className="bg-[var(--color-card-bg)] border-[var(--color-border)] text-[var(--color-text-primary)]"
+                >
+                  <p>Card is {getStatusLabel().toLowerCase()}</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">
+                    Tap to {method.active ? "deactivate" : "activate"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          <div className="flex">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onToggleActive(method.id)}
-              title={method.active ? "Deactivate" : "Activate"}
-            >
-              {method.active ? (
-                <ToggleRightIcon className="h-5 w-5 text-green-500" />
-              ) : (
-                <ToggleLeftIcon className="h-5 w-5 text-gray-400" />
-              )}
-            </Button>
+          <div className="flex flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"

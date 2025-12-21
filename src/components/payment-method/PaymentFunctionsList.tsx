@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { PaymentMethod } from "@/types";
 import {
-  ToggleLeftIcon,
-  ToggleRightIcon,
   EditIcon,
   ImageIcon,
   CreditCardIcon,
@@ -10,7 +8,18 @@ import {
   CalendarIcon,
   ChevronRightIcon,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Storage key for the first-visit tooltip hint
+const STATUS_DOT_HINT_KEY = "expense-tracker-status-dot-hint-shown";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { Button } from "@/components/ui/button";
 import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
@@ -49,6 +58,64 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 
   // Deactivation confirmation state
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+
+  // Title expansion state
+  const [isTitleExpanded, setIsTitleExpanded] = useState(false);
+  const [isTitleTruncated, setIsTitleTruncated] = useState(false);
+  const [showStatusTooltip, setShowStatusTooltip] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Get the full card name
+  const cardName =
+    paymentMethod.type === "credit_card"
+      ? `${paymentMethod.issuer} ${paymentMethod.name}`
+      : paymentMethod.name;
+
+  // Check if title is truncated on mount and window resize
+  useLayoutEffect(() => {
+    const checkTruncation = () => {
+      if (titleRef.current && !isTitleExpanded) {
+        const { scrollWidth, clientWidth } = titleRef.current;
+        setIsTitleTruncated(scrollWidth > clientWidth);
+      }
+    };
+
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [cardName, isTitleExpanded]);
+
+  // First-visit tooltip hint
+  useEffect(() => {
+    const hasSeenHint = localStorage.getItem(STATUS_DOT_HINT_KEY);
+    if (!hasSeenHint) {
+      const timer = setTimeout(() => {
+        setShowStatusTooltip(true);
+        localStorage.setItem(STATUS_DOT_HINT_KEY, "true");
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => setShowStatusTooltip(false), 3000);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Get status dot color based on card state
+  const getStatusDotColor = () => {
+    if (!paymentMethod.active) {
+      return "var(--color-danger)"; // #a86f64 - rust/terracotta for inactive
+    }
+    return "var(--color-success)"; // #7c9885 - sage green for active
+  };
+
+  const getStatusLabel = () => {
+    return paymentMethod.active ? "Active" : "Inactive";
+  };
+
+  const handleTitleClick = () => {
+    if (isTitleTruncated || isTitleExpanded) {
+      setIsTitleExpanded(!isTitleExpanded);
+    }
+  };
 
   const handleToggleClick = () => {
     if (paymentMethod.active) {
@@ -138,18 +205,13 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Japandi Header - Clean, restrained */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-        <h2
-          className="text-xl font-medium flex items-center"
-          style={{
-            color: "var(--color-text-primary)",
-            letterSpacing: "-0.2px",
-          }}
-        >
+      {/* Japandi Header - Clean, restrained with status dot */}
+      <div className="flex items-start gap-3 mb-2">
+        {/* Card icon */}
+        <div className="flex-shrink-0 mt-0.5">
           {paymentMethod.type === "credit_card" ? (
             <CreditCardIcon
-              className="h-5 w-5 mr-2"
+              className="h-5 w-5"
               style={{
                 color: "var(--color-accent)",
                 strokeWidth: 2,
@@ -157,55 +219,92 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             />
           ) : (
             <BanknoteIcon
-              className="h-5 w-5 mr-2"
+              className="h-5 w-5"
               style={{
                 color: "var(--color-accent)",
                 strokeWidth: 2,
               }}
             />
           )}
-          {paymentMethod.type === "credit_card"
-            ? `${paymentMethod.issuer} ${paymentMethod.name}`
-            : paymentMethod.name}
-        </h2>
+        </div>
 
-        {/* Japandi Active Status Badge */}
-        <button
-          onClick={handleToggleClick}
-          className="mt-2 sm:mt-0 transition-all duration-300 ease-out active:scale-[0.98]"
-          style={{
-            backgroundColor: paymentMethod.active
-              ? "rgba(124, 152, 133, 0.15)"
-              : "transparent",
-            color: paymentMethod.active
-              ? "#A8C4AF"
-              : "var(--color-text-tertiary)",
-            border: `1px solid ${paymentMethod.active ? "rgba(124, 152, 133, 0.25)" : "var(--color-border)"}`,
-            borderRadius: "20px",
-            padding: "8px 20px",
-            fontSize: "14px",
-            fontWeight: 500,
-            letterSpacing: "0.5px",
+        {/* Title with truncation and expand */}
+        <div
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={handleTitleClick}
+          role={isTitleTruncated || isTitleExpanded ? "button" : undefined}
+          tabIndex={isTitleTruncated || isTitleExpanded ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (
+              (e.key === "Enter" || e.key === " ") &&
+              (isTitleTruncated || isTitleExpanded)
+            ) {
+              e.preventDefault();
+              handleTitleClick();
+            }
           }}
-          aria-label={`Card status: ${paymentMethod.active ? "active" : "inactive"}. Click to ${paymentMethod.active ? "deactivate" : "activate"}.`}
-          role="switch"
-          aria-checked={paymentMethod.active}
+          aria-expanded={isTitleTruncated ? isTitleExpanded : undefined}
         >
-          <span className="flex items-center">
-            {paymentMethod.active ? (
-              <ToggleRightIcon
-                className="h-4 w-4 mr-2"
-                style={{ color: "var(--color-accent)", strokeWidth: 2 }}
-              />
-            ) : (
-              <ToggleLeftIcon
-                className="h-4 w-4 mr-2"
-                style={{ color: "var(--color-text-tertiary)", strokeWidth: 2 }}
-              />
+          <div className="flex items-center gap-1">
+            <h2
+              ref={titleRef}
+              className={`text-xl font-medium transition-all duration-200 ${
+                !isTitleExpanded ? "truncate" : ""
+              }`}
+              style={{
+                color: "var(--color-text-primary)",
+                letterSpacing: "-0.2px",
+              }}
+            >
+              {cardName}
+            </h2>
+            {/* Chevron indicator for truncated names */}
+            {(isTitleTruncated || isTitleExpanded) && (
+              <span
+                className="flex-shrink-0"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                {isTitleExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </span>
             )}
-            {paymentMethod.active ? "active" : "inactive"}
-          </span>
-        </button>
+          </div>
+        </div>
+
+        {/* Status dot indicator */}
+        <TooltipProvider>
+          <Tooltip open={showStatusTooltip} onOpenChange={setShowStatusTooltip}>
+            <TooltipTrigger asChild>
+              <button
+                className="flex-shrink-0 p-2 -m-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] transition-all duration-200 active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleClick();
+                }}
+                aria-label={`Card status: ${getStatusLabel()}. Click to ${paymentMethod.active ? "deactivate" : "activate"}`}
+                style={{ minWidth: "44px", minHeight: "44px" }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full mx-auto transition-colors duration-200"
+                  style={{ backgroundColor: getStatusDotColor() }}
+                />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              align="end"
+              className="bg-[var(--color-card-bg)] border-[var(--color-border)] text-[var(--color-text-primary)]"
+            >
+              <p>Card is {getStatusLabel().toLowerCase()}</p>
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                Tap to {paymentMethod.active ? "deactivate" : "activate"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Separator
