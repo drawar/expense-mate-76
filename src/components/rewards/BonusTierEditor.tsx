@@ -303,8 +303,11 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <HelpCircle
-                        className="h-3 w-3 text-muted-foreground cursor-help"
-                        style={{ strokeWidth: 2.5 }}
+                        className="h-3 w-3 cursor-help"
+                        style={{
+                          color: "var(--color-text-tertiary)",
+                          strokeWidth: 2.5,
+                        }}
                       />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
