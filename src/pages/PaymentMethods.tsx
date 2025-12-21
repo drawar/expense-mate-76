@@ -268,6 +268,38 @@ const PaymentMethods = () => {
     }
   };
 
+  const handleImageRemove = async () => {
+    if (!imageUploadMethod?.imageUrl) return;
+
+    try {
+      // Delete from Supabase Storage
+      await storageService.deleteCardImage(imageUploadMethod.imageUrl);
+
+      // Update payment method to remove imageUrl
+      const updatedMethods = paymentMethods.map((method) =>
+        method.id === imageUploadMethod.id
+          ? { ...method, imageUrl: undefined }
+          : method
+      );
+
+      await storageService.savePaymentMethods(updatedMethods);
+
+      toast({
+        title: "Success",
+        description: "Card image removed successfully",
+      });
+
+      refetch();
+    } catch (error) {
+      console.error("Error removing card image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove card image",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -388,6 +420,7 @@ const PaymentMethods = () => {
           }}
           paymentMethod={imageUploadMethod}
           onImageUpload={handleImageUpload}
+          onImageRemove={handleImageRemove}
           isUploading={isUploading}
         />
       </div>

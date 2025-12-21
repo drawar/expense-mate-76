@@ -15,7 +15,17 @@ export type Transaction = {
   isContactless: boolean;
   notes?: string;
   reimbursementAmount?: number;
+
+  // MCC snapshot (immutable, for rewards calculation)
+  mccCode?: string;
+
+  // User category (editable, for budgets/spending analysis)
+  userCategory?: string;
+  isRecategorized?: boolean;
+
+  // Legacy field (synced with userCategory for backwards compatibility)
   category?: string;
+
   is_deleted?: boolean;
   deleted_at?: string;
 };
@@ -116,7 +126,8 @@ export interface DbMerchant {
   id: string;
   name: string;
   address: string | null;
-  mcc: { code: string; description: string } | null;
+  mcc: { code: string; description: string } | null; // Legacy JSONB column
+  mcc_code: string | null; // New normalized column (references mcc table)
   is_online: boolean | null;
   coordinates: { lat: number; lng: number } | null;
   is_deleted?: boolean;

@@ -54,7 +54,8 @@
       "Bash(VITE_SUPABASE_URL=\"https://yulueezoyjxobhureuxj.supabase.co\" VITE_SUPABASE_PUBLISHABLE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHVlZXpveWp4b2JodXJldXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMjM1MTEsImV4cCI6MjA3NzU5OTUxMX0.QpTFICkI0IWYdq2Me4Rp3DFrCAs_QiVZEmUywACnqAE\" npx tsx -e:*)",
       "WebFetch(domain:www.citibank.com)",
       "WebFetch(domain:en.wikipedia.org)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(PGPASSWORD=\"$SUPABASE_DB_PASSWORD\" psql -h aws-0-ap-southeast-1.pooler.supabase.com -p 6543 -U postgres.yulueezoyjxobhureuxj -d postgres -f supabase/migrations/20251221300000_create_card_images_storage.sql)"
     ]
   }
 }

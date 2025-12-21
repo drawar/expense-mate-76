@@ -933,10 +933,75 @@ export class StorageService {
     return getMCCFromMerchantName(merchantName);
   }
 
+  private static CARD_IMAGES_BUCKET = "card-images";
+
+  /**
+   * Upload a card image to Supabase Storage
+   * Returns the public URL of the uploaded image
+   */
   async uploadCardImage(file: File): Promise<string> {
-    // Placeholder implementation for card image upload
-    // In a real implementation, this would upload to a storage service
-    return URL.createObjectURL(file);
+    // Generate a unique filename using timestamp and random string
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
+    const fileName = `card-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(StorageService.CARD_IMAGES_BUCKET)
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("Error uploading card image:", error);
+      // Provide helpful error message for bucket not found
+      if (error.message.includes("Bucket not found")) {
+        throw new Error(
+          "Card images storage bucket not configured. Please create 'card-images' bucket in Supabase Dashboard > Storage."
+        );
+      }
+      throw new Error(`Failed to upload image: ${error.message}`);
+    }
+
+    // Get the public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from(StorageService.CARD_IMAGES_BUCKET)
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  }
+
+  /**
+   * Delete a card image from Supabase Storage
+   * Extracts the file path from the public URL and removes the file
+   */
+  async deleteCardImage(imageUrl: string): Promise<void> {
+    // Only delete if it's a Supabase storage URL (not external URLs like princeoftravel.com)
+    if (!imageUrl.includes("supabase.co/storage")) {
+      console.log("Skipping deletion - not a Supabase storage URL:", imageUrl);
+      return;
+    }
+
+    // Extract the file name from the URL
+    // URL format: https://<project>.supabase.co/storage/v1/object/public/card-images/<filename>
+    const match = imageUrl.match(/\/card-images\/(.+)$/);
+    if (!match) {
+      console.warn("Could not extract file path from image URL:", imageUrl);
+      return;
+    }
+
+    const filePath = match[1];
+
+    const { error } = await supabase.storage
+      .from(StorageService.CARD_IMAGES_BUCKET)
+      .remove([filePath]);
+
+    if (error) {
+      console.error("Error deleting card image:", error);
+      throw new Error(`Failed to delete image: ${error.message}`);
+    }
   }
 
   /**

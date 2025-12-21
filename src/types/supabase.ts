@@ -14,6 +14,21 @@ export type Database = {
   };
   public: {
     Tables: {
+      mcc: {
+        Row: {
+          code: string;
+          description: string;
+        };
+        Insert: {
+          code: string;
+          description: string;
+        };
+        Update: {
+          code?: string;
+          description?: string;
+        };
+        Relationships: [];
+      };
       conversion_rates: {
         Row: {
           conversion_rate: number;
@@ -49,7 +64,8 @@ export type Database = {
           id: string;
           is_deleted: boolean | null;
           is_online: boolean | null;
-          mcc: string | null;
+          mcc: Json | null; // Legacy JSONB column
+          mcc_code: string | null; // New normalized column
           name: string;
           updated_at: string | null;
         };
@@ -60,7 +76,8 @@ export type Database = {
           id?: string;
           is_deleted?: boolean | null;
           is_online?: boolean | null;
-          mcc?: string | null;
+          mcc?: Json | null;
+          mcc_code?: string | null;
           name: string;
           updated_at?: string | null;
         };
@@ -71,7 +88,8 @@ export type Database = {
           id?: string;
           is_deleted?: boolean | null;
           is_online?: boolean | null;
-          mcc?: string | null;
+          mcc?: Json | null;
+          mcc_code?: string | null;
           name?: string;
           updated_at?: string | null;
         };
@@ -262,13 +280,15 @@ export type Database = {
           amount: number;
           base_points: number | null;
           bonus_points: number | null;
-          category: string | null;
+          category: string | null; // Legacy field (synced with user_category)
           created_at: string | null;
           currency: string | null;
           date: string;
           id: string;
           is_contactless: boolean | null;
           is_deleted: boolean | null;
+          is_recategorized: boolean | null; // Track if user changed category
+          mcc_code: string | null; // Snapshot of MCC code for rewards
           merchant_id: string | null;
           notes: string | null;
           payment_amount: number | null;
@@ -277,6 +297,7 @@ export type Database = {
           reimbursement_amount: number | null;
           total_points: number | null;
           updated_at: string | null;
+          user_category: string | null; // User-editable category for budgets
           user_id: string;
         };
         Insert: {
@@ -290,6 +311,8 @@ export type Database = {
           id?: string;
           is_contactless?: boolean | null;
           is_deleted?: boolean | null;
+          is_recategorized?: boolean | null;
+          mcc_code?: string | null;
           merchant_id?: string | null;
           notes?: string | null;
           payment_amount?: number | null;
@@ -298,6 +321,7 @@ export type Database = {
           reimbursement_amount?: number | null;
           total_points?: number | null;
           updated_at?: string | null;
+          user_category?: string | null;
           user_id: string;
         };
         Update: {
@@ -311,6 +335,8 @@ export type Database = {
           id?: string;
           is_contactless?: boolean | null;
           is_deleted?: boolean | null;
+          is_recategorized?: boolean | null;
+          mcc_code?: string | null;
           merchant_id?: string | null;
           notes?: string | null;
           payment_amount?: number | null;
@@ -319,6 +345,7 @@ export type Database = {
           reimbursement_amount?: number | null;
           total_points?: number | null;
           updated_at?: string | null;
+          user_category?: string | null;
           user_id?: string;
         };
         Relationships: [
