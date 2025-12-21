@@ -7,11 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  BUDGET_CATEGORIES,
-  CATEGORY_ICONS,
-  BudgetCategory,
-} from "@/utils/constants/categories";
+import { BUDGET_CATEGORIES } from "@/utils/constants/categories";
 import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 
 import { Button } from "@/components/ui/button";
@@ -65,34 +61,15 @@ const TransactionDetailsView = ({
             <TagIcon className="h-4 w-4" />
             {onCategoryChange ? (
               <Select value={currentCategory} onValueChange={onCategoryChange}>
-                <SelectTrigger className="w-[220px] h-9">
-                  <SelectValue placeholder="Select category">
-                    {(() => {
-                      const CurrentIcon =
-                        CATEGORY_ICONS[currentCategory as BudgetCategory];
-                      return CurrentIcon ? (
-                        <span className="flex items-center gap-2">
-                          <CurrentIcon className="h-4 w-4" />
-                          {currentCategory}
-                        </span>
-                      ) : (
-                        currentCategory
-                      );
-                    })()}
-                  </SelectValue>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {BUDGET_CATEGORIES.map((category) => {
-                    const Icon = CATEGORY_ICONS[category];
-                    return (
-                      <SelectItem key={category} value={category}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {category}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
+                  {BUDGET_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             ) : (
