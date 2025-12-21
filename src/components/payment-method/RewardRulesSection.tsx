@@ -1,8 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { PaymentMethod } from "@/types";
 import { RewardRule } from "@/core/rewards/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -26,10 +24,8 @@ import {
   TrashIcon,
   Settings2,
   Loader2,
-  CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRuleEditor } from "@/components/rewards/RewardRuleEditor";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
@@ -39,7 +35,6 @@ import {
   getRuleRepository,
 } from "@/core/rewards/RuleRepository";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 interface RewardRulesSectionProps {
   paymentMethod: PaymentMethod;
@@ -1354,71 +1349,163 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg">
-            <CoinsIcon className="h-5 w-5 mr-2 text-amber-500" />
+    <div
+      style={{
+        backgroundColor: "var(--color-card-bg)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "12px",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
+      <div className="p-4 pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h3
+            className="flex items-center text-base font-medium"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            <CoinsIcon
+              className="h-5 w-5 mr-2"
+              style={{ color: "var(--color-warning)" }}
+            />
             Reward Rules
-          </CardTitle>
+            {rewardRules.length > 0 && (
+              <span
+                className="ml-2 text-xs px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: "var(--color-accent-subtle)",
+                  color: "var(--color-accent-text)",
+                }}
+              >
+                {rewardRules.length}
+              </span>
+            )}
+          </h3>
           <div className="flex gap-2">
-            {quickSetupConfig && (
-              <Button
-                variant="outline"
-                size="sm"
+            {/* Show Quick Setup prominently when no rules exist */}
+            {quickSetupConfig && rewardRules.length === 0 ? (
+              <button
                 onClick={handleQuickSetup}
                 disabled={isRunningSetup}
-                className="text-[#00A651] border-[#00A651]/30 hover:bg-[#00A651]/10"
+                className="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
+                style={{
+                  backgroundColor: "var(--color-accent)",
+                  color: "var(--color-bg)",
+                  borderRadius: "10px",
+                }}
               >
                 {isRunningSetup ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
-                  <Settings2 className="h-4 w-4 mr-1" />
+                  <Settings2 className="h-4 w-4 mr-2" />
                 )}
                 Quick Setup
-              </Button>
+              </button>
+            ) : (
+              <>
+                {/* Show both buttons when rules exist */}
+                {quickSetupConfig && (
+                  <button
+                    onClick={handleQuickSetup}
+                    disabled={isRunningSetup}
+                    className="flex items-center px-3 py-1.5 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-text-secondary)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    {isRunningSetup ? (
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : (
+                      <Settings2 className="h-4 w-4 mr-1.5" />
+                    )}
+                    Reset Rules
+                  </button>
+                )}
+                <button
+                  onClick={handleAddRule}
+                  className="flex items-center px-3 py-1.5 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98]"
+                  style={{
+                    backgroundColor: "var(--color-accent)",
+                    color: "var(--color-bg)",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <PlusIcon className="h-4 w-4 mr-1.5" />
+                  Add Rule
+                </button>
+              </>
             )}
-            <Button variant="outline" size="sm" onClick={handleAddRule}>
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add Rule
-            </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Setup log */}
+        {/* Onboarding hint when no rules */}
+        {rewardRules.length === 0 && quickSetupConfig && (
+          <p
+            className="mt-2 text-xs"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Quick Setup adds common reward categories for{" "}
+            {quickSetupConfig.name} automatically
+          </p>
+        )}
+      </div>
+      <div className="px-4 pb-4 space-y-3">
+        {/* Setup log - Japandi style */}
         {showSetupLog && setupLog.length > 0 && (
-          <div className="p-3 bg-muted rounded-lg font-mono text-xs space-y-1 max-h-32 overflow-y-auto">
+          <div
+            className="p-3 font-mono text-xs space-y-1 max-h-32 overflow-y-auto"
+            style={{
+              backgroundColor: "var(--color-surface)",
+              borderRadius: "8px",
+            }}
+          >
             {setupLog.map((line, i) => (
               <div
                 key={i}
-                className={cn(
-                  line.startsWith("✅") && "text-green-600 dark:text-green-400",
-                  line.startsWith("❌") && "text-red-600 dark:text-red-400"
-                )}
+                style={{
+                  color: line.startsWith("✅")
+                    ? "var(--color-success)"
+                    : line.startsWith("❌")
+                      ? "var(--color-error)"
+                      : "var(--color-text-secondary)",
+                }}
               >
                 {line}
               </div>
             ))}
             {!isRunningSetup && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2 h-6 text-xs"
+              <button
+                className="mt-2 text-xs font-medium transition-colors"
+                style={{ color: "var(--color-text-tertiary)" }}
                 onClick={() => setShowSetupLog(false)}
               >
                 Dismiss
-              </Button>
+              </button>
             )}
           </div>
         )}
 
-        {/* Rules list */}
+        {/* Rules list - Japandi style */}
         {rewardRules.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No reward rules configured</p>
-            <p className="text-xs mt-1">
+          <div
+            className="text-center py-8"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            <AlertCircle
+              className="h-10 w-10 mx-auto mb-3"
+              style={{ color: "var(--color-accent)", opacity: 0.3 }}
+            />
+            <p
+              className="text-sm font-medium"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              No reward rules configured
+            </p>
+            <p
+              className="text-xs mt-1.5"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               {quickSetupConfig
                 ? `Use "Quick Setup" for ${quickSetupConfig.name} defaults, or add rules manually.`
                 : "Add rules to track reward points for this card."}
@@ -1431,70 +1518,96 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
               .map((rule) => (
                 <div
                   key={rule.id}
-                  className="flex items-start justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                  className="flex items-start justify-between p-3 transition-colors duration-300"
+                  style={{
+                    backgroundColor: "var(--color-surface)",
+                    borderRadius: "8px",
+                  }}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm">{rule.name}</span>
-                      <Badge
-                        variant="secondary"
-                        className="bg-primary/10 text-primary text-xs"
+                      <span
+                        className="font-medium text-sm"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {rule.name}
+                      </span>
+                      {/* Japandi Multiplier Badge */}
+                      <span
+                        className="text-sm font-medium px-2.5 py-0.5"
+                        style={{
+                          backgroundColor: "var(--color-badge-bg)",
+                          color: "var(--color-badge-text)",
+                          border: "1px solid var(--color-badge-border)",
+                          borderRadius: "6px",
+                        }}
                       >
                         {(() => {
                           const total =
                             rule.reward.bonusMultiplier +
                             rule.reward.baseMultiplier;
-                          // Round to nearest 2 decimal places, but show as integer if it's a whole number
                           return Number.isInteger(total)
                             ? total
                             : Math.round(total * 100) / 100;
                         })()}
                         x
-                      </Badge>
+                      </span>
                       {rule.reward.monthlyCap && (
-                        <Badge variant="outline" className="text-xs">
+                        <span
+                          className="text-xs px-2 py-0.5"
+                          style={{
+                            color: "var(--color-text-tertiary)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: "4px",
+                          }}
+                        >
                           Cap:{" "}
                           {rule.reward.monthlyCapType === "spend_amount"
                             ? `$${rule.reward.monthlyCap.toLocaleString()}`
                             : `${rule.reward.monthlyCap.toLocaleString()} pts`}
-                        </Badge>
+                        </span>
                       )}
                       {!rule.enabled && (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-yellow-100 text-yellow-800"
+                        <span
+                          className="text-xs px-2 py-0.5"
+                          style={{
+                            backgroundColor: "rgba(196, 165, 123, 0.15)",
+                            color: "var(--color-warning)",
+                            borderRadius: "4px",
+                          }}
                         >
                           Disabled
-                        </Badge>
+                        </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                    <p
+                      className="text-xs mt-1 truncate"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
                       {rule.description}
                     </p>
                   </div>
                   <div className="flex gap-1 ml-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                    <button
+                      className="h-9 w-9 flex items-center justify-center rounded-md transition-colors duration-300"
+                      style={{ color: "var(--color-icon-secondary)" }}
                       onClick={() => handleEditRule(rule)}
                     >
                       <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    </button>
+                    <button
+                      className="h-9 w-9 flex items-center justify-center rounded-md transition-colors duration-300"
+                      style={{ color: "var(--color-error)" }}
                       onClick={() => setDeleteConfirmRule(rule)}
                     >
                       <TrashIcon className="h-4 w-4" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ))}
           </div>
         )}
-      </CardContent>
+      </div>
 
       {/* Rule Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
@@ -1516,25 +1629,47 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog - Japandi style */}
       <AlertDialog
         open={!!deleteConfirmRule}
         onOpenChange={() => setDeleteConfirmRule(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          style={{
+            backgroundColor: "var(--color-modal-bg)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "16px",
+          }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Reward Rule</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle style={{ color: "var(--color-text-primary)" }}>
+              Delete Reward Rule
+            </AlertDialogTitle>
+            <AlertDialogDescription
+              style={{ color: "var(--color-text-secondary)" }}
+            >
               Are you sure you want to delete "{deleteConfirmRule?.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text-secondary)",
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteRule}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              style={{
+                backgroundColor: "var(--color-error)",
+                color: "var(--color-bg)",
+              }}
             >
               {isDeleting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1544,7 +1679,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
   );
 };
 

@@ -9,6 +9,7 @@ import {
   MerchantCategoryCode,
 } from "@/types";
 import { initializeRewardSystem, calculateRewardPoints } from "@/core/rewards";
+import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
 
 export class StorageService {
   private useLocalStorage: boolean = false;
@@ -195,6 +196,8 @@ export class StorageService {
 
     try {
       // Transform PaymentMethod objects to database format
+      // Use nullish coalescing (??) to preserve falsy values like false or 0
+      // Only convert to null when the value is undefined or null
       const dbPaymentMethods = paymentMethods.map((pm) => ({
         id: pm.id,
         name: pm.name,
@@ -205,13 +208,13 @@ export class StorageService {
         icon: pm.icon,
         color: pm.color,
         image_url: pm.imageUrl,
-        points_currency: pm.pointsCurrency || null,
-        reward_currency_id: pm.rewardCurrencyId || null,
+        points_currency: pm.pointsCurrency ?? null,
+        reward_currency_id: pm.rewardCurrencyId ?? null,
         is_active: pm.active,
         reward_rules: pm.rewardRules as unknown,
         selected_categories: pm.selectedCategories as unknown,
-        statement_start_day: pm.statementStartDay,
-        is_monthly_statement: pm.isMonthlyStatement,
+        statement_start_day: pm.statementStartDay ?? null,
+        is_monthly_statement: pm.isMonthlyStatement ?? null,
         conversion_rate: pm.conversionRate as unknown,
         user_id: session.user.id,
       }));
@@ -907,15 +910,16 @@ export class StorageService {
   }
 
   async hasMerchantCategorySuggestions(merchantName: string): Promise<boolean> {
-    // Simple implementation for now
-    return false;
+    // Check if the merchant name matches a known airline, hotel, or travel agency
+    const mcc = getMCCFromMerchantName(merchantName);
+    return mcc !== null;
   }
 
   async getSuggestedMerchantCategory(
     merchantName: string
   ): Promise<MerchantCategoryCode | null> {
-    // Simple implementation for now
-    return null;
+    // Return the MCC for known airlines, hotels, and travel agencies
+    return getMCCFromMerchantName(merchantName);
   }
 
   async uploadCardImage(file: File): Promise<string> {

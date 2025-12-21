@@ -64,6 +64,14 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
 
   return (
     <div className="relative py-4">
+      {/* Card count indicator - Japandi style */}
+      <div
+        className="absolute top-0 right-4 text-xs font-medium"
+        style={{ color: "var(--color-text-tertiary)" }}
+      >
+        {current + 1} of {count}
+      </div>
+
       <Carousel
         setApi={setApi}
         className="w-full max-w-[600px] mx-auto"
@@ -80,11 +88,14 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
             >
               <div
                 className={cn(
-                  "transition-all duration-300 px-2 cursor-pointer",
+                  "transition-all duration-300 ease-out px-2 cursor-pointer",
                   index === current ? "scale-100" : "scale-[0.85] opacity-60",
                   !method.active && "opacity-50"
                 )}
                 onClick={() => onSelectMethod(method)}
+                style={{
+                  transform: index === current ? "scale(1)" : "scale(0.85)",
+                }}
               >
                 <PaymentCardFace paymentMethod={method} />
               </div>
@@ -92,9 +103,44 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
           ))}
         </CarouselContent>
 
-        <CarouselPrevious className="absolute -left-4 sm:-left-2 md:left-2" />
-        <CarouselNext className="absolute -right-4 sm:-right-2 md:right-2" />
+        <CarouselPrevious
+          className="absolute -left-4 sm:-left-2 md:left-2 transition-all duration-300"
+          style={{
+            backgroundColor: "var(--color-card-bg)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-icon-secondary)",
+          }}
+        />
+        <CarouselNext
+          className="absolute -right-4 sm:-right-2 md:right-2 transition-all duration-300"
+          style={{
+            backgroundColor: "var(--color-card-bg)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-icon-secondary)",
+          }}
+        />
       </Carousel>
+
+      {/* Japandi Pagination Dots */}
+      <div className="flex justify-center gap-2 mt-4">
+        {paymentMethods.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => api?.scrollTo(index)}
+            className="transition-all duration-300 ease-out"
+            style={{
+              width: index === current ? "24px" : "8px",
+              height: "8px",
+              borderRadius: "4px",
+              backgroundColor:
+                index === current
+                  ? "var(--color-accent)"
+                  : "var(--color-border)",
+            }}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

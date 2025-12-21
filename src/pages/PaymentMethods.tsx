@@ -39,11 +39,24 @@ const PaymentMethods = () => {
   const { toast } = useToast();
 
   // Set first active payment method as selected on load
+  // Also update selectedMethod when paymentMethods changes (e.g., after refetch)
   useEffect(() => {
-    if (paymentMethods.length > 0 && !selectedMethod) {
-      const activeMethod =
-        paymentMethods.find((m) => m.active) || paymentMethods[0];
-      setSelectedMethod(activeMethod);
+    if (paymentMethods.length > 0) {
+      if (!selectedMethod) {
+        // No selection yet - pick the first active method
+        const activeMethod =
+          paymentMethods.find((m) => m.active) || paymentMethods[0];
+        setSelectedMethod(activeMethod);
+      } else {
+        // Update selectedMethod with fresh data from paymentMethods
+        // This ensures we have the latest data after refetch (e.g., after Quick Setup)
+        const updatedMethod = paymentMethods.find(
+          (m) => m.id === selectedMethod.id
+        );
+        if (updatedMethod && updatedMethod !== selectedMethod) {
+          setSelectedMethod(updatedMethod);
+        }
+      }
     }
   }, [paymentMethods, selectedMethod]);
 
@@ -82,7 +95,11 @@ const PaymentMethods = () => {
   };
 
   const handleEditMethod = (method: PaymentMethod) => {
-    setEditingMethod(method);
+    // Get fresh data from paymentMethods in case the passed method is stale
+    // This can happen if user clicks Edit right after Quick Setup before useEffect runs
+    const freshMethod =
+      paymentMethods.find((m) => m.id === method.id) || method;
+    setEditingMethod(freshMethod);
     setIsFormOpen(true);
   };
 
@@ -241,27 +258,65 @@ const PaymentMethods = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="container max-w-7xl mx-auto pb-16">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 mt-4">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "var(--color-bg)" }}
+    >
+      <div className="container max-w-7xl mx-auto pb-16 px-4">
+        {/* Japandi Header - Medium weight, restrained */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 mt-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gradient">
+            <h1
+              className="text-2xl font-medium tracking-tight"
+              style={{
+                color: "var(--color-text-primary)",
+                letterSpacing: "-0.2px",
+                lineHeight: 1.3,
+              }}
+            >
               Payment Methods
             </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm">
+            <p
+              className="mt-1.5 text-sm"
+              style={{
+                color: "var(--color-text-secondary)",
+                letterSpacing: "0.1px",
+              }}
+            >
               Manage your payment cards and cash payment methods
             </p>
           </div>
 
-          <Button onClick={handleAddMethod} className="gap-2 mt-4 sm:mt-0">
+          {/* Japandi CTA Button - Sage green, rounded */}
+          <Button
+            onClick={handleAddMethod}
+            className="gap-2 mt-4 sm:mt-0 font-medium transition-all duration-300 ease-out active:scale-[0.98]"
+            style={{
+              backgroundColor: "var(--color-accent)",
+              color: "var(--color-bg)",
+              borderRadius: "10px",
+              padding: "12px 20px",
+              letterSpacing: "0.3px",
+            }}
+          >
             <Plus className="h-4 w-4" />
             Add Method
           </Button>
         </div>
 
         {isLoading ? (
-          <div className="animate-pulse text-center py-10">
-            Loading payment methods...
+          <div
+            className="flex flex-col items-center justify-center py-16"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            <div
+              className="w-10 h-10 border-2 rounded-full animate-spin mb-4"
+              style={{
+                borderColor: "var(--color-border)",
+                borderTopColor: "var(--color-accent)",
+              }}
+            />
+            <span className="text-sm">Loading payment methods...</span>
           </div>
         ) : paymentMethods.length === 0 ? (
           <EmptyPaymentMethodState onAddClick={handleAddMethod} />
@@ -288,7 +343,12 @@ const PaymentMethods = () => {
                 onToggleActive={handleToggleActive}
                 onEdit={handleEditMethod}
                 onImageUpload={handleOpenImageUpload}
-                onRulesChanged={fetchRulesForPaymentMethods}
+                onRulesChanged={() => {
+                  // Refetch both rules and payment methods
+                  // Quick setup may update payment_methods.points_currency directly
+                  fetchRulesForPaymentMethods();
+                  refetch();
+                }}
               />
             )}
           </div>

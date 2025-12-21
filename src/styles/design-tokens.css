@@ -1,50 +1,60 @@
 /**
- * Moss Dark UI Design Tokens
- * 
- * This file defines the core design system tokens for the Moss Dark UI redesign.
- * All color, spacing, typography, and motion values should reference these tokens.
+ * Japandi Design System Tokens
+ *
+ * A clean, minimalist design inspired by Japanese and Scandinavian aesthetics.
+ * Natural materiality, warm neutrals, restrained color use.
  */
 
 :root {
   /* ============================================
-     COLORS
+     COLORS - DARK MODE (Default)
      ============================================ */
 
   /* Background Colors */
-  --color-bg: #0b0b0d;
-  --color-card-bg: #161719;
-  --color-surface: #1f2023;
+  --color-bg: #1a1d1f;
+  --color-card-bg: #242729;
+  --color-surface: #2c2f31;
+  --color-modal-bg: #1f2224;
 
   /* Border & Divider Colors */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-subtle: rgba(255, 255, 255, 0.12);
+  --color-border: #3a3d3f;
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
   --color-track: rgba(255, 255, 255, 0.07);
+  --color-divider: #3a3d3f;
 
-  /* Text Colors - WCAG AA Compliant */
-  --color-text-primary: #f2f2f7;
-  --color-text-secondary: #d1d1d6;
-  --color-text-tertiary: #a1a1a6;
-  --color-text-helper: #8e8e93;
-  --color-text-disabled: #3a3a3c;
+  /* Text Colors - Warm tones */
+  --color-text-primary: #e8e6e3;
+  --color-text-secondary: #a8a5a0;
+  --color-text-tertiary: #6b6863;
+  --color-text-disabled: #4a4845;
 
-  /* Legacy text color aliases for backward compatibility */
-  --color-text: #f2f2f7;
-  --color-text-muted: #8e8e93;
+  /* Legacy text color aliases */
+  --color-text: #e8e6e3;
+  --color-text-muted: #6b6863;
 
   /* Icon Colors */
-  --color-icon-primary: #e5e5ea;
-  --color-icon-secondary: #a7a7ad;
+  --color-icon-primary: #e8e6e3;
+  --color-icon-secondary: #a8a5a0;
 
-  /* Accent Colors (TD/Questrade Green) */
-  --color-accent: #00a651;
-  --color-accent-soft: #10b981;
-  --color-accent-glow: #00a65155;
-  --color-accent-subtle: rgba(0, 166, 81, 0.15);
+  /* Accent Colors - Sage Green (Japandi) */
+  --color-accent: #7c9885;
+  --color-accent-hover: #6a8574;
+  --color-accent-pressed: #5d7567;
+  --color-accent-soft: #7c9885;
+  --color-accent-glow: rgba(124, 152, 133, 0.25);
+  --color-accent-subtle: rgba(124, 152, 133, 0.12);
+  --color-accent-text: #a8c4af;
 
   /* Semantic Colors */
-  --color-danger: #e66a6a;
-  --color-success: #86efac;
-  --color-warning: #fdba74;
+  --color-success: #7c9885;
+  --color-warning: #c4a57b;
+  --color-danger: #a86f64;
+  --color-error: #a86f64;
+
+  /* Badge Colors */
+  --color-badge-bg: rgba(124, 152, 133, 0.15);
+  --color-badge-text: #a8c4af;
+  --color-badge-border: rgba(124, 152, 133, 0.3);
 
   /* ============================================
      SPACING
@@ -65,55 +75,69 @@
   --font-family-base:
     "Inter", -apple-system, BlinkMacSystemFont, "Helvetica", "Arial", sans-serif;
 
-  /* Font Sizes - Mobile First (< 768px) */
-  --font-size-title-1: 32px;
+  /* Font Sizes - Japandi (restrained) */
+  --font-size-header: 24px;
+  --font-size-title-1: 24px;
   --font-size-title-2: 20px;
-  --font-size-section-header: 16px;
-  --font-size-body: 15px;
+  --font-size-body: 14px;
   --font-size-label: 13px;
   --font-size-helper: 11px;
+  --font-size-large-amount: 20px;
 
-  /* Font Weights */
+  /* Font Weights - Never above 500 for Japandi */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
 
   /* Line Heights */
   --line-height-tight: 1.2;
   --line-height-normal: 1.3;
   --line-height-relaxed: 1.5;
 
+  /* Letter Spacing */
+  --letter-spacing-header: -0.2px;
+  --letter-spacing-body: 0.1px;
+  --letter-spacing-label: 0.3px;
+
   /* ============================================
      BORDER RADIUS
      ============================================ */
 
-  --radius-card: 20px;
-  --radius-input: 14px;
-  --radius-pill: 18px;
+  --radius-card: 12px;
+  --radius-input: 8px;
+  --radius-button: 10px;
+  --radius-pill: 20px;
   --radius-pill-full: 9999px;
-  --radius-sm: 8px;
+  --radius-sm: 6px;
+  --radius-modal: 16px;
 
   /* ============================================
-     SHADOWS
+     SHADOWS - Dark Mode
      ============================================ */
 
-  --shadow-card-mobile: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-card-desktop: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.5);
-  --shadow-card-lift: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* Card shadows */
+  --shadow-card-mobile: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-card-desktop: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-card-lift: 0 4px 16px rgba(0, 0, 0, 0.18);
   --shadow-glow-accent: 0 0 12px var(--color-accent-glow);
 
   /* ============================================
      MOTION & TRANSITIONS
      ============================================ */
 
-  --transition-smooth: cubic-bezier(0.35, 0, 0.15, 1);
+  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-japandi: cubic-bezier(0.35, 0, 0.15, 1);
 
   --duration-fast: 150ms;
   --duration-normal: 300ms;
-  --duration-slow: 500ms;
+  --duration-slow: 400ms;
 
   /* ============================================
      INTERACTION
@@ -122,27 +146,92 @@
   --tap-target-min: 44px;
   --button-press-scale: 0.98;
   --card-hover-lift: -2px;
+
+  /* ============================================
+     OVERLAY
+     ============================================ */
+
+  --overlay-bg: rgba(26, 29, 31, 0.85);
+  --overlay-blur: blur(8px);
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+
+.light {
+  /* Background Colors */
+  --color-bg: #f5f3f0;
+  --color-card-bg: #ffffff;
+  --color-surface: #fafaf8;
+  --color-modal-bg: #f8f6f3;
+
+  /* Border & Divider Colors */
+  --color-border: #e5e2dd;
+  --color-border-subtle: #d4d0ca;
+  --color-divider: #e5e2dd;
+
+  /* Text Colors */
+  --color-text-primary: #2b2926;
+  --color-text-secondary: #5c5854;
+  --color-text-tertiary: #8e8a85;
+  --color-text-disabled: #b8b5b0;
+
+  /* Legacy text color aliases */
+  --color-text: #2b2926;
+  --color-text-muted: #8e8a85;
+
+  /* Icon Colors */
+  --color-icon-primary: #2b2926;
+  --color-icon-secondary: #5c5854;
+
+  /* Accent Colors - Deeper sage for light mode */
+  --color-accent: #5d7567;
+  --color-accent-hover: #4e6356;
+  --color-accent-pressed: #3e5247;
+  --color-accent-soft: #5d7567;
+  --color-accent-glow: rgba(93, 117, 103, 0.25);
+  --color-accent-subtle: rgba(124, 152, 133, 0.15);
+  --color-accent-text: #4e6356;
+
+  /* Semantic Colors */
+  --color-success: #5d7567;
+  --color-warning: #a67c52;
+  --color-danger: #8b5b52;
+  --color-error: #8b5b52;
+
+  /* Badge Colors */
+  --color-badge-bg: rgba(93, 117, 103, 0.12);
+  --color-badge-text: #4e6356;
+  --color-badge-border: rgba(93, 117, 103, 0.25);
+
+  /* Shadows - Light Mode (warmer) */
+  --shadow-subtle: 0 2px 12px rgba(43, 41, 38, 0.06);
+  --shadow-card: 0 2px 12px rgba(43, 41, 38, 0.06);
+  --shadow-medium: 0 4px 20px rgba(43, 41, 38, 0.1);
+  --shadow-strong: 0 8px 32px rgba(43, 41, 38, 0.14);
+  --shadow-modal: 0 16px 48px rgba(43, 41, 38, 0.12);
+
+  /* Card shadows */
+  --shadow-card-mobile: 0 2px 12px rgba(43, 41, 38, 0.06);
+  --shadow-card-desktop: 0 2px 12px rgba(43, 41, 38, 0.06);
+  --shadow-card-hover: 0 4px 20px rgba(43, 41, 38, 0.1);
+  --shadow-card-lift: 0 4px 20px rgba(43, 41, 38, 0.1);
+
+  /* Overlay */
+  --overlay-bg: rgba(43, 41, 38, 0.25);
+  --overlay-blur: blur(12px);
 }
 
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */
 
-/* Tablet breakpoint (768px - 1024px) */
 @media (min-width: 768px) {
   :root {
-    --font-size-title-1: 36px;
-    --font-size-section-header: 18px;
-    --font-size-body: 16px;
-    --font-size-label: 14px;
-    --font-size-helper: 12px;
-  }
-}
-
-/* Desktop breakpoint (> 1024px) */
-@media (min-width: 1024px) {
-  :root {
-    --font-size-title-1: 40px;
+    --font-size-header: 24px;
+    --font-size-body: 14px;
+    --font-size-label: 13px;
   }
 }
 

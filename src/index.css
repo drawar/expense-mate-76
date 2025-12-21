@@ -9,66 +9,74 @@
 @tailwind utilities;
 
 @layer base {
+  /* ============================================
+     JAPANDI LIGHT MODE (Default for :root)
+     Warm off-white, linen-like backgrounds
+     ============================================ */
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 30 14% 95%; /* #F5F3F0 - warm off-white */
+    --foreground: 30 6% 16%; /* #2B2926 - warm black */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #FFFFFF - pure white cards */
+    --card-foreground: 30 6% 16%; /* #2B2926 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 30 20% 97%; /* #F8F6F3 - warmer overlay */
+    --popover-foreground: 30 6% 16%; /* #2B2926 */
 
-    --primary: 151 100% 33%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 144 19% 38%; /* #5D7567 - deeper sage */
+    --primary-foreground: 0 0% 100%; /* white text on primary */
 
-    --secondary: 160 30% 96%;
-    --secondary-foreground: 160 47% 11%;
+    --secondary: 30 10% 96%; /* #FAFAF8 - barely off-white */
+    --secondary-foreground: 30 6% 16%; /* #2B2926 */
 
-    --muted: 160 30% 96%;
-    --muted-foreground: 160 16% 47%;
+    --muted: 30 10% 96%; /* #FAFAF8 */
+    --muted-foreground: 30 4% 54%; /* #8E8A85 - tertiary text */
 
-    --accent: 158 64% 42%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 144 19% 38%; /* #5D7567 - sage green */
+    --accent-foreground: 0 0% 100%; /* white */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 10 26% 44%; /* #8B5B52 - muted terracotta */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 151 100% 33%;
+    --border: 30 10% 88%; /* #E5E2DD - subtle dividers */
+    --input: 30 12% 82%; /* #D4D0CA - input border */
+    --ring: 144 19% 38%; /* #5D7567 - focus ring */
 
-    --radius: 0.8rem;
+    --radius: 0.75rem;
   }
 
+  /* ============================================
+     JAPANDI DARK MODE
+     Warm charcoal, never pure black
+     ============================================ */
   .dark {
-    --background: 160 15% 10%;
-    --foreground: 210 40% 98%;
+    --background: 200 8% 11%; /* #1A1D1F - warm charcoal */
+    --foreground: 30 6% 91%; /* #E8E6E3 - warm white */
 
-    --card: 160 20% 14%;
-    --card-foreground: 210 40% 98%;
+    --card: 200 6% 15%; /* #242729 - elevated card */
+    --card-foreground: 30 6% 91%; /* #E8E6E3 */
 
-    --popover: 160 20% 14%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 200 7% 13%; /* #1F2224 - modal bg */
+    --popover-foreground: 30 6% 91%; /* #E8E6E3 */
 
-    --primary: 151 100% 40%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 144 19% 51%; /* #7C9885 - sage green */
+    --primary-foreground: 200 8% 11%; /* dark text on sage */
 
-    --secondary: 160 25% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 200 5% 18%; /* #2C2F31 - surface */
+    --secondary-foreground: 30 6% 91%; /* #E8E6E3 */
 
-    --muted: 160 18% 20%;
-    --muted-foreground: 160 20% 65%;
+    --muted: 200 5% 18%; /* #2C2F31 */
+    --muted-foreground: 30 3% 41%; /* #6B6863 - tertiary */
 
-    --accent: 158 64% 52%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 144 19% 51%; /* #7C9885 - sage green */
+    --accent-foreground: 200 8% 11%; /* #1A1D1F */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 10 26% 52%; /* #A86F64 - muted terracotta */
+    --destructive-foreground: 30 6% 91%;
 
-    --border: 160 25% 17%;
-    --input: 160 25% 17%;
-    --ring: 151 100% 40%;
+    --border: 200 4% 24%; /* #3A3D3F - subtle dividers */
+    --input: 200 4% 24%; /* #3A3D3F */
+    --ring: 144 19% 51%; /* #7C9885 - focus ring */
   }
 }
 
