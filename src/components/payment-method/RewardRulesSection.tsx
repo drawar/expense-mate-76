@@ -143,6 +143,19 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   const [isRunningSetup, setIsRunningSetup] = useState(false);
   const [setupLog, setSetupLog] = useState<string[]>([]);
   const [showSetupLog, setShowSetupLog] = useState(false);
+  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
+
+  const toggleRuleExpanded = (ruleId: string) => {
+    setExpandedRules((prev) => {
+      const next = new Set(prev);
+      if (next.has(ruleId)) {
+        next.delete(ruleId);
+      } else {
+        next.add(ruleId);
+      }
+      return next;
+    });
+  };
 
   const cardTypeId =
     paymentMethod.issuer && paymentMethod.name
@@ -1610,8 +1623,20 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         )}
                       </div>
                       <p
-                        className="text-sm mt-1 truncate"
+                        className={`text-sm mt-1 cursor-pointer ${
+                          expandedRules.has(rule.id) ? "" : "line-clamp-2"
+                        }`}
                         style={{ color: "var(--color-text-secondary)" }}
+                        onClick={() => toggleRuleExpanded(rule.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            toggleRuleExpanded(rule.id);
+                          }
+                        }}
+                        aria-expanded={expandedRules.has(rule.id)}
                       >
                         {rule.description}
                       </p>
