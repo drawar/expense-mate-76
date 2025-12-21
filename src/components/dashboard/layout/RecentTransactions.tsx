@@ -6,10 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, ArrowUpRightIcon } from "lucide-react";
 import TransactionCard from "@/components/expense/TransactionCard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import {
-  getCategoryFromMCC,
-  getCategoryFromMerchantName,
-} from "@/utils/categoryMapping";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -30,34 +27,12 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   // Limit to max items
   const displayTransactions = transactions.slice(0, maxItems);
 
-  // Apply category mapping logic to transactions (same as in TransactionTable)
+  // Apply category mapping logic to transactions using getEffectiveCategory
   const transactionsWithCategories = useMemo(() => {
-    return displayTransactions.map((transaction) => {
-      // Use transaction's stored category if available
-      if (transaction.category && transaction.category !== "Uncategorized") {
-        return transaction;
-      }
-
-      let determinedCategory = "Uncategorized";
-
-      // Try to determine from MCC
-      if (transaction.merchant.mcc?.code) {
-        determinedCategory = getCategoryFromMCC(transaction.merchant.mcc.code);
-      } else {
-        // Try to determine from merchant name
-        const nameBasedCategory = getCategoryFromMerchantName(
-          transaction.merchant.name
-        );
-        if (nameBasedCategory) {
-          determinedCategory = nameBasedCategory;
-        }
-      }
-
-      return {
-        ...transaction,
-        category: determinedCategory,
-      };
-    });
+    return displayTransactions.map((transaction) => ({
+      ...transaction,
+      category: getEffectiveCategory(transaction),
+    }));
   }, [displayTransactions]);
 
   // Render the empty state when no transactions are available

@@ -419,13 +419,13 @@ export class StorageService {
           `
           *,
           payment_methods:payment_method_id(
-            id, name, type, issuer, last_four_digits, currency, 
-            icon, color, image_url, is_active, 
-            reward_rules, selected_categories, statement_start_day, 
+            id, name, type, issuer, last_four_digits, currency,
+            icon, color, image_url, is_active,
+            reward_rules, selected_categories, statement_start_day,
             is_monthly_statement, conversion_rate
           ),
           merchants:merchant_id(
-            id, name, address, mcc, is_online, coordinates, is_deleted
+            id, name, address, mcc, mcc_code, is_online, coordinates, is_deleted
           )
         `
         )
@@ -501,7 +501,11 @@ export class StorageService {
           row.reimbursement_amount != null
             ? parseFloat(row.reimbursement_amount.toString())
             : undefined,
-        category: row.category || undefined,
+        // Category fields
+        mccCode: row.mcc_code || row.merchants?.mcc_code || undefined,
+        userCategory: row.user_category || undefined,
+        isRecategorized: row.is_recategorized || false,
+        category: row.category || undefined, // Legacy field
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -578,6 +582,7 @@ export class StorageService {
       });
 
       // First, ensure merchant exists
+      const mccCode = transactionData.merchant.mcc?.code || null;
       const merchantData = {
         id: merchantId,
         name: transactionData.merchant.name,
@@ -585,6 +590,7 @@ export class StorageService {
         mcc: transactionData.merchant.mcc
           ? JSON.parse(JSON.stringify(transactionData.merchant.mcc))
           : null,
+        mcc_code: mccCode, // New normalized column
         is_online: transactionData.merchant.isOnline,
         coordinates: transactionData.merchant.coordinates
           ? JSON.parse(JSON.stringify(transactionData.merchant.coordinates))
@@ -606,6 +612,13 @@ export class StorageService {
 
       console.log("Merchant upserted successfully:", merchantResult.data);
 
+      // Determine user category (use provided or derive from MCC/category)
+      const userCategory =
+        transactionData.userCategory ||
+        transactionData.category ||
+        transactionData.merchant.mcc?.description ||
+        "Uncategorized";
+
       // Insert transaction with authenticated user ID
       const transactionInsertData = {
         date: transactionData.date,
@@ -621,7 +634,11 @@ export class StorageService {
         is_contactless: transactionData.isContactless,
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
-        category: transactionData.category,
+        // Category fields
+        mcc_code: mccCode, // Snapshot MCC code for rewards
+        user_category: userCategory, // User-editable category for budgets
+        is_recategorized: transactionData.isRecategorized || false,
+        category: userCategory, // Sync legacy field
         user_id: session.user.id,
       };
 
@@ -705,7 +722,11 @@ export class StorageService {
         reimbursementAmount: data.reimbursement_amount
           ? parseFloat(data.reimbursement_amount.toString())
           : undefined,
-        category: data.category || undefined,
+        // Category fields
+        mccCode: data.mcc_code || undefined,
+        userCategory: data.user_category || undefined,
+        isRecategorized: data.is_recategorized || false,
+        category: data.category || undefined, // Legacy field
       };
 
       // Check if prepaid card should be deactivated
@@ -761,6 +782,7 @@ export class StorageService {
           updates.merchant.id && updates.merchant.id.trim() !== ""
             ? updates.merchant.id
             : crypto.randomUUID();
+        const mccCode = updates.merchant.mcc?.code || null;
         const merchantData = {
           id: merchantId,
           name: updates.merchant.name,
@@ -768,6 +790,7 @@ export class StorageService {
           mcc: updates.merchant.mcc
             ? JSON.parse(JSON.stringify(updates.merchant.mcc))
             : null,
+          mcc_code: mccCode, // New normalized column
           is_online: updates.merchant.isOnline,
           coordinates: updates.merchant.coordinates
             ? JSON.parse(JSON.stringify(updates.merchant.coordinates))
@@ -790,6 +813,8 @@ export class StorageService {
         }
       }
 
+      // Build update object, syncing category fields
+      const userCategory = updates.userCategory || updates.category;
       const { data, error } = await supabase
         .from("transactions")
         .update({
@@ -809,7 +834,11 @@ export class StorageService {
           is_contactless: updates.isContactless,
           notes: updates.notes,
           reimbursement_amount: updates.reimbursementAmount,
-          category: updates.category,
+          // Category fields
+          mcc_code: updates.mccCode,
+          user_category: userCategory,
+          is_recategorized: updates.isRecategorized,
+          category: userCategory, // Sync legacy field
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)

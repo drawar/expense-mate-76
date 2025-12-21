@@ -13,18 +13,13 @@ CREATE TABLE IF NOT EXISTS public.mcc (
   description TEXT NOT NULL
 );
 
--- Populate from existing merchant MCC data
-INSERT INTO mcc (code, description)
-SELECT DISTINCT mcc->>'code', mcc->>'description'
-FROM merchants
-WHERE mcc IS NOT NULL
-  AND mcc->>'code' IS NOT NULL
-  AND mcc->>'code' != ''
-ON CONFLICT (code) DO NOTHING;
+-- Note: The MCC table will be populated by the seeding script (scripts/seed-mcc-table.ts)
+-- which contains all 541 standard MCC codes
 
 -- Add RLS policy (public read access - MCC codes are not user-specific)
 ALTER TABLE mcc ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "MCC codes are publicly readable" ON mcc;
 CREATE POLICY "MCC codes are publicly readable"
   ON mcc FOR SELECT
   USING (true);
@@ -36,12 +31,22 @@ CREATE POLICY "MCC codes are publicly readable"
 -- Add new mcc_code column (simple TEXT, no FK initially to allow migration)
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS mcc_code TEXT;
 
--- Backfill mcc_code from existing JSONB
-UPDATE merchants
-SET mcc_code = mcc->>'code'
-WHERE mcc IS NOT NULL AND mcc_code IS NULL;
+-- Backfill mcc_code from existing mcc column
+-- Handle both JSONB format (mcc->>'code') and TEXT format
+DO $$
+BEGIN
+  -- Try JSONB extraction first
+  UPDATE merchants
+  SET mcc_code = mcc::jsonb->>'code'
+  WHERE mcc IS NOT NULL
+    AND mcc_code IS NULL
+    AND mcc::text ~ '^\s*\{.*\}\s*$';
+EXCEPTION WHEN OTHERS THEN
+  -- If that fails, the column might already be TEXT or empty
+  NULL;
+END $$;
 
--- Note: We keep the old 'mcc' JSONB column for now for backwards compatibility
+-- Note: We keep the old 'mcc' column for now for backwards compatibility
 -- It can be dropped in a future migration after verifying all code uses mcc_code
 
 -- ============================================

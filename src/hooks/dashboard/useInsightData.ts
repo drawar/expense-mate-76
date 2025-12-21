@@ -11,6 +11,7 @@ import {
   DEFAULT_REWARD_RATE,
   SAVINGS_MULTIPLIER,
 } from "@/utils/dashboard";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 /**
  * Interface for card optimization suggestions
@@ -139,7 +140,7 @@ export function usePaymentMethodOptimization(
 
     // Process all transactions in a single pass
     transactions.forEach((tx) => {
-      const category = tx.category || "Uncategorized";
+      const category = getEffectiveCategory(tx);
       const methodName = tx.paymentMethod?.name || "Unknown";
       const amount = tx.amount;
 
@@ -332,7 +333,7 @@ export function useSavingsPotential(
     // Single pass algorithm - process all transactions in one loop
     transactions.forEach((tx) => {
       const amount = tx.amount;
-      const category = tx.category || "Uncategorized";
+      const category = getEffectiveCategory(tx);
       const categoryLower = category.toLowerCase();
 
       // Add to total spending

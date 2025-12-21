@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { metricsUtils } from "./metricsUtils";
 import { ChartDataItem } from "@/types/dashboard";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 /**
  * Parse a YYYY-MM-DD date string as a local date (not UTC)
@@ -68,7 +69,7 @@ export const chartUtils = {
       if (groupBy === "paymentMethod") {
         key = tx.paymentMethod?.name || "Unknown";
       } else if (groupBy === "category") {
-        key = tx.category || "Uncategorized";
+        key = getEffectiveCategory(tx);
       }
 
       // Convert amount to display currency
@@ -378,7 +379,8 @@ export const chartUtils = {
     const categoryMap = new Map<string, number>();
 
     transactions.forEach((tx) => {
-      if (!tx.category) return;
+      const category = getEffectiveCategory(tx);
+      if (category === "Uncategorized") return;
 
       // Convert to display currency
       const convertedAmount = CurrencyService.convert(
@@ -400,8 +402,8 @@ export const chartUtils = {
         finalAmount -= reimbursedAmount;
       }
 
-      const existingAmount = categoryMap.get(tx.category) || 0;
-      categoryMap.set(tx.category, existingAmount + finalAmount);
+      const existingAmount = categoryMap.get(category) || 0;
+      categoryMap.set(category, existingAmount + finalAmount);
     });
 
     // Convert to array and sort by amount (descending)

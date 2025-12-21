@@ -3,10 +3,7 @@ import { Transaction } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { CurrencyService } from "@/core/currency";
 import { formatDate } from "@/utils/dates/formatters";
-import {
-  getCategoryFromMCC,
-  getCategoryFromMerchantName,
-} from "@/utils/categoryMapping";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -19,28 +16,11 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
   className = "",
   onClick,
 }) => {
-  // Determine category for display
-  const displayCategory = React.useMemo(() => {
-    // Use transaction's stored category if available
-    if (transaction.category && transaction.category !== "Uncategorized") {
-      return transaction.category;
-    }
-
-    // Try to determine from MCC
-    if (transaction.merchant.mcc?.code) {
-      return getCategoryFromMCC(transaction.merchant.mcc.code);
-    }
-
-    // Try to determine from merchant name
-    const nameBasedCategory = getCategoryFromMerchantName(
-      transaction.merchant.name
-    );
-    if (nameBasedCategory) {
-      return nameBasedCategory;
-    }
-
-    return "Uncategorized";
-  }, [transaction]);
+  // Determine category for display using getEffectiveCategory
+  const displayCategory = React.useMemo(
+    () => getEffectiveCategory(transaction),
+    [transaction]
+  );
 
   const handleClick = () => {
     if (onClick) {

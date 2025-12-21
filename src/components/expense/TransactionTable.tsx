@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -16,10 +15,7 @@ import { formatDate } from "@/utils/dates/formatters";
 import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from "lucide-react";
 import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
-import {
-  getCategoryFromMCC,
-  getCategoryFromMerchantName,
-} from "@/utils/categoryMapping";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -40,11 +36,13 @@ const TransactionTable = ({
   const handleExportCSV = useMemo(
     () => async () => {
       const csvPromise = exportTransactionsToCSV(transactions);
-      
+
       // Use the utility function to handle the string promise safely
       await withResolvedStringPromise(async (csvContent) => {
         // Create a blob and download link
-        const url = URL.createObjectURL(new Blob([csvContent], { type: "text/csv;charset=utf-8;" }));
+        const url = URL.createObjectURL(
+          new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+        );
         const link = document.createElement("a");
 
         link.setAttribute("href", url);
@@ -67,30 +65,7 @@ const TransactionTable = ({
   const transactionCategories = useMemo(() => {
     return transactions.reduce(
       (acc, transaction) => {
-        const txId = transaction.id;
-
-        // Use transaction's stored category if available
-        if (transaction.category && transaction.category !== "Uncategorized") {
-          acc[txId] = transaction.category;
-          return acc;
-        }
-
-        // Try to determine from MCC
-        if (transaction.merchant.mcc?.code) {
-          acc[txId] = getCategoryFromMCC(transaction.merchant.mcc.code);
-          return acc;
-        }
-
-        // Try to determine from merchant name
-        const nameBasedCategory = getCategoryFromMerchantName(
-          transaction.merchant.name
-        );
-        if (nameBasedCategory) {
-          acc[txId] = nameBasedCategory;
-          return acc;
-        }
-
-        acc[txId] = "Uncategorized";
+        acc[transaction.id] = getEffectiveCategory(transaction);
         return acc;
       },
       {} as Record<string, string>
@@ -106,10 +81,7 @@ const TransactionTable = ({
           className="flex items-center gap-1"
           onClick={handleExportCSV}
         >
-          <DownloadIcon 
-            className="h-4 w-4" 
-            style={{ strokeWidth: 2.5 }}
-          />
+          <DownloadIcon className="h-4 w-4" style={{ strokeWidth: 2.5 }} />
           Export CSV
         </Button>
       </div>
@@ -194,10 +166,10 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onView(transaction)}
                       >
-                        <EyeIcon 
-                          className="h-4 w-4" 
-                          style={{ 
-                            color: 'var(--color-icon-secondary)',
+                        <EyeIcon
+                          className="h-4 w-4"
+                          style={{
+                            color: "var(--color-icon-secondary)",
                             strokeWidth: 2.5,
                           }}
                         />
@@ -208,10 +180,10 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onEdit(transaction)}
                       >
-                        <EditIcon 
-                          className="h-4 w-4" 
-                          style={{ 
-                            color: 'var(--color-icon-secondary)',
+                        <EditIcon
+                          className="h-4 w-4"
+                          style={{
+                            color: "var(--color-icon-secondary)",
                             strokeWidth: 2.5,
                           }}
                         />
@@ -222,10 +194,10 @@ const TransactionTable = ({
                         size="icon"
                         onClick={() => onDelete(transaction)}
                       >
-                        <TrashIcon 
-                          className="h-4 w-4" 
-                          style={{ 
-                            color: 'var(--color-icon-secondary)',
+                        <TrashIcon
+                          className="h-4 w-4"
+                          style={{
+                            color: "var(--color-icon-secondary)",
                             strokeWidth: 2.5,
                           }}
                         />

@@ -1,10 +1,9 @@
-
 // hooks/dashboard/useDashboardMetrics.ts
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { DashboardData } from "@/types/dashboard";
 import { metricsUtils, chartUtils } from "@/utils/dashboard";
-import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 interface UseDashboardMetricsOptions {
   filteredTransactions: Transaction[];
@@ -21,7 +20,7 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
     filteredTransactions,
     previousPeriodTransactions,
     displayCurrency,
-    calculateDayOfWeekMetrics = false
+    calculateDayOfWeekMetrics = false,
   } = options;
 
   // Generate dashboard data from filtered transactions
@@ -44,43 +43,28 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
             paymentMethods: [],
             categories: [],
             dayOfWeekSpending: {},
-            spendingTrends: { 
-              labels: [], 
-              datasets: [{ 
-                label: "Expenses",
-                data: [],
-                backgroundColor: "#8884d8"
-              }] 
+            spendingTrends: {
+              labels: [],
+              datasets: [
+                {
+                  label: "Expenses",
+                  data: [],
+                  backgroundColor: "#8884d8",
+                },
+              ],
             },
-          }
+          },
         } as DashboardData;
       }
 
       // Apply category mapping to transactions before calculating metrics
-      const transactionsWithCategories = filteredTransactions.map(transaction => {
-        // Use transaction's stored category if available and not "Uncategorized"
-        if (transaction.category && transaction.category !== "Uncategorized") {
-          return transaction;
-        }
-
-        let determinedCategory = "Uncategorized";
-
-        // Try to determine from MCC
-        if (transaction.merchant.mcc?.code) {
-          determinedCategory = getCategoryFromMCC(transaction.merchant.mcc.code);
-        } else {
-          // Try to determine from merchant name
-          const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
-          if (nameBasedCategory) {
-            determinedCategory = nameBasedCategory;
-          }
-        }
-
-        return {
+      // Use getEffectiveCategory which prefers userCategory, then category, then derives from MCC
+      const transactionsWithCategories = filteredTransactions.map(
+        (transaction) => ({
           ...transaction,
-          category: determinedCategory
-        };
-      });
+          category: getEffectiveCategory(transaction),
+        })
+      );
 
       // Calculate metrics using transactions with proper categories
       const metrics = metricsUtils.calculateMetrics(
@@ -93,10 +77,10 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
       const categoriesData = chartUtils.generatePieChartData(
         transactionsWithCategories,
         {
-          groupBy: 'category',
+          groupBy: "category",
           displayCurrency,
           includeReimbursements: true,
-          topItemsLimit: 10
+          topItemsLimit: 10,
         }
       );
 
@@ -104,9 +88,9 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
       const paymentMethodsData = chartUtils.generatePieChartData(
         transactionsWithCategories,
         {
-          groupBy: 'paymentMethod',
+          groupBy: "paymentMethod",
           displayCurrency,
-          includeReimbursements: true
+          includeReimbursements: true,
         }
       );
 
@@ -114,38 +98,46 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
       const barData = chartUtils.generateTimeSeriesData(
         transactionsWithCategories,
         {
-          period: 'month',
+          period: "month",
           displayCurrency,
           includeReimbursements: true,
-          includeTrend: true
+          includeTrend: true,
         }
       );
 
       // Calculate day of week spending if enabled
-      const dayOfWeekSpending = calculateDayOfWeekMetrics 
-        ? metricsUtils.calculateAverageByDayOfWeek(transactionsWithCategories, displayCurrency)
+      const dayOfWeekSpending = calculateDayOfWeekMetrics
+        ? metricsUtils.calculateAverageByDayOfWeek(
+            transactionsWithCategories,
+            displayCurrency
+          )
         : {};
 
       // Transform bar data to the expected spendingTrends format
       const spendingTrends = {
-        labels: barData.data.map(item => item.period),
+        labels: barData.data.map((item) => item.period),
         datasets: [
           {
             label: "Expenses",
-            data: barData.data.map(item => item.amount),
-            backgroundColor: chartUtils.CHART_COLORS[0]
-          }
-        ]
+            data: barData.data.map((item) => item.amount),
+            backgroundColor: chartUtils.CHART_COLORS[0],
+          },
+        ],
       };
 
       // Get top values
-      const topCategory = categoriesData.length > 0 ? 
-        { name: categoriesData[0].name, value: categoriesData[0].value } : 
-        undefined;
-        
-      const topPaymentMethod = paymentMethodsData.length > 0 ? 
-        { name: paymentMethodsData[0].name, value: paymentMethodsData[0].value } : 
-        undefined;
+      const topCategory =
+        categoriesData.length > 0
+          ? { name: categoriesData[0].name, value: categoriesData[0].value }
+          : undefined;
+
+      const topPaymentMethod =
+        paymentMethodsData.length > 0
+          ? {
+              name: paymentMethodsData[0].name,
+              value: paymentMethodsData[0].value,
+            }
+          : undefined;
 
       // Create the dashboard data object with properly categorized transactions
       const result: DashboardData = {
@@ -160,7 +152,7 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
         top: {
           category: topCategory,
           paymentMethod: topPaymentMethod,
-        }
+        },
       };
 
       return result;
@@ -168,11 +160,16 @@ export function useDashboardMetrics(options: UseDashboardMetricsOptions) {
       console.error("Error generating dashboard data:", error);
       return null;
     }
-  }, [filteredTransactions, previousPeriodTransactions, displayCurrency, calculateDayOfWeekMetrics]);
+  }, [
+    filteredTransactions,
+    previousPeriodTransactions,
+    displayCurrency,
+    calculateDayOfWeekMetrics,
+  ]);
 
   return {
     dashboardData,
     isLoading: false,
-    error: dashboardData ? null : "Failed to calculate dashboard metrics"
+    error: dashboardData ? null : "Failed to calculate dashboard metrics",
   };
 }
