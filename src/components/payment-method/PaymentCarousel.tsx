@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { PaymentMethod } from "@/types";
 import { cn } from "@/lib/utils";
 import { PaymentCardFace } from "./PaymentCardFace";
@@ -10,6 +10,12 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+
+// Haptic feedback utility
+const haptic = {
+  light: () => navigator.vibrate?.(10),
+  medium: () => navigator.vibrate?.(20),
+};
 
 interface PaymentCarouselProps {
   paymentMethods: PaymentMethod[];
@@ -25,15 +31,22 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  const prevIndexRef = useRef<number>(0);
 
   useEffect(() => {
     if (!api) return;
 
     // Set up event listeners for the carousel
     const onSelect = () => {
-      setCurrent(api.selectedScrollSnap());
-      if (paymentMethods[api.selectedScrollSnap()]) {
-        onSelectMethod(paymentMethods[api.selectedScrollSnap()]);
+      const newIndex = api.selectedScrollSnap();
+      // Trigger haptic feedback when snapping to a different card
+      if (newIndex !== prevIndexRef.current) {
+        haptic.medium();
+        prevIndexRef.current = newIndex;
+      }
+      setCurrent(newIndex);
+      if (paymentMethods[newIndex]) {
+        onSelectMethod(paymentMethods[newIndex]);
       }
     };
 
@@ -108,6 +121,7 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
             borderColor: "var(--color-border)",
             color: "var(--color-icon-secondary)",
           }}
+          onClick={() => haptic.light()}
         />
         <CarouselNext
           className="absolute -right-4 sm:-right-2 md:right-2 transition-all duration-300"
@@ -116,6 +130,7 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
             borderColor: "var(--color-border)",
             color: "var(--color-icon-secondary)",
           }}
+          onClick={() => haptic.light()}
         />
       </Carousel>
 
@@ -124,7 +139,10 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
         {paymentMethods.map((_, index) => (
           <button
             key={index}
-            onClick={() => api?.scrollTo(index)}
+            onClick={() => {
+              haptic.light();
+              api?.scrollTo(index);
+            }}
             className="transition-all duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{
               width: "8px",

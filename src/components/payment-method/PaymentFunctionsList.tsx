@@ -19,7 +19,6 @@ import {
 // Storage key for the first-visit tooltip hint
 const STATUS_DOT_HINT_KEY = "expense-tracker-status-dot-hint-shown";
 import { CurrencyService } from "@/core/currency/CurrencyService";
-import { Button } from "@/components/ui/button";
 import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
 import { Separator } from "@/components/ui/separator";
 import { RewardRule } from "@/core/rewards/types";
@@ -303,10 +302,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         style={{ backgroundColor: "var(--color-divider)", opacity: 0.4 }}
       />
 
-      {/* Japandi Stats Summary - Card stats section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Stats Summary - Horizontal 2-column grid */}
+      <div className="grid grid-cols-2 gap-3">
         <div
-          className="p-4"
+          className="p-3"
           style={{
             backgroundColor: "var(--color-card-bg)",
             border: "1px solid var(--color-border)",
@@ -315,60 +314,46 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
           }}
         >
           <h3
-            className="text-[13px] mb-1"
+            className="text-[12px] mb-0.5"
             style={{ color: "var(--color-text-tertiary)" }}
           >
             Total Spent
           </h3>
           <p
-            className="text-xl font-medium"
+            className="text-lg font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
             {CurrencyService.format(totalSpent, paymentMethod.currency)}
           </p>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
-            {paymentMethodTransactions.length} transactions
-          </p>
         </div>
 
         {paymentMethod.type === "credit_card" && (
-          <>
-            <div
-              className="p-4"
-              style={{
-                backgroundColor: "var(--color-card-bg)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "10px",
-                boxShadow: "var(--shadow-card)",
-              }}
+          <div
+            className="p-3"
+            style={{
+              backgroundColor: "var(--color-card-bg)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "10px",
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
+            <h3
+              className="text-[12px] mb-0.5 truncate"
+              style={{ color: "var(--color-text-tertiary)" }}
             >
-              <h3
-                className="text-[13px] mb-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Reward Points
-              </h3>
-              <p
-                className="text-xl font-medium"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                {totalRewardPoints.toLocaleString()}
-              </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Total earned points
-              </p>
-            </div>
-          </>
+              {paymentMethod.pointsCurrency || "Reward Points"}
+            </h3>
+            <p
+              className="text-lg font-medium"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {totalRewardPoints.toLocaleString()}
+            </p>
+          </div>
         )}
       </div>
 
-      {/* Japandi Settings Card */}
+      {/* Primary Actions Card */}
       <div
         style={{
           backgroundColor: "var(--color-card-bg)",
@@ -380,7 +365,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       >
         {/* Edit payment method */}
         <div
-          className="p-4 cursor-pointer transition-colors duration-150"
+          className="px-4 py-3 cursor-pointer transition-colors duration-150"
           onClick={() => onEdit(paymentMethod)}
           style={{ minHeight: "44px" }}
           onMouseEnter={(e) =>
@@ -399,39 +384,31 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                   strokeWidth: 2,
                 }}
               />
-              <div>
-                <h3
-                  className="font-medium text-sm"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  Edit Payment Method
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Update name, currency, and other details
-                </p>
-              </div>
+              <span
+                className="font-medium text-sm"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Edit Payment Method
+              </span>
             </div>
             <Chevron direction="right" size="medium" />
           </div>
         </div>
 
-        {/* Divider */}
-        <div
-          style={{
-            borderTop: "1px solid var(--color-divider)",
-            margin: "0 16px",
-            opacity: 0.4,
-          }}
-        />
-
         {/* Upload card image - only for credit cards */}
         {paymentMethod.type === "credit_card" && (
           <>
+            {/* Divider */}
             <div
-              className="p-4 cursor-pointer transition-colors duration-150"
+              style={{
+                borderTop: "1px solid var(--color-divider)",
+                margin: "0 16px",
+                opacity: 0.4,
+              }}
+            />
+
+            <div
+              className="px-4 py-3 cursor-pointer transition-colors duration-150"
               onClick={() => onImageUpload(paymentMethod)}
               style={{ minHeight: "44px" }}
               onMouseEnter={(e) =>
@@ -450,119 +427,72 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                       strokeWidth: 2,
                     }}
                   />
-                  <div>
-                    <h3
-                      className="font-medium text-sm"
-                      style={{ color: "var(--color-text-primary)" }}
-                    >
-                      {paymentMethod.imageUrl
-                        ? "Change Card Image"
-                        : "Upload Card Image"}
-                    </h3>
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      {paymentMethod.imageUrl
-                        ? "Replace or remove current image"
-                        : "Add an image of your card"}
-                    </p>
-                  </div>
+                  <span
+                    className="font-medium text-sm"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {paymentMethod.imageUrl
+                      ? "Change Card Image"
+                      : "Upload Card Image"}
+                  </span>
                 </div>
                 <Chevron direction="right" size="medium" />
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div
-              style={{
-                borderTop: "1px solid var(--color-divider)",
-                margin: "0 16px",
-                opacity: 0.4,
-              }}
-            />
-
-            {/* Statement details - Enhanced with current period */}
-            <div
-              className="p-4 transition-colors duration-150"
-              style={{ minHeight: "44px" }}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-start">
-                  <CalendarIcon
-                    className="h-5 w-5 mr-3 mt-0.5"
-                    style={{
-                      color: "var(--color-icon-secondary)",
-                      strokeWidth: 2,
-                    }}
-                  />
-                  <div className="space-y-2">
-                    <div>
-                      <h3
-                        className="font-medium text-sm"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        Statement Details
-                      </h3>
-                      <p
-                        className="text-sm"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        {statementPeriod?.label}
-                        {paymentMethod.statementStartDay && (
-                          <span style={{ color: "var(--color-text-tertiary)" }}>
-                            {" "}
-                            (starts day {paymentMethod.statementStartDay})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    {/* Current period info */}
-                    {statementPeriod && (
-                      <div
-                        className="text-xs px-3 py-2 rounded-lg"
-                        style={{
-                          backgroundColor: "var(--color-surface)",
-                        }}
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <span style={{ color: "var(--color-text-tertiary)" }}>
-                            Current period:
-                          </span>
-                          <span
-                            className="font-medium"
-                            style={{ color: "var(--color-text-primary)" }}
-                          >
-                            {formatDate(statementPeriod.start)} -{" "}
-                            {formatDate(statementPeriod.end)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-4 mt-1">
-                          <span style={{ color: "var(--color-text-tertiary)" }}>
-                            Days remaining:
-                          </span>
-                          <span
-                            className="font-medium"
-                            style={{
-                              color:
-                                statementPeriod.daysRemaining <= 5
-                                  ? "var(--color-warning)"
-                                  : "var(--color-text-primary)",
-                            }}
-                          >
-                            {statementPeriod.daysRemaining} day
-                            {statementPeriod.daysRemaining !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Statement Period Card - Informational, not actionable */}
+      {paymentMethod.type === "credit_card" && statementPeriod && (
+        <div
+          className="p-4"
+          style={{
+            backgroundColor: "var(--color-card-bg)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "12px",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarIcon
+              className="h-4 w-4"
+              style={{
+                color: "var(--color-icon-secondary)",
+                strokeWidth: 2,
+              }}
+            />
+            <span
+              className="text-[13px] font-medium"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Statement Period
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {formatDate(statementPeriod.start)} –{" "}
+              {formatDate(statementPeriod.end)}
+            </span>
+            <span style={{ color: "var(--color-text-tertiary)" }}>•</span>
+            <span
+              className="text-sm"
+              style={{
+                color:
+                  statementPeriod.daysRemaining <= 5
+                    ? "var(--color-warning)"
+                    : "var(--color-text-secondary)",
+              }}
+            >
+              {statementPeriod.daysRemaining} day
+              {statementPeriod.daysRemaining !== 1 ? "s" : ""} left
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Unified Reward Rules Section - only for credit cards */}
       {paymentMethod.type === "credit_card" && (
