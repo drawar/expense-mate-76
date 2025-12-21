@@ -1,7 +1,7 @@
 // components/dashboard/layout/SummarySection.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { SummaryCard } from "@/components/dashboard/cards";
+import { SummaryCard, BudgetProgressCard } from "@/components/dashboard/cards";
 import { BarChartIcon, ArrowDownLeftIcon } from "lucide-react";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 
@@ -45,9 +45,7 @@ const SummarySection: React.FC = () => {
 
   return (
     <div className="space-y-4 w-full">
-      <div
-        className={`grid grid-cols-1 ${hasReimbursements ? "sm:grid-cols-2" : ""} gap-4 mb-6 animate-fadeIn`}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 animate-fadeIn">
         {/* Net Expenses Card */}
         <SummaryCard
           title="Net Expenses"
@@ -61,6 +59,9 @@ const SummarySection: React.FC = () => {
           cardColor="bg-gradient-to-br from-emerald-500/10 to-teal-600/10"
           valueColor="text-emerald-800 dark:text-emerald-300"
         />
+
+        {/* Budget Progress Card */}
+        <BudgetProgressCard className="rounded-xl border border-border/50 bg-card" />
 
         {/* Reimbursements Card - only show when there are reimbursements */}
         {hasReimbursements && (
