@@ -1,15 +1,31 @@
 import { Transaction } from "@/types";
 import { CurrencyService } from "@/core/currency";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BUDGET_CATEGORIES } from "@/utils/constants/categories";
+import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 
-import { CreditCardIcon, CoinsIcon } from "lucide-react";
+import { CreditCardIcon, CoinsIcon, TagIcon } from "lucide-react";
 
 interface TransactionDetailsViewProps {
   transaction: Transaction;
+  onCategoryChange?: (category: string) => void;
 }
 
 const TransactionDetailsView = ({
   transaction,
+  onCategoryChange,
 }: TransactionDetailsViewProps) => {
+  const currentCategory = getEffectiveCategory(transaction);
+  const mccCategory = getMccCategory(transaction);
+  const isRecategorized =
+    transaction.isRecategorized || currentCategory !== mccCategory;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
       <div className="space-y-4">
@@ -27,6 +43,36 @@ const TransactionDetailsView = ({
                 transaction.paymentAmount,
                 transaction.paymentCurrency
               )}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">
+            Category
+          </h3>
+          <div className="flex items-center gap-2">
+            <TagIcon className="h-4 w-4" />
+            {onCategoryChange ? (
+              <Select value={currentCategory} onValueChange={onCategoryChange}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUDGET_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="font-medium">{currentCategory}</p>
+            )}
+          </div>
+          {isRecategorized && mccCategory !== "Uncategorized" && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Merchant type: {mccCategory}
             </p>
           )}
         </div>
