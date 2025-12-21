@@ -1,9 +1,8 @@
 import { PaymentMethod } from "@/types";
 import { RewardService } from "@/core/rewards/RewardService";
-import { ConversionService, MilesCurrency } from "./ConversionService";
+import { ConversionService } from "./ConversionService";
 import { CalculationInput, CalculationResult } from "@/core/rewards/types";
 import { MonthlySpendingTracker } from "@/core/rewards/MonthlySpendingTracker";
-import { CardRegistry } from "@/core/rewards/CardRegistry";
 import { DateTime } from "luxon";
 
 /**
@@ -37,6 +36,8 @@ export interface CardCalculationResult {
 /**
  * SimulatorService orchestrates multi-card reward calculations
  * and currency conversions for the Card Optimizer Simulator feature.
+ *
+ * Uses the ID-based currency system with reward_currencies table.
  */
 export class SimulatorService {
   private rewardService: RewardService;
@@ -58,20 +59,20 @@ export class SimulatorService {
    *
    * @param input - Simulation input with transaction details
    * @param paymentMethods - Array of payment methods to simulate
-   * @param milesCurrency - Target miles currency for conversion
+   * @param targetCurrencyId - Target miles currency ID for conversion
    * @returns Array of calculation results, ranked by converted miles
    */
   async simulateAllCards(
     input: SimulationInput,
     paymentMethods: PaymentMethod[],
-    milesCurrency: MilesCurrency
+    targetCurrencyId: string
   ): Promise<CardCalculationResult[]> {
     // Filter to only active payment methods (Requirement 2.1)
     const activePaymentMethods = paymentMethods.filter((pm) => pm.active);
 
     // Calculate rewards for each card in parallel
     const calculationPromises = activePaymentMethods.map((paymentMethod) =>
-      this.simulateSingleCard(input, paymentMethod, milesCurrency)
+      this.simulateSingleCard(input, paymentMethod, targetCurrencyId)
     );
 
     // Wait for all calculations to complete
@@ -119,187 +120,16 @@ export class SimulatorService {
    *
    * @param input - Simulation input with transaction details
    * @param paymentMethod - Payment method to simulate
-   * @param milesCurrency - Target miles currency for conversion
+   * @param targetCurrencyId - Target miles currency ID for conversion
    * @returns Calculation result with conversion
    */
   async simulateSingleCard(
     input: SimulationInput,
     paymentMethod: PaymentMethod,
-    milesCurrency: MilesCurrency
+    targetCurrencyId: string
   ): Promise<CardCalculationResult> {
     console.log(
-      `[SimulatorService] START simulateSingleCard for ${paymentMethod.name}, issuer: "${paymentMethod.issuer}", existing pointsCurrency: "${paymentMethod.pointsCurrency}"`
-    );
-    try {
-      // Get monthly spending for this payment method (Requirement 7.1)
-      const monthlySpend = await this.getMonthlySpending(
-        paymentMethod.id,
-        input.date
-      );
-
-      // Get pointsCurrency from payment method or look up from CardRegistry
-      let pointsCurrency = paymentMethod.pointsCurrency;
-      if (!pointsCurrency) {
-        const cardRegistry = CardRegistry.getInstance();
-        const cardType = cardRegistry.getCardTypeByIssuerAndName(
-          paymentMethod.issuer,
-          paymentMethod.name
-        );
-        pointsCurrency = cardType?.pointsCurrency;
-
-        // Fallback: map issuer to default pointsCurrency
-        if (!pointsCurrency) {
-          const issuerPointsCurrencyMap: Record<string, string> = {
-            dbs: "DBS Points",
-            citi: "Citi ThankYou Points",
-            citibank: "Citi ThankYou Points",
-            uob: "UNI$",
-            ocbc: "OCBC$",
-            hsbc: "HSBC Rewards Points",
-            amex: "Membership Rewards Points (CA)",
-            "american express": "Membership Rewards Points (CA)",
-            rbc: "RBC Avion Points",
-            td: "Aeroplan Points",
-            scotiabank: "Scene+ Points",
-          };
-          const normalizedIssuer = paymentMethod.issuer.toLowerCase();
-          pointsCurrency = issuerPointsCurrencyMap[normalizedIssuer];
-          console.log(
-            `[SimulatorService] Fallback issuer mapping for "${paymentMethod.issuer}": "${pointsCurrency}"`
-          );
-        } else {
-          console.log(
-            `[SimulatorService] Looked up pointsCurrency from CardRegistry: "${pointsCurrency}"`
-          );
-        }
-      }
-
-      // Build calculation input
-      console.log(
-        `[SimulatorService] Payment method: ${paymentMethod.name}, pointsCurrency: "${pointsCurrency}"`
-      );
-      const calculationInput: CalculationInput = {
-        amount: input.amount,
-        currency: input.currency,
-        convertedAmount: input.convertedAmount,
-        convertedCurrency: input.convertedCurrency,
-        paymentMethod: {
-          id: paymentMethod.id,
-          issuer: paymentMethod.issuer,
-          name: paymentMethod.name,
-          pointsCurrency: pointsCurrency,
-        },
-        mcc: input.mcc,
-        merchantName: input.merchantName,
-        transactionType: "purchase",
-        isOnline: input.isOnline,
-        isContactless: input.isContactless,
-        date: DateTime.fromJSDate(input.date),
-        monthlySpend,
-      };
-
-      // Calculate rewards using existing RewardService (Requirement 2.2)
-      const calculation =
-        await this.rewardService.calculateRewards(calculationInput);
-
-      // Convert to miles currency (Requirement 3.2)
-      const rewardCurrency = calculation.pointsCurrency;
-      const { miles, rate } = await this.conversionService.convertToMiles(
-        calculation.totalPoints,
-        rewardCurrency,
-        milesCurrency
-      );
-
-      return {
-        paymentMethod,
-        calculation,
-        convertedMiles: miles,
-        conversionRate: rate,
-        rank: 0, // Will be set by rankResults
-      };
-    } catch (error) {
-      // Handle individual card calculation error
-      console.error(`Error simulating card ${paymentMethod.name}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Calculate rewards for all active payment methods using ID-based currency system
-   *
-   * @param input - Simulation input with transaction details
-   * @param paymentMethods - Array of payment methods to simulate
-   * @param milesCurrencyId - Target miles currency ID for conversion
-   * @returns Array of calculation results, ranked by converted miles
-   */
-  async simulateAllCardsById(
-    input: SimulationInput,
-    paymentMethods: PaymentMethod[],
-    milesCurrencyId: string
-  ): Promise<CardCalculationResult[]> {
-    // Filter to only active payment methods (Requirement 2.1)
-    const activePaymentMethods = paymentMethods.filter((pm) => pm.active);
-
-    // Calculate rewards for each card in parallel
-    const calculationPromises = activePaymentMethods.map((paymentMethod) =>
-      this.simulateSingleCardById(input, paymentMethod, milesCurrencyId)
-    );
-
-    // Wait for all calculations to complete
-    // Using Promise.allSettled to handle individual card failures (Requirement 2.4)
-    const results = await Promise.allSettled(calculationPromises);
-
-    // Extract successful results and handle failures
-    const cardResults: CardCalculationResult[] = results.map(
-      (result, index) => {
-        if (result.status === "fulfilled") {
-          return result.value;
-        } else {
-          // Handle individual card failure (Requirement 2.4)
-          const paymentMethod = activePaymentMethods[index];
-          console.error(
-            `Error calculating rewards for ${paymentMethod.name}:`,
-            result.reason
-          );
-
-          return {
-            paymentMethod,
-            calculation: {
-              totalPoints: 0,
-              basePoints: 0,
-              bonusPoints: 0,
-              pointsCurrency: paymentMethod.pointsCurrency || "points",
-              minSpendMet: true,
-              messages: ["Calculation failed for this card"],
-            },
-            convertedMiles: null,
-            conversionRate: null,
-            rank: 0,
-            error: result.reason?.message || "Unknown error",
-          };
-        }
-      }
-    );
-
-    // Rank results by converted miles value (Requirement 4.1)
-    return this.rankResults(cardResults);
-  }
-
-  /**
-   * Calculate rewards for a single card using ID-based currency system
-   *
-   * @param input - Simulation input with transaction details
-   * @param paymentMethod - Payment method to simulate
-   * @param milesCurrencyId - Target miles currency ID for conversion
-   * @returns Calculation result with conversion
-   */
-  async simulateSingleCardById(
-    input: SimulationInput,
-    paymentMethod: PaymentMethod,
-    milesCurrencyId: string
-  ): Promise<CardCalculationResult> {
-    console.log(
-      `[SimulatorService] START simulateSingleCardById for ${paymentMethod.name}, issuer: "${paymentMethod.issuer}", rewardCurrencyId: "${paymentMethod.rewardCurrencyId}"`
+      `[SimulatorService] START simulateSingleCard for ${paymentMethod.name}, issuer: "${paymentMethod.issuer}", rewardCurrencyId: "${paymentMethod.rewardCurrencyId}"`
     );
     try {
       // Get monthly spending for this payment method (Requirement 7.1)
@@ -356,18 +186,18 @@ export class SimulatorService {
       let convertedMiles: number | null = null;
       let conversionRate: number | null = null;
 
-      if (rewardCurrencyId && milesCurrencyId) {
+      if (rewardCurrencyId && targetCurrencyId) {
         const conversionResult =
           await this.conversionService.convertToMilesById(
             calculation.totalPoints,
             rewardCurrencyId,
-            milesCurrencyId
+            targetCurrencyId
           );
         convertedMiles = conversionResult.miles;
         conversionRate = conversionResult.rate;
       } else {
         console.warn(
-          `[SimulatorService] Cannot convert - missing rewardCurrencyId: "${rewardCurrencyId}" or milesCurrencyId: "${milesCurrencyId}"`
+          `[SimulatorService] Cannot convert - missing rewardCurrencyId: "${rewardCurrencyId}" or targetCurrencyId: "${targetCurrencyId}"`
         );
       }
 
@@ -383,6 +213,30 @@ export class SimulatorService {
       console.error(`Error simulating card ${paymentMethod.name}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Alias for simulateAllCards (for backward compatibility)
+   * @deprecated Use simulateAllCards instead
+   */
+  async simulateAllCardsById(
+    input: SimulationInput,
+    paymentMethods: PaymentMethod[],
+    targetCurrencyId: string
+  ): Promise<CardCalculationResult[]> {
+    return this.simulateAllCards(input, paymentMethods, targetCurrencyId);
+  }
+
+  /**
+   * Alias for simulateSingleCard (for backward compatibility)
+   * @deprecated Use simulateSingleCard instead
+   */
+  async simulateSingleCardById(
+    input: SimulationInput,
+    paymentMethod: PaymentMethod,
+    targetCurrencyId: string
+  ): Promise<CardCalculationResult> {
+    return this.simulateSingleCard(input, paymentMethod, targetCurrencyId);
   }
 
   /**

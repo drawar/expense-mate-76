@@ -148,30 +148,33 @@ export const PointsDisplay = ({
           )}
         </div>
 
-        {points && (
-          <div className="mt-2 space-y-1">
-            {points.messages && points.messages.length > 0 && (
-              <div className="text-xs text-gray-600">
-                {points.messages.map((message, index) => (
-                  <div key={index}>{message}</div>
-                ))}
-              </div>
-            )}
-            {points.remainingMonthlyBonusPoints !== undefined &&
-              points.remainingMonthlyBonusPoints < 1000 &&
-              points.remainingMonthlyBonusPoints > 0 && (
-                <div className="text-xs text-amber-600 font-medium">
-                  ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points
-                  remaining this month
+        {points &&
+          (points.messages?.length > 0 ||
+            (points.remainingMonthlyBonusPoints !== undefined &&
+              points.remainingMonthlyBonusPoints <= 1000)) && (
+            <div className="mt-2 space-y-1">
+              {points.messages && points.messages.length > 0 && (
+                <div className="text-xs text-gray-600">
+                  {points.messages.map((message, index) => (
+                    <div key={index}>{message}</div>
+                  ))}
                 </div>
               )}
-            {points.remainingMonthlyBonusPoints === 0 && (
-              <div className="text-xs text-red-600 font-medium">
-                🚫 Monthly bonus cap reached
-              </div>
-            )}
-          </div>
-        )}
+              {points.remainingMonthlyBonusPoints !== undefined &&
+                points.remainingMonthlyBonusPoints < 1000 &&
+                points.remainingMonthlyBonusPoints > 0 && (
+                  <div className="text-xs text-amber-600 font-medium">
+                    ⚠️ Only {points.remainingMonthlyBonusPoints} bonus points
+                    remaining this month
+                  </div>
+                )}
+              {points.remainingMonthlyBonusPoints === 0 && (
+                <div className="text-xs text-red-600 font-medium">
+                  🚫 Monthly bonus cap reached
+                </div>
+              )}
+            </div>
+          )}
       </CardContent>
     </Card>
   );

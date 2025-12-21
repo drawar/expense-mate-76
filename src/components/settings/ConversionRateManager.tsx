@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  ConversionService,
-  MilesCurrency,
-  ConversionRateMatrix,
-} from "@/core/currency/ConversionService";
+import { ConversionService } from "@/core/currency/ConversionService";
+import { RewardCurrency } from "@/core/currency/types";
 import {
   Card,
   CardContent,
@@ -23,56 +20,90 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Save, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Loader2, Save, AlertCircle, RefreshCw, Trash2 } from "lucide-react";
 
 /**
- * Miles currency options in display order
+ * Rate matrix using currency IDs as keys
+ * { sourceCurrencyId: { targetCurrencyId: rate } }
  */
-const MILES_CURRENCIES: MilesCurrency[] = [
-  "KrisFlyer",
-  "AsiaMiles",
-  "Avios",
-  "FlyingBlue",
-  "Aeroplan",
-  "Velocity",
-];
+type RateMatrix = Record<string, Record<string, number>>;
 
 /**
  * Editing state for a specific cell
  */
 interface EditingCell {
-  rewardCurrency: string;
-  milesCurrency: MilesCurrency;
+  sourceCurrencyId: string;
+  targetCurrencyId: string;
   value: string;
 }
 
 /**
  * ConversionRateManager component for managing conversion rates between
- * reward currencies and miles programs.
- * 
- * Requirements: 6.1, 6.2, 6.3, 6.4
+ * reward currencies (bank points) and destination currencies (airline miles).
+ *
+ * Uses the unified reward_currencies table with is_transferrable flag:
+ * - Source currencies: is_transferrable = true (bank points like Citi ThankYou)
+ * - Target currencies: is_transferrable = false (airline miles like KrisFlyer)
  */
 export function ConversionRateManager() {
-  const [conversionRates, setConversionRates] = useState<ConversionRateMatrix>({});
+  const [rateMatrix, setRateMatrix] = useState<RateMatrix>({});
+  const [sourceCurrencies, setSourceCurrencies] = useState<RewardCurrency[]>(
+    []
+  );
+  const [targetCurrencies, setTargetCurrencies] = useState<RewardCurrency[]>(
+    []
+  );
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [deleteConfirmCurrency, setDeleteConfirmCurrency] = useState<
+    string | null
+  >(null);
 
   const conversionService = ConversionService.getInstance();
 
   /**
-   * Load conversion rates from the database
+   * Load all data from the database
    */
-  const loadConversionRates = async () => {
+  const loadData = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const rates = await conversionService.getAllConversionRates();
-      setConversionRates(rates);
+      // Load currencies and rates in parallel
+      const [sources, targets, rates] = await Promise.all([
+        conversionService.getTransferrableCurrencies(),
+        conversionService.getDestinationCurrencies(),
+        conversionService.getAllConversionRatesWithCurrencies(),
+      ]);
+
+      setSourceCurrencies(sources);
+      setTargetCurrencies(targets);
+
+      // Build rate matrix from rates array
+      const matrix: RateMatrix = {};
+      for (const rate of rates) {
+        if (!matrix[rate.sourceCurrencyId]) {
+          matrix[rate.sourceCurrencyId] = {};
+        }
+        matrix[rate.sourceCurrencyId][rate.targetCurrencyId] = rate.rate;
+      }
+      setRateMatrix(matrix);
+      setHasChanges(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load conversion rates";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load data";
       setError(errorMessage);
       toast({
         title: "Error",
@@ -85,34 +116,33 @@ export function ConversionRateManager() {
   };
 
   /**
-   * Initialize component by loading rates
+   * Initialize component by loading data
    */
   useEffect(() => {
-    loadConversionRates();
+    loadData();
   }, []);
 
   /**
-   * Get all unique reward currencies from the matrix
+   * Get the rate for a specific source/target pair
    */
-  const getRewardCurrencies = (): string[] => {
-    return Object.keys(conversionRates).sort();
-  };
-
-  /**
-   * Get the conversion rate for a specific pair
-   */
-  const getRate = (rewardCurrency: string, milesCurrency: MilesCurrency): number | undefined => {
-    return conversionRates[rewardCurrency]?.[milesCurrency];
+  const getRate = (
+    sourceCurrencyId: string,
+    targetCurrencyId: string
+  ): number | undefined => {
+    return rateMatrix[sourceCurrencyId]?.[targetCurrencyId];
   };
 
   /**
    * Handle cell click to start editing
    */
-  const handleCellClick = (rewardCurrency: string, milesCurrency: MilesCurrency) => {
-    const currentRate = getRate(rewardCurrency, milesCurrency);
+  const handleCellClick = (
+    sourceCurrencyId: string,
+    targetCurrencyId: string
+  ) => {
+    const currentRate = getRate(sourceCurrencyId, targetCurrencyId);
     setEditingCell({
-      rewardCurrency,
-      milesCurrency,
+      sourceCurrencyId,
+      targetCurrencyId,
       value: currentRate !== undefined ? currentRate.toString() : "",
     });
   };
@@ -166,14 +196,15 @@ export function ConversionRateManager() {
     }
 
     const numValue = parseFloat(editingCell.value);
-    
+
     // Update local state
-    setConversionRates((prev) => {
+    setRateMatrix((prev) => {
       const updated = { ...prev };
-      if (!updated[editingCell.rewardCurrency]) {
-        updated[editingCell.rewardCurrency] = {};
+      if (!updated[editingCell.sourceCurrencyId]) {
+        updated[editingCell.sourceCurrencyId] = {};
       }
-      updated[editingCell.rewardCurrency][editingCell.milesCurrency] = numValue;
+      updated[editingCell.sourceCurrencyId][editingCell.targetCurrencyId] =
+        numValue;
       return updated;
     });
 
@@ -200,6 +231,43 @@ export function ConversionRateManager() {
   };
 
   /**
+   * Delete all conversion rates for a source currency
+   */
+  const handleDeleteSourceCurrency = async (sourceCurrencyId: string) => {
+    setIsDeleting(sourceCurrencyId);
+    setDeleteConfirmCurrency(null);
+
+    try {
+      await conversionService.deleteConversionRatesForSourceCurrency(
+        sourceCurrencyId
+      );
+
+      // Remove from local state
+      setRateMatrix((prev) => {
+        const updated = { ...prev };
+        delete updated[sourceCurrencyId];
+        return updated;
+      });
+
+      const currency = sourceCurrencies.find((c) => c.id === sourceCurrencyId);
+      toast({
+        title: "Rates Deleted",
+        description: `Successfully deleted all rates for "${currency?.displayName || sourceCurrencyId}"`,
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete rates";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  /**
    * Save all changes to the database
    */
   const handleSaveAll = async () => {
@@ -209,26 +277,28 @@ export function ConversionRateManager() {
     try {
       // Collect all updates
       const updates: Array<{
-        rewardCurrency: string;
-        milesCurrency: MilesCurrency;
+        sourceCurrencyId: string;
+        targetCurrencyId: string;
         rate: number;
       }> = [];
 
-      for (const rewardCurrency of Object.keys(conversionRates)) {
-        for (const milesCurrency of MILES_CURRENCIES) {
-          const rate = conversionRates[rewardCurrency][milesCurrency];
-          if (rate !== undefined) {
+      for (const sourceCurrencyId of Object.keys(rateMatrix)) {
+        for (const targetCurrencyId of Object.keys(
+          rateMatrix[sourceCurrencyId]
+        )) {
+          const rate = rateMatrix[sourceCurrencyId][targetCurrencyId];
+          if (rate !== undefined && rate > 0) {
             updates.push({
-              rewardCurrency,
-              milesCurrency,
+              sourceCurrencyId,
+              targetCurrencyId,
               rate,
             });
           }
         }
       }
 
-      // Batch update
-      await conversionService.batchUpdateConversionRates(updates);
+      // Batch upsert
+      await conversionService.batchUpsertConversionRatesById(updates);
 
       setHasChanges(false);
       toast({
@@ -236,7 +306,8 @@ export function ConversionRateManager() {
         description: "Conversion rates saved successfully",
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save conversion rates";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to save conversion rates";
       setError(errorMessage);
       toast({
         title: "Error",
@@ -249,22 +320,29 @@ export function ConversionRateManager() {
   };
 
   /**
-   * Retry loading rates after error
+   * Retry loading after error
    */
   const handleRetry = () => {
-    loadConversionRates();
+    loadData();
   };
 
-  const rewardCurrencies = getRewardCurrencies();
+  // Get source currencies that have at least one rate defined
+  const sourceCurrenciesWithRates = sourceCurrencies.filter(
+    (sc) => rateMatrix[sc.id] && Object.keys(rateMatrix[sc.id]).length > 0
+  );
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Conversion Rate Management</CardTitle>
-        <CardDescription>
-          Manage conversion rates between reward currencies and miles programs.
-          Click on any cell to edit the rate. Rates must be positive numbers.
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Conversion Rate Management</CardTitle>
+            <CardDescription>
+              Manage conversion rates between reward currencies (bank points)
+              and airline miles. Click on any cell to edit the rate.
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {error && (
@@ -289,68 +367,154 @@ export function ConversionRateManager() {
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-muted-foreground">Loading conversion rates...</span>
+            <span className="ml-2 text-muted-foreground">
+              Loading conversion rates...
+            </span>
           </div>
-        ) : rewardCurrencies.length === 0 ? (
+        ) : sourceCurrenciesWithRates.length === 0 ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Conversion Rates</AlertTitle>
             <AlertDescription>
-              No conversion rates have been configured yet. Click on cells below to add rates.
+              No conversion rates have been configured yet. Rates are seeded
+              when the application starts.
             </AlertDescription>
           </Alert>
         ) : null}
 
-        {!isLoading && (
+        {!isLoading && sourceCurrenciesWithRates.length > 0 && (
           <>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold">Reward Currency</TableHead>
-                    {MILES_CURRENCIES.map((currency) => (
-                      <TableHead key={currency} className="text-center font-semibold">
-                        {currency}
+                    <TableHead className="font-semibold">
+                      Source Currency
+                    </TableHead>
+                    {targetCurrencies.map((currency) => (
+                      <TableHead
+                        key={currency.id}
+                        className="text-center font-semibold"
+                      >
+                        {currency.displayName}
                       </TableHead>
                     ))}
+                    <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rewardCurrencies.map((rewardCurrency) => (
-                    <TableRow key={rewardCurrency}>
-                      <TableCell className="font-medium">{rewardCurrency}</TableCell>
-                      {MILES_CURRENCIES.map((milesCurrency) => {
-                        const rate = getRate(rewardCurrency, milesCurrency);
+                  {sourceCurrenciesWithRates.map((sourceCurrency) => (
+                    <TableRow key={sourceCurrency.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div>{sourceCurrency.displayName}</div>
+                          {sourceCurrency.issuer && (
+                            <div className="text-xs text-muted-foreground">
+                              {sourceCurrency.issuer}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      {targetCurrencies.map((targetCurrency) => {
+                        const rate = getRate(
+                          sourceCurrency.id,
+                          targetCurrency.id
+                        );
                         const isEditing =
-                          editingCell?.rewardCurrency === rewardCurrency &&
-                          editingCell?.milesCurrency === milesCurrency;
+                          editingCell?.sourceCurrencyId === sourceCurrency.id &&
+                          editingCell?.targetCurrencyId === targetCurrency.id;
 
                         return (
                           <TableCell
-                            key={milesCurrency}
+                            key={targetCurrency.id}
                             className="text-center cursor-pointer hover:bg-muted/50"
-                            onClick={() => !isEditing && handleCellClick(rewardCurrency, milesCurrency)}
+                            onClick={() =>
+                              !isEditing &&
+                              handleCellClick(
+                                sourceCurrency.id,
+                                targetCurrency.id
+                              )
+                            }
                           >
                             {isEditing ? (
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="0.0001"
                                 min="0"
                                 value={editingCell.value}
-                                onChange={(e) => handleInputChange(e.target.value)}
+                                onChange={(e) =>
+                                  handleInputChange(e.target.value)
+                                }
                                 onBlur={handleCellSave}
                                 onKeyDown={handleKeyPress}
                                 autoFocus
                                 className="w-24 mx-auto text-center"
                               />
                             ) : (
-                              <span className={rate !== undefined ? "" : "text-muted-foreground"}>
-                                {rate !== undefined ? rate.toFixed(4) : "—"}
+                              <span
+                                className={
+                                  rate !== undefined
+                                    ? ""
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {rate !== undefined ? rate.toFixed(4) : "-"}
                               </span>
                             )}
                           </TableCell>
                         );
                       })}
+                      <TableCell>
+                        <Dialog
+                          open={deleteConfirmCurrency === sourceCurrency.id}
+                          onOpenChange={(open) =>
+                            setDeleteConfirmCurrency(
+                              open ? sourceCurrency.id : null
+                            )
+                          }
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={isDeleting === sourceCurrency.id}
+                            >
+                              {isDeleting === sourceCurrency.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Delete Conversion Rates</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to delete all conversion
+                                rates for "{sourceCurrency.displayName}"? This
+                                cannot be undone.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() => setDeleteConfirmCurrency(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteSourceCurrency(sourceCurrency.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -364,7 +528,7 @@ export function ConversionRateManager() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={loadConversionRates}
+                  onClick={loadData}
                   disabled={isSaving}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />

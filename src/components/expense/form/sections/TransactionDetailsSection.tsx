@@ -28,7 +28,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { MossCard } from "@/components/ui/moss-card";
 import { MossInput } from "@/components/ui/moss-input";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
-import ContactlessToggle from "@/components/expense/form/elements/ContactlessToggle";
 
 // Import from our centralized currency service
 import { CurrencyService } from "@/core/currency/CurrencyService";
@@ -37,39 +36,39 @@ interface TransactionDetailsSectionProps {
   minimal?: boolean; // Enable progressive disclosure mode
 }
 
-export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps> = ({ 
+export const TransactionDetailsSection: React.FC<
+  TransactionDetailsSectionProps
+> = ({
   minimal = true, // Default to minimal view with progressive disclosure
 }) => {
   const form = useFormContext();
   const currency = form.watch("currency");
-  const isOnline = form.watch("isOnline") || false;
-  const paymentMethodId = form.watch("paymentMethodId");
   const mcc = form.watch("mcc");
-  
+
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
-  // Determine if payment is cash (for ContactlessToggle)
-  const isCash = paymentMethodId === "cash" || paymentMethodId === "Cash";
-  
   // Allow negative values only for MCC 6540 (POI Funding Transactions)
   const allowNegativeAmount = mcc?.code === "6540";
 
   return (
     <MossCard>
-      <h2 
+      <h2
         className="section-header flex items-center gap-2"
         style={{
-          fontSize: 'var(--font-size-section-header)',
+          fontSize: "var(--font-size-section-header)",
           fontWeight: 600,
-          color: 'var(--color-text-primary)',
-          marginBottom: 'var(--space-lg)',
+          color: "var(--color-text-primary)",
+          marginBottom: "var(--space-lg)",
         }}
       >
-        <CalendarIcon className="h-5 w-5" style={{ color: 'var(--color-icon-primary)' }} />
+        <CalendarIcon
+          className="h-5 w-5"
+          style={{ color: "var(--color-icon-primary)" }}
+        />
         Transaction Details
       </h2>
-      
+
       {/* Essential fields - always visible */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -78,15 +77,22 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
                   Transaction Amount
                   {allowNegativeAmount && (
-                    <span style={{ 
-                      fontSize: 'var(--font-size-helper)', 
-                      color: 'var(--color-text-helper)',
-                      marginLeft: '8px',
-                      fontWeight: 'normal'
-                    }}>
+                    <span
+                      style={{
+                        fontSize: "var(--font-size-helper)",
+                        color: "var(--color-text-helper)",
+                        marginLeft: "8px",
+                        fontWeight: "normal",
+                      }}
+                    >
                       (positive or negative)
                     </span>
                   )}
@@ -101,7 +107,8 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
                     onChange={(e) => {
                       field.onChange(e);
                       // Update payment amount automatically when transaction amount changes
-                      const currentPaymentMethod = form.getValues("paymentMethodId");
+                      const currentPaymentMethod =
+                        form.getValues("paymentMethodId");
                       if (currentPaymentMethod) {
                         form.setValue("paymentAmount", e.target.value);
                       }
@@ -118,7 +125,12 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
             name="currency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
                   Currency
                 </FormLabel>
                 <Select
@@ -152,7 +164,12 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+              <FormLabel
+                style={{
+                  fontSize: "var(--font-size-label)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
                 Date
               </FormLabel>
               <Popover>
@@ -190,10 +207,10 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
           )}
         />
       </div>
-      
+
       {/* Optional fields - collapsible */}
       {minimal && (
-        <CollapsibleSection 
+        <CollapsibleSection
           trigger="Show advanced fields"
           id="transaction-advanced"
           persistState={true}
@@ -205,7 +222,12 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
               name="reimbursementAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  <FormLabel
+                    style={{
+                      fontSize: "var(--font-size-label)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
                     Reimbursement Amount
                   </FormLabel>
                   <FormControl>
@@ -217,7 +239,9 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription style={{ color: 'var(--color-text-helper)' }}>
+                  <FormDescription
+                    style={{ color: "var(--color-text-helper)" }}
+                  >
                     Amount reimbursed for this expense (in {currency})
                   </FormDescription>
                   <FormMessage />
@@ -225,16 +249,18 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
               )}
             />
 
-            {/* Contactless Toggle */}
-            <ContactlessToggle isOnline={isOnline} isCash={isCash} />
-
             {/* Notes Field */}
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                  <FormLabel
+                    style={{
+                      fontSize: "var(--font-size-label)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
                     Notes (Optional)
                   </FormLabel>
                   <FormControl>
@@ -251,7 +277,7 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
           </div>
         </CollapsibleSection>
       )}
-      
+
       {/* Non-minimal mode - show all fields */}
       {!minimal && (
         <div className="space-y-4 mt-4">
@@ -261,7 +287,12 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
             name="reimbursementAmount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
                   Reimbursement Amount
                 </FormLabel>
                 <FormControl>
@@ -273,7 +304,7 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
                     {...field}
                   />
                 </FormControl>
-                <FormDescription style={{ color: 'var(--color-text-helper)' }}>
+                <FormDescription style={{ color: "var(--color-text-helper)" }}>
                   Amount reimbursed for this expense (in {currency})
                 </FormDescription>
                 <FormMessage />
@@ -281,16 +312,18 @@ export const TransactionDetailsSection: React.FC<TransactionDetailsSectionProps>
             )}
           />
 
-          {/* Contactless Toggle */}
-          <ContactlessToggle isOnline={isOnline} isCash={isCash} />
-
           {/* Notes Field */}
           <FormField
             control={form.control}
             name="notes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel style={{ fontSize: 'var(--font-size-label)', color: 'var(--color-text-secondary)' }}>
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
                   Notes (Optional)
                 </FormLabel>
                 <FormControl>

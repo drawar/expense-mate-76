@@ -50,34 +50,21 @@ const AddExpense = () => {
   }, [paymentMethods]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="min-h-screen">
       {/* Responsive container: full-width on mobile with padding, centered with max-width on tablet/desktop */}
       <div className="w-full px-4 md:px-0 md:max-w-[600px] lg:max-w-[640px] mx-auto pb-16">
-        {/* Page header with new typography scale */}
+        {/* Page header */}
         <div className="flex flex-col mt-6 mb-6">
-          <h1 
-            className="font-semibold tracking-tight"
-            style={{
-              fontSize: 'var(--font-size-title-1)',
-              lineHeight: 'var(--line-height-tight)',
-              color: 'var(--color-text)',
-            }}
-          >
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">
             Add Expense
           </h1>
-          <p 
-            className="mt-2"
-            style={{
-              fontSize: 'var(--font-size-body)',
-              color: 'var(--color-text-secondary)',
-            }}
-          >
+          <p className="text-muted-foreground mt-1.5 text-sm">
             Record a new expense transaction
           </p>
         </div>
 
         {/* Spacing between header and content: 24px (xl) */}
-        <div style={{ marginTop: 'var(--space-xl)' }}>
+        <div style={{ marginTop: "var(--space-xl)" }}>
           <StorageModeAlert useLocalStorage={useLocalStorage} />
           <ErrorAlert error={saveError} />
 

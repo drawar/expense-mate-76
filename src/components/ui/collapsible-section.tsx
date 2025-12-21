@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
   trigger: string;
@@ -11,7 +11,7 @@ interface CollapsibleSectionProps {
   persistState?: boolean; // Enable sessionStorage persistence
 }
 
-const STORAGE_KEY_PREFIX = 'collapsible-section-';
+const STORAGE_KEY_PREFIX = "collapsible-section-";
 
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   trigger,
@@ -23,10 +23,10 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 }) => {
   // Initialize state from sessionStorage if persistence is enabled
   const [isOpen, setIsOpen] = React.useState<boolean>(() => {
-    if (persistState && id && typeof window !== 'undefined') {
+    if (persistState && id && typeof window !== "undefined") {
       const stored = sessionStorage.getItem(`${STORAGE_KEY_PREFIX}${id}`);
       if (stored !== null) {
-        return stored === 'true';
+        return stored === "true";
       }
     }
     return defaultOpen;
@@ -34,7 +34,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   // Persist state to sessionStorage when it changes
   React.useEffect(() => {
-    if (persistState && id && typeof window !== 'undefined') {
+    if (persistState && id && typeof window !== "undefined") {
       sessionStorage.setItem(`${STORAGE_KEY_PREFIX}${id}`, String(isOpen));
     }
   }, [isOpen, persistState, id]);
@@ -47,41 +47,40 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   const getTriggerText = () => {
     if (isOpen) {
       return trigger
-        .replace('Show', 'Hide')
-        .replace('Add', 'Hide')
-        .replace('more', '')
-        .replace('advanced', '')
+        .replace("Show", "Hide")
+        .replace("Add", "Hide")
+        .replace("more", "")
+        .replace("advanced", "")
         .trim();
     }
     return trigger;
   };
 
   return (
-    <div className={cn('collapsible-section', className)}>
+    <div className={cn("collapsible-section", className)}>
       <button
         type="button"
         onClick={handleToggle}
         className="flex items-center gap-2 text-sm font-medium transition-colors"
         style={{
-          color: 'var(--color-accent)',
-          paddingTop: 'var(--space-sm)',
-          minHeight: '44px',
-          transitionDuration: 'var(--duration-fast)',
+          color: "var(--color-accent)",
+          paddingTop: "var(--space-sm)",
+          minHeight: "44px",
+          transitionDuration: "var(--duration-fast)",
         }}
         aria-expanded={isOpen}
-        aria-controls={id ? `collapsible-content-${id}` : `collapsible-content-${trigger}`}
+        aria-controls={
+          id ? `collapsible-content-${id}` : `collapsible-content-${trigger}`
+        }
       >
         <span>{getTriggerText()}</span>
         <ChevronDown
-          className={cn(
-            'h-4 w-4 transition-transform',
-            isOpen && 'rotate-180'
-          )}
+          className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
           style={{
-            color: 'var(--color-icon-secondary)',
+            color: "var(--color-icon-secondary)",
             strokeWidth: 2.5,
-            transitionDuration: 'var(--duration-fast)',
-            transitionTimingFunction: 'var(--transition-smooth)',
+            transitionDuration: "var(--duration-fast)",
+            transitionTimingFunction: "var(--transition-smooth)",
           }}
         />
       </button>
@@ -89,12 +88,14 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       <div
         id={id ? `collapsible-content-${id}` : undefined}
         className={cn(
-          'overflow-hidden transition-all',
-          isOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
+          "transition-all",
+          isOpen
+            ? "max-h-[1000px] opacity-100 mt-4"
+            : "max-h-0 opacity-0 overflow-hidden"
         )}
         style={{
-          transitionDuration: 'var(--duration-fast)',
-          transitionTimingFunction: 'var(--transition-smooth)',
+          transitionDuration: "var(--duration-fast)",
+          transitionTimingFunction: "var(--transition-smooth)",
         }}
       >
         {children}

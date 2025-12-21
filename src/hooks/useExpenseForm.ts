@@ -179,18 +179,12 @@ export const useExpenseForm = ({
             totalPoints,
           });
 
-          const messageText = `Earning ${bonusPoints} bonus miles (€${eurFareAmount.toFixed(2)} × 5)`;
-
           setPointsCalculation({
             totalPoints,
             basePoints,
             bonusPoints,
-            pointsCurrency: "Flying Blue Miles",
-            messageText,
-            messages: [
-              `EUR fare: €${eurFareAmount.toFixed(2)} × 5 = ${bonusPoints} bonus`,
-              `CAD amount: $${amount.toFixed(2)} × 1 = ${basePoints} base`,
-            ],
+            pointsCurrency:
+              selectedPaymentMethod.pointsCurrency || "Flying Blue Points",
           });
 
           // Update form field with calculated value

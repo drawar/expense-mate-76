@@ -6,12 +6,12 @@
  *
  * Format: {issuer}-{name}
  * - Both issuer and name are converted to lowercase
- * - Spaces in the name are replaced with hyphens
+ * - Spaces are replaced with hyphens in both issuer and name
  * - Special characters are preserved (except spaces)
  *
  * Examples:
  * - issuer: "Chase", name: "Sapphire Reserve" -> "chase-sapphire-reserve"
- * - issuer: "American Express", name: "Gold Card" -> "american express-gold-card"
+ * - issuer: "American Express", name: "Gold Card" -> "american-express-gold-card"
  */
 export class CardTypeIdService {
   /**
@@ -35,7 +35,7 @@ export class CardTypeIdService {
       );
     }
 
-    const normalizedIssuer = issuer.toLowerCase().trim();
+    const normalizedIssuer = issuer.toLowerCase().trim().replace(/\s+/g, "-");
     const normalizedName = name.toLowerCase().trim().replace(/\s+/g, "-");
 
     return `${normalizedIssuer}-${normalizedName}`;

@@ -30,11 +30,28 @@ VALUES
   ('DBS Points', 'KrisFlyer', 0.4),
   ('DBS Points', 'AsiaMiles', 0.4);
 
+-- UOB UNI$ (Singapore)
+-- UNI$ can be converted to KrisFlyer and Asia Miles
+-- Rate: 500 UNI$ = 2,000 miles (4x multiplier)
+INSERT INTO conversion_rates (reward_currency, miles_currency, conversion_rate)
+VALUES
+  ('UNI$', 'KrisFlyer', 4.0),
+  ('UNI$', 'AsiaMiles', 4.0);
+
 -- UOB PRVI Miles (Singapore)
+-- 1:1 transfer to KrisFlyer and Asia Miles
 INSERT INTO conversion_rates (reward_currency, miles_currency, conversion_rate)
 VALUES
   ('UOB PRVI Miles', 'KrisFlyer', 1.0),
   ('UOB PRVI Miles', 'AsiaMiles', 1.0);
+
+-- OCBC$ (Singapore)
+-- OCBC$ can be converted to various miles programs
+-- Rate varies but approximately 1 OCBC$ = 2 miles
+INSERT INTO conversion_rates (reward_currency, miles_currency, conversion_rate)
+VALUES
+  ('OCBC$', 'KrisFlyer', 2.0),
+  ('OCBC$', 'AsiaMiles', 2.0);
 
 -- Membership Rewards Points (CA) - Canadian Amex
 -- NO KrisFlyer, NO Velocity
@@ -44,6 +61,11 @@ VALUES
   ('Membership Rewards Points (CA)', 'Avios', 1.0),
   ('Membership Rewards Points (CA)', 'AsiaMiles', 0.75),
   ('Membership Rewards Points (CA)', 'FlyingBlue', 0.75);
+
+-- Aeroplan Points - these ARE miles, so 1:1 to Aeroplan
+INSERT INTO conversion_rates (reward_currency, miles_currency, conversion_rate)
+VALUES
+  ('Aeroplan Points', 'Aeroplan', 1.0);
 
 -- RBC Avion Points (Canada)
 INSERT INTO conversion_rates (reward_currency, miles_currency, conversion_rate)

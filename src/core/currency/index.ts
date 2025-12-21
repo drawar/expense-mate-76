@@ -1,10 +1,5 @@
 export { CurrencyService } from "./CurrencyService";
-export {
-  ConversionService,
-  type MilesCurrency,
-  type ConversionRateMatrix,
-  type DbConversionRate,
-} from "./ConversionService";
+export { ConversionService } from "./ConversionService";
 export {
   SimulatorService,
   type SimulationInput,
@@ -14,11 +9,10 @@ export {
   type RewardCurrency,
   type DbRewardCurrency,
   type MilesCurrencyType,
-  type DbMilesCurrency,
   type ConversionRate,
-  type DbConversionRateNew,
+  type DbConversionRate,
   toRewardCurrency,
-  toMilesCurrency,
+  toConversionRate,
 } from "./types";
 export {
   type ChartTheme,

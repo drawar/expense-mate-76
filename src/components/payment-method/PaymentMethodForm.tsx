@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PaymentMethod, Currency } from "@/types";
-import { CurrencyService } from "@/core/currency";
+import { CurrencyService, ConversionService } from "@/core/currency";
+import { RewardCurrency } from "@/core/currency/types";
 import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
@@ -41,13 +42,69 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   onSubmit,
   isOpen, // Use this prop to control the dialog
 }) => {
+  // All form fields as controlled state
+  const [name, setName] = useState<string>(currentMethod?.name || "");
   const [selectedType, setSelectedType] = useState<string>(
     currentMethod?.type || "credit_card"
   );
+  const [currency, setCurrency] = useState<string>(
+    currentMethod?.currency || "CAD"
+  );
+  const [issuer, setIssuer] = useState<string>(currentMethod?.issuer || "");
+  const [lastFourDigits, setLastFourDigits] = useState<string>(
+    currentMethod?.lastFourDigits || ""
+  );
+  const [pointsCurrency, setPointsCurrency] = useState<string>(
+    currentMethod?.pointsCurrency || ""
+  );
+  const [rewardCurrencyId, setRewardCurrencyId] = useState<string>(
+    currentMethod?.rewardCurrencyId || ""
+  );
+  const [statementStartDay, setStatementStartDay] = useState<string>(
+    currentMethod?.statementStartDay?.toString() || ""
+  );
+  const [isMonthlyStatement, setIsMonthlyStatement] = useState<boolean>(
+    currentMethod?.isMonthlyStatement || false
+  );
+  const [active, setActive] = useState<boolean>(currentMethod?.active ?? true);
 
-  // Reset type when dialog opens with different method
-  React.useEffect(() => {
+  // Reward currencies from database
+  const [rewardCurrencies, setRewardCurrencies] = useState<RewardCurrency[]>(
+    []
+  );
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(false);
+
+  // Fetch all reward currencies when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchCurrencies = async () => {
+        setIsLoadingCurrencies(true);
+        try {
+          const conversionService = ConversionService.getInstance();
+          const currencies = await conversionService.getRewardCurrencies();
+          setRewardCurrencies(currencies);
+        } catch (error) {
+          console.error("Error fetching reward currencies:", error);
+        } finally {
+          setIsLoadingCurrencies(false);
+        }
+      };
+      fetchCurrencies();
+    }
+  }, [isOpen]);
+
+  // Reset all form values when dialog opens with different method
+  useEffect(() => {
+    setName(currentMethod?.name || "");
     setSelectedType(currentMethod?.type || "credit_card");
+    setCurrency(currentMethod?.currency || "CAD");
+    setIssuer(currentMethod?.issuer || "");
+    setLastFourDigits(currentMethod?.lastFourDigits || "");
+    setPointsCurrency(currentMethod?.pointsCurrency || "");
+    setRewardCurrencyId(currentMethod?.rewardCurrencyId || "");
+    setStatementStartDay(currentMethod?.statementStartDay?.toString() || "");
+    setIsMonthlyStatement(currentMethod?.isMonthlyStatement || false);
+    setActive(currentMethod?.active ?? true);
   }, [currentMethod, isOpen]);
 
   const isCreditCard = selectedType === "credit_card";
@@ -67,6 +124,21 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         </DialogHeader>
 
         <form onSubmit={onSubmit}>
+          {/* Hidden inputs to sync controlled state values with FormData */}
+          <input type="hidden" name="type" value={selectedType} />
+          <input type="hidden" name="currency" value={currency} />
+          <input type="hidden" name="pointsCurrency" value={pointsCurrency} />
+          <input
+            type="hidden"
+            name="rewardCurrencyId"
+            value={rewardCurrencyId}
+          />
+          <input
+            type="hidden"
+            name="isMonthlyStatement"
+            value={isMonthlyStatement ? "on" : ""}
+          />
+          <input type="hidden" name="active" value={active ? "on" : ""} />
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
@@ -77,7 +149,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 name="name"
                 placeholder="e.g. Chase Sapphire"
                 className="col-span-3"
-                defaultValue={currentMethod?.name || ""}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
@@ -86,11 +159,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               <Label htmlFor="type" className="text-right">
                 Type
               </Label>
-              <Select
-                name="type"
-                value={selectedType}
-                onValueChange={setSelectedType}
-              >
+              <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select payment type" />
                 </SelectTrigger>
@@ -106,10 +175,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               <Label htmlFor="currency" className="text-right">
                 Currency
               </Label>
-              <Select
-                name="currency"
-                defaultValue={currentMethod?.currency || "CAD"}
-              >
+              <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
@@ -134,7 +200,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     name="issuer"
                     placeholder="e.g. Chase, Amex"
                     className="col-span-3"
-                    defaultValue={currentMethod?.issuer || ""}
+                    value={issuer}
+                    onChange={(e) => setIssuer(e.target.value)}
                   />
                 </div>
 
@@ -148,8 +215,46 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     placeholder="e.g. 1234"
                     className="col-span-3"
                     maxLength={4}
-                    defaultValue={currentMethod?.lastFourDigits || ""}
+                    value={lastFourDigits}
+                    onChange={(e) => setLastFourDigits(e.target.value)}
                   />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="rewardCurrency" className="text-right">
+                    Rewards Currency
+                  </Label>
+                  <Select
+                    value={rewardCurrencyId}
+                    onValueChange={(value) => {
+                      setRewardCurrencyId(value);
+                      // Also set pointsCurrency for backward compatibility
+                      const selected = rewardCurrencies.find(
+                        (c) => c.id === value
+                      );
+                      if (selected) {
+                        setPointsCurrency(selected.displayName);
+                      }
+                    }}
+                    disabled={isLoadingCurrencies}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue
+                        placeholder={
+                          isLoadingCurrencies
+                            ? "Loading..."
+                            : "Select rewards currency"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rewardCurrencies.map((currency) => (
+                        <SelectItem key={currency.id} value={currency.id}>
+                          {currency.displayName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -164,9 +269,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     max="31"
                     placeholder="e.g. 15"
                     className="col-span-3"
-                    defaultValue={
-                      currentMethod?.statementStartDay?.toString() || ""
-                    }
+                    value={statementStartDay}
+                    onChange={(e) => setStatementStartDay(e.target.value)}
                   />
                 </div>
 
@@ -176,7 +280,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     <Switch
                       id="isMonthlyStatement"
                       name="isMonthlyStatement"
-                      defaultChecked={currentMethod?.isMonthlyStatement}
+                      checked={isMonthlyStatement}
+                      onCheckedChange={setIsMonthlyStatement}
                     />
                     <Label htmlFor="isMonthlyStatement">
                       Use statement month (instead of calendar month)
@@ -192,7 +297,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 <Switch
                   id="active"
                   name="active"
-                  defaultChecked={currentMethod?.active ?? true}
+                  checked={active}
+                  onCheckedChange={setActive}
                 />
                 <Label htmlFor="active">Active</Label>
               </div>

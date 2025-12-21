@@ -10,12 +10,12 @@ describe("CardTypeIdService", () => {
       expect(result).toBe("chase-sapphire-reserve");
     });
 
-    it("should handle issuer with spaces", () => {
+    it("should replace spaces with dashes in issuer", () => {
       const result = service.generateCardTypeId(
         "American Express",
         "Gold Card"
       );
-      expect(result).toBe("american express-gold-card");
+      expect(result).toBe("american-express-gold-card");
     });
 
     it("should replace multiple spaces in name with single hyphens", () => {
@@ -91,7 +91,7 @@ describe("CardTypeIdService", () => {
   describe("isValidCardTypeId", () => {
     it("should validate correct card type IDs", () => {
       expect(service.isValidCardTypeId("chase-sapphire-reserve")).toBe(true);
-      expect(service.isValidCardTypeId("american express-gold-card")).toBe(
+      expect(service.isValidCardTypeId("american-express-gold-card")).toBe(
         true
       );
       expect(service.isValidCardTypeId("visa-platinum")).toBe(true);

@@ -220,7 +220,7 @@ async function diagnoseRewardRulesIssue() {
       '  If your payment method has issuer="American Express" and name="Cobalt"'
     );
     console.log(
-      '  The generated card type ID will be: "american express-cobalt"'
+      '  The generated card type ID will be: "american-express-cobalt"'
     );
     console.log("  Your reward rules must have the same card_type_id");
   } else if (orphanedRuleCardTypeIds.length > 0) {

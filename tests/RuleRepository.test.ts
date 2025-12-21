@@ -23,7 +23,6 @@ const mockRules: DbRewardRule[] = [
     monthly_cap: null,
     monthly_min_spend: null,
     monthly_spend_period_type: null,
-    points_currency: "Points",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },

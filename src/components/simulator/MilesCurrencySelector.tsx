@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ConversionService } from "@/core/currency";
-import type { MilesCurrencyType } from "@/core/currency/types";
+import type { RewardCurrency, MilesCurrencyType } from "@/core/currency/types";
 
 interface MilesCurrencySelectorProps {
   /**
@@ -42,7 +42,7 @@ export function MilesCurrencySelector({
   onChange,
   availableCurrencyIds,
 }: MilesCurrencySelectorProps) {
-  const [currencies, setCurrencies] = useState<MilesCurrencyType[]>([]);
+  const [currencies, setCurrencies] = useState<RewardCurrency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +50,9 @@ export function MilesCurrencySelector({
       setIsLoading(true);
       try {
         const conversionService = ConversionService.getInstance();
-        const allCurrencies = await conversionService.getMilesCurrencies();
+        // Use getDestinationCurrencies() which returns non-transferrable currencies (airline miles)
+        const allCurrencies =
+          await conversionService.getDestinationCurrencies();
 
         // Filter if specific IDs provided
         if (availableCurrencyIds && availableCurrencyIds.length > 0) {
@@ -66,7 +68,7 @@ export function MilesCurrencySelector({
           onChange(allCurrencies[0].id);
         }
       } catch (error) {
-        console.error("Error fetching miles currencies:", error);
+        console.error("Error fetching destination currencies:", error);
       } finally {
         setIsLoading(false);
       }

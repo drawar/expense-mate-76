@@ -93,20 +93,30 @@ const PaymentMethods = () => {
       const formData = new FormData(event.currentTarget);
 
       const method: PaymentMethod = {
+        // Preserve existing fields when editing
+        ...(editingMethod || {}),
         id: editingMethod?.id || uuidv4(),
         name: formData.get("name") as string,
         type: formData.get("type") as "cash" | "credit_card",
         currency: (formData.get("currency") as Currency) || ("USD" as Currency),
         issuer: (formData.get("issuer") as string) || "Cash", // Provide default issuer
-        rewardRules: [],
         active: formData.get("active") === "on",
-        imageUrl: editingMethod?.imageUrl,
       };
 
       // Add credit card specific fields if applicable
       if (method.type === "credit_card") {
         method.lastFourDigits =
           (formData.get("lastFourDigits") as string) || undefined;
+
+        const pointsCurrency = formData.get("pointsCurrency") as string;
+        if (pointsCurrency) {
+          method.pointsCurrency = pointsCurrency;
+        }
+
+        const rewardCurrencyId = formData.get("rewardCurrencyId") as string;
+        if (rewardCurrencyId) {
+          method.rewardCurrencyId = rewardCurrencyId;
+        }
 
         const statementDay = formData.get("statementStartDay") as string;
         if (statementDay) {

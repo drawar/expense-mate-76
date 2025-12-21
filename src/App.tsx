@@ -15,7 +15,6 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import DiagnoseRewards from "./pages/DiagnoseRewards";
 import CardOptimizerSimulator from "./pages/CardOptimizerSimulator";
-import SeedConversionRates from "./pages/SeedConversionRates";
 import DeleteMembershipRewards from "./pages/DeleteMembershipRewards";
 import Settings from "./pages/Settings";
 import { useEffect, useState } from "react";
@@ -140,16 +139,6 @@ function App() {
                     <ProtectedRoute>
                       <MainLayout>
                         <CardOptimizerSimulator />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/seed-conversion-rates"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <SeedConversionRates />
                       </MainLayout>
                     </ProtectedRoute>
                   }

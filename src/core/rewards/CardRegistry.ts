@@ -108,7 +108,7 @@ export class CardRegistry {
       ),
       issuer: citibankRewardsIssuer,
       name: citibankRewardsName,
-      pointsCurrency: "ThankYou Points",
+      pointsCurrency: "Citi ThankYou Points",
       rewardRules: [],
       defaultRules: [this.createCitibankRewardsCardRule()],
     });
@@ -194,7 +194,7 @@ export class CardRegistry {
       ),
       issuer: amexPlatinumCreditIssuer,
       name: amexPlatinumCreditName,
-      pointsCurrency: "Membership Rewards Points",
+      pointsCurrency: "Membership Rewards Points (CA)",
       rewardRules: [],
       defaultRules: [this.createAmexPlatinumCreditCardRule()],
     });
@@ -209,7 +209,7 @@ export class CardRegistry {
       ),
       issuer: amexPlatinumSingaporeIssuer,
       name: amexPlatinumSingaporeName,
-      pointsCurrency: "Membership Rewards Points",
+      pointsCurrency: "Membership Rewards Points (CA)",
       rewardRules: [],
       defaultRules: [this.createAmexPlatinumSingaporeCardRule()],
     });
@@ -224,7 +224,7 @@ export class CardRegistry {
       ),
       issuer: amexPlatinumCanadaIssuer,
       name: amexPlatinumCanadaName,
-      pointsCurrency: "Membership Rewards Points",
+      pointsCurrency: "Membership Rewards Points (CA)",
       rewardRules: [],
       defaultRules: [this.createAmexPlatinumCanadaCardRule()],
     });
@@ -239,7 +239,7 @@ export class CardRegistry {
       ),
       issuer: amexCobaltIssuer,
       name: amexCobaltName,
-      pointsCurrency: "Membership Rewards Points",
+      pointsCurrency: "Membership Rewards Points (CA)",
       rewardRules: [],
       defaultRules: [this.createAmexCobaltCardRule()],
     });
@@ -382,7 +382,7 @@ export class CardRegistry {
         blockSize: 1,
         bonusTiers: [],
         monthlyCap: 9000, // Cap at 9,000 bonus points per month
-        pointsCurrency: "ThankYou Points",
+        pointsCurrency: "Citi ThankYou Points",
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -692,7 +692,7 @@ export class CardRegistry {
         amountRoundingStrategy: "none",
         blockSize: 1.6, // 2 points per $1.6
         bonusTiers: [],
-        pointsCurrency: "Membership Rewards Points",
+        pointsCurrency: "Membership Rewards Points (CA)",
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -723,7 +723,7 @@ export class CardRegistry {
         amountRoundingStrategy: "none",
         blockSize: 1.6, // $1.60 per 2 points
         bonusTiers: [],
-        pointsCurrency: "Membership Rewards Points",
+        pointsCurrency: "Membership Rewards Points (CA)",
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -754,7 +754,7 @@ export class CardRegistry {
         pointsRoundingStrategy: "nearest",
         amountRoundingStrategy: "none",
         blockSize: 1,
-        pointsCurrency: "Membership Rewards Points",
+        pointsCurrency: "Membership Rewards Points (CA)",
         // Multiple tiers with different rates
         bonusTiers: [
           {
@@ -854,7 +854,7 @@ export class CardRegistry {
         pointsRoundingStrategy: "nearest",
         amountRoundingStrategy: "none",
         blockSize: 1,
-        pointsCurrency: "Membership Rewards Points",
+        pointsCurrency: "Membership Rewards Points (CA)",
         // Multiple tiers with different rates
         bonusTiers: [
           {
