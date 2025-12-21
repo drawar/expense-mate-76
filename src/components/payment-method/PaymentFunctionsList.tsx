@@ -213,7 +213,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       />
 
       {/* Japandi Stats Summary - Card stats section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           className="p-4"
           style={{
@@ -271,37 +271,6 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                 style={{ color: "var(--color-text-tertiary)" }}
               >
                 Total earned points
-              </p>
-            </div>
-
-            <div
-              className="p-4"
-              style={{
-                backgroundColor: "var(--color-card-bg)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "10px",
-                boxShadow: "var(--shadow-card)",
-              }}
-            >
-              <h3
-                className="text-[13px] mb-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Statement Cycle
-              </h3>
-              <p
-                className="text-xl font-medium"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                {paymentMethod.statementStartDay
-                  ? `Day ${paymentMethod.statementStartDay}`
-                  : "Calendar Month"}
-              </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Billing cycle
               </p>
             </div>
           </>
