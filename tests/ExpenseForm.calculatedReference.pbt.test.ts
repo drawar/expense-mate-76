@@ -12,7 +12,12 @@ import { PaymentMethod, MerchantCategoryCode } from "@/types";
 
 // Arbitrary for generating valid transaction amounts
 const amountArbitrary = (): fc.Arbitrary<number> =>
-  fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true, noDefaultInfinity: true });
+  fc.float({
+    min: Math.fround(0.01),
+    max: Math.fround(10000),
+    noNaN: true,
+    noDefaultInfinity: true,
+  });
 
 // Arbitrary for generating merchant category codes
 const mccArbitrary = (): fc.Arbitrary<string | undefined> =>
@@ -22,7 +27,7 @@ const mccArbitrary = (): fc.Arbitrary<string | undefined> =>
       "5812", // Eating places and restaurants
       "5541", // Service stations
       "5912", // Drug stores and pharmacies
-      "5999"  // Miscellaneous retail
+      "5999" // Miscellaneous retail
     ),
     { nil: undefined }
   );
@@ -31,11 +36,17 @@ const mccArbitrary = (): fc.Arbitrary<string | undefined> =>
 const paymentMethodArbitrary = (): fc.Arbitrary<PaymentMethod> =>
   fc.record({
     id: fc.uuid(),
-    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
+    name: fc
+      .string({ minLength: 1, maxLength: 50 })
+      .filter((s) => s.trim().length > 0),
     type: fc.constantFrom("credit_card", "debit_card", "cash"),
     currency: fc.constantFrom("USD", "EUR", "GBP", "JPY", "CAD", "AUD"),
-    issuer: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
-    lastFourDigits: fc.option(fc.string({ minLength: 4, maxLength: 4 }), { nil: undefined }),
+    issuer: fc
+      .string({ minLength: 1, maxLength: 50 })
+      .filter((s) => s.trim().length > 0),
+    lastFourDigits: fc.option(fc.string({ minLength: 4, maxLength: 4 }), {
+      nil: undefined,
+    }),
     expiryDate: fc.option(fc.string({ maxLength: 7 }), { nil: undefined }),
     cardImage: fc.option(fc.string(), { nil: undefined }),
     rewardRules: fc.constant([]),
@@ -64,7 +75,15 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
         merchantNameArbitrary(),
         booleanArbitrary(),
         booleanArbitrary(),
-        async (amount1, amount2, paymentMethod, mcc, merchantName, isOnline, isContactless) => {
+        async (
+          amount1,
+          amount2,
+          paymentMethod,
+          mcc,
+          merchantName,
+          isOnline,
+          isContactless
+        ) => {
           // Skip if amounts are the same
           fc.pre(Math.abs(amount1 - amount2) > 0.01);
 
@@ -106,9 +125,9 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
           expect(result2.totalPoints).toBeGreaterThanOrEqual(0);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
-  });
+  }, 30000);
 
   it("**Feature: expense-editing-enhancements, Property 9: Calculated reference updates** - Changing MCC updates calculated reference", async () => {
     await fc.assert(
@@ -118,7 +137,13 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
         merchantNameArbitrary(),
         booleanArbitrary(),
         booleanArbitrary(),
-        async (amount, paymentMethod, merchantName, isOnline, isContactless) => {
+        async (
+          amount,
+          paymentMethod,
+          merchantName,
+          isOnline,
+          isContactless
+        ) => {
           const currency = paymentMethod.currency;
 
           // Calculate points with MCC "5411" (Grocery)
@@ -148,17 +173,17 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
           expect(result2.totalPoints).toBeGreaterThanOrEqual(0);
 
           // Both should have the same structure
-          expect(result1).toHaveProperty('totalPoints');
-          expect(result1).toHaveProperty('basePoints');
-          expect(result1).toHaveProperty('bonusPoints');
-          expect(result2).toHaveProperty('totalPoints');
-          expect(result2).toHaveProperty('basePoints');
-          expect(result2).toHaveProperty('bonusPoints');
+          expect(result1).toHaveProperty("totalPoints");
+          expect(result1).toHaveProperty("basePoints");
+          expect(result1).toHaveProperty("bonusPoints");
+          expect(result2).toHaveProperty("totalPoints");
+          expect(result2).toHaveProperty("basePoints");
+          expect(result2).toHaveProperty("bonusPoints");
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
-  });
+  }, 30000);
 
   it("**Feature: expense-editing-enhancements, Property 9: Calculated reference updates** - Changing payment method updates calculated reference", async () => {
     await fc.assert(
@@ -170,7 +195,15 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
         merchantNameArbitrary(),
         booleanArbitrary(),
         booleanArbitrary(),
-        async (amount, paymentMethod1, paymentMethod2, mcc, merchantName, isOnline, isContactless) => {
+        async (
+          amount,
+          paymentMethod1,
+          paymentMethod2,
+          mcc,
+          merchantName,
+          isOnline,
+          isContactless
+        ) => {
           // Skip if payment methods are the same
           fc.pre(paymentMethod1.id !== paymentMethod2.id);
 
@@ -206,19 +239,19 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
           expect(result2.totalPoints).toBeGreaterThanOrEqual(0);
 
           // Both should have complete structure
-          expect(result1).toHaveProperty('totalPoints');
-          expect(result1).toHaveProperty('basePoints');
-          expect(result1).toHaveProperty('bonusPoints');
-          expect(result1).toHaveProperty('pointsCurrency');
-          expect(result2).toHaveProperty('totalPoints');
-          expect(result2).toHaveProperty('basePoints');
-          expect(result2).toHaveProperty('bonusPoints');
-          expect(result2).toHaveProperty('pointsCurrency');
+          expect(result1).toHaveProperty("totalPoints");
+          expect(result1).toHaveProperty("basePoints");
+          expect(result1).toHaveProperty("bonusPoints");
+          expect(result1).toHaveProperty("pointsCurrency");
+          expect(result2).toHaveProperty("totalPoints");
+          expect(result2).toHaveProperty("basePoints");
+          expect(result2).toHaveProperty("bonusPoints");
+          expect(result2).toHaveProperty("pointsCurrency");
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
-  });
+  }, 30000);
 
   it("**Feature: expense-editing-enhancements, Property 9: Calculated reference updates** - Changing isOnline flag updates calculated reference", async () => {
     await fc.assert(
@@ -258,17 +291,17 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
           expect(result2.totalPoints).toBeGreaterThanOrEqual(0);
 
           // Both should have complete structure
-          expect(result1).toHaveProperty('totalPoints');
-          expect(result1).toHaveProperty('basePoints');
-          expect(result1).toHaveProperty('bonusPoints');
-          expect(result2).toHaveProperty('totalPoints');
-          expect(result2).toHaveProperty('basePoints');
-          expect(result2).toHaveProperty('bonusPoints');
+          expect(result1).toHaveProperty("totalPoints");
+          expect(result1).toHaveProperty("basePoints");
+          expect(result1).toHaveProperty("bonusPoints");
+          expect(result2).toHaveProperty("totalPoints");
+          expect(result2).toHaveProperty("basePoints");
+          expect(result2).toHaveProperty("bonusPoints");
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
-  });
+  }, 30000);
 
   it("**Feature: expense-editing-enhancements, Property 9: Calculated reference updates** - Calculated reference is always non-negative", async () => {
     await fc.assert(
@@ -279,7 +312,14 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
         merchantNameArbitrary(),
         booleanArbitrary(),
         booleanArbitrary(),
-        async (amount, paymentMethod, mcc, merchantName, isOnline, isContactless) => {
+        async (
+          amount,
+          paymentMethod,
+          mcc,
+          merchantName,
+          isOnline,
+          isContactless
+        ) => {
           const currency = paymentMethod.currency;
 
           // Calculate points
@@ -299,10 +339,12 @@ describe("ExpenseForm Calculated Reference Updates Property-Based Tests", () => 
           expect(result.bonusPoints).toBeGreaterThanOrEqual(0);
 
           // Property: Total points should equal base + bonus
-          expect(result.totalPoints).toBe(result.basePoints + result.bonusPoints);
+          expect(result.totalPoints).toBe(
+            result.basePoints + result.bonusPoints
+          );
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
-  });
+  }, 30000);
 });

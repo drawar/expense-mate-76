@@ -8,6 +8,21 @@
 import fc from "fast-check";
 import { Transaction, PaymentMethod, Merchant, Currency } from "../src/types";
 
+// Generate valid date strings in YYYY-MM-DD format
+const dateStringArbitrary = (): fc.Arbitrary<string> => {
+  return fc
+    .tuple(
+      fc.integer({ min: 2020, max: 2025 }),
+      fc.integer({ min: 1, max: 12 }),
+      fc.integer({ min: 1, max: 28 }) // Use 28 to avoid invalid dates
+    )
+    .map(([year, month, day]) => {
+      const m = month.toString().padStart(2, "0");
+      const d = day.toString().padStart(2, "0");
+      return `${year}-${m}-${d}`;
+    });
+};
+
 // Arbitraries for generating random test data
 
 const currencyArbitrary = (): fc.Arbitrary<Currency> => {
@@ -52,7 +67,13 @@ const paymentMethodArbitrary = (): fc.Arbitrary<PaymentMethod> => {
   return fc.record({
     id: fc.uuid(),
     name: fc.string({ minLength: 1, maxLength: 100 }),
-    type: fc.constantFrom("credit_card", "debit_card", "cash", "bank_account", "other"),
+    type: fc.constantFrom(
+      "credit_card",
+      "debit_card",
+      "cash",
+      "bank_account",
+      "other"
+    ),
     issuer: fc.string({ maxLength: 50 }),
     lastFourDigits: fc.option(fc.string({ minLength: 4, maxLength: 4 }), {
       nil: undefined,
@@ -81,15 +102,28 @@ const transactionArbitrary = (): fc.Arbitrary<Transaction> => {
       fc.integer({ min: 1, max: 12 }),
       fc.integer({ min: 1, max: 28 }), // Use 28 to avoid invalid dates
       merchantArbitrary(),
-      fc.double({ min: 0.01, max: 100000, noNaN: true, noDefaultInfinity: true }),
+      fc.double({
+        min: 0.01,
+        max: 100000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
       currencyArbitrary(),
       paymentMethodArbitrary(),
       fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
       fc.boolean(),
       fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
-      fc.option(fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }), {
-        nil: undefined,
-      }),
+      fc.option(
+        fc.double({
+          min: 0,
+          max: 100000,
+          noNaN: true,
+          noDefaultInfinity: true,
+        }),
+        {
+          nil: undefined,
+        }
+      ),
       fc.option(fc.string({ maxLength: 100 }), { nil: undefined })
     )
     .map(
@@ -130,7 +164,10 @@ const transactionArbitrary = (): fc.Arbitrary<Transaction> => {
 // Mock storage service that simulates database persistence
 interface MockTransactionStorage {
   transactions: Map<string, Transaction>;
-  updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null>;
+  updateTransaction(
+    id: string,
+    updates: Partial<Transaction>
+  ): Promise<Transaction | null>;
 }
 
 function createMockTransactionStorage(): MockTransactionStorage {
@@ -138,7 +175,10 @@ function createMockTransactionStorage(): MockTransactionStorage {
 
   return {
     transactions,
-    async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
+    async updateTransaction(
+      id: string,
+      updates: Partial<Transaction>
+    ): Promise<Transaction | null> {
       const existing = transactions.get(id);
       if (!existing) return null;
 
@@ -160,7 +200,12 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
       await fc.assert(
         fc.asyncProperty(
           transactionArbitrary(),
-          fc.double({ min: 0.01, max: 100000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 100000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (transaction, newAmount) => {
             // Create a mock storage
             const storage = createMockTransactionStorage();
@@ -189,14 +234,13 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
       await fc.assert(
         fc.asyncProperty(
           transactionArbitrary(),
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2025-12-31") }),
-          async (transaction, newDate) => {
+          dateStringArbitrary(),
+          async (transaction, newDateString) => {
             // Create a mock storage
             const storage = createMockTransactionStorage();
             storage.transactions.set(transaction.id, transaction);
 
             // Update the date
-            const newDateString = newDate.toISOString().split("T")[0];
             const updated = await storage.updateTransaction(transaction.id, {
               date: newDateString,
             });
@@ -248,9 +292,17 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
       await fc.assert(
         fc.asyncProperty(
           transactionArbitrary(),
-          fc.option(fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }), {
-            nil: undefined,
-          }),
+          fc.option(
+            fc.double({
+              min: 0,
+              max: 100000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
+            {
+              nil: undefined,
+            }
+          ),
           async (transaction, newReimbursementAmount) => {
             // Create a mock storage
             const storage = createMockTransactionStorage();
@@ -269,7 +321,10 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
 
             // Verify the reimbursement amount was persisted
             if (newReimbursementAmount !== undefined) {
-              expect(updated.reimbursementAmount).toBeCloseTo(newReimbursementAmount, 2);
+              expect(updated.reimbursementAmount).toBeCloseTo(
+                newReimbursementAmount,
+                2
+              );
             } else {
               expect(updated.reimbursementAmount).toBeUndefined();
             }
@@ -284,13 +339,25 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
         fc.asyncProperty(
           transactionArbitrary(),
           fc.record({
-            amount: fc.double({ min: 0.01, max: 100000, noNaN: true, noDefaultInfinity: true }),
+            amount: fc.double({
+              min: 0.01,
+              max: 100000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
             notes: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
             reimbursementAmount: fc.option(
-              fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
+              fc.double({
+                min: 0,
+                max: 100000,
+                noNaN: true,
+                noDefaultInfinity: true,
+              }),
               { nil: undefined }
             ),
-            category: fc.option(fc.string({ maxLength: 100 }), { nil: undefined }),
+            category: fc.option(fc.string({ maxLength: 100 }), {
+              nil: undefined,
+            }),
           }),
           async (transaction, updates) => {
             // Create a mock storage
@@ -298,7 +365,10 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
             storage.transactions.set(transaction.id, transaction);
 
             // Update multiple fields
-            const updated = await storage.updateTransaction(transaction.id, updates);
+            const updated = await storage.updateTransaction(
+              transaction.id,
+              updates
+            );
 
             // Verify the update was successful
             expect(updated).not.toBeNull();
@@ -311,7 +381,10 @@ describe("Transaction Field Persistence Property-Based Tests", () => {
             expect(updated.notes).toBe(updates.notes);
             expect(updated.category).toBe(updates.category);
             if (updates.reimbursementAmount !== undefined) {
-              expect(updated.reimbursementAmount).toBeCloseTo(updates.reimbursementAmount, 2);
+              expect(updated.reimbursementAmount).toBeCloseTo(
+                updates.reimbursementAmount,
+                2
+              );
             } else {
               expect(updated.reimbursementAmount).toBeUndefined();
             }

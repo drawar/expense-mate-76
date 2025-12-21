@@ -23,8 +23,12 @@ const mockRule: DbRewardRule = {
   amount_rounding_strategy: "floor",
   block_size: 1,
   monthly_cap: null,
+  monthly_cap_type: null,
   monthly_min_spend: null,
   monthly_spend_period_type: null,
+  cap_group_id: null,
+  valid_from: null,
+  valid_until: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

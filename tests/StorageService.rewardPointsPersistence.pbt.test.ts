@@ -52,7 +52,13 @@ const paymentMethodArbitrary = (): fc.Arbitrary<PaymentMethod> => {
   return fc.record({
     id: fc.uuid(),
     name: fc.string({ minLength: 1, maxLength: 100 }),
-    type: fc.constantFrom("credit_card", "debit_card", "cash", "bank_account", "other"),
+    type: fc.constantFrom(
+      "credit_card",
+      "debit_card",
+      "cash",
+      "bank_account",
+      "other"
+    ),
     issuer: fc.string({ maxLength: 50 }),
     lastFourDigits: fc.option(fc.string({ minLength: 4, maxLength: 4 }), {
       nil: undefined,
@@ -78,35 +84,75 @@ const rewardPointsArbitrary = (): fc.Arbitrary<{
   base: number;
   bonus: number;
 }> => {
-  return fc.record({
-    base: fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
-    bonus: fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }),
-  }).map(({ base, bonus }) => ({
-    total: base + bonus,
-    base,
-    bonus,
-  }));
+  return fc
+    .record({
+      base: fc.double({
+        min: 0,
+        max: 100000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
+      bonus: fc.double({
+        min: 0,
+        max: 100000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
+    })
+    .map(({ base, bonus }) => ({
+      total: base + bonus,
+      base,
+      bonus,
+    }));
+};
+
+// Generate valid date strings in YYYY-MM-DD format
+const dateStringArbitrary = (): fc.Arbitrary<string> => {
+  return fc
+    .tuple(
+      fc.integer({ min: 2020, max: 2025 }),
+      fc.integer({ min: 1, max: 12 }),
+      fc.integer({ min: 1, max: 28 }) // Use 28 to avoid invalid dates
+    )
+    .map(([year, month, day]) => {
+      const m = month.toString().padStart(2, "0");
+      const d = day.toString().padStart(2, "0");
+      return `${year}-${m}-${d}`;
+    });
 };
 
 const transactionDataArbitrary = (): fc.Arbitrary<Omit<Transaction, "id">> => {
   return fc
     .tuple(
-      fc.date({ min: new Date("2020-01-01"), max: new Date("2025-12-31") }),
+      dateStringArbitrary(),
       merchantArbitrary(),
-      fc.double({ min: 0.01, max: 100000, noNaN: true, noDefaultInfinity: true }),
+      fc.double({
+        min: 0.01,
+        max: 100000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
       currencyArbitrary(),
       paymentMethodArbitrary(),
       rewardPointsArbitrary(),
       fc.boolean(),
       fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
-      fc.option(fc.double({ min: 0, max: 100000, noNaN: true, noDefaultInfinity: true }), {
-        nil: undefined,
-      }),
+      fc.option(
+        fc.double({
+          min: 0,
+          max: 100000,
+          noNaN: true,
+          noDefaultInfinity: true,
+        }),
+        {
+          nil: undefined,
+        }
+      ),
       fc.option(fc.string({ maxLength: 100 }), { nil: undefined })
     )
     .map(
       ([
-        date,
+        dateStr,
         merchant,
         amount,
         currency,
@@ -117,7 +163,7 @@ const transactionDataArbitrary = (): fc.Arbitrary<Omit<Transaction, "id">> => {
         reimbursementAmount,
         category,
       ]) => ({
-        date: date.toISOString().split("T")[0],
+        date: dateStr,
         merchant,
         amount,
         currency,
@@ -138,18 +184,24 @@ const transactionDataArbitrary = (): fc.Arbitrary<Omit<Transaction, "id">> => {
 // Simple mock for testing updateTransaction behavior
 interface MockStorageService {
   transactions: Map<string, Transaction>;
-  updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null>;
+  updateTransaction(
+    id: string,
+    updates: Partial<Transaction>
+  ): Promise<Transaction | null>;
 }
 
 function createMockStorageService(): MockStorageService {
   const transactions = new Map<string, Transaction>();
-  
+
   return {
     transactions,
-    async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
+    async updateTransaction(
+      id: string,
+      updates: Partial<Transaction>
+    ): Promise<Transaction | null> {
       const existing = transactions.get(id);
       if (!existing) return null;
-      
+
       // Simulate the behavior of the real updateTransaction method
       // Handle NULL values by defaulting to 0
       const updated: Transaction = {
@@ -158,7 +210,7 @@ function createMockStorageService(): MockStorageService {
         basePoints: updates.basePoints ?? 0,
         bonusPoints: updates.bonusPoints ?? 0,
       };
-      
+
       transactions.set(id, updated);
       return updated;
     },
@@ -201,13 +253,26 @@ describe("Reward Points Persistence Property-Based Tests", () => {
             }
 
             // Verify all point values are preserved with reasonable precision
-            expect(updatedTransaction.rewardPoints).toBeCloseTo(newPoints.total, 2);
-            expect(updatedTransaction.basePoints).toBeCloseTo(newPoints.base, 2);
-            expect(updatedTransaction.bonusPoints).toBeCloseTo(newPoints.bonus, 2);
+            expect(updatedTransaction.rewardPoints).toBeCloseTo(
+              newPoints.total,
+              2
+            );
+            expect(updatedTransaction.basePoints).toBeCloseTo(
+              newPoints.base,
+              2
+            );
+            expect(updatedTransaction.bonusPoints).toBeCloseTo(
+              newPoints.bonus,
+              2
+            );
 
             // Verify the relationship: total = base + bonus
-            const calculatedTotal = updatedTransaction.basePoints + updatedTransaction.bonusPoints;
-            expect(updatedTransaction.rewardPoints).toBeCloseTo(calculatedTotal, 2);
+            const calculatedTotal =
+              updatedTransaction.basePoints + updatedTransaction.bonusPoints;
+            expect(updatedTransaction.rewardPoints).toBeCloseTo(
+              calculatedTotal,
+              2
+            );
           }
         ),
         { numRuns: 100 }
@@ -216,38 +281,41 @@ describe("Reward Points Persistence Property-Based Tests", () => {
 
     it("should default NULL reward points to 0 when updating transactions", async () => {
       await fc.assert(
-        fc.asyncProperty(transactionDataArbitrary(), async (transactionData) => {
-          // Create a mock storage service
-          const storageService = createMockStorageService();
+        fc.asyncProperty(
+          transactionDataArbitrary(),
+          async (transactionData) => {
+            // Create a mock storage service
+            const storageService = createMockStorageService();
 
-          // Add the transaction to the mock storage
-          const transactionId = crypto.randomUUID();
-          const initialTransaction: Transaction = {
-            ...transactionData,
-            id: transactionId,
-          };
-          storageService.transactions.set(transactionId, initialTransaction);
+            // Add the transaction to the mock storage
+            const transactionId = crypto.randomUUID();
+            const initialTransaction: Transaction = {
+              ...transactionData,
+              id: transactionId,
+            };
+            storageService.transactions.set(transactionId, initialTransaction);
 
-          // Update with undefined points (simulating NULL in database)
-          const updatedTransaction = await storageService.updateTransaction(
-            transactionId,
-            {
-              rewardPoints: undefined,
-              basePoints: undefined,
-              bonusPoints: undefined,
+            // Update with undefined points (simulating NULL in database)
+            const updatedTransaction = await storageService.updateTransaction(
+              transactionId,
+              {
+                rewardPoints: undefined,
+                basePoints: undefined,
+                bonusPoints: undefined,
+              }
+            );
+
+            // Verify the update was successful
+            expect(updatedTransaction).not.toBeNull();
+            if (!updatedTransaction) {
+              throw new Error("Update failed");
             }
-          );
 
-          // Verify the update was successful
-          expect(updatedTransaction).not.toBeNull();
-          if (!updatedTransaction) {
-            throw new Error("Update failed");
+            // Verify NULL values default to 0
+            expect(updatedTransaction.basePoints).toBe(0);
+            expect(updatedTransaction.bonusPoints).toBe(0);
           }
-
-          // Verify NULL values default to 0
-          expect(updatedTransaction.basePoints).toBe(0);
-          expect(updatedTransaction.bonusPoints).toBe(0);
-        }),
+        ),
         { numRuns: 100 }
       );
     });

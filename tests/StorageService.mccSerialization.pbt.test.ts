@@ -90,8 +90,12 @@ function createMockMerchantStorage(): MockMerchantStorage {
         isOnline: stored.is_online || false,
         coordinates: stored.coordinates
           ? {
-              lat: Number(stored.coordinates.lat),
-              lng: Number(stored.coordinates.lng),
+              lat: Number(
+                (stored.coordinates as { lat: number; lng: number }).lat
+              ),
+              lng: Number(
+                (stored.coordinates as { lat: number; lng: number }).lng
+              ),
             }
           : undefined,
       };
