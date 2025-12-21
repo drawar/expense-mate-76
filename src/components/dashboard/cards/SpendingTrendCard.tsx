@@ -88,7 +88,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const TrendAndAverage = () => (
     <div className="flex items-center justify-between mb-4">
       <div>
-        <p className="text-sm text-muted-foreground">Trend</p>
+        <p className="text-sm text-muted-foreground">vs last period</p>
         <div className="flex items-center gap-1 mt-1">
           {trend >= 0 ? (
             <TrendingUpIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -102,13 +102,16 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                 : "font-medium text-green-600 dark:text-green-400"
             }
           >
-            {Math.abs(trend).toFixed(1)}%
+            {trend >= 0 ? "+" : ""}
+            {trend.toFixed(1)}%
           </span>
         </div>
       </div>
 
       <div className="text-right">
-        <p className="text-sm text-muted-foreground">Average</p>
+        <p className="text-sm text-muted-foreground">
+          {getPeriodLabel(selectedPeriod)} avg
+        </p>
         <p className="font-medium mt-1">{formatCurrency(average)}</p>
       </div>
     </div>

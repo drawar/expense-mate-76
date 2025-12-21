@@ -111,32 +111,36 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {/* Combined Spending Breakdown */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20">
-              <p className="text-xs text-muted-foreground mb-0.5">Can Save</p>
-              <p className="font-semibold text-green-600 dark:text-green-400">
-                {formattedValues?.savingsPotentialFormatted}
-              </p>
-            </div>
-            <div className="p-2.5 rounded-lg bg-muted/50">
-              <p className="text-xs text-muted-foreground mb-0.5">
-                Discretionary
-              </p>
-              <p className="font-semibold">
-                {formattedValues?.discretionarySpendingFormatted}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {formattedValues?.discretionaryPercentage}% of total
-              </p>
+          {/* Primary metric - Savings Potential */}
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Potential savings from discretionary
+                </p>
+                <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+                  {formattedValues?.savingsPotentialFormatted}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">
+                  Discretionary spend
+                </p>
+                <p className="text-sm font-medium">
+                  {formattedValues?.discretionarySpendingFormatted}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {formattedValues?.discretionaryPercentage}% of total
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Top Savings Categories - show only if there are categories */}
           {savingsCategories.length > 0 && (
-            <div className="pt-2 border-t border-border/50">
+            <div>
               <p className="text-xs font-medium mb-1.5 text-muted-foreground">
-                Top opportunities
+                Where to cut back
               </p>
               {savingsCategories}
             </div>

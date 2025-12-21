@@ -41,9 +41,13 @@ const SummarySection: React.FC = () => {
   const netExpenses =
     (metrics?.totalExpenses || 0) - (metrics?.totalReimbursed || 0);
 
+  const hasReimbursements = (metrics?.totalReimbursed || 0) > 0;
+
   return (
     <div className="space-y-4 w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 animate-fadeIn">
+      <div
+        className={`grid grid-cols-1 ${hasReimbursements ? "sm:grid-cols-2" : ""} gap-4 mb-6 animate-fadeIn`}
+      >
         {/* Net Expenses Card */}
         <SummaryCard
           title="Net Expenses"
@@ -58,15 +62,17 @@ const SummarySection: React.FC = () => {
           valueColor="text-emerald-800 dark:text-emerald-300"
         />
 
-        {/* Reimbursements Card */}
-        <SummaryCard
-          title="Reimbursements"
-          icon={<ArrowDownLeftIcon className="h-5 w-5 text-primary" />}
-          value={formatCurrency(metrics?.totalReimbursed || 0)}
-          description={`From ${reimbursedTransactionsCount} transactions`}
-          cardColor="bg-gradient-to-br from-green-500/10 to-emerald-600/10"
-          valueColor="text-green-800 dark:text-green-300"
-        />
+        {/* Reimbursements Card - only show when there are reimbursements */}
+        {hasReimbursements && (
+          <SummaryCard
+            title="Reimbursements"
+            icon={<ArrowDownLeftIcon className="h-5 w-5 text-primary" />}
+            value={formatCurrency(metrics?.totalReimbursed || 0)}
+            description={`From ${reimbursedTransactionsCount} transaction${reimbursedTransactionsCount !== 1 ? "s" : ""}`}
+            cardColor="bg-gradient-to-br from-green-500/10 to-emerald-600/10"
+            valueColor="text-green-800 dark:text-green-300"
+          />
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
-
-import React from 'react';
-import { Transaction } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CurrencyService } from '@/core/currency';
-import { formatDate } from '@/utils/dates/formatters';
-import { getCategoryFromMCC, getCategoryFromMerchantName } from '@/utils/categoryMapping';
+import React from "react";
+import { Transaction } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { CurrencyService } from "@/core/currency";
+import { formatDate } from "@/utils/dates/formatters";
+import {
+  getCategoryFromMCC,
+  getCategoryFromMerchantName,
+} from "@/utils/categoryMapping";
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -13,10 +14,10 @@ interface TransactionCardProps {
   onClick?: () => void;
 }
 
-const TransactionCard: React.FC<TransactionCardProps> = ({ 
-  transaction, 
-  className = '',
-  onClick 
+const TransactionCard: React.FC<TransactionCardProps> = ({
+  transaction,
+  className = "",
+  onClick,
 }) => {
   // Determine category for display
   const displayCategory = React.useMemo(() => {
@@ -31,7 +32,9 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
     }
 
     // Try to determine from merchant name
-    const nameBasedCategory = getCategoryFromMerchantName(transaction.merchant.name);
+    const nameBasedCategory = getCategoryFromMerchantName(
+      transaction.merchant.name
+    );
     if (nameBasedCategory) {
       return nameBasedCategory;
     }
@@ -46,65 +49,48 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
   };
 
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-all hover:shadow-md ${className}`}
       onClick={handleClick}
     >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Header with merchant name and date */}
-          <div className="flex items-start justify-between">
-            <div className="min-w-0 flex-1">
-              <h3 className="font-medium text-foreground truncate">
-                {transaction.merchant.name}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(transaction.date)}
-              </p>
-            </div>
-            <Badge variant="secondary" className="ml-2 text-xs">
-              {displayCategory}
-            </Badge>
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Header: merchant name and amount */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-medium text-foreground truncate flex-1">
+              {transaction.merchant.name}
+            </h3>
+            <p className="text-base font-semibold text-foreground whitespace-nowrap">
+              {CurrencyService.format(transaction.amount, transaction.currency)}
+            </p>
           </div>
 
-          {/* Amount */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold text-foreground">
-                {CurrencyService.format(transaction.amount, transaction.currency)}
-              </p>
-              {transaction.currency !== transaction.paymentCurrency && (
-                <p className="text-xs text-muted-foreground">
-                  Paid: {CurrencyService.format(transaction.paymentAmount, transaction.paymentCurrency)}
-                </p>
-              )}
+          {/* Secondary info: date, category, points */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <span>{formatDate(transaction.date)}</span>
+              <span>•</span>
+              <span className="truncate max-w-[100px]">{displayCategory}</span>
             </div>
-          </div>
-
-          {/* Payment method and points */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground truncate">
-              {transaction.paymentMethod.name}
-            </span>
             {transaction.rewardPoints > 0 && (
               <span className="text-primary font-medium">
-                {transaction.rewardPoints.toLocaleString()} pts
+                +{transaction.rewardPoints.toLocaleString()} pts
               </span>
             )}
           </div>
 
-          {/* Transaction type indicators */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {transaction.merchant.isOnline ? (
-              <span>Online</span>
-            ) : (
-              <span>In-store</span>
-            )}
-            {transaction.isContactless && !transaction.merchant.isOnline && (
-              <>
-                <span>•</span>
-                <span>Contactless</span>
-              </>
+          {/* Payment method */}
+          <div className="text-xs text-muted-foreground truncate">
+            {transaction.paymentMethod.name}
+            {transaction.currency !== transaction.paymentCurrency && (
+              <span className="ml-1">
+                (
+                {CurrencyService.format(
+                  transaction.paymentAmount,
+                  transaction.paymentCurrency
+                )}
+                )
+              </span>
             )}
           </div>
         </div>
