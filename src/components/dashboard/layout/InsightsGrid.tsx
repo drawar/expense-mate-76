@@ -76,9 +76,11 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         <SpendingDistributionCard
           categoryData={charts.categories}
           paymentMethodData={charts.paymentMethods}
+          transactions={filteredTransactions}
           currency={currency}
           className={commonCardClass}
           maxCategories={4}
+          maxMerchants={5}
           highlightTopMethod={true}
         />
 

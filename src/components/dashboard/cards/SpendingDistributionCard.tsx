@@ -1,34 +1,52 @@
 // src/components/dashboard/cards/SpendingDistributionCard.tsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Currency } from "@/types";
+import { Currency, Transaction } from "@/types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CreditCardIcon, TagIcon } from "lucide-react";
+import { CreditCardIcon, TagIcon, StoreIcon } from "lucide-react";
 import { Chevron } from "@/components/ui/chevron";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/core/currency";
 
+// Color palette for merchants
+const MERCHANT_COLORS = [
+  "#10b981",
+  "#3b82f6",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+  "#6366f1",
+  "#84cc16",
+];
+
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];
   paymentMethodData: ChartDataItem[];
+  transactions?: Transaction[];
   currency?: Currency;
   className?: string;
   maxCategories?: number;
+  maxMerchants?: number;
   highlightTopMethod?: boolean;
 }
 
-type ViewMode = "category" | "payment";
+type ViewMode = "category" | "payment" | "merchant";
 
 /**
- * A combined card component that toggles between category and payment method distribution views
+ * A combined card component that toggles between category, payment method, and merchant views
  */
 const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
   categoryData,
   paymentMethodData,
+  transactions = [],
   currency = "SGD",
   className = "",
   maxCategories = 10,
+  maxMerchants = 5,
   highlightTopMethod = true,
 }) => {
   // State to track which view is currently active
@@ -84,25 +102,75 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
     return paymentMethodData;
   }, [paymentMethodData, highlightTopMethod]);
 
+  // Process merchant data from transactions
+  const processedMerchantData = React.useMemo(() => {
+    if (!transactions || transactions.length === 0) return [];
+
+    // Aggregate spending by merchant
+    const merchantMap = new Map<string, { total: number; count: number }>();
+
+    transactions.forEach((tx) => {
+      const merchantName = tx.merchant.name;
+      const existing = merchantMap.get(merchantName) || { total: 0, count: 0 };
+      merchantMap.set(merchantName, {
+        total: existing.total + tx.amount,
+        count: existing.count + 1,
+      });
+    });
+
+    // Convert to array and sort by total descending
+    const merchantArray = Array.from(merchantMap.entries())
+      .map(([name, data], index) => ({
+        name,
+        value: data.total,
+        count: data.count,
+        color: MERCHANT_COLORS[index % MERCHANT_COLORS.length],
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, maxMerchants);
+
+    return merchantArray;
+  }, [transactions, maxMerchants]);
+
   // Get active data based on current view mode
   const activeData =
-    viewMode === "category" ? processedCategoryData : processedPaymentData;
+    viewMode === "category"
+      ? processedCategoryData
+      : viewMode === "payment"
+        ? processedPaymentData
+        : processedMerchantData;
 
   // Get title based on current view mode
-  const title =
-    viewMode === "category" ? "Expense Categories" : "Payment Methods";
+  const getTitle = () => {
+    switch (viewMode) {
+      case "category":
+        return "Expense Categories";
+      case "payment":
+        return "Payment Methods";
+      case "merchant":
+        return "Top Merchants";
+    }
+  };
+
+  // Get icon based on current view mode
+  const getIcon = () => {
+    switch (viewMode) {
+      case "category":
+        return <TagIcon className="h-5 w-5 text-primary" />;
+      case "payment":
+        return <CreditCardIcon className="h-5 w-5 text-primary" />;
+      case "merchant":
+        return <StoreIcon className="h-5 w-5 text-primary" />;
+    }
+  };
 
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center gap-2">
-            {viewMode === "category" ? (
-              <TagIcon className="h-5 w-5 text-primary" />
-            ) : (
-              <CreditCardIcon className="h-5 w-5 text-primary" />
-            )}
-            {title}
+            {getIcon()}
+            {getTitle()}
           </CardTitle>
 
           <ToggleGroup
@@ -111,12 +179,13 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
             onValueChange={(value) => value && setViewMode(value as ViewMode)}
           >
             <ToggleGroupItem value="category" aria-label="View categories">
-              <TagIcon className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Category</span>
+              <TagIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="merchant" aria-label="View top merchants">
+              <StoreIcon className="h-4 w-4" />
             </ToggleGroupItem>
             <ToggleGroupItem value="payment" aria-label="View payment methods">
-              <CreditCardIcon className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Payment</span>
+              <CreditCardIcon className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -124,27 +193,38 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
       <CardContent>
         {activeData && activeData.length > 0 ? (
           <div className="mt-2 space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               {activeData.map((item, index) => (
-                <React.Fragment key={`${item.name}-${index}`}>
-                  <div className="flex items-center">
+                <div
+                  key={`${item.name}-${index}`}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center min-w-0 flex-1">
                     <div
                       className="w-3 h-3 rounded-sm mr-2 flex-shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span
-                      className={`truncate text-[14px] font-medium text-olive-green dark:text-white ${
-                        item.highlighted ? "font-semibold" : ""
-                      }`}
-                      title={item.name}
-                    >
-                      {item.name}
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span
+                        className={`truncate text-[14px] font-medium text-olive-green dark:text-white block ${
+                          item.highlighted ? "font-semibold" : ""
+                        }`}
+                        title={item.name}
+                      >
+                        {item.name}
+                      </span>
+                      {viewMode === "merchant" && item.count && (
+                        <span className="text-[11px] text-muted-foreground">
+                          {item.count}{" "}
+                          {item.count === 1 ? "transaction" : "transactions"}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right text-[14px] font-semibold text-olive-green dark:text-white">
+                  <div className="text-right text-[14px] font-semibold text-olive-green dark:text-white ml-2">
                     {CurrencyService.format(item.value, currency)}
                   </div>
-                </React.Fragment>
+                </div>
               ))}
             </div>
 
@@ -163,7 +243,13 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
         ) : (
           <div className="flex items-center justify-center py-4 text-muted-foreground">
             <p className="text-sm">
-              No {viewMode === "category" ? "category" : "payment method"} data
+              No{" "}
+              {viewMode === "category"
+                ? "category"
+                : viewMode === "merchant"
+                  ? "merchant"
+                  : "payment method"}{" "}
+              data
             </p>
           </div>
         )}
