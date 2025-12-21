@@ -298,6 +298,7 @@ const PaymentMethods = () => {
               padding: "12px 20px",
               letterSpacing: "0.3px",
             }}
+            aria-label="Add new payment method"
           >
             <Plus className="h-4 w-4" />
             Add Method

@@ -184,6 +184,9 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             borderRadius: "20px",
             letterSpacing: "0.5px",
           }}
+          aria-label={`Card status: ${paymentMethod.active ? "active" : "inactive"}. Click to ${paymentMethod.active ? "deactivate" : "activate"}.`}
+          role="switch"
+          aria-checked={paymentMethod.active}
         >
           <span className="flex items-center">
             {paymentMethod.active ? (

@@ -1361,7 +1361,10 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h3
             className="flex items-center text-base font-medium"
-            style={{ color: "var(--color-text-primary)" }}
+            style={{
+              color: "var(--color-text-primary)",
+              letterSpacing: "0.2px",
+            }}
           >
             <CoinsIcon
               className="h-5 w-5 mr-2"
@@ -1370,10 +1373,12 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
             Reward Rules
             {rewardRules.length > 0 && (
               <span
-                className="ml-2 text-xs px-2 py-0.5 rounded-full"
+                className="ml-2 text-[13px] font-medium"
                 style={{
-                  backgroundColor: "var(--color-accent-subtle)",
-                  color: "var(--color-accent-text)",
+                  backgroundColor: "rgba(124, 152, 133, 0.15)",
+                  color: "#A8C4AF",
+                  padding: "2px 8px",
+                  borderRadius: "10px",
                 }}
               >
                 {rewardRules.length}
@@ -1415,7 +1420,10 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                     }}
                   >
                     {isRunningSetup ? (
-                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      <Loader2
+                        className="h-4 w-4 mr-1.5 animate-spin"
+                        style={{ color: "var(--color-accent)" }}
+                      />
                     ) : (
                       <Settings2 className="h-4 w-4 mr-1.5" />
                     )}
@@ -1430,6 +1438,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                     color: "var(--color-bg)",
                     borderRadius: "8px",
                   }}
+                  aria-label="Add new reward rule"
                 >
                   <PlusIcon className="h-4 w-4 mr-1.5" />
                   Add Rule
@@ -1511,97 +1520,117 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-0">
             {rewardRules
               .sort((a, b) => b.priority - a.priority)
-              .map((rule) => (
-                <div
-                  key={rule.id}
-                  className="flex items-start justify-between p-3 transition-colors duration-300"
-                  style={{
-                    backgroundColor: "var(--color-surface)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="font-medium text-sm"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        {rule.name}
-                      </span>
-                      {/* Japandi Multiplier Badge */}
-                      <span
-                        className="text-sm font-medium px-2.5 py-0.5"
-                        style={{
-                          backgroundColor: "var(--color-badge-bg)",
-                          color: "var(--color-badge-text)",
-                          border: "1px solid var(--color-badge-border)",
-                          borderRadius: "6px",
-                        }}
-                      >
-                        {(() => {
-                          const total =
-                            rule.reward.bonusMultiplier +
-                            rule.reward.baseMultiplier;
-                          return Number.isInteger(total)
-                            ? total
-                            : Math.round(total * 100) / 100;
-                        })()}
-                        x
-                      </span>
-                      {rule.reward.monthlyCap && (
+              .map((rule, index, sortedRules) => (
+                <div key={rule.id}>
+                  <div
+                    className="flex items-start justify-between p-3 transition-colors duration-300"
+                    style={{
+                      backgroundColor: "var(--color-surface)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className="text-xs px-2 py-0.5"
-                          style={{
-                            color: "var(--color-text-tertiary)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: "4px",
-                          }}
+                          className="font-medium text-sm"
+                          style={{ color: "var(--color-text-primary)" }}
                         >
-                          Monthly cap:{" "}
-                          {rule.reward.monthlyCapType === "spend_amount"
-                            ? `$${rule.reward.monthlyCap.toLocaleString()}`
-                            : `${rule.reward.monthlyCap.toLocaleString()} pts`}
+                          {rule.name}
                         </span>
-                      )}
-                      {!rule.enabled && (
+                        {/* Japandi Multiplier Badge */}
                         <span
-                          className="text-xs px-2 py-0.5"
+                          className="text-sm font-medium px-2.5 py-0.5"
                           style={{
-                            backgroundColor: "rgba(196, 165, 123, 0.15)",
-                            color: "var(--color-warning)",
-                            borderRadius: "4px",
+                            backgroundColor: "var(--color-badge-bg)",
+                            color: "var(--color-badge-text)",
+                            border: "1px solid var(--color-badge-border)",
+                            borderRadius: "6px",
                           }}
+                          aria-label={`Earn ${(() => {
+                            const total =
+                              rule.reward.bonusMultiplier +
+                              rule.reward.baseMultiplier;
+                            return Number.isInteger(total)
+                              ? total
+                              : Math.round(total * 100) / 100;
+                          })()} points per dollar on ${rule.name}`}
                         >
-                          Disabled
+                          {(() => {
+                            const total =
+                              rule.reward.bonusMultiplier +
+                              rule.reward.baseMultiplier;
+                            return Number.isInteger(total)
+                              ? total
+                              : Math.round(total * 100) / 100;
+                          })()}
+                          x
                         </span>
-                      )}
+                        {rule.reward.monthlyCap && (
+                          <span
+                            className="text-xs px-2 py-0.5"
+                            style={{
+                              color: "var(--color-text-tertiary)",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            Monthly cap:{" "}
+                            {rule.reward.monthlyCapType === "spend_amount"
+                              ? `$${rule.reward.monthlyCap.toLocaleString()}`
+                              : `${rule.reward.monthlyCap.toLocaleString()} pts`}
+                          </span>
+                        )}
+                        {!rule.enabled && (
+                          <span
+                            className="text-xs px-2 py-0.5"
+                            style={{
+                              backgroundColor: "rgba(196, 165, 123, 0.15)",
+                              color: "var(--color-warning)",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="text-sm mt-1 truncate"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        {rule.description}
+                      </p>
                     </div>
-                    <p
-                      className="text-sm mt-1 truncate"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      {rule.description}
-                    </p>
+                    <div className="flex gap-4 ml-2">
+                      <button
+                        className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
+                        style={{ color: "var(--color-icon-secondary)" }}
+                        onClick={() => handleEditRule(rule)}
+                        aria-label={`Edit ${rule.name} reward rule`}
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
+                        style={{ color: "var(--color-error)" }}
+                        onClick={() => setDeleteConfirmRule(rule)}
+                        aria-label={`Delete ${rule.name} reward rule`}
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-4 ml-2">
-                    <button
-                      className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
-                      style={{ color: "var(--color-icon-secondary)" }}
-                      onClick={() => handleEditRule(rule)}
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
-                      style={{ color: "var(--color-error)" }}
-                      onClick={() => setDeleteConfirmRule(rule)}
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  {/* Divider between rules */}
+                  {index < sortedRules.length - 1 && (
+                    <div
+                      style={{
+                        borderTop: "1px solid rgba(58, 61, 63, 0.4)",
+                        margin: "16px 0",
+                      }}
+                    />
+                  )}
                 </div>
               ))}
           </div>

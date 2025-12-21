@@ -18,6 +18,25 @@ body {
 }
 
 /* ============================================
+   FOCUS STYLES - Accessibility
+   ============================================ */
+
+/* Global focus ring for interactive elements */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible:not([tabindex="-1"]) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Remove default outline (we're replacing with our focus ring) */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================
    CARD COMPONENTS
    ============================================ */
 
@@ -27,15 +46,16 @@ body {
   padding: var(--space-xl);
   border: 1px solid var(--color-border-subtle);
   box-shadow: var(--shadow-card-mobile);
-  transition: transform var(--duration-fast) var(--transition-smooth),
-              box-shadow var(--duration-fast) var(--transition-smooth);
+  transition:
+    transform var(--duration-fast) var(--transition-smooth),
+    box-shadow var(--duration-fast) var(--transition-smooth);
 }
 
 @media (min-width: 1024px) {
   .moss-card {
     box-shadow: var(--shadow-card-desktop);
   }
-  
+
   .moss-card-hover:hover {
     transform: translateY(var(--card-hover-lift));
     box-shadow: var(--shadow-card-lift);
@@ -55,8 +75,9 @@ body {
   border: 1px solid var(--color-border-subtle);
   width: 100%;
   min-height: 44px;
-  transition: border-color var(--duration-fast) var(--transition-smooth),
-              box-shadow var(--duration-fast) var(--transition-smooth);
+  transition:
+    border-color var(--duration-fast) var(--transition-smooth),
+    box-shadow var(--duration-fast) var(--transition-smooth);
 }
 
 .moss-input::placeholder {
@@ -88,9 +109,10 @@ body {
   font-weight: var(--font-weight-semibold);
   border: none;
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--transition-smooth),
-              opacity var(--duration-fast) var(--transition-smooth),
-              background-color var(--duration-fast) var(--transition-smooth);
+  transition:
+    transform var(--duration-fast) var(--transition-smooth),
+    opacity var(--duration-fast) var(--transition-smooth),
+    background-color var(--duration-fast) var(--transition-smooth);
 }
 
 .moss-button:hover:not(:disabled) {
@@ -138,8 +160,9 @@ body {
 
 .collapsible-content {
   overflow: hidden;
-  transition: max-height var(--duration-fast) var(--transition-smooth),
-              opacity var(--duration-fast) var(--transition-smooth);
+  transition:
+    max-height var(--duration-fast) var(--transition-smooth),
+    opacity var(--duration-fast) var(--transition-smooth);
   transition-timing-function: var(--transition-smooth);
 }
 
@@ -215,12 +238,12 @@ body {
     /* Inactive state: neutral gray */
     background-color: rgba(120, 120, 128, 0.16);
   }
-  
+
   .moss-switch[data-state="checked"] {
     /* Active state: moss-green */
     background-color: var(--color-accent);
   }
-  
+
   .moss-switch:hover:not(:disabled) {
     opacity: 0.9;
   }
@@ -232,15 +255,17 @@ body {
     /* iOS inactive state */
     background-color: rgba(120, 120, 128, 0.16);
   }
-  
+
   .moss-switch[data-state="checked"] {
     /* iOS active state: moss-green */
     background-color: var(--color-accent);
   }
-  
+
   /* iOS-specific thumb styling */
   .moss-switch-thumb {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 3px 8px rgba(0, 0, 0, 0.15),
+      0 3px 1px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -408,8 +433,9 @@ label,
 
 /* Button press scale effect - applies to all buttons */
 .button-press {
-  transition: transform var(--duration-fast) var(--transition-smooth),
-              opacity var(--duration-fast) var(--transition-smooth);
+  transition:
+    transform var(--duration-fast) var(--transition-smooth),
+    opacity var(--duration-fast) var(--transition-smooth);
 }
 
 .button-press:active:not(:disabled) {
@@ -418,8 +444,9 @@ label,
 
 /* Card hover lift effect - desktop only */
 .hover-lift {
-  transition: transform var(--duration-fast) var(--transition-smooth),
-              box-shadow var(--duration-fast) var(--transition-smooth);
+  transition:
+    transform var(--duration-fast) var(--transition-smooth),
+    box-shadow var(--duration-fast) var(--transition-smooth);
 }
 
 @media (min-width: 1024px) {
@@ -481,7 +508,7 @@ label,
   .reward-points-panel {
     padding: calc(var(--space-sm) + 2px) calc(var(--space-md) + 2px);
   }
-  
+
   .reward-points-panel .points-badge,
   .reward-points-panel .bonus-badge {
     font-size: 14px;
@@ -494,12 +521,12 @@ label,
   .reward-points-panel {
     padding: var(--space-md) var(--space-lg);
   }
-  
+
   .reward-points-panel .points-badge {
     font-size: var(--font-size-body);
     padding: calc(var(--space-xs) + 2px) var(--space-md);
   }
-  
+
   .reward-points-panel .bonus-badge {
     font-size: var(--font-size-label);
     padding: calc(var(--space-xs) + 2px) var(--space-md);
@@ -511,12 +538,12 @@ label,
   .reward-points-panel {
     padding: var(--space-md) var(--space-lg);
   }
-  
+
   .reward-points-panel .points-badge {
     font-size: var(--font-size-body);
     padding: calc(var(--space-xs) + 2px) var(--space-md);
   }
-  
+
   .reward-points-panel .bonus-badge {
     font-size: var(--font-size-label);
     padding: calc(var(--space-xs) + 2px) var(--space-md);
