@@ -191,7 +191,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label htmlFor="name">Name *</Label>
+            <Label
+              htmlFor="name"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Name <span style={{ color: "var(--color-error)" }}>*</span>
+            </Label>
             <Input
               type="text"
               id="name"
@@ -202,16 +207,28 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                   setValidationErrors({ ...validationErrors, name: undefined });
                 }
               }}
-              className={validationErrors.name ? "border-red-500" : ""}
+              style={{
+                borderColor: validationErrors.name
+                  ? "var(--color-error)"
+                  : undefined,
+              }}
             />
             {validationErrors.name && (
-              <p className="text-sm text-red-500 mt-1">
+              <p
+                className="text-sm mt-1"
+                style={{ color: "var(--color-error)" }}
+              >
                 {validationErrors.name}
               </p>
             )}
           </div>
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label
+              htmlFor="description"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Description
+            </Label>
             <Textarea
               id="description"
               value={description}
@@ -219,7 +236,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="enabled">Enabled</Label>
+            <Label
+              htmlFor="enabled"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Enabled
+            </Label>
             <Switch
               id="enabled"
               checked={enabled}
@@ -227,7 +249,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="priority">Priority *</Label>
+            <Label
+              htmlFor="priority"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Priority <span style={{ color: "var(--color-error)" }}>*</span>
+            </Label>
             <Select
               value={String(priority)}
               onValueChange={(value) => {
@@ -242,7 +269,11 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             >
               <SelectTrigger
                 id="priority"
-                className={validationErrors.priority ? "border-red-500" : ""}
+                style={{
+                  borderColor: validationErrors.priority
+                    ? "var(--color-error)"
+                    : undefined,
+                }}
               >
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
@@ -267,11 +298,17 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
               </SelectContent>
             </Select>
             {validationErrors.priority && (
-              <p className="text-sm text-red-500 mt-1">
+              <p
+                className="text-sm mt-1"
+                style={{ color: "var(--color-error)" }}
+              >
                 {validationErrors.priority}
               </p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Higher priority rules are applied first
             </p>
           </div>
@@ -285,7 +322,13 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="baseMultiplier">Base Multiplier *</Label>
+              <Label
+                htmlFor="baseMultiplier"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Base Multiplier{" "}
+                <span style={{ color: "var(--color-error)" }}>*</span>
+              </Label>
               <Input
                 type="number"
                 id="baseMultiplier"
@@ -300,21 +343,34 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                     });
                   }
                 }}
-                className={
-                  validationErrors.baseMultiplier ? "border-red-500" : ""
-                }
+                style={{
+                  borderColor: validationErrors.baseMultiplier
+                    ? "var(--color-error)"
+                    : undefined,
+                }}
               />
               {validationErrors.baseMultiplier && (
-                <p className="text-sm text-red-500 mt-1">
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--color-error)" }}
+                >
                   {validationErrors.baseMultiplier}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
                 Points earned per dollar (e.g., 1.5 = 1.5 points per $1)
               </p>
             </div>
             <div>
-              <Label htmlFor="bonusMultiplier">Bonus Multiplier</Label>
+              <Label
+                htmlFor="bonusMultiplier"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Bonus Multiplier
+              </Label>
               <Input
                 type="number"
                 id="bonusMultiplier"
@@ -329,23 +385,37 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                     });
                   }
                 }}
-                className={
-                  validationErrors.bonusMultiplier ? "border-red-500" : ""
-                }
+                style={{
+                  borderColor: validationErrors.bonusMultiplier
+                    ? "var(--color-error)"
+                    : undefined,
+                }}
               />
               {validationErrors.bonusMultiplier && (
-                <p className="text-sm text-red-500 mt-1">
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--color-error)" }}
+                >
                   {validationErrors.bonusMultiplier}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
                 Additional bonus points per dollar
               </p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="blockSize">Block Size *</Label>
+              <Label
+                htmlFor="blockSize"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Block Size{" "}
+                <span style={{ color: "var(--color-error)" }}>*</span>
+              </Label>
               <Input
                 type="number"
                 id="blockSize"
@@ -360,19 +430,34 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                     });
                   }
                 }}
-                className={validationErrors.blockSize ? "border-red-500" : ""}
+                style={{
+                  borderColor: validationErrors.blockSize
+                    ? "var(--color-error)"
+                    : undefined,
+                }}
               />
               {validationErrors.blockSize && (
-                <p className="text-sm text-red-500 mt-1">
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--color-error)" }}
+                >
                   {validationErrors.blockSize}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
                 Earn points per $X spent (e.g., 1 = per $1, 5 = per $5)
               </p>
             </div>
             <div>
-              <Label htmlFor="monthlyCap">Monthly Cap</Label>
+              <Label
+                htmlFor="monthlyCap"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Monthly Cap
+              </Label>
               <Input
                 type="number"
                 id="monthlyCap"
@@ -389,10 +474,17 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                   }
                 }}
                 placeholder="No limit"
-                className={validationErrors.monthlyCap ? "border-red-500" : ""}
+                style={{
+                  borderColor: validationErrors.monthlyCap
+                    ? "var(--color-error)"
+                    : undefined,
+                }}
               />
               {validationErrors.monthlyCap && (
-                <p className="text-sm text-red-500 mt-1">
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--color-error)" }}
+                >
                   {validationErrors.monthlyCap}
                 </p>
               )}
@@ -400,7 +492,12 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="monthlyCapType">Cap Type</Label>
+              <Label
+                htmlFor="monthlyCapType"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Cap Type
+              </Label>
               <Select
                 value={monthlyCapType}
                 onValueChange={(value: "bonus_points" | "spend_amount") =>
@@ -415,14 +512,22 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                   <SelectItem value="spend_amount">Spend Amount</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
                 {monthlyCapType === "bonus_points"
                   ? "Cap limits total bonus points earned"
                   : "Cap limits eligible spend amount ($)"}
               </p>
             </div>
             <div>
-              <Label htmlFor="capGroupId">Cap Group ID</Label>
+              <Label
+                htmlFor="capGroupId"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Cap Group ID
+              </Label>
               <Input
                 type="text"
                 id="capGroupId"
@@ -430,13 +535,21 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                 onChange={(e) => setCapGroupId(e.target.value)}
                 placeholder="e.g., 5x-food-cap"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
                 Rules with the same Cap Group ID share a single monthly cap
               </p>
             </div>
           </div>
           <div>
-            <Label htmlFor="monthlyMinSpend">Monthly Minimum Spend</Label>
+            <Label
+              htmlFor="monthlyMinSpend"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Monthly Minimum Spend
+            </Label>
             <Input
               type="number"
               id="monthlyMinSpend"
@@ -453,16 +566,24 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
                 }
               }}
               placeholder="No minimum"
-              className={
-                validationErrors.monthlyMinSpend ? "border-red-500" : ""
-              }
+              style={{
+                borderColor: validationErrors.monthlyMinSpend
+                  ? "var(--color-error)"
+                  : undefined,
+              }}
             />
             {validationErrors.monthlyMinSpend && (
-              <p className="text-sm text-red-500 mt-1">
+              <p
+                className="text-sm mt-1"
+                style={{ color: "var(--color-error)" }}
+              >
                 {validationErrors.monthlyMinSpend}
               </p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Minimum monthly spend to qualify for bonus (optional)
             </p>
           </div>
