@@ -7,17 +7,15 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import Card from "./Card";
 import { chartUtils } from "@/utils/dashboard";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import {
-  BarChart as RechartsBar,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
-  YAxis,
-  CartesianGrid,
+  ReferenceLine,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -63,6 +61,31 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const chartData = chartResult?.data || [];
   const trend = chartResult?.trend || 0;
   const average = chartResult?.average || 0;
+
+  // Calculate spending pace (for daily view)
+  const spendingPace = React.useMemo(() => {
+    if (selectedPeriod !== "week" || chartData.length === 0) return null;
+
+    const totalSpent = chartData.reduce((sum, d) => sum + (d.amount || 0), 0);
+    const daysElapsed = chartData.length;
+    const dailyAvg = totalSpent / daysElapsed;
+
+    // Get current date info for projection
+    const now = new Date();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0
+    ).getDate();
+    const daysRemaining = daysInMonth - now.getDate();
+    const projectedTotal = totalSpent + dailyAvg * daysRemaining;
+
+    return {
+      dailyAvg,
+      projectedTotal,
+      daysRemaining,
+    };
+  }, [chartData, selectedPeriod]);
 
   // Create period selector
   const periodSelector = (
@@ -155,34 +178,53 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       {chartData.length >= 2 && <TrendAndAverage />}
 
       {chartData.length > 0 && (
-        <div className="h-48 w-full">
+        <div className="h-40 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <RechartsBar
+            <LineChart
               data={chartData}
-              margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis
                 dataKey="period"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11 }}
+                interval="preserveStartEnd"
               />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => formatCurrency(value)}
+              {/* Average reference line */}
+              <ReferenceLine
+                y={average}
+                stroke="#9ca3af"
+                strokeDasharray="4 4"
+                strokeWidth={1}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar
+              <Line
+                type="monotone"
                 dataKey="amount"
-                fill="#8884d8"
-                activeBar={{ fill: "#7171d6" }}
-                radius={[4, 4, 0, 0]}
+                stroke="#10b981"
+                strokeWidth={2}
+                dot={{ fill: "#10b981", strokeWidth: 0, r: 3 }}
+                activeDot={{
+                  fill: "#10b981",
+                  strokeWidth: 2,
+                  stroke: "#fff",
+                  r: 5,
+                }}
               />
-            </RechartsBar>
+            </LineChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Spending pace indicator */}
+      {spendingPace && (
+        <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+          <span>At this pace: </span>
+          <span className="font-medium text-foreground">
+            {formatCurrency(spendingPace.projectedTotal)}
+          </span>
+          <span> by month end ({spendingPace.daysRemaining} days left)</span>
         </div>
       )}
     </Card>
