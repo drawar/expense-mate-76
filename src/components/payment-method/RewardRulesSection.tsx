@@ -25,7 +25,15 @@ import {
   Settings2,
   Loader2,
   AlertCircle,
+  RotateCcw,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Chevron } from "@/components/ui/chevron";
 import { SwipeableRow } from "@/components/ui/swipeable-row";
 import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRuleEditor } from "@/components/rewards/RewardRuleEditor";
@@ -1410,77 +1418,121 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
               </span>
             )}
           </h3>
-          <div className="flex gap-2">
-            {/* Show Quick Setup prominently when no rules exist */}
-            {quickSetupConfig && rewardRules.length === 0 ? (
-              <button
-                onClick={handleQuickSetup}
-                disabled={isRunningSetup}
-                className="flex items-center text-sm font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98] disabled:opacity-50"
-                style={{
-                  backgroundColor: "#7C9885",
-                  color: "#1A1D1F",
-                  borderRadius: "10px",
-                  padding: "16px 24px",
-                  letterSpacing: "0.3px",
-                  fontWeight: 500,
-                }}
-              >
-                {isRunningSetup ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Settings2 className="h-4 w-4 mr-2" />
-                )}
-                Quick Setup
-              </button>
-            ) : (
-              <>
-                {/* Show both buttons when rules exist */}
-                {quickSetupConfig && (
-                  <button
-                    onClick={handleQuickSetup}
-                    disabled={isRunningSetup}
-                    className="flex items-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50 hover:bg-[var(--color-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                    style={{
-                      backgroundColor: "transparent",
-                      color: "var(--color-text-tertiary)",
-                      border: "none",
-                      fontSize: "14px",
-                      fontWeight: 400,
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      outlineColor: "var(--color-accent)",
-                    }}
+          <div className="flex gap-1">
+            <TooltipProvider delayDuration={300}>
+              {/* Show Quick Setup prominently when no rules exist */}
+              {quickSetupConfig && rewardRules.length === 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleQuickSetup}
+                      disabled={isRunningSetup}
+                      className="flex items-center text-sm font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98] disabled:opacity-50"
+                      style={{
+                        backgroundColor: "#7C9885",
+                        color: "#1A1D1F",
+                        borderRadius: "10px",
+                        padding: "16px 24px",
+                        letterSpacing: "0.3px",
+                        fontWeight: 500,
+                      }}
+                      aria-label="Quick setup - auto-configure common reward rules"
+                    >
+                      {isRunningSetup ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Settings2 className="h-4 w-4 mr-2" />
+                      )}
+                      Quick Setup
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-[var(--color-card-bg)] border-[var(--color-border)] text-[var(--color-text-primary)]"
                   >
-                    {isRunningSetup ? (
-                      <Loader2
-                        className="h-4 w-4 mr-1.5 animate-spin"
-                        style={{ color: "#7C9885" }}
-                      />
-                    ) : (
-                      <Settings2 className="h-4 w-4 mr-1.5" />
-                    )}
-                    Reset Rules
-                  </button>
-                )}
-                <button
-                  onClick={handleAddRule}
-                  className="flex items-center text-sm font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98]"
-                  style={{
-                    backgroundColor: "#7C9885",
-                    color: "#1A1D1F",
-                    borderRadius: "10px",
-                    padding: "16px 24px",
-                    letterSpacing: "0.3px",
-                    fontWeight: 500,
-                  }}
-                  aria-label="Add new reward rule"
-                >
-                  <PlusIcon className="h-4 w-4 mr-1.5" />
-                  Add Rule
-                </button>
-              </>
-            )}
+                    <p className="font-medium">Auto-configure rules</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                      {quickSetupConfig.description}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <>
+                  {/* Icon-only Reset Rules button */}
+                  {quickSetupConfig && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={handleQuickSetup}
+                          disabled={isRunningSetup}
+                          className="flex items-center justify-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50 hover:bg-[var(--color-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            borderRadius: "8px",
+                            width: "44px",
+                            height: "44px",
+                            outlineColor: "var(--color-accent)",
+                          }}
+                          aria-label="Reset rules to defaults"
+                        >
+                          {isRunningSetup ? (
+                            <Loader2
+                              className="h-[22px] w-[22px] animate-spin"
+                              style={{ color: "#7C9885" }}
+                            />
+                          ) : (
+                            <RotateCcw
+                              className="h-[22px] w-[22px]"
+                              style={{ color: "#A8A5A0" }}
+                            />
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[var(--color-card-bg)] border-[var(--color-border)] text-[var(--color-text-primary)]"
+                      >
+                        <p className="font-medium">Reset Rules</p>
+                        <p className="text-xs text-[var(--color-text-tertiary)]">
+                          Restore default {quickSetupConfig.name} rules
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {/* Icon-only Add Rule button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleAddRule}
+                        className="flex items-center justify-center transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98]"
+                        style={{
+                          backgroundColor: "#7C9885",
+                          borderRadius: "8px",
+                          width: "44px",
+                          height: "44px",
+                        }}
+                        aria-label="Add new reward rule"
+                      >
+                        <PlusIcon
+                          className="h-[22px] w-[22px]"
+                          style={{ color: "#1A1D1F" }}
+                        />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[var(--color-card-bg)] border-[var(--color-border)] text-[var(--color-text-primary)]"
+                    >
+                      <p className="font-medium">Add Rule</p>
+                      <p className="text-xs text-[var(--color-text-tertiary)]">
+                        Create a custom reward rule
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </TooltipProvider>
           </div>
         </div>
         {/* Onboarding hint when no rules */}
@@ -1587,65 +1639,119 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                     onHintComplete={handleSwipeHintComplete}
                   >
                     <div
-                      className="p-3"
+                      className="p-3 cursor-pointer"
                       style={{
                         backgroundColor: "var(--color-surface)",
                         borderRadius: "8px",
+                        minHeight: "72px",
                       }}
+                      onClick={() => toggleRuleExpanded(rule.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggleRuleExpanded(rule.id);
+                        }
+                      }}
+                      aria-expanded={expandedRules.has(rule.id)}
                     >
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="font-medium text-sm"
-                          style={{ color: "var(--color-text-primary)" }}
-                        >
-                          {rule.name}
-                        </span>
-                        {rule.reward.monthlyCap && (
-                          <span
-                            className="text-sm px-2 py-0.5"
-                            style={{
-                              color: "var(--color-text-tertiary)",
-                              border: "1px solid var(--color-border)",
-                              borderRadius: "4px",
-                            }}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className="font-medium text-sm"
+                              style={{ color: "var(--color-text-primary)" }}
+                            >
+                              {rule.name}
+                            </span>
+                            {rule.reward.monthlyCap && (
+                              <span
+                                className="text-sm px-2 py-0.5"
+                                style={{
+                                  color: "var(--color-text-tertiary)",
+                                  border: "1px solid var(--color-border)",
+                                  borderRadius: "4px",
+                                }}
+                              >
+                                Monthly cap:{" "}
+                                {rule.reward.monthlyCapType === "spend_amount"
+                                  ? `$${rule.reward.monthlyCap.toLocaleString()}`
+                                  : `${rule.reward.monthlyCap.toLocaleString()} pts`}
+                              </span>
+                            )}
+                            {!rule.enabled && (
+                              <span
+                                className="text-xs px-2 py-0.5"
+                                style={{
+                                  backgroundColor: "rgba(196, 165, 123, 0.15)",
+                                  color: "var(--color-warning)",
+                                  borderRadius: "4px",
+                                }}
+                              >
+                                Disabled
+                              </span>
+                            )}
+                          </div>
+                          <p
+                            className={`text-sm mt-1 ${
+                              expandedRules.has(rule.id) ? "" : "line-clamp-2"
+                            }`}
+                            style={{ color: "var(--color-text-secondary)" }}
                           >
-                            Monthly cap:{" "}
-                            {rule.reward.monthlyCapType === "spend_amount"
-                              ? `$${rule.reward.monthlyCap.toLocaleString()}`
-                              : `${rule.reward.monthlyCap.toLocaleString()} pts`}
-                          </span>
-                        )}
-                        {!rule.enabled && (
-                          <span
-                            className="text-xs px-2 py-0.5"
-                            style={{
-                              backgroundColor: "rgba(196, 165, 123, 0.15)",
-                              color: "var(--color-warning)",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            Disabled
-                          </span>
-                        )}
+                            {rule.description}
+                          </p>
+                          {/* Additional info when expanded */}
+                          {expandedRules.has(rule.id) && (
+                            <div
+                              className="mt-3 pt-3 space-y-1"
+                              style={{
+                                borderTop: "1px solid rgba(58, 61, 63, 0.4)",
+                              }}
+                            >
+                              {rule.conditions.some(
+                                (c) => c.type === "currency"
+                              ) && (
+                                <p
+                                  className="text-xs"
+                                  style={{
+                                    color: "var(--color-text-tertiary)",
+                                  }}
+                                >
+                                  Currency:{" "}
+                                  {rule.conditions
+                                    .filter((c) => c.type === "currency")
+                                    .flatMap((c) => c.values)
+                                    .join(", ")}
+                                </p>
+                              )}
+                              <p
+                                className="text-xs"
+                                style={{ color: "var(--color-text-tertiary)" }}
+                              >
+                                Priority: {rule.priority}
+                              </p>
+                              <p
+                                className="text-xs"
+                                style={{ color: "var(--color-text-tertiary)" }}
+                              >
+                                Matched by:{" "}
+                                {rule.conditions.length > 0
+                                  ? rule.conditions
+                                      .map((c) => c.type)
+                                      .join(", ")
+                                  : "All purchases"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {/* Chevron indicator */}
+                        <Chevron
+                          direction={expandedRules.has(rule.id) ? "up" : "down"}
+                          size="medium"
+                          className="mt-0.5 transition-transform duration-200"
+                        />
                       </div>
-                      <p
-                        className={`text-sm mt-1 cursor-pointer ${
-                          expandedRules.has(rule.id) ? "" : "line-clamp-2"
-                        }`}
-                        style={{ color: "var(--color-text-secondary)" }}
-                        onClick={() => toggleRuleExpanded(rule.id)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            toggleRuleExpanded(rule.id);
-                          }
-                        }}
-                        aria-expanded={expandedRules.has(rule.id)}
-                      >
-                        {rule.description}
-                      </p>
                     </div>
                   </SwipeableRow>
                   {/* Divider between rules */}

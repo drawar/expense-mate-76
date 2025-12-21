@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { PaymentMethod } from "@/types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { PaymentCardFace } from "./PaymentCardFace";
 import {
   Carousel,

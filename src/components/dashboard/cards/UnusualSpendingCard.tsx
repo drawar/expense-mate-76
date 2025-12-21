@@ -1,14 +1,15 @@
 // components/dashboard/cards/UnusualSpendingCard.tsx
 import React from "react";
-import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
+import { AlertTriangleIcon } from "lucide-react";
+import { Chevron } from "@/components/ui/chevron";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CurrencyService } from "@/core/currency";
 import { Link } from "react-router-dom";
-import { 
-  useUnusualSpending, 
-  type SpendingAnomaly 
+import {
+  useUnusualSpending,
+  type SpendingAnomaly,
 } from "@/hooks/dashboard/useUnusualSpending";
 
 interface UnusualSpendingCardProps {
@@ -120,7 +121,8 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
                 to="/transactions?filter=anomalies"
                 className="text-sm text-primary flex items-center justify-center mt-2 hover:underline"
               >
-                View All Anomalies <ChevronRightIcon className="h-4 w-4 ml-1" />
+                View All Anomalies{" "}
+                <Chevron direction="right" size="small" className="ml-1" />
               </Link>
             )}
           </div>

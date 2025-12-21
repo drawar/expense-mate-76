@@ -1,6 +1,6 @@
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Chevron } from "@/components/ui/chevron";
 
 interface CollapsibleSectionProps {
   trigger: string;
@@ -74,11 +74,11 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         }
       >
         <span>{getTriggerText()}</span>
-        <ChevronDown
-          className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+        <Chevron
+          direction={isOpen ? "up" : "down"}
+          size="small"
+          className="transition-transform"
           style={{
-            color: "var(--color-icon-secondary)",
-            strokeWidth: 2.5,
             transitionDuration: "var(--duration-fast)",
             transitionTimingFunction: "var(--transition-smooth)",
           }}

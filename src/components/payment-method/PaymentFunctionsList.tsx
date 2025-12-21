@@ -6,11 +6,9 @@ import {
   CreditCardIcon,
   BanknoteIcon,
   CalendarIcon,
-  ChevronRightIcon,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
+import { Chevron } from "@/components/ui/chevron";
 import {
   Tooltip,
   TooltipContent,
@@ -260,16 +258,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             </h2>
             {/* Chevron indicator for truncated names */}
             {(isTitleTruncated || isTitleExpanded) && (
-              <span
-                className="flex-shrink-0"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                {isTitleExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </span>
+              <Chevron
+                direction={isTitleExpanded ? "up" : "down"}
+                size="small"
+              />
             )}
           </div>
         </div>
@@ -422,13 +414,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                 </p>
               </div>
             </div>
-            <ChevronRightIcon
-              className="h-5 w-5"
-              style={{
-                color: "var(--color-icon-secondary)",
-                strokeWidth: 2,
-              }}
-            />
+            <Chevron direction="right" size="medium" />
           </div>
         </div>
 
@@ -483,13 +469,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                     </p>
                   </div>
                 </div>
-                <ChevronRightIcon
-                  className="h-5 w-5"
-                  style={{
-                    color: "var(--color-icon-secondary)",
-                    strokeWidth: 2,
-                  }}
-                />
+                <Chevron direction="right" size="medium" />
               </div>
             </div>
 

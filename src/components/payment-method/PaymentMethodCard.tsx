@@ -4,15 +4,12 @@ import {
   EditIcon,
   ImageIcon,
   ShieldIcon,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import {
   CreditCardIcon,
   BanknoteIcon,
   CalendarIcon,
   CoinsIcon,
 } from "lucide-react";
+import { Chevron } from "@/components/ui/chevron";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -173,13 +170,10 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                 </CardTitle>
                 {/* Chevron indicator for truncated names */}
                 {(isTitleTruncated || isTitleExpanded) && (
-                  <span className="flex-shrink-0 text-[var(--color-text-tertiary)]">
-                    {isTitleExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </span>
+                  <Chevron
+                    direction={isTitleExpanded ? "up" : "down"}
+                    size="small"
+                  />
                 )}
               </div>
               <CardDescription>
