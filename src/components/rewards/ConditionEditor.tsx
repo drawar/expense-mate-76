@@ -56,13 +56,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>MCC Codes</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                MCC Codes
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -89,7 +94,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
                 handleValuesChange(e.target.value.split(",").filter(Boolean))
               }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Enter comma-separated MCC codes
             </p>
           </div>
@@ -99,13 +107,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>Merchant Names</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Merchant Names
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -129,7 +142,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
                 handleValuesChange(e.target.value.split(",").filter(Boolean))
               }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Enter comma-separated merchant names
             </p>
           </div>
@@ -139,13 +155,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>Transaction Type</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Transaction Type
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -189,13 +210,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>Currencies</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Currencies
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -222,7 +248,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
                 )
               }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Enter comma-separated currency codes (ISO 4217)
             </p>
           </div>
@@ -232,13 +261,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>Amount</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Amount
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -261,7 +295,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
                 handleValuesChange([parseFloat(e.target.value) || 0])
               }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Enter the threshold amount
             </p>
           </div>
@@ -271,13 +308,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label>Categories</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Categories
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -299,7 +341,10 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
                 handleValuesChange(e.target.value.split(",").filter(Boolean))
               }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
               Enter comma-separated category names
             </p>
           </div>
@@ -308,7 +353,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
       default:
         return (
           <div>
-            <Label>Values</Label>
+            <Label style={{ color: "var(--color-text-primary)" }}>Values</Label>
             <Input
               placeholder="Enter values separated by commas"
               value={(condition.values as string[])?.join(",") || ""}
@@ -327,13 +372,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label>Condition Type</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Condition Type
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -369,13 +419,18 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
 
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label>Operation</Label>
+              <Label style={{ color: "var(--color-text-primary)" }}>
+                Operation
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle 
-                      className="h-4 w-4 text-muted-foreground cursor-help" 
-                      style={{ strokeWidth: 2.5 }}
+                    <HelpCircle
+                      className="h-4 w-4 cursor-help"
+                      style={{
+                        color: "var(--color-text-tertiary)",
+                        strokeWidth: 2.5,
+                      }}
                     />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">

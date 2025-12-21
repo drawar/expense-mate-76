@@ -53,13 +53,18 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Label>Bonus Tiers</Label>
+          <Label style={{ color: "var(--color-text-primary)" }}>
+            Bonus Tiers
+          </Label>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle 
-                  className="h-4 w-4 text-muted-foreground cursor-help" 
-                  style={{ strokeWidth: 2.5 }}
+                <HelpCircle
+                  className="h-4 w-4 cursor-help"
+                  style={{
+                    color: "var(--color-text-tertiary)",
+                    strokeWidth: 2.5,
+                  }}
                 />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
@@ -81,7 +86,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
       </div>
 
       {tiers.length === 0 && (
-        <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-lg">
+        <div
+          className="text-center py-4 text-sm border border-dashed rounded-lg"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
           No bonus tiers configured. Click "Add Tier" to create tiered rewards.
         </div>
       )}
@@ -97,10 +105,10 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 size="sm"
                 onClick={() => removeTier(index)}
               >
-                <TrashIcon 
-                  className="h-4 w-4" 
-                  style={{ 
-                    color: 'var(--color-icon-secondary)',
+                <TrashIcon
+                  className="h-4 w-4"
+                  style={{
+                    color: "var(--color-icon-secondary)",
                     strokeWidth: 2.5,
                   }}
                 />
@@ -111,13 +119,21 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`tier-${index}-min-amount`}>Min Amount</Label>
+                  <Label
+                    htmlFor={`tier-${index}-min-amount`}
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    Min Amount
+                  </Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle 
-                          className="h-3 w-3 text-muted-foreground cursor-help" 
-                          style={{ strokeWidth: 2.5 }}
+                        <HelpCircle
+                          className="h-3 w-3 cursor-help"
+                          style={{
+                            color: "var(--color-text-tertiary)",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -144,13 +160,21 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`tier-${index}-max-amount`}>Max Amount</Label>
+                  <Label
+                    htmlFor={`tier-${index}-max-amount`}
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    Max Amount
+                  </Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle 
-                          className="h-3 w-3 text-muted-foreground cursor-help" 
-                          style={{ strokeWidth: 2.5 }}
+                        <HelpCircle
+                          className="h-3 w-3 cursor-help"
+                          style={{
+                            color: "var(--color-text-tertiary)",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -182,13 +206,21 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`tier-${index}-multiplier`}>Multiplier</Label>
+                  <Label
+                    htmlFor={`tier-${index}-multiplier`}
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    Multiplier
+                  </Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle 
-                          className="h-3 w-3 text-muted-foreground cursor-help" 
-                          style={{ strokeWidth: 2.5 }}
+                        <HelpCircle
+                          className="h-3 w-3 cursor-help"
+                          style={{
+                            color: "var(--color-text-tertiary)",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -216,15 +248,21 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`tier-${index}-min-spend`}>
+                  <Label
+                    htmlFor={`tier-${index}-min-spend`}
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
                     Min Monthly Spend
                   </Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle 
-                          className="h-3 w-3 text-muted-foreground cursor-help" 
-                          style={{ strokeWidth: 2.5 }}
+                        <HelpCircle
+                          className="h-3 w-3 cursor-help"
+                          style={{
+                            color: "var(--color-text-tertiary)",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -255,12 +293,17 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
 
             <div>
               <div className="flex items-center gap-2">
-                <Label htmlFor={`tier-${index}-name`}>Tier Name</Label>
+                <Label
+                  htmlFor={`tier-${index}-name`}
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Tier Name
+                </Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle 
-                        className="h-3 w-3 text-muted-foreground cursor-help" 
+                      <HelpCircle
+                        className="h-3 w-3 text-muted-foreground cursor-help"
                         style={{ strokeWidth: 2.5 }}
                       />
                     </TooltipTrigger>
@@ -285,7 +328,12 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
             </div>
 
             <div>
-              <Label htmlFor={`tier-${index}-description`}>Description</Label>
+              <Label
+                htmlFor={`tier-${index}-description`}
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Description
+              </Label>
               <Input
                 id={`tier-${index}-description`}
                 type="text"
