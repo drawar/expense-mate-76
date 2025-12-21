@@ -217,10 +217,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         <div
           className="p-4"
           style={{
-            backgroundColor: "#242729",
-            border: "1px solid #3A3D3F",
+            backgroundColor: "var(--color-card-bg)",
+            border: "1px solid var(--color-border)",
             borderRadius: "10px",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <h3
@@ -248,10 +248,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <div
               className="p-4"
               style={{
-                backgroundColor: "#242729",
-                border: "1px solid #3A3D3F",
+                backgroundColor: "var(--color-card-bg)",
+                border: "1px solid var(--color-border)",
                 borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <h3
@@ -277,10 +277,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <div
               className="p-4"
               style={{
-                backgroundColor: "#242729",
-                border: "1px solid #3A3D3F",
+                backgroundColor: "var(--color-card-bg)",
+                border: "1px solid var(--color-border)",
                 borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <h3

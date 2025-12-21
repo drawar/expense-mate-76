@@ -127,12 +127,16 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
           <button
             key={index}
             onClick={() => api?.scrollTo(index)}
-            className="transition-all duration-300 ease-out"
+            className="transition-all duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{
               width: "8px",
               height: "8px",
               borderRadius: "4px",
-              backgroundColor: index === current ? "#7C9885" : "#4B5563",
+              backgroundColor:
+                index === current
+                  ? "var(--color-accent)"
+                  : "var(--color-text-disabled)",
+              outlineColor: "var(--color-accent)",
             }}
             aria-label={`Go to slide ${index + 1}`}
           />

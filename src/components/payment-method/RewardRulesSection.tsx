@@ -1415,22 +1415,17 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                   <button
                     onClick={handleQuickSetup}
                     disabled={isRunningSetup}
-                    className="flex items-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
+                    className="flex items-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50 hover:bg-[var(--color-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={{
                       backgroundColor: "transparent",
-                      color: "#6B6863",
+                      color: "var(--color-text-tertiary)",
                       border: "none",
                       fontSize: "14px",
                       fontWeight: 400,
                       padding: "8px 12px",
                       borderRadius: "6px",
+                      outlineColor: "var(--color-accent)",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#2C2F31")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
                   >
                     {isRunningSetup ? (
                       <Loader2
@@ -1623,42 +1618,30 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                     </div>
                     <div className="flex ml-2" style={{ gap: "16px" }}>
                       <button
-                        className="flex items-center justify-center transition-colors duration-300"
+                        className="flex items-center justify-center transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[var(--color-surface)]"
                         style={{
                           width: "44px",
                           height: "44px",
                           borderRadius: "6px",
                           color: "var(--color-icon-secondary)",
                           padding: "10px",
+                          outlineColor: "var(--color-accent)",
                         }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#2C2F31")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
                         onClick={() => handleEditRule(rule)}
                         aria-label={`Edit ${rule.name} reward rule`}
                       >
                         <PencilIcon className="h-6 w-6" />
                       </button>
                       <button
-                        className="flex items-center justify-center transition-colors duration-300"
+                        className="flex items-center justify-center transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[var(--color-surface)]"
                         style={{
                           width: "44px",
                           height: "44px",
                           borderRadius: "6px",
                           color: "var(--color-error)",
                           padding: "10px",
+                          outlineColor: "var(--color-accent)",
                         }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#2C2F31")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
                         onClick={() => setDeleteConfirmRule(rule)}
                         aria-label={`Delete ${rule.name} reward rule`}
                       >

@@ -133,7 +133,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
 
     const issuerLower = paymentMethod.issuer.toLowerCase();
     let badgeClasses =
-      "h-10 w-10 p-2 rounded-full bg-white/90 text-black font-bold flex items-center justify-center";
+      "h-10 w-10 p-2 rounded-full bg-white/90 text-black font-medium flex items-center justify-center";
     let networkName = "";
 
     if (issuerLower.includes("visa")) {
@@ -191,7 +191,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
         {/* Inactive overlay */}
         {!paymentMethod.active && (
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center">
-            <div className="bg-white/20 px-4 py-2 rounded-full text-white font-bold rotate-[-15deg]">
+            <div className="bg-white/20 px-4 py-2 rounded-full text-white font-medium rotate-[-15deg]">
               Inactive
             </div>
           </div>
@@ -269,7 +269,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
       {/* Inactive overlay */}
       {!paymentMethod.active && (
         <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white/20 px-4 py-2 rounded-full text-white font-bold rotate-[-15deg]">
+          <div className="bg-white/20 px-4 py-2 rounded-full text-white font-medium rotate-[-15deg]">
             Inactive
           </div>
         </div>
