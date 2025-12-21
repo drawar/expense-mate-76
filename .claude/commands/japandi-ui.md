@@ -772,3 +772,701 @@ announcements.
 - **User Confusion**: Fewer support requests
 - **Accessibility Score**: Improved Lighthouse audit
 - **Data Loss**: Zero accidental deletions
+
+---
+
+# Implementation Audit
+
+## Overview
+
+This section identifies specific issues in the current implementation that
+deviate from the Japandi design specification. Each issue includes what's wrong
+and the exact fix needed.
+
+---
+
+## Critical Color Issues (Fix Immediately)
+
+### 1. Primary Accent Color is Wrong
+
+**Current Implementation:**
+
+- "Add Method" and "Add Rule" buttons appear to use `#A8D5BA` or similar (too
+  light, too saturated)
+- Bright mint/seafoam green that looks cheap and unprofessional
+
+**Correct Implementation:**
+
+- Exact hex: `#7C9885` (muted sage green)
+- Button text color: `#1A1D1F` (dark text on sage background)
+- Hover state: `#6A8574`
+- Pressed state: `#5D7567` with `scale(0.98)`
+- This applies to ALL primary CTA buttons throughout the app
+
+**Why it matters:** The wrong green completely breaks the Japandi aesthetic. The
+current bright green looks like a default Material Design color, not the
+natural, muted palette specified.
+
+---
+
+### 2. Background Color is Too Dark
+
+**Current Implementation:**
+
+- Appears to be pure black `#000000` or very close (`#0A0A0A`)
+- Lacks warmth, feels harsh
+
+**Correct Implementation:**
+
+- Primary background: `#1A1D1F` (warm charcoal, NOT pure black)
+- This should be the main app background color
+- The subtle warm undertone is critical for Japandi feel
+
+**Why it matters:** Pure black feels cold and digital. The warm charcoal creates
+a natural, cozy atmosphere while maintaining dark mode benefits.
+
+---
+
+### 3. Card Surface Background
+
+**Current Implementation:**
+
+- Appears too similar to main background
+- No visible elevation/distinction
+
+**Correct Implementation:**
+
+```css
+background: #242729; /* slightly lighter than primary background */
+border: 1px solid #3a3d3f;
+border-radius: 12px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+```
+
+**Why it matters:** Cards need subtle elevation to create visual hierarchy and
+separation from background.
+
+---
+
+### 4. Multiplier Badges Are Wrong Style
+
+**Current Implementation:**
+
+- "5x", "3x", "2x", "1x" badges appear white or very light solid color
+- Look too stark and prominent
+
+**Correct Implementation:**
+
+| Multiplier | Background                  | Text      | Border                      |
+| ---------- | --------------------------- | --------- | --------------------------- |
+| 5x         | `rgba(124, 152, 133, 0.15)` | `#A8C4AF` | `rgba(124, 152, 133, 0.3)`  |
+| 3x         | `rgba(124, 152, 133, 0.12)` | `#A8C4AF` | `rgba(124, 152, 133, 0.25)` |
+| 2x         | `rgba(124, 152, 133, 0.10)` | `#A8C4AF` | `rgba(124, 152, 133, 0.2)`  |
+| 1x         | `rgba(124, 152, 133, 0.08)` | `#A8C4AF` | `rgba(124, 152, 133, 0.15)` |
+
+```css
+font-size: 16px;
+font-weight: 500;
+padding: 4px 10px;
+border-radius: 6px;
+border-width: 1px;
+```
+
+**Why it matters:** Badges should be subtle and harmonious, using transparency
+to create hierarchy. Current solid badges compete with content instead of
+supporting it.
+
+---
+
+## Typography Issues
+
+### 5. Font Weights Too Heavy
+
+**Current Implementation:**
+
+- Headers and button text appear to be weight 600 or 700
+- Violates Japandi principle of restraint
+
+**Correct Implementation:**
+
+- Maximum font weight: **500** (medium)
+- Headers: weight 500
+- Body text: weight 400
+- NEVER use weight 600, 700, or higher
+
+**Specific applications:**
+
+```css
+/* Card title "American Express Cobalt" */
+font-size: 24px;
+font-weight: 500;
+letter-spacing: -0.2px;
+
+/* Button text "Add Method", "Add Rule" */
+font-size: 16px;
+font-weight: 500;
+letter-spacing: 0.3px;
+
+/* Amount "C$787.97" */
+font-size: 20px;
+font-weight: 500;
+
+/* Labels "Total Spent", "Reward Points" */
+font-size: 13px;
+font-weight: 500;
+letter-spacing: 0.3px;
+text-transform: capitalize; /* not uppercase */
+
+/* Body/description text */
+font-size: 14px;
+font-weight: 400;
+letter-spacing: 0.1px;
+line-height: 1.5;
+```
+
+---
+
+### 6. Letter Spacing Not Applied
+
+**Current Implementation:**
+
+- Text appears cramped without proper spacing
+
+**Correct Implementation:**
+
+| Element     | Letter-spacing |
+| ----------- | -------------- |
+| Headers     | -0.2px         |
+| Body text   | 0.1px          |
+| Labels      | 0.3px          |
+| Button text | 0.3px          |
+
+---
+
+## Component-Specific Issues
+
+### 7. "Reset Rules" Button Style is Wrong
+
+**Current Implementation:**
+
+- Ghost/outline button with accent color border
+- Too prominent, competes with "Add Rule"
+- Visually suggests primary action
+
+**Correct Implementation:**
+
+```css
+/* Style: Text-only button (no border, no background in default state) */
+color: #6b6863; /* tertiary */
+font-size: 14px;
+font-weight: 400;
+background: transparent;
+border: none;
+
+/* Hover/Press */
+background: #2c2f31;
+border-radius: 6px;
+padding: 8px 12px;
+```
+
+**Alternative:** Replace with icon-only button (↻ reset icon) to save space
+
+---
+
+### 8. Active Status Badge Too Prominent
+
+**Current Implementation:**
+
+- "active" badge appears with bright accent color
+- Too eye-catching for default state
+
+**Correct Implementation:**
+
+```css
+background: rgba(124, 152, 133, 0.15);
+color: #a8c4af;
+border: 1px solid rgba(124, 152, 133, 0.25);
+padding: 8px 20px;
+border-radius: 20px;
+font-size: 14px;
+font-weight: 500;
+letter-spacing: 0.5px;
+text-transform: lowercase; /* "active" not "Active" */
+```
+
+**Alternative approach:** Only show badge when card is inactive (use warning
+color for "inactive" state)
+
+---
+
+### 9. Stats Cards Lack Visual Distinction
+
+**Current Implementation:**
+
+- "Total Spent" and "Reward Points" sections blend with surrounding content
+- No container distinction
+
+**Correct Implementation:**
+
+```css
+background: #1f2224;
+border: 1px solid #2c2f31;
+border-radius: 10px;
+padding: 16px;
+margin-bottom: 12px; /* vertical spacing between cards */
+```
+
+Each stat should feel like a contained data card, not just text on the
+background.
+
+---
+
+### 10. Rule Description Text Too Dim
+
+**Current Implementation:**
+
+- "Earn 5 points per $1 CAD at restaurant..." appears very faint
+- Looks like disabled text
+
+**Correct Implementation:**
+
+```css
+color: #a8a5a0; /* secondary, NOT tertiary */
+font-size: 14px;
+line-height: 1.5;
+```
+
+Should be clearly readable, not faded.
+
+---
+
+### 11. Edit and Delete Icons Too Close
+
+**Current Implementation:**
+
+- Pencil and trash icons appear adjacent with minimal spacing
+- Easy to tap wrong one
+
+**Correct Implementation:**
+
+```css
+/* Minimum spacing between icons */
+gap: 16px;
+
+/* Touch target per icon */
+width: 44px;
+height: 44px;
+
+/* Icon size */
+font-size: 24px;
+
+/* Padding around each icon */
+padding: 10px;
+```
+
+**Alternative solution:**
+
+- Move edit icon to left side of rule title
+- Keep delete icon on right
+- Or implement swipe-to-delete gesture for mobile
+
+---
+
+### 12. Section Spacing Inconsistent
+
+**Current Implementation:**
+
+- Some sections feel cramped
+- Others have too much space
+- No visible rhythm
+
+**Correct Implementation - Spacing Scale:**
+
+| Purpose                | Value |
+| ---------------------- | ----- |
+| Section gaps (major)   | 24px  |
+| Within-section spacing | 16px  |
+| Related items grouping | 12px  |
+| Tight groupings        | 8px   |
+| Card/container padding | 20px  |
+| Between reward rules   | 16px  |
+
+**Specific applications:**
+
+- Space between "Statement Cycle" card and "Edit Payment Method" button: 24px
+- Space between "Upload Card Image" and "Statement Details": 16px
+- Space between individual reward rules: 16px with divider line
+
+---
+
+### 13. Pagination Dots Wrong Style
+
+**Current Implementation:**
+
+- Active dot appears white/very light
+- Dots appear small (maybe 6px)
+
+**Correct Implementation:**
+
+```css
+/* Dot size */
+width: 8px;
+height: 8px;
+border-radius: 4px;
+
+/* Active dot */
+background: #7c9885; /* accent color */
+
+/* Inactive dot */
+background: #4b5563;
+
+/* Spacing */
+gap: 8px;
+
+/* Position */
+margin-top: 16px; /* below card image */
+justify-content: center;
+```
+
+---
+
+### 14. Card Count "6 of 11" Too Subtle
+
+**Current Implementation:**
+
+- Text appears very dim in top-right
+- Easy to miss
+
+**Correct Implementation:**
+
+```css
+color: #a8a5a0; /* secondary, not tertiary */
+font-size: 13px; /* increase from current ~11-12px */
+font-weight: 400;
+```
+
+**Optional enhancement - background pill:**
+
+```css
+background: rgba(26, 29, 31, 0.6);
+padding: 4px 8px;
+border-radius: 12px;
+```
+
+---
+
+### 15. Interactive Element Affordances Missing
+
+**Current Implementation:**
+
+- Can't tell which elements are tappable
+- No visual feedback on press
+
+**Correct Implementation:**
+
+All tappable rows ("Edit Payment Method", "Upload Card Image", "Statement
+Details") should have:
+
+```css
+/* Press state */
+background: #2c2f31;
+
+/* Minimum height for touch target */
+min-height: 44px;
+
+/* Transition */
+transition: background-color 0.15s ease;
+```
+
+- On mobile: Add haptic feedback (light impact) on tap
+- On web: Add `cursor: pointer` (with `Platform.OS` check)
+
+---
+
+### 16. Statement Details Expansion Unclear
+
+**Current Implementation:**
+
+- Shows expanded content but unclear if it's always expanded or collapsible
+- "Calendar month (starts day 1)" label redundant with date range shown
+
+**Correct Implementation:**
+
+- If collapsible: Add chevron icon (▼ when expanded, ▶ when collapsed)
+- If always expanded: Remove chevron, make it clear this is static info
+- Remove redundant label since date range shows the same info
+- Or change label to explain: "Your billing cycle" instead of repeating the type
+
+---
+
+### 17. Cap Label Lacks Context
+
+**Current Implementation:**
+
+- "Cap: $2,500" appears but timeframe unclear
+- Users won't know if this is monthly, annual, or lifetime
+
+**Correct Implementation:**
+
+```css
+/* Change to: "Annual cap: $2,500" or "Monthly cap: $2,500" */
+color: #6b6863; /* tertiary text */
+font-size: 12px;
+```
+
+**Optional:** Add info icon (ℹ️) with tooltip: "Maximum amount eligible for this
+earn rate per year"
+
+---
+
+## Dividers and Separators
+
+### 18. Section Dividers Need Implementation
+
+**Current Implementation:**
+
+- Sections run together without clear separation
+
+**Correct Implementation:**
+
+```css
+/* Between reward rules */
+border-top: 1px solid rgba(58, 61, 63, 0.4);
+margin: 16px 0;
+
+/* Above "Reward Rules" section */
+border-top: 1px solid rgba(58, 61, 63, 0.4);
+margin-top: 24px;
+margin-bottom: 20px;
+```
+
+---
+
+## Missing Features
+
+### 19. No Loading States Visible
+
+**Implementation Needed:**
+
+```css
+/* Large ActivityIndicator - accent color */
+color: #7c9885;
+
+/* Card details loading - skeleton shimmer */
+height: 200px;
+background: linear-gradient(90deg, #242729 25%, #2c2f31 50%, #242729 75%);
+animation: shimmer 1.5s infinite;
+
+/* Button loading state */
+/* Replace button text with small white ActivityIndicator */
+
+/* Loading text */
+color: #a8a5a0; /* secondary */
+```
+
+---
+
+### 20. No Upload Image Feedback
+
+**Current Implementation:**
+
+- "Upload Card Image" section exists but no indication of upload status
+
+**Implementation Needed:**
+
+- If no image uploaded: Show "Add an image of your card" in tertiary color
+- If image uploaded:
+  - Change text to "Change Card Image"
+  - Show small thumbnail preview (50x32px) next to the text
+  - Add "Remove Image" option
+- During upload: Show progress spinner with "Uploading..."
+- On success: Show checkmark for 2 seconds
+- On error: Show error message in error color `#A86F64`
+
+---
+
+### 21. No Error States
+
+**Implementation Needed:**
+
+```css
+/* Error color */
+color: #a86f64; /* muted terracotta, not bright red */
+
+/* Error background */
+background: rgba(168, 111, 100, 0.15);
+```
+
+- If card fails to load: Show error message with retry button
+- If update fails: Toast notification at bottom: "Failed to update card" with
+  retry
+
+---
+
+### 22. Reward Rules Section Header Needs Polish
+
+**Current Implementation:**
+
+- "Reward Rules" with "4" appears but styling unclear
+
+**Correct Implementation:**
+
+```css
+/* Header "Reward Rules" */
+font-size: 16px;
+font-weight: 500;
+color: #e8e6e3;
+letter-spacing: 0.2px;
+
+/* Count badge "4" */
+background: rgba(124, 152, 133, 0.15);
+color: #a8c4af;
+font-size: 13px;
+font-weight: 500;
+padding: 2px 8px;
+border-radius: 10px;
+margin-left: 8px;
+```
+
+---
+
+## Button Styling Summary
+
+For consistency, here's the complete button style guide:
+
+### Primary CTA Button ("Add Method", "Add Rule")
+
+```css
+background: #7c9885;
+color: #1a1d1f;
+font-size: 16px;
+font-weight: 500;
+letter-spacing: 0.3px;
+padding: 16px 24px;
+border-radius: 10px;
+border: none;
+transition: all 0.3s ease;
+
+/* Hover */
+background: #6a8574;
+
+/* Pressed */
+background: #5d7567;
+transform: scale(0.98);
+```
+
+### Secondary/Destructive Button ("Reset Rules")
+
+```css
+background: transparent;
+color: #6b6863;
+font-size: 14px;
+font-weight: 400;
+padding: 8px 12px;
+border: none;
+
+/* Hover/Pressed */
+background: #2c2f31;
+border-radius: 6px;
+```
+
+### Icon-Only Buttons (Edit, Delete)
+
+```css
+/* Size (touch target) */
+width: 44px;
+height: 44px;
+
+/* Icon */
+font-size: 24px;
+color: #a8a5a0;
+
+/* Padding */
+padding: 10px;
+
+/* Pressed */
+background: #2c2f31;
+border-radius: 6px;
+```
+
+---
+
+## Accessibility Additions Needed
+
+### 23. Screen Reader Labels
+
+```jsx
+// Primary buttons
+accessibilityLabel = "Add new payment method";
+accessibilityRole = "button";
+
+// Card navigation
+accessibilityLabel = "View next card";
+accessibilityHint = "Navigate to American Express Gold";
+
+// Multiplier badges
+accessibilityLabel = "Earn 5 points per dollar on food and groceries";
+
+// Status toggle
+accessibilityLabel = "Card status";
+accessibilityHint = "Currently active. Double-tap to deactivate.";
+
+// Rule actions
+accessibilityLabel = "Edit food and groceries reward rule";
+accessibilityLabel = "Delete food and groceries reward rule";
+```
+
+### 24. Keyboard Navigation
+
+- All interactive elements must be keyboard accessible
+- Focus indicators: 3px ring in `#7C9885`
+- Tab order: logical flow through card details → actions → reward rules
+- Arrow keys should navigate card carousel
+- Enter/Space should activate buttons
+- Escape should close modals
+
+---
+
+## Animation Specifications
+
+### 25. Transition Timing
+
+```javascript
+// Button hover/press
+transition: 'background-color 0.3s ease, transform 0.15s ease'
+
+// Modal entrance
+duration: 300ms
+easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' // spring
+
+// Card carousel swipe
+duration: 250ms
+easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+
+// Background color changes
+duration: 400ms
+easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+```
+
+Use `react-native-reanimated` 2.x for smooth 60fps animations.
+
+---
+
+## Testing Checklist
+
+Before considering this complete, verify:
+
+- [ ] Primary accent is exactly `#7C9885` (use color picker to verify)
+- [ ] Background is exactly `#1A1D1F` (not pure black)
+- [ ] All font weights are 500 or below (check computed styles)
+- [ ] Letter spacing applied to all text elements
+- [ ] Touch targets are minimum 44x44px (test with touch indicator)
+- [ ] All buttons have proper press states
+- [ ] Multiplier badges use correct transparency values
+- [ ] Stats cards have distinct background containers
+- [ ] Spacing follows the specified scale (4, 8, 12, 16, 20, 24px)
+- [ ] Pagination dots are 8px and use correct colors
+- [ ] Loading states appear correctly (test with slow network)
+- [ ] Error states work properly (test by forcing failures)
+- [ ] Screen reader announces all elements correctly
+- [ ] Keyboard navigation works throughout

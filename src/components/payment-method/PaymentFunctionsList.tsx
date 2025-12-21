@@ -311,7 +311,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       >
         {/* Edit payment method */}
         <div
-          className="p-4 cursor-pointer transition-colors duration-300"
+          className="p-4 cursor-pointer transition-colors duration-150"
           onClick={() => onEdit(paymentMethod)}
           style={{ minHeight: "44px" }}
           onMouseEnter={(e) =>
@@ -368,7 +368,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         {paymentMethod.type === "credit_card" && (
           <>
             <div
-              className="p-4 cursor-pointer transition-colors duration-300"
+              className="p-4 cursor-pointer transition-colors duration-150"
               onClick={() => onImageUpload(paymentMethod)}
               style={{ minHeight: "44px" }}
               onMouseEnter={(e) =>
@@ -427,7 +427,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 
             {/* Statement details - Enhanced with current period */}
             <div
-              className="p-4 transition-colors duration-300"
+              className="p-4 transition-colors duration-150"
               style={{ minHeight: "44px" }}
             >
               <div className="flex justify-between items-start">

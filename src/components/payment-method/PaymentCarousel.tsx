@@ -66,8 +66,8 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
     <div className="relative py-4">
       {/* Card count indicator - Japandi style */}
       <div
-        className="absolute top-0 right-4 text-xs font-medium"
-        style={{ color: "var(--color-text-tertiary)" }}
+        className="absolute top-0 right-4 text-[13px]"
+        style={{ color: "var(--color-text-secondary)" }}
       >
         {current + 1} of {count}
       </div>
@@ -133,9 +133,7 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
               height: "8px",
               borderRadius: "4px",
               backgroundColor:
-                index === current
-                  ? "var(--color-accent)"
-                  : "var(--color-border)",
+                index === current ? "var(--color-accent)" : "#4B5563",
             }}
             aria-label={`Go to slide ${index + 1}`}
           />

@@ -1407,12 +1407,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                   <button
                     onClick={handleQuickSetup}
                     disabled={isRunningSetup}
-                    className="flex items-center px-3 py-1.5 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
+                    className="flex items-center px-3 py-2 text-sm transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50 hover:bg-[var(--color-surface)] rounded-md"
                     style={{
                       backgroundColor: "transparent",
-                      color: "var(--color-text-secondary)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
+                      color: "var(--color-text-tertiary)",
+                      border: "none",
                     }}
                   >
                     {isRunningSetup ? (
@@ -1561,7 +1560,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                             borderRadius: "4px",
                           }}
                         >
-                          Cap:{" "}
+                          Monthly cap:{" "}
                           {rule.reward.monthlyCapType === "spend_amount"
                             ? `$${rule.reward.monthlyCap.toLocaleString()}`
                             : `${rule.reward.monthlyCap.toLocaleString()} pts`}
@@ -1581,26 +1580,26 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                       )}
                     </div>
                     <p
-                      className="text-xs mt-1 truncate"
-                      style={{ color: "var(--color-text-tertiary)" }}
+                      className="text-sm mt-1 truncate"
+                      style={{ color: "var(--color-text-secondary)" }}
                     >
                       {rule.description}
                     </p>
                   </div>
-                  <div className="flex gap-1 ml-2">
+                  <div className="flex gap-4 ml-2">
                     <button
-                      className="h-9 w-9 flex items-center justify-center rounded-md transition-colors duration-300"
+                      className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
                       style={{ color: "var(--color-icon-secondary)" }}
                       onClick={() => handleEditRule(rule)}
                     >
-                      <PencilIcon className="h-4 w-4" />
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                     <button
-                      className="h-9 w-9 flex items-center justify-center rounded-md transition-colors duration-300"
+                      className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
                       style={{ color: "var(--color-error)" }}
                       onClick={() => setDeleteConfirmRule(rule)}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <TrashIcon className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
