@@ -1,11 +1,17 @@
 // components/dashboard/layout/RecentTransactions.tsx
 import React, { useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import {
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  format,
+  isToday,
+  isYesterday,
+} from "date-fns";
 import { Transaction, Currency } from "@/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, ArrowUpRightIcon } from "lucide-react";
-import TransactionCard from "@/components/expense/TransactionCard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { CurrencyService } from "@/core/currency";
@@ -15,6 +21,16 @@ interface RecentTransactionsProps {
   allTransactions?: Transaction[];
   displayCurrency?: Currency;
   maxItems?: number;
+}
+
+/**
+ * Format date as "Today", "Yesterday", or "Dec 13"
+ */
+function formatTransactionDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return format(d, "MMM d");
 }
 
 /**
@@ -135,20 +151,46 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       {transactionsWithCategories.length === 0 ? (
         renderEmptyState()
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border/50 bg-card">
+          {/* Compact Transaction List */}
+          <div className="divide-y divide-border/50">
             {transactionsWithCategories.map((transaction) => (
-              <TransactionCard
+              <Link
                 key={transaction.id}
-                transaction={transaction}
-                className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
-              />
+                to={`/transactions?id=${transaction.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground truncate">
+                      {transaction.merchant.name}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {formatTransactionDate(transaction.date)} •{" "}
+                    {getEffectiveCategory(transaction)}
+                  </div>
+                </div>
+                <div className="text-right ml-4 flex-shrink-0">
+                  <div className="font-semibold text-foreground">
+                    {CurrencyService.format(
+                      transaction.amount,
+                      transaction.currency
+                    )}
+                  </div>
+                  {transaction.rewardPoints > 0 && (
+                    <div className="text-xs text-primary">
+                      +{transaction.rewardPoints.toLocaleString()} pts
+                    </div>
+                  )}
+                </div>
+              </Link>
             ))}
           </div>
 
           {/* Week Summary */}
           {weekSummary && (
-            <div className="mt-4 pt-4 border-t border-border/50 text-sm text-muted-foreground">
+            <div className="px-4 py-3 border-t border-border/50 text-sm text-muted-foreground bg-muted/30">
               <span className="font-medium text-foreground">This week:</span>{" "}
               {CurrencyService.format(weekSummary.total, displayCurrency)}
               {weekSummary.topCategory && (
@@ -162,7 +204,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               )}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
