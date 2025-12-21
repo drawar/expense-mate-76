@@ -26,6 +26,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { SwipeableRow } from "@/components/ui/swipeable-row";
 import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRuleEditor } from "@/components/rewards/RewardRuleEditor";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
@@ -129,6 +130,8 @@ function getQuickSetupConfig(
   return null;
 }
 
+const SWIPE_HINT_STORAGE_KEY = "reward-rules-swipe-hint-shown";
+
 export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   paymentMethod,
   rewardRules,
@@ -144,6 +147,15 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   const [setupLog, setSetupLog] = useState<string[]>([]);
   const [showSetupLog, setShowSetupLog] = useState(false);
   const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
+  const [showSwipeHint, setShowSwipeHint] = useState(() => {
+    // Only show hint if not previously shown
+    return !localStorage.getItem(SWIPE_HINT_STORAGE_KEY);
+  });
+
+  const handleSwipeHintComplete = useCallback(() => {
+    localStorage.setItem(SWIPE_HINT_STORAGE_KEY, "true");
+    setShowSwipeHint(false);
+  }, []);
 
   const toggleRuleExpanded = (ruleId: string) => {
     setExpandedRules((prev) => {
@@ -1549,14 +1561,38 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
               .sort((a, b) => b.priority - a.priority)
               .map((rule, index, sortedRules) => (
                 <div key={rule.id}>
-                  <div
-                    className="flex items-start justify-between p-3 transition-colors duration-300"
-                    style={{
-                      backgroundColor: "var(--color-surface)",
-                      borderRadius: "8px",
-                    }}
+                  <SwipeableRow
+                    actions={[
+                      {
+                        key: "edit",
+                        label: "Edit",
+                        icon: <PencilIcon className="h-5 w-5" />,
+                        backgroundColor: "#7C9885",
+                        color: "#1A1D1F",
+                        onClick: () => handleEditRule(rule),
+                        width: 80,
+                      },
+                      {
+                        key: "delete",
+                        label: "Delete",
+                        icon: <TrashIcon className="h-5 w-5" />,
+                        backgroundColor: "#A86F64",
+                        color: "#E8E6E3",
+                        onClick: () => setDeleteConfirmRule(rule),
+                        width: 80,
+                      },
+                    ]}
+                    style={{ borderRadius: "8px" }}
+                    showHint={index === 0 && showSwipeHint}
+                    onHintComplete={handleSwipeHintComplete}
                   >
-                    <div className="flex-1 min-w-0">
+                    <div
+                      className="p-3"
+                      style={{
+                        backgroundColor: "var(--color-surface)",
+                        borderRadius: "8px",
+                      }}
+                    >
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className="font-medium text-sm"
@@ -1641,39 +1677,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         {rule.description}
                       </p>
                     </div>
-                    <div className="flex ml-2" style={{ gap: "16px" }}>
-                      <button
-                        className="flex items-center justify-center transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[var(--color-surface)]"
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          borderRadius: "6px",
-                          color: "var(--color-icon-secondary)",
-                          padding: "10px",
-                          outlineColor: "var(--color-accent)",
-                        }}
-                        onClick={() => handleEditRule(rule)}
-                        aria-label={`Edit ${rule.name} reward rule`}
-                      >
-                        <PencilIcon className="h-6 w-6" />
-                      </button>
-                      <button
-                        className="flex items-center justify-center transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:bg-[var(--color-surface)]"
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          borderRadius: "6px",
-                          color: "var(--color-error)",
-                          padding: "10px",
-                          outlineColor: "var(--color-accent)",
-                        }}
-                        onClick={() => setDeleteConfirmRule(rule)}
-                        aria-label={`Delete ${rule.name} reward rule`}
-                      >
-                        <TrashIcon className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
+                  </SwipeableRow>
                   {/* Divider between rules */}
                   {index < sortedRules.length - 1 && (
                     <div
