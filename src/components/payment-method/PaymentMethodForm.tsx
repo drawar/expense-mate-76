@@ -269,8 +269,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label
+                htmlFor="type"
+                className="text-right pt-2"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 Type
               </Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
@@ -285,8 +289,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </Select>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="currency" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label
+                htmlFor="currency"
+                className="text-right pt-2"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 Currency
               </Label>
               <Select value={currency} onValueChange={setCurrency}>
@@ -305,8 +313,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
             {isCreditCard ? (
               <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="issuer" className="text-right">
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label
+                    htmlFor="issuer"
+                    className="text-right pt-2"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
                     Issuer
                   </Label>
                   <Select value={issuer} onValueChange={setIssuer}>
@@ -364,8 +376,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="rewardCurrency" className="text-right">
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label
+                    htmlFor="rewardCurrency"
+                    className="text-right pt-2"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
                     Rewards Currency
                   </Label>
                   <Select
@@ -485,9 +501,14 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </>
             ) : null}
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Status</Label>
-              <div className="col-span-3 flex items-center space-x-2">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label
+                className="text-right pt-2"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Status
+              </Label>
+              <div className="col-span-3 flex items-center space-x-2 pt-1">
                 <Switch
                   id="active"
                   name="active"
