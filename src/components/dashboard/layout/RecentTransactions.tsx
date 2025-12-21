@@ -1,15 +1,19 @@
 // components/dashboard/layout/RecentTransactions.tsx
 import React, { useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Transaction } from "@/types";
+import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { Transaction, Currency } from "@/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, ArrowUpRightIcon } from "lucide-react";
 import TransactionCard from "@/components/expense/TransactionCard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { CurrencyService } from "@/core/currency";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  allTransactions?: Transaction[];
+  displayCurrency?: Currency;
   maxItems?: number;
 }
 
@@ -19,6 +23,8 @@ interface RecentTransactionsProps {
  */
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   transactions,
+  allTransactions,
+  displayCurrency = "CAD",
   maxItems = 5,
 }) => {
   // Use the media query hook for responsive design
@@ -34,6 +40,64 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       category: getEffectiveCategory(transaction),
     }));
   }, [displayTransactions]);
+
+  // Calculate this week's summary
+  const weekSummary = useMemo(() => {
+    const txList = allTransactions || transactions;
+    if (txList.length === 0) return null;
+
+    const today = new Date();
+    const weekStart = startOfWeek(today, { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
+
+    // Filter transactions for this week
+    const thisWeekTransactions = txList.filter((tx) => {
+      const txDate = new Date(tx.date);
+      return isWithinInterval(txDate, { start: weekStart, end: weekEnd });
+    });
+
+    if (thisWeekTransactions.length === 0) return null;
+
+    // Calculate total (convert to display currency)
+    const total = thisWeekTransactions.reduce((sum, tx) => {
+      const converted = CurrencyService.convert(
+        tx.amount,
+        tx.currency,
+        displayCurrency
+      );
+      return sum + converted;
+    }, 0);
+
+    // Calculate category breakdown
+    const categoryTotals: Record<string, number> = {};
+    thisWeekTransactions.forEach((tx) => {
+      const category = getEffectiveCategory(tx);
+      const converted = CurrencyService.convert(
+        tx.amount,
+        tx.currency,
+        displayCurrency
+      );
+      categoryTotals[category] = (categoryTotals[category] || 0) + converted;
+    });
+
+    // Find top category
+    let topCategory = "";
+    let topAmount = 0;
+    Object.entries(categoryTotals).forEach(([cat, amount]) => {
+      if (amount > topAmount) {
+        topCategory = cat;
+        topAmount = amount;
+      }
+    });
+
+    const topPercentage = total > 0 ? Math.round((topAmount / total) * 100) : 0;
+
+    return {
+      total,
+      topCategory,
+      topPercentage,
+    };
+  }, [allTransactions, transactions, displayCurrency]);
 
   // Render the empty state when no transactions are available
   const renderEmptyState = useCallback(() => {
@@ -71,15 +135,34 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       {transactionsWithCategories.length === 0 ? (
         renderEmptyState()
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {transactionsWithCategories.map((transaction) => (
-            <TransactionCard
-              key={transaction.id}
-              transaction={transaction}
-              className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {transactionsWithCategories.map((transaction) => (
+              <TransactionCard
+                key={transaction.id}
+                transaction={transaction}
+                className="glass-card-elevated rounded-xl border border-border/50 bg-card hover:shadow-md hover:scale-[1.01] transition-all"
+              />
+            ))}
+          </div>
+
+          {/* Week Summary */}
+          {weekSummary && (
+            <div className="mt-4 pt-4 border-t border-border/50 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">This week:</span>{" "}
+              {CurrencyService.format(weekSummary.total, displayCurrency)}
+              {weekSummary.topCategory && (
+                <>
+                  {" "}
+                  <span className="mx-1">•</span>{" "}
+                  <span>
+                    {weekSummary.topCategory}: {weekSummary.topPercentage}%
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

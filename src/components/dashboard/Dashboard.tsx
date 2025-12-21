@@ -145,7 +145,11 @@ export function Dashboard() {
           />
 
           {/* Recent Transactions */}
-          <RecentTransactions transactions={recentTransactions} />
+          <RecentTransactions
+            transactions={recentTransactions}
+            allTransactions={transactions}
+            displayCurrency={displayCurrency}
+          />
         </ErrorBoundary>
       </div>
     </div>

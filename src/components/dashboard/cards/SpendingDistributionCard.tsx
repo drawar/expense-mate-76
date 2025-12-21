@@ -8,6 +8,11 @@ import { Chevron } from "@/components/ui/chevron";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/core/currency";
+import {
+  SPENDING_TIERS,
+  SpendingTier,
+  getSpendingTier,
+} from "@/utils/constants/categories";
 
 // Color palette for merchants
 const MERCHANT_COLORS = [
@@ -22,6 +27,13 @@ const MERCHANT_COLORS = [
   "#6366f1",
   "#84cc16",
 ];
+
+// Colors for spending tiers
+const TIER_COLORS: Record<SpendingTier, string> = {
+  Essentials: "#10b981", // Green
+  Lifestyle: "#f59e0b", // Amber
+  Other: "#6b7280", // Gray
+};
 
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];
@@ -83,6 +95,33 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
 
     return topCategories;
   }, [categoryData, maxCategories]);
+
+  // Calculate spending tier summary from category data
+  const tierSummary = React.useMemo(() => {
+    if (!categoryData || categoryData.length === 0) return null;
+
+    const tierTotals: Record<SpendingTier, number> = {
+      Essentials: 0,
+      Lifestyle: 0,
+      Other: 0,
+    };
+
+    let total = 0;
+    categoryData.forEach((item) => {
+      const tier = getSpendingTier(item.name);
+      tierTotals[tier] += item.value;
+      total += item.value;
+    });
+
+    if (total === 0) return null;
+
+    return SPENDING_TIERS.map((tier) => ({
+      name: tier,
+      value: tierTotals[tier],
+      percentage: Math.round((tierTotals[tier] / total) * 100),
+      color: TIER_COLORS[tier],
+    })).filter((item) => item.value > 0);
+  }, [categoryData]);
 
   // Process payment method data
   const processedPaymentData = React.useMemo(() => {
@@ -193,6 +232,30 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
       <CardContent>
         {activeData && activeData.length > 0 ? (
           <div className="mt-2 space-y-3">
+            {/* Spending Tier Summary - only show in category view */}
+            {viewMode === "category" &&
+              tierSummary &&
+              tierSummary.length > 0 && (
+                <div className="flex gap-2 pb-3 border-b border-border/50">
+                  {tierSummary.map((tier) => (
+                    <div
+                      key={tier.name}
+                      className="flex-1 text-center px-2 py-1.5 rounded-md bg-muted/50"
+                    >
+                      <div className="text-xs text-muted-foreground">
+                        {tier.name}
+                      </div>
+                      <div
+                        className="text-sm font-semibold"
+                        style={{ color: tier.color }}
+                      >
+                        {tier.percentage}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
             <div className="space-y-2">
               {activeData.map((item, index) => (
                 <div
