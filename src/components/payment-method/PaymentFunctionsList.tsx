@@ -172,16 +172,19 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         {/* Japandi Active Status Badge */}
         <button
           onClick={handleToggleClick}
-          className="mt-2 sm:mt-0 px-5 py-2 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98]"
+          className="mt-2 sm:mt-0 transition-all duration-300 ease-out active:scale-[0.98]"
           style={{
             backgroundColor: paymentMethod.active
-              ? "var(--color-badge-bg)"
+              ? "rgba(124, 152, 133, 0.15)"
               : "transparent",
             color: paymentMethod.active
-              ? "var(--color-badge-text)"
+              ? "#A8C4AF"
               : "var(--color-text-tertiary)",
-            border: `1px solid ${paymentMethod.active ? "var(--color-badge-border)" : "var(--color-border)"}`,
+            border: `1px solid ${paymentMethod.active ? "rgba(124, 152, 133, 0.25)" : "var(--color-border)"}`,
             borderRadius: "20px",
+            padding: "8px 20px",
+            fontSize: "14px",
+            fontWeight: 500,
             letterSpacing: "0.5px",
           }}
           aria-label={`Card status: ${paymentMethod.active ? "active" : "inactive"}. Click to ${paymentMethod.active ? "deactivate" : "activate"}.`}
@@ -214,9 +217,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         <div
           className="p-4"
           style={{
-            backgroundColor: "var(--color-modal-bg)",
-            border: "1px solid var(--color-surface)",
+            backgroundColor: "#242729",
+            border: "1px solid #3A3D3F",
             borderRadius: "10px",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
           }}
         >
           <h3
@@ -244,9 +248,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <div
               className="p-4"
               style={{
-                backgroundColor: "var(--color-modal-bg)",
-                border: "1px solid var(--color-surface)",
+                backgroundColor: "#242729",
+                border: "1px solid #3A3D3F",
                 borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
               }}
             >
               <h3
@@ -272,9 +277,10 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             <div
               className="p-4"
               style={{
-                backgroundColor: "var(--color-modal-bg)",
-                border: "1px solid var(--color-surface)",
+                backgroundColor: "#242729",
+                border: "1px solid #3A3D3F",
                 borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
               }}
             >
               <h3

@@ -122,18 +122,17 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
       </Carousel>
 
       {/* Japandi Pagination Dots */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center mt-4" style={{ gap: "8px" }}>
         {paymentMethods.map((_, index) => (
           <button
             key={index}
             onClick={() => api?.scrollTo(index)}
             className="transition-all duration-300 ease-out"
             style={{
-              width: index === current ? "24px" : "8px",
+              width: "8px",
               height: "8px",
               borderRadius: "4px",
-              backgroundColor:
-                index === current ? "var(--color-accent)" : "#4B5563",
+              backgroundColor: index === current ? "#7C9885" : "#4B5563",
             }}
             aria-label={`Go to slide ${index + 1}`}
           />

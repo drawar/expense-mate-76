@@ -1391,11 +1391,14 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
               <button
                 onClick={handleQuickSetup}
                 disabled={isRunningSetup}
-                className="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
+                className="flex items-center text-sm font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98] disabled:opacity-50"
                 style={{
-                  backgroundColor: "var(--color-accent)",
-                  color: "var(--color-bg)",
+                  backgroundColor: "#7C9885",
+                  color: "#1A1D1F",
                   borderRadius: "10px",
+                  padding: "16px 24px",
+                  letterSpacing: "0.3px",
+                  fontWeight: 500,
                 }}
               >
                 {isRunningSetup ? (
@@ -1412,17 +1415,27 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                   <button
                     onClick={handleQuickSetup}
                     disabled={isRunningSetup}
-                    className="flex items-center px-3 py-2 text-sm transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50 hover:bg-[var(--color-surface)] rounded-md"
+                    className="flex items-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-50"
                     style={{
                       backgroundColor: "transparent",
-                      color: "var(--color-text-tertiary)",
+                      color: "#6B6863",
                       border: "none",
+                      fontSize: "14px",
+                      fontWeight: 400,
+                      padding: "8px 12px",
+                      borderRadius: "6px",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#2C2F31")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     {isRunningSetup ? (
                       <Loader2
                         className="h-4 w-4 mr-1.5 animate-spin"
-                        style={{ color: "var(--color-accent)" }}
+                        style={{ color: "#7C9885" }}
                       />
                     ) : (
                       <Settings2 className="h-4 w-4 mr-1.5" />
@@ -1432,11 +1445,14 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                 )}
                 <button
                   onClick={handleAddRule}
-                  className="flex items-center px-3 py-1.5 text-sm font-medium transition-all duration-300 ease-out active:scale-[0.98]"
+                  className="flex items-center text-sm font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98]"
                   style={{
-                    backgroundColor: "var(--color-accent)",
-                    color: "var(--color-bg)",
-                    borderRadius: "8px",
+                    backgroundColor: "#7C9885",
+                    color: "#1A1D1F",
+                    borderRadius: "10px",
+                    padding: "16px 24px",
+                    letterSpacing: "0.3px",
+                    fontWeight: 500,
                   }}
                   aria-label="Add new reward rule"
                 >
@@ -1540,14 +1556,16 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         >
                           {rule.name}
                         </span>
-                        {/* Japandi Multiplier Badge */}
+                        {/* Japandi Multiplier Badge - translucent sage + border */}
                         <span
-                          className="text-sm font-medium px-2.5 py-0.5"
                           style={{
-                            backgroundColor: "var(--color-badge-bg)",
-                            color: "var(--color-badge-text)",
-                            border: "1px solid var(--color-badge-border)",
+                            backgroundColor: "rgba(124, 152, 133, 0.15)",
+                            color: "#A8C4AF",
+                            border: "1px solid rgba(124, 152, 133, 0.3)",
                             borderRadius: "6px",
+                            fontSize: "16px",
+                            fontWeight: 500,
+                            padding: "4px 10px",
                           }}
                           aria-label={`Earn ${(() => {
                             const total =
@@ -1603,22 +1621,48 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         {rule.description}
                       </p>
                     </div>
-                    <div className="flex gap-4 ml-2">
+                    <div className="flex ml-2" style={{ gap: "16px" }}>
                       <button
-                        className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
-                        style={{ color: "var(--color-icon-secondary)" }}
+                        className="flex items-center justify-center transition-colors duration-300"
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "6px",
+                          color: "var(--color-icon-secondary)",
+                          padding: "10px",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#2C2F31")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
                         onClick={() => handleEditRule(rule)}
                         aria-label={`Edit ${rule.name} reward rule`}
                       >
-                        <PencilIcon className="h-5 w-5" />
+                        <PencilIcon className="h-6 w-6" />
                       </button>
                       <button
-                        className="h-11 w-11 flex items-center justify-center rounded-md transition-colors duration-300 hover:bg-[var(--color-surface)]"
-                        style={{ color: "var(--color-error)" }}
+                        className="flex items-center justify-center transition-colors duration-300"
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "6px",
+                          color: "var(--color-error)",
+                          padding: "10px",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#2C2F31")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
                         onClick={() => setDeleteConfirmRule(rule)}
                         aria-label={`Delete ${rule.name} reward rule`}
                       >
-                        <TrashIcon className="h-5 w-5" />
+                        <TrashIcon className="h-6 w-6" />
                       </button>
                     </div>
                   </div>

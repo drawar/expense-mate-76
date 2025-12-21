@@ -290,13 +290,14 @@ const PaymentMethods = () => {
           {/* Japandi CTA Button - Sage green, rounded */}
           <Button
             onClick={handleAddMethod}
-            className="gap-2 mt-4 sm:mt-0 font-medium transition-all duration-300 ease-out active:scale-[0.98]"
+            className="gap-2 mt-4 sm:mt-0 font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98]"
             style={{
-              backgroundColor: "var(--color-accent)",
-              color: "var(--color-bg)",
+              backgroundColor: "#7C9885",
+              color: "#1A1D1F",
               borderRadius: "10px",
-              padding: "12px 20px",
+              padding: "16px 24px",
               letterSpacing: "0.3px",
+              fontWeight: 500,
             }}
             aria-label="Add new payment method"
           >

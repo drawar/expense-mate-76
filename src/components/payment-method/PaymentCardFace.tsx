@@ -228,8 +228,8 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
       {/* Current Balance Label */}
       <div className="text-xs text-white/80">Current Balance</div>
 
-      {/* Balance Amount */}
-      <div className="text-xl font-bold mt-0.5">
+      {/* Balance Amount - Japandi: font-weight 500 max */}
+      <div className="text-xl font-medium mt-0.5">
         {CurrencyService.format(currentBalance, paymentMethod.currency)}
       </div>
 
