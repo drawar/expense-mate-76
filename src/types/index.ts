@@ -62,6 +62,7 @@ export interface PaymentMethod {
   selectedCategories?: string[];
   statementStartDay?: number;
   isMonthlyStatement?: boolean;
+  totalLoaded?: number; // For prepaid cards: total amount loaded onto the card
 }
 
 export interface Merchant {
@@ -106,6 +107,7 @@ export interface DbPaymentMethod {
   statement_start_day: number | null;
   is_monthly_statement: boolean | null;
   conversion_rate: Record<string, number> | null;
+  total_loaded: number | null; // For prepaid cards: total amount loaded onto the card
   created_at: string;
   updated_at: string;
 }

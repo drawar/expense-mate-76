@@ -182,22 +182,6 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
           </ResponsiveContainer>
         </div>
       )}
-
-      {chartData.length >= 2 && (
-        <div className="mt-2 text-sm space-y-1">
-          <div className="flex items-center gap-1">
-            {trend >= 0 ? (
-              <TrendingUpIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
-            ) : (
-              <TrendingDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
-            )}
-            <span>
-              Your spending {trend >= 0 ? "increased" : "decreased"} by{" "}
-              {Math.abs(trend).toFixed(1)}% compared to last period
-            </span>
-          </div>
-        </div>
-      )}
     </Card>
   );
 };

@@ -133,6 +133,7 @@ export class StorageService {
         isMonthlyStatement: row.is_monthly_statement ?? undefined,
         conversionRate:
           (row.conversion_rate as Record<string, number>) || undefined,
+        totalLoaded: row.total_loaded ?? undefined,
       }));
 
       console.log(
@@ -216,6 +217,7 @@ export class StorageService {
         statement_start_day: pm.statementStartDay ?? null,
         is_monthly_statement: pm.isMonthlyStatement ?? null,
         conversion_rate: pm.conversionRate as unknown,
+        total_loaded: pm.totalLoaded ?? null,
         user_id: session.user.id,
       }));
 
@@ -706,6 +708,11 @@ export class StorageService {
         category: data.category || undefined,
       };
 
+      // Check if prepaid card should be deactivated
+      await this.checkAndDeactivatePrepaidCard(
+        transactionData.paymentMethod.id
+      );
+
       console.log("Returning completed transaction:", newTransaction);
       return newTransaction;
     } catch (error) {
@@ -715,9 +722,9 @@ export class StorageService {
     }
   }
 
-  private addTransactionToLocalStorage(
+  private async addTransactionToLocalStorage(
     transactionData: Omit<Transaction, "id">
-  ): Transaction {
+  ): Promise<Transaction> {
     console.log("Adding transaction to localStorage:", transactionData);
     const transactions = this.getTransactionsFromLocalStorage();
     const newTransaction: Transaction = {
@@ -731,6 +738,10 @@ export class StorageService {
 
     transactions.unshift(newTransaction);
     this.saveTransactionsToLocalStorage(transactions);
+
+    // Check if prepaid card should be deactivated
+    await this.checkAndDeactivatePrepaidCard(transactionData.paymentMethod.id);
+
     console.log("Transaction added to localStorage:", newTransaction);
     return newTransaction;
   }
@@ -926,6 +937,64 @@ export class StorageService {
     // Placeholder implementation for card image upload
     // In a real implementation, this would upload to a storage service
     return URL.createObjectURL(file);
+  }
+
+  /**
+   * Check if a prepaid card should be deactivated based on balance
+   * If totalLoaded - totalSpent <= 0, the card will be set to inactive
+   */
+  async checkAndDeactivatePrepaidCard(paymentMethodId: string): Promise<void> {
+    try {
+      // Get the payment method
+      const paymentMethods = await this.getPaymentMethods();
+      const paymentMethod = paymentMethods.find(
+        (pm) => pm.id === paymentMethodId
+      );
+
+      // Only check prepaid cards that are active and have a total loaded value
+      if (
+        !paymentMethod ||
+        paymentMethod.type !== "prepaid_card" ||
+        !paymentMethod.active ||
+        paymentMethod.totalLoaded === undefined
+      ) {
+        return;
+      }
+
+      // Get all transactions for this payment method
+      const transactions = await this.getTransactions();
+      const cardTransactions = transactions.filter(
+        (t) => t.paymentMethod.id === paymentMethodId && !t.is_deleted
+      );
+
+      // Calculate total spent (sum of paymentAmount for transactions in card's currency)
+      const totalSpent = cardTransactions.reduce((sum, t) => {
+        // Use paymentAmount which is in the payment method's currency
+        return sum + (t.paymentAmount || t.amount);
+      }, 0);
+
+      // Check if balance is depleted
+      const balance = paymentMethod.totalLoaded - totalSpent;
+      console.log(
+        `Prepaid card ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}, totalSpent=${totalSpent}, balance=${balance}`
+      );
+
+      if (balance <= 0) {
+        console.log(
+          `Deactivating prepaid card ${paymentMethod.name} - balance depleted`
+        );
+
+        // Update the payment method to inactive
+        const updatedMethods = paymentMethods.map((pm) =>
+          pm.id === paymentMethodId ? { ...pm, active: false } : pm
+        );
+
+        await this.savePaymentMethods(updatedMethods);
+      }
+    } catch (error) {
+      console.error("Error checking prepaid card balance:", error);
+      // Don't fail the transaction if this check fails
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { PaymentMethod } from "@/types";
+import { CurrencyService } from "@/core/currency";
 import {
   EditIcon,
   ImageIcon,
@@ -8,6 +9,7 @@ import {
   BanknoteIcon,
   CalendarIcon,
   CoinsIcon,
+  WalletIcon,
 } from "lucide-react";
 import { Chevron } from "@/components/ui/chevron";
 import { Button } from "@/components/ui/button";
@@ -90,6 +92,8 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   const icon =
     method.type === "credit_card" ? (
       <CreditCardIcon className="h-5 w-5" style={{ color: method.color }} />
+    ) : method.type === "prepaid_card" ? (
+      <WalletIcon className="h-5 w-5" style={{ color: method.color }} />
     ) : (
       <BanknoteIcon className="h-5 w-5" style={{ color: method.color }} />
     );
@@ -179,7 +183,9 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
               <CardDescription>
                 {method.type === "credit_card"
                   ? `${method.issuer} ${method.lastFourDigits ? `•••• ${method.lastFourDigits}` : ""}`
-                  : `${method.currency}`}
+                  : method.type === "prepaid_card"
+                    ? `${method.currency} ${method.lastFourDigits ? `•••• ${method.lastFourDigits}` : ""}`
+                    : `${method.currency}`}
               </CardDescription>
             </div>
             {/* Status dot indicator */}
@@ -280,6 +286,32 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                 )}
               </div>
             )}
+          </>
+        )}
+
+        {/* Prepaid card specific content */}
+        {method.type === "prepaid_card" && (
+          <>
+            <div className="flex items-center text-sm">
+              <WalletIcon className="h-4 w-4 mr-2 text-emerald-500" />
+              <span>
+                Total Loaded:{" "}
+                <strong>
+                  {method.totalLoaded !== undefined
+                    ? CurrencyService.format(
+                        method.totalLoaded,
+                        method.currency
+                      )
+                    : "Not set"}
+                </strong>
+              </span>
+            </div>
+            <p
+              className="text-xs mt-2"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Balance is calculated from transactions
+            </p>
           </>
         )}
       </CardContent>

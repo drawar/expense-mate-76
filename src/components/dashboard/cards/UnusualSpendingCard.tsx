@@ -72,16 +72,11 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
 
       <CardContent>
         {anomalies.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-center">
-            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-full mb-3">
-              <AlertTriangleIcon className="h-6 w-6 text-green-500" />
+          <div className="flex items-center gap-2 py-2 text-muted-foreground">
+            <div className="bg-green-100 dark:bg-green-900/30 p-1 rounded-full">
+              <AlertTriangleIcon className="h-3.5 w-3.5 text-green-500" />
             </div>
-            <p className="text-muted-foreground">
-              No unusual spending detected.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              We'll notify you when we spot any anomalies in your spending.
-            </p>
+            <span className="text-sm">No unusual spending detected</span>
           </div>
         ) : (
           <div className="space-y-4">

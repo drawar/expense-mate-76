@@ -52,6 +52,7 @@ interface ValidationErrors {
   name?: string;
   lastFourDigits?: string;
   statementStartDay?: string;
+  totalLoaded?: string;
 }
 
 interface PaymentMethodFormProps {
@@ -98,6 +99,9 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     currentMethod?.isMonthlyStatement || false
   );
   const [active, setActive] = useState<boolean>(currentMethod?.active ?? true);
+  const [totalLoaded, setTotalLoaded] = useState<string>(
+    currentMethod?.totalLoaded?.toString() || ""
+  );
 
   // Validation state
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -137,6 +141,15 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     return undefined;
   };
 
+  const validateTotalLoaded = (value: string): string | undefined => {
+    if (!value) return undefined; // Optional field
+    const amount = parseFloat(value);
+    if (isNaN(amount) || amount < 0) {
+      return "Must be a positive number";
+    }
+    return undefined;
+  };
+
   // Run validation on field change
   const handleFieldBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -152,6 +165,9 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       case "statementStartDay":
         newErrors.statementStartDay = validateStatementDay(statementStartDay);
         break;
+      case "totalLoaded":
+        newErrors.totalLoaded = validateTotalLoaded(totalLoaded);
+        break;
     }
     setErrors(newErrors);
   };
@@ -161,8 +177,9 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     const nameError = validateName(name);
     const digitsError = validateLastFourDigits(lastFourDigits);
     const dayError = validateStatementDay(statementStartDay);
-    return !nameError && !digitsError && !dayError;
-  }, [name, lastFourDigits, statementStartDay]);
+    const loadedError = validateTotalLoaded(totalLoaded);
+    return !nameError && !digitsError && !dayError && !loadedError;
+  }, [name, lastFourDigits, statementStartDay, totalLoaded]);
 
   // Fetch all reward currencies when dialog opens
   useEffect(() => {
@@ -195,12 +212,15 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     setStatementStartDay(currentMethod?.statementStartDay?.toString() || "");
     setIsMonthlyStatement(currentMethod?.isMonthlyStatement || false);
     setActive(currentMethod?.active ?? true);
+    setTotalLoaded(currentMethod?.totalLoaded?.toString() || "");
     // Reset validation state
     setErrors({});
     setTouched({});
   }, [currentMethod, isOpen]);
 
   const isCreditCard = selectedType === "credit_card";
+  const isPrepaidCard = selectedType === "prepaid_card";
+  const isCardType = isCreditCard || isPrepaidCard;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -232,6 +252,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
             value={isMonthlyStatement ? "on" : ""}
           />
           <input type="hidden" name="active" value={active ? "on" : ""} />
+          <input type="hidden" name="totalLoaded" value={totalLoaded} />
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-4 items-start gap-4">
               <Label
@@ -311,71 +332,125 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </Select>
             </div>
 
-            {isCreditCard ? (
+            {/* Credit card specific: Issuer */}
+            {isCreditCard && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label
+                  htmlFor="issuer"
+                  className="text-right pt-2"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Issuer
+                </Label>
+                <Select value={issuer} onValueChange={setIssuer}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select issuer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CARD_ISSUERS.map((issuerOption) => (
+                      <SelectItem key={issuerOption} value={issuerOption}>
+                        {issuerOption}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="issuer" value={issuer} />
+              </div>
+            )}
+
+            {/* Shared: Last 4 Digits for credit card and prepaid card */}
+            {isCardType && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label
+                  htmlFor="lastFourDigits"
+                  className="text-right pt-2"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Last 4 Digits
+                </Label>
+                <div className="col-span-3 space-y-1">
+                  <Input
+                    id="lastFourDigits"
+                    name="lastFourDigits"
+                    placeholder="e.g. 1234"
+                    maxLength={4}
+                    value={lastFourDigits}
+                    onChange={(e) => {
+                      // Only allow numeric input
+                      const value = e.target.value.replace(/\D/g, "");
+                      setLastFourDigits(value);
+                    }}
+                    onBlur={() => handleFieldBlur("lastFourDigits")}
+                    style={{
+                      borderColor:
+                        touched.lastFourDigits && errors.lastFourDigits
+                          ? "var(--color-error)"
+                          : undefined,
+                    }}
+                  />
+                  {touched.lastFourDigits && errors.lastFourDigits && (
+                    <p
+                      className="text-xs flex items-center gap-1"
+                      style={{ color: "var(--color-error)" }}
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.lastFourDigits}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Prepaid card specific: Total Loaded */}
+            {isPrepaidCard && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label
+                  htmlFor="totalLoaded"
+                  className="text-right pt-2"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Total Loaded
+                </Label>
+                <div className="col-span-3 space-y-1">
+                  <Input
+                    id="totalLoaded"
+                    name="totalLoaded"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 500.00"
+                    value={totalLoaded}
+                    onChange={(e) => setTotalLoaded(e.target.value)}
+                    onBlur={() => handleFieldBlur("totalLoaded")}
+                    style={{
+                      borderColor:
+                        touched.totalLoaded && errors.totalLoaded
+                          ? "var(--color-error)"
+                          : undefined,
+                    }}
+                  />
+                  {touched.totalLoaded && errors.totalLoaded && (
+                    <p
+                      className="text-xs flex items-center gap-1"
+                      style={{ color: "var(--color-error)" }}
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.totalLoaded}
+                    </p>
+                  )}
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    Total amount loaded onto this prepaid card
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Credit card specific: Rewards, Statement */}
+            {isCreditCard && (
               <>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label
-                    htmlFor="issuer"
-                    className="text-right pt-2"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    Issuer
-                  </Label>
-                  <Select value={issuer} onValueChange={setIssuer}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select issuer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CARD_ISSUERS.map((issuerOption) => (
-                        <SelectItem key={issuerOption} value={issuerOption}>
-                          {issuerOption}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <input type="hidden" name="issuer" value={issuer} />
-                </div>
-
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label
-                    htmlFor="lastFourDigits"
-                    className="text-right pt-2"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    Last 4 Digits
-                  </Label>
-                  <div className="col-span-3 space-y-1">
-                    <Input
-                      id="lastFourDigits"
-                      name="lastFourDigits"
-                      placeholder="e.g. 1234"
-                      maxLength={4}
-                      value={lastFourDigits}
-                      onChange={(e) => {
-                        // Only allow numeric input
-                        const value = e.target.value.replace(/\D/g, "");
-                        setLastFourDigits(value);
-                      }}
-                      onBlur={() => handleFieldBlur("lastFourDigits")}
-                      style={{
-                        borderColor:
-                          touched.lastFourDigits && errors.lastFourDigits
-                            ? "var(--color-error)"
-                            : undefined,
-                      }}
-                    />
-                    {touched.lastFourDigits && errors.lastFourDigits && (
-                      <p
-                        className="text-xs flex items-center gap-1"
-                        style={{ color: "var(--color-error)" }}
-                      >
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.lastFourDigits}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-4 items-start gap-4">
                   <Label
                     htmlFor="rewardCurrency"
@@ -499,7 +574,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   </div>
                 </div>
               </>
-            ) : null}
+            )}
 
             <div className="grid grid-cols-4 items-start gap-4">
               <Label

@@ -114,17 +114,20 @@ const PaymentMethods = () => {
         ...(editingMethod || {}),
         id: editingMethod?.id || uuidv4(),
         name: formData.get("name") as string,
-        type: formData.get("type") as "cash" | "credit_card",
+        type: formData.get("type") as "cash" | "credit_card" | "prepaid_card",
         currency: (formData.get("currency") as Currency) || ("USD" as Currency),
         issuer: (formData.get("issuer") as string) || "Cash", // Provide default issuer
         active: formData.get("active") === "on",
       };
 
-      // Add credit card specific fields if applicable
-      if (method.type === "credit_card") {
+      // Add last 4 digits for credit card and prepaid card
+      if (method.type === "credit_card" || method.type === "prepaid_card") {
         method.lastFourDigits =
           (formData.get("lastFourDigits") as string) || undefined;
+      }
 
+      // Add credit card specific fields if applicable
+      if (method.type === "credit_card") {
         const pointsCurrency = formData.get("pointsCurrency") as string;
         if (pointsCurrency) {
           method.pointsCurrency = pointsCurrency;
@@ -141,6 +144,14 @@ const PaymentMethods = () => {
         }
 
         method.isMonthlyStatement = formData.get("isMonthlyStatement") === "on";
+      }
+
+      // Add prepaid card specific fields if applicable
+      if (method.type === "prepaid_card") {
+        const totalLoaded = formData.get("totalLoaded") as string;
+        if (totalLoaded) {
+          method.totalLoaded = parseFloat(totalLoaded);
+        }
       }
 
       await handleSaveMethod(method);

@@ -5,6 +5,7 @@ import {
   ImageIcon,
   CreditCardIcon,
   BanknoteIcon,
+  WalletIcon,
   CalendarIcon,
   AlertTriangle,
 } from "lucide-react";
@@ -214,6 +215,14 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                 strokeWidth: 2,
               }}
             />
+          ) : paymentMethod.type === "prepaid_card" ? (
+            <WalletIcon
+              className="h-5 w-5"
+              style={{
+                color: "var(--color-accent)",
+                strokeWidth: 2,
+              }}
+            />
           ) : (
             <BanknoteIcon
               className="h-5 w-5"
@@ -348,6 +357,42 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
               style={{ color: "var(--color-text-primary)" }}
             >
               {totalRewardPoints.toLocaleString()}
+            </p>
+          </div>
+        )}
+
+        {paymentMethod.type === "prepaid_card" && (
+          <div
+            className="p-3"
+            style={{
+              backgroundColor: "var(--color-card-bg)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "10px",
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
+            <h3
+              className="text-[12px] mb-0.5"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Remaining Balance
+            </h3>
+            <p
+              className="text-lg font-medium"
+              style={{
+                color:
+                  paymentMethod.totalLoaded !== undefined &&
+                  paymentMethod.totalLoaded - totalSpent <= 0
+                    ? "var(--color-danger)"
+                    : "var(--color-text-primary)",
+              }}
+            >
+              {paymentMethod.totalLoaded !== undefined
+                ? CurrencyService.format(
+                    Math.max(0, paymentMethod.totalLoaded - totalSpent),
+                    paymentMethod.currency
+                  )
+                : "Not set"}
             </p>
           </div>
         )}

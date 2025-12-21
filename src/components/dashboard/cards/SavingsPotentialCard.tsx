@@ -1,10 +1,9 @@
 // src/components/dashboard/cards/SavingsPotentialCard.tsx
 import React from "react";
-import { PiggyBankIcon, TrendingDownIcon, BarChart3Icon } from "lucide-react";
+import { PiggyBankIcon, TrendingDownIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyService } from "@/core/currency";
-import { Progress } from "@/components/ui/progress";
 import { useSavingsPotential } from "@/hooks/dashboard/useChartData";
 
 interface SavingsPotentialCardProps {
@@ -43,7 +42,6 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
       analysis.savingsPotential,
       currency
     );
-    const savingsProgressRounded = Math.round(analysis.savingsProgress);
     const discretionarySpendingFormatted = CurrencyService.format(
       analysis.discretionarySpending,
       currency
@@ -54,30 +52,28 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
 
     return {
       savingsPotentialFormatted,
-      savingsProgressRounded,
       discretionarySpendingFormatted,
       discretionaryPercentage,
     };
   }, [analysis, currency, hasTransactions]);
 
-  // Memoize the categories to prevent unnecessary re-renders
+  // Memoize the top 2 categories only to reduce clutter
   const savingsCategories = React.useMemo(() => {
     if (!hasTransactions) return [];
 
-    return analysis.topDiscretionaryCategories.map((category, index) => (
-      <div
-        key={index}
-        className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"
-      >
-        <div className="flex items-center">
-          <TrendingDownIcon className="h-3.5 w-3.5 text-green-500 mr-2" />
-          <span className="text-xs">{category.category}</span>
+    return analysis.topDiscretionaryCategories
+      .slice(0, 2)
+      .map((category, index) => (
+        <div key={index} className="flex items-center justify-between py-1">
+          <div className="flex items-center">
+            <TrendingDownIcon className="h-3 w-3 text-green-500 mr-1.5" />
+            <span className="text-xs">{category.category}</span>
+          </div>
+          <span className="text-xs text-green-500">
+            -{CurrencyService.format(category.savingsPotential, currency)}
+          </span>
         </div>
-        <span className="text-xs text-green-500">
-          -{CurrencyService.format(category.savingsPotential, currency)}
-        </span>
-      </div>
-    ));
+      ));
   }, [analysis.topDiscretionaryCategories, currency, hasTransactions]);
 
   // Early return for empty state
@@ -114,46 +110,37 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Monthly Savings Potential
-            </p>
-            <p className="font-medium text-green-500">
-              {formattedValues?.savingsPotentialFormatted}
-            </p>
-          </div>
-
-          {/* Savings Progress */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Progress towards goal</span>
-              <span>{formattedValues?.savingsProgressRounded}%</span>
+        <div className="space-y-3">
+          {/* Combined Spending Breakdown */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20">
+              <p className="text-xs text-muted-foreground mb-0.5">Can Save</p>
+              <p className="font-semibold text-green-600 dark:text-green-400">
+                {formattedValues?.savingsPotentialFormatted}
+              </p>
             </div>
-            <Progress value={analysis.savingsProgress} className="h-2" />
-          </div>
-
-          {/* Discretionary Spending Summary */}
-          <div className="p-3 rounded-lg border border-border bg-muted/30">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-sm flex items-center">
-                <BarChart3Icon className="h-4 w-4 mr-1" />
-                Discretionary Spending
-              </span>
-              <span className="text-sm font-medium">
+            <div className="p-2.5 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-0.5">
+                Discretionary
+              </p>
+              <p className="font-semibold">
                 {formattedValues?.discretionarySpendingFormatted}
-              </span>
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {formattedValues?.discretionaryPercentage}% of total
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {formattedValues?.discretionaryPercentage}% of your total spending
-            </p>
           </div>
 
-          {/* Top Savings Categories */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium">Top savings opportunities:</p>
-            {savingsCategories}
-          </div>
+          {/* Top Savings Categories - show only if there are categories */}
+          {savingsCategories.length > 0 && (
+            <div className="pt-2 border-t border-border/50">
+              <p className="text-xs font-medium mb-1.5 text-muted-foreground">
+                Top opportunities
+              </p>
+              {savingsCategories}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

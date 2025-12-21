@@ -78,16 +78,17 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           paymentMethodData={charts.paymentMethods}
           currency={currency}
           className={commonCardClass}
-          maxCategories={7}
+          maxCategories={4}
           highlightTopMethod={true}
         />
 
-        {/* Unusual Spending Card */}
-        <UnusualSpendingCard
+        {/* Savings Potential Card */}
+        <SavingsPotentialCard
+          title="Savings Potential"
           transactions={filteredTransactions}
+          savingsGoalPercentage={20}
           currency={currency}
           className={commonCardClass}
-          maxDisplayedAnomalies={isMobile ? 2 : 3}
         />
 
         {/* Spending Trends Card */}
@@ -98,30 +99,22 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           initialPeriod="day"
         />
 
-        {/* Container for optimization cards */}
-        <div
-          className={`grid grid-cols-1 gap-4 ${isMobile ? "" : "col-span-1"}`}
-        >
-          <div className="grid grid-cols-1 gap-4">
-            {/* Card Optimization Card */}
-            <CardOptimizationCard
-              title="Card Optimization"
-              transactions={filteredTransactions}
-              paymentMethods={paymentMethods}
-              currency={currency}
-              className={commonCardClass}
-            />
+        {/* Unusual Spending Card */}
+        <UnusualSpendingCard
+          transactions={filteredTransactions}
+          currency={currency}
+          className={commonCardClass}
+          maxDisplayedAnomalies={isMobile ? 2 : 3}
+        />
 
-            {/* Savings Potential Card */}
-            <SavingsPotentialCard
-              title="Savings Potential"
-              transactions={filteredTransactions}
-              savingsGoalPercentage={20}
-              currency={currency}
-              className={commonCardClass}
-            />
-          </div>
-        </div>
+        {/* Card Optimization Card - only renders when suggestions exist */}
+        <CardOptimizationCard
+          title="Card Optimization"
+          transactions={filteredTransactions}
+          paymentMethods={paymentMethods}
+          currency={currency}
+          className={commonCardClass}
+        />
       </div>
     </div>
   );
