@@ -1600,39 +1600,9 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
                         >
                           {rule.name}
                         </span>
-                        {/* Japandi Multiplier Badge - translucent sage + border */}
-                        <span
-                          style={{
-                            backgroundColor: "rgba(124, 152, 133, 0.15)",
-                            color: "#A8C4AF",
-                            border: "1px solid rgba(124, 152, 133, 0.3)",
-                            borderRadius: "6px",
-                            fontSize: "16px",
-                            fontWeight: 500,
-                            padding: "4px 10px",
-                          }}
-                          aria-label={`Earn ${(() => {
-                            const total =
-                              rule.reward.bonusMultiplier +
-                              rule.reward.baseMultiplier;
-                            return Number.isInteger(total)
-                              ? total
-                              : Math.round(total * 100) / 100;
-                          })()} points per dollar on ${rule.name}`}
-                        >
-                          {(() => {
-                            const total =
-                              rule.reward.bonusMultiplier +
-                              rule.reward.baseMultiplier;
-                            return Number.isInteger(total)
-                              ? total
-                              : Math.round(total * 100) / 100;
-                          })()}
-                          x
-                        </span>
                         {rule.reward.monthlyCap && (
                           <span
-                            className="text-xs px-2 py-0.5"
+                            className="text-sm px-2 py-0.5"
                             style={{
                               color: "var(--color-text-tertiary)",
                               border: "1px solid var(--color-border)",
