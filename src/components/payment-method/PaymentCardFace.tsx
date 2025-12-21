@@ -35,7 +35,7 @@ const CARD_IMAGES: Record<string, string> = {
     "https://storage.googleapis.com/max-sg/assets/cc_appplication_icons/HSBC%20Revolution.png",
   // Brim Financial cards
   "brim financial:air france klm world elite":
-    "https://milesopedia.com/wp-content/uploads/2023/12/Carte-Air-France-KLM-World-Elite-Mastercard-Flying-Blue.png",
+    "https://princeoftravel.com/wp-content/uploads/2023/09/AFKLM_WorldElite_FINAL-V2-01-1.png",
 };
 
 /**
