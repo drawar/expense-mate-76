@@ -13,18 +13,18 @@ import { Chevron } from "@/components/ui/chevron";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/core/currency";
-// Color palette for merchants
+// Japandi muted color palette for merchants
 const MERCHANT_COLORS = [
-  "#10b981",
-  "#3b82f6",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#6366f1",
-  "#84cc16",
+  "#7c9885", // Primary sage
+  "#6a8574", // Deeper sage
+  "#5d7567", // Deep sage
+  "#8b9a8f", // Light gray-green
+  "#a86f64", // Terracotta
+  "#c4a57b", // Clay
+  "#8e8a85", // Warm gray
+  "#5c5854", // Dark warm gray
+  "#9c8f7e", // Taupe
+  "#7a8b7f", // Muted green
 ];
 
 interface SpendingDistributionCardProps {
@@ -296,7 +296,7 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
                       className="flex items-center justify-between text-xs"
                     >
                       <span className="text-muted-foreground">{swap.tip}</span>
-                      <span className="text-green-600 dark:text-green-400 font-medium">
+                      <span className="text-[var(--color-success)] font-medium">
                         Save {CurrencyService.format(swap.savings, currency)}
                       </span>
                     </div>

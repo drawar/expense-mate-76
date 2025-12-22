@@ -42,7 +42,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <p className="text-muted-foreground mb-6">{description}</p>
       <Button
         onClick={finalAction.onClick}
-        className="gap-2 bg-gradient-to-r from-[#00A651] to-[#10B981]"
+        className="gap-2 bg-primary hover:bg-primary/90"
       >
         <PlusCircleIcon className="h-4 w-4" />
         {finalAction.label}

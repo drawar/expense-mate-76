@@ -26,34 +26,40 @@ interface InsightsCardProps {
 }
 
 /**
- * Get icon component for insight severity
+ * Get icon component for insight severity - using Japandi design tokens
  */
 function getSeverityIcon(severity: string) {
   switch (severity) {
     case "danger":
-      return <AlertTriangleIcon className="h-4 w-4 text-red-500" />;
+      return (
+        <AlertTriangleIcon className="h-4 w-4 text-[var(--color-error)]" />
+      );
     case "warning":
-      return <AlertCircleIcon className="h-4 w-4 text-amber-500" />;
+      return (
+        <AlertCircleIcon className="h-4 w-4 text-[var(--color-warning)]" />
+      );
     case "success":
-      return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
+      return (
+        <CheckCircleIcon className="h-4 w-4 text-[var(--color-success)]" />
+      );
     default:
-      return <InfoIcon className="h-4 w-4 text-blue-500" />;
+      return <InfoIcon className="h-4 w-4 text-[var(--color-accent)]" />;
   }
 }
 
 /**
- * Get background color class for insight severity
+ * Get background color class for insight severity - using Japandi design tokens
  */
 function getSeverityBgClass(severity: string) {
   switch (severity) {
     case "danger":
-      return "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900";
+      return "bg-[rgba(168,111,100,0.1)] border-[rgba(168,111,100,0.3)]";
     case "warning":
-      return "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900";
+      return "bg-[rgba(196,165,123,0.1)] border-[rgba(196,165,123,0.3)]";
     case "success":
-      return "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900";
+      return "bg-[var(--color-accent-subtle)] border-[var(--color-badge-border)]";
     default:
-      return "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900";
+      return "bg-[var(--color-accent-subtle)] border-[var(--color-badge-border)]";
   }
 }
 
@@ -164,7 +170,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
             Smart Insights
           </CardTitle>
           {urgentCount > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(168,111,100,0.15)] text-[var(--color-error)]">
               {urgentCount} {urgentCount === 1 ? "alert" : "alerts"}
             </span>
           )}

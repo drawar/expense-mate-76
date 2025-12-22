@@ -124,7 +124,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </p>
         <Link to="/add-expense">
           <Button
-            className={`btn-hover-effect bg-gradient-to-r from-[#00A651] to-[#10B981] ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
+            className={`btn-hover-effect bg-primary hover:bg-primary/90 ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
           >
             <PlusCircleIcon className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
             {!isMobile && <span>Record Your First Expense</span>}
@@ -137,7 +137,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
+        <h2 className="text-2xl font-medium tracking-tight text-primary">
           Recent Transactions
         </h2>
         <Link

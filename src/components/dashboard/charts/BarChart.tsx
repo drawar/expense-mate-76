@@ -135,9 +135,9 @@ const BarChart: React.FC<BarChartProps> = ({
     const trendType = trend >= 0 ? "increase" : "decrease";
     const trendIcon =
       trend >= 0 ? (
-        <TrendingUpIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+        <TrendingUpIcon className="h-4 w-4 text-[var(--color-error)]" />
       ) : (
-        <TrendingDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <TrendingDownIcon className="h-4 w-4 text-[var(--color-success)]" />
       );
 
     // Find the highest spending category

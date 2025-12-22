@@ -27,7 +27,7 @@ const DashboardHeader: React.FC = () => {
         <ThemeToggle />
         <Link to="/add-expense">
           <Button
-            className={`btn-hover-effect bg-gradient-to-r from-[#00A651] to-[#10B981] ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
+            className={`btn-hover-effect bg-primary hover:bg-primary/90 ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
           >
             <PlusCircleIcon className="h-4 w-4" />
             {!isMobile && <span>Add Expense</span>}

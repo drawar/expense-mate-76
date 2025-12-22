@@ -36,17 +36,17 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
   // Get a subset of anomalies to display
   const displayedAnomalies = anomalies.slice(0, maxDisplayedAnomalies);
 
-  // Helper to get dot color based on severity
+  // Helper to get dot color based on severity - using Japandi design tokens
   const getSeverityColor = (severity: "low" | "medium" | "high"): string => {
     switch (severity) {
       case "high":
-        return "text-red-500 fill-red-500";
+        return "text-[var(--color-error)] fill-[var(--color-error)]";
       case "medium":
-        return "text-orange-500 fill-orange-500";
+        return "text-[var(--color-warning)] fill-[var(--color-warning)]";
       case "low":
-        return "text-blue-500 fill-blue-500";
+        return "text-[var(--color-accent)] fill-[var(--color-accent)]";
       default:
-        return "text-gray-500 fill-gray-500";
+        return "text-muted-foreground fill-muted-foreground";
     }
   };
 
@@ -60,14 +60,14 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center gap-2">
-            <AlertTriangleIcon className="h-5 w-5 text-amber-500" />
+            <AlertTriangleIcon className="h-5 w-5 text-[var(--color-warning)]" />
             {title}
           </CardTitle>
 
           {alertCount > 0 && (
             <Badge
               variant="outline"
-              className="bg-amber-100 text-amber-800 border-amber-200 px-2 py-0.5"
+              className="bg-[var(--color-badge-bg)] text-[var(--color-badge-text)] border-[var(--color-badge-border)] px-2 py-0.5"
             >
               {alertCount} {alertCount === 1 ? "alert" : "alerts"}
             </Badge>

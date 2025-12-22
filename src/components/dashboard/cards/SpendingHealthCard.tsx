@@ -190,11 +190,11 @@ const SpendingHealthCard: React.FC<SpendingHealthCardProps> = ({
     [transactions, monthlyBudget, totalSpent]
   );
 
-  // Determine score color and label
+  // Determine score color and label - using Japandi design tokens
   const getScoreColor = () => {
-    if (score >= 70) return "text-green-600 dark:text-green-400";
-    if (score >= 50) return "text-amber-600 dark:text-amber-400";
-    return "text-red-600 dark:text-red-400";
+    if (score >= 70) return "text-[var(--color-success)]";
+    if (score >= 50) return "text-[var(--color-warning)]";
+    return "text-[var(--color-error)]";
   };
 
   const getScoreLabel = () => {
@@ -207,11 +207,17 @@ const SpendingHealthCard: React.FC<SpendingHealthCardProps> = ({
   const getStatusIcon = (status: HealthFactor["status"]) => {
     switch (status) {
       case "good":
-        return <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />;
+        return (
+          <CheckCircleIcon className="h-3.5 w-3.5 text-[var(--color-success)]" />
+        );
       case "warning":
-        return <AlertCircleIcon className="h-3.5 w-3.5 text-amber-500" />;
+        return (
+          <AlertCircleIcon className="h-3.5 w-3.5 text-[var(--color-warning)]" />
+        );
       case "bad":
-        return <XCircleIcon className="h-3.5 w-3.5 text-red-500" />;
+        return (
+          <XCircleIcon className="h-3.5 w-3.5 text-[var(--color-error)]" />
+        );
     }
   };
 

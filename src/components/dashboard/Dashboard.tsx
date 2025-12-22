@@ -129,7 +129,7 @@ export function Dashboard() {
 
         {/* Dashboard Title and Global Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
+          <h2 className="text-2xl font-medium tracking-tight text-primary">
             Expense Summary
           </h2>
 

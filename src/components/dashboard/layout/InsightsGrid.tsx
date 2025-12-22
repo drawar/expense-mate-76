@@ -65,7 +65,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   if (!hasData) {
     return (
       <div className="my-6 space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
+        <h2 className="text-2xl font-medium tracking-tight text-primary">
           Financial Insights
         </h2>
         <div className="p-6 text-center border border-dashed rounded-xl">
@@ -81,7 +81,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
 
   return (
     <div className="my-6 space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#00A651] to-[#10B981]">
+      <h2 className="text-2xl font-medium tracking-tight text-primary">
         Financial Insights
       </h2>
 

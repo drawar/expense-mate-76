@@ -114,15 +114,15 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         <p className="text-sm text-muted-foreground">vs last period</p>
         <div className="flex items-center gap-1 mt-1">
           {trend >= 0 ? (
-            <TrendingUpIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <TrendingUpIcon className="h-4 w-4 text-[var(--color-error)]" />
           ) : (
-            <TrendingDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <TrendingDownIcon className="h-4 w-4 text-[var(--color-success)]" />
           )}
           <span
             className={
               trend >= 0
-                ? "font-medium text-red-600 dark:text-red-400"
-                : "font-medium text-green-600 dark:text-green-400"
+                ? "font-medium text-[var(--color-error)]"
+                : "font-medium text-[var(--color-success)]"
             }
           >
             {trend >= 0 ? "+" : ""}
@@ -202,11 +202,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
               <Line
                 type="monotone"
                 dataKey="amount"
-                stroke="#10b981"
+                stroke="#7c9885"
                 strokeWidth={2}
-                dot={{ fill: "#10b981", strokeWidth: 0, r: 3 }}
+                dot={{ fill: "#7c9885", strokeWidth: 0, r: 3 }}
                 activeDot={{
-                  fill: "#10b981",
+                  fill: "#7c9885",
                   strokeWidth: 2,
                   stroke: "#fff",
                   r: 5,

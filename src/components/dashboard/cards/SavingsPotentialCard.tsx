@@ -66,10 +66,10 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
       .map((category, index) => (
         <div key={index} className="flex items-center justify-between py-1">
           <div className="flex items-center">
-            <TrendingDownIcon className="h-3 w-3 text-green-500 mr-1.5" />
+            <TrendingDownIcon className="h-3 w-3 text-[var(--color-success)] mr-1.5" />
             <span className="text-xs">{category.category}</span>
           </div>
-          <span className="text-xs text-green-500">
+          <span className="text-xs text-[var(--color-success)]">
             -{CurrencyService.format(category.savingsPotential, currency)}
           </span>
         </div>
@@ -112,13 +112,13 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
       <CardContent>
         <div className="space-y-3">
           {/* Primary metric - Savings Potential */}
-          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+          <div className="p-3 rounded-lg bg-[var(--color-accent-subtle)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">
                   Potential savings from discretionary
                 </p>
-                <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+                <p className="text-xl font-semibold text-[var(--color-success)]">
                   {formattedValues?.savingsPotentialFormatted}
                 </p>
               </div>

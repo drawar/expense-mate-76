@@ -295,23 +295,23 @@ const SpendingBreakdownCard: React.FC<SpendingBreakdownCardProps> = ({
           ))}
         </div>
 
-        {/* Legend for savings potential */}
+        {/* Legend for savings potential - using Japandi muted palette */}
         <div className="mt-4 pt-3 border-t border-border/50">
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-[#7c9885]" />
               <span>Essentials</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <div className="w-2 h-2 rounded-full bg-[#8b9a8f]" />
               <span>Lifestyle</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <div className="w-2 h-2 rounded-full bg-[#c4a57b]" />
               <span>Home</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-pink-500" />
+              <div className="w-2 h-2 rounded-full bg-[#a86f64]" />
               <span>Personal</span>
             </div>
           </div>

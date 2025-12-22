@@ -70,7 +70,7 @@ const TransactionRow: React.FC<{
           {CurrencyService.format(transaction.amount, currency)}
         </div>
         {transaction.rewardPoints > 0 && (
-          <div className="text-xs text-green-600">
+          <div className="text-xs text-[var(--color-success)]">
             +{transaction.rewardPoints.toLocaleString()}{" "}
             {transaction.paymentMethod?.pointsCurrency || "pts"}
           </div>
@@ -186,7 +186,9 @@ const CategoryDrilldownSheet: React.FC<CategoryDrilldownSheetProps> = ({
               <div
                 className={cn(
                   "text-lg font-semibold flex items-center gap-1",
-                  change > 0 ? "text-red-600" : "text-green-600"
+                  change > 0
+                    ? "text-[var(--color-error)]"
+                    : "text-[var(--color-success)]"
                 )}
               >
                 {change > 0 ? (

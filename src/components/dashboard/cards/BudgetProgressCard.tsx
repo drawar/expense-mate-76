@@ -166,17 +166,17 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     return suggestions.sort((a, b) => b.amount - a.amount).slice(0, 3);
   }, [isOverBudget, transactions, remaining]);
 
-  // Determine status color
+  // Determine status color - using Japandi design tokens
   const getStatusColor = () => {
-    if (isOverBudget) return "text-red-600 dark:text-red-400";
-    if (!isOnTrack) return "text-amber-600 dark:text-amber-400";
-    return "text-green-600 dark:text-green-400";
+    if (isOverBudget) return "text-[var(--color-error)]";
+    if (!isOnTrack) return "text-[var(--color-warning)]";
+    return "text-[var(--color-success)]";
   };
 
   const getProgressColor = () => {
-    if (isOverBudget) return "bg-red-500";
-    if (!isOnTrack) return "bg-amber-500";
-    return "bg-green-500";
+    if (isOverBudget) return "bg-[var(--color-error)]";
+    if (!isOnTrack) return "bg-[var(--color-warning)]";
+    return "bg-[var(--color-success)]";
   };
 
   const getStatusText = () => {
@@ -288,7 +288,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
             {/* Remaining amount */}
             <div className="text-xs text-muted-foreground">
               {isOverBudget ? (
-                <span className="text-red-600 dark:text-red-400">
+                <span className="text-[var(--color-error)]">
                   {formatCurrency(Math.abs(remaining))} over budget
                 </span>
               ) : (
@@ -306,7 +306,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
             {/* Recovery suggestions when over budget */}
             {isOverBudget && recoverySuggestions.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border/50">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-warning)] mb-2">
                   <LightbulbIcon className="h-3.5 w-3.5" />
                   How to recover:
                 </div>
@@ -319,7 +319,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
                       <span className="text-muted-foreground">
                         {item.suggestion}
                       </span>
-                      <span className="text-green-600 dark:text-green-400 font-medium">
+                      <span className="text-[var(--color-success)] font-medium">
                         Save {formatCurrency(item.amount)}
                       </span>
                     </div>

@@ -55,8 +55,8 @@ const SummarySection: React.FC = () => {
             icon={<ArrowDownLeftIcon className="h-5 w-5 text-primary" />}
             value={formatCurrency(metrics?.totalReimbursed || 0)}
             description={`From ${reimbursedTransactionsCount} transaction${reimbursedTransactionsCount !== 1 ? "s" : ""}`}
-            cardColor="bg-gradient-to-br from-green-500/10 to-emerald-600/10"
-            valueColor="text-green-800 dark:text-green-300"
+            cardColor="bg-[var(--color-accent-subtle)]"
+            valueColor="text-[var(--color-success)]"
           />
         )}
       </div>

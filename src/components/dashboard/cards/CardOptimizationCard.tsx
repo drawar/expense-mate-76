@@ -74,7 +74,7 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
             <p className="text-sm text-muted-foreground">
               Potential annual savings:
             </p>
-            <p className="font-medium text-green-500">
+            <p className="font-medium text-[var(--color-success)]">
               +{CurrencyService.format(totalPotentialSavings, currency)}
             </p>
           </div>
@@ -89,7 +89,7 @@ const CardOptimizationCard: React.FC<CardOptimizationCardProps> = ({
                   <span className="font-medium text-sm">
                     {suggestion.category}
                   </span>
-                  <span className="text-green-500 text-xs">
+                  <span className="text-[var(--color-success)] text-xs">
                     +
                     {CurrencyService.format(
                       suggestion.potentialSavings,
