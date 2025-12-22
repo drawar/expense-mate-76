@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -31,10 +31,21 @@ import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
 /**
- * Format date for group header (Today, Yesterday, or full date)
+ * Get a YYYY-MM-DD key from a Date using LOCAL timezone (not UTC)
+ * This fixes timezone issues where transactions appear on wrong days
  */
-function formatDateGroupHeader(dateStr: string): string {
-  const date = parseISO(dateStr);
+function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Format date for group header (Today, Yesterday, or full date)
+ * Uses the actual Date object to ensure correct timezone handling
+ */
+function formatDateGroupHeader(date: Date): string {
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
   return format(date, "EEEE, MMMM d, yyyy");
@@ -99,22 +110,31 @@ const TransactionTable = ({
 
   // Group transactions by date for better organization
   const groupedTransactions = useMemo(() => {
-    const groups: { date: string; transactions: Transaction[] }[] = [];
+    const groups: {
+      date: string;
+      dateObj: Date;
+      transactions: Transaction[];
+    }[] = [];
     let currentDate = "";
+    let currentDateObj: Date | null = null;
     let currentGroup: Transaction[] = [];
 
     // Transactions are already sorted by date (desc), group them
     transactions.forEach((tx) => {
-      const txDate =
-        typeof tx.date === "string"
-          ? tx.date.split("T")[0]
-          : format(tx.date, "yyyy-MM-dd");
+      // Parse the transaction date and get local date key
+      const txDateObj = new Date(tx.date);
+      const txDate = getLocalDateKey(txDateObj);
 
       if (txDate !== currentDate) {
-        if (currentGroup.length > 0) {
-          groups.push({ date: currentDate, transactions: currentGroup });
+        if (currentGroup.length > 0 && currentDateObj) {
+          groups.push({
+            date: currentDate,
+            dateObj: currentDateObj,
+            transactions: currentGroup,
+          });
         }
         currentDate = txDate;
+        currentDateObj = txDateObj;
         currentGroup = [tx];
       } else {
         currentGroup.push(tx);
@@ -122,8 +142,12 @@ const TransactionTable = ({
     });
 
     // Don't forget the last group
-    if (currentGroup.length > 0) {
-      groups.push({ date: currentDate, transactions: currentGroup });
+    if (currentGroup.length > 0 && currentDateObj) {
+      groups.push({
+        date: currentDate,
+        dateObj: currentDateObj,
+        transactions: currentGroup,
+      });
     }
 
     return groups;
@@ -165,17 +189,14 @@ const TransactionTable = ({
               </TableRow>
             ) : (
               groupedTransactions.map((group) => (
-                <>
+                <React.Fragment key={`group-${group.date}`}>
                   {/* Date Header Row */}
-                  <TableRow
-                    key={`date-${group.date}`}
-                    className="bg-muted/50 hover:bg-muted/50"
-                  >
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableCell
                       colSpan={7}
                       className="py-2 font-semibold text-sm text-muted-foreground"
                     >
-                      {formatDateGroupHeader(group.date)}
+                      {formatDateGroupHeader(group.dateObj)}
                     </TableCell>
                   </TableRow>
                   {/* Transaction Rows for this date */}
@@ -349,7 +370,7 @@ const TransactionTable = ({
                       </TableCell>
                     </TableRow>
                   ))}
-                </>
+                </React.Fragment>
               ))
             )}
           </TableBody>
