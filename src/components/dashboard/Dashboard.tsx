@@ -13,6 +13,7 @@ import { PieChartIcon } from "lucide-react";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { TimeframeTab } from "@/utils/dashboard";
 import { Currency } from "@/types";
+import { useBudget } from "@/hooks/useBudget";
 
 /**
  * Main dashboard component - the entry point for the dashboard UI
@@ -35,6 +36,9 @@ export function Dashboard() {
     setUseStatementMonth,
     setStatementCycleDay,
   } = useDashboardContext();
+
+  // Get monthly budget for current currency
+  const { monthlyBudget } = useBudget(displayCurrency);
 
   // Get recent transactions for display
   const recentTransactions = React.useMemo(() => {
@@ -142,6 +146,7 @@ export function Dashboard() {
             dashboardData={dashboardData}
             paymentMethods={paymentMethods}
             currency={displayCurrency}
+            monthlyBudget={monthlyBudget}
           />
 
           {/* Recent Transactions */}

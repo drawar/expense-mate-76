@@ -24,6 +24,11 @@ export type Transaction = {
   userCategory?: string;
   isRecategorized?: boolean;
 
+  // Auto-categorization metadata
+  autoCategoryConfidence?: number; // 0.0 to 1.0 confidence score
+  needsReview?: boolean; // Flag for transactions needing user review
+  categorySuggestionReason?: string; // Why this category was suggested
+
   // Legacy field (synced with userCategory for backwards compatibility)
   category?: string;
 

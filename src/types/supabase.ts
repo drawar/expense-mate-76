@@ -300,6 +300,10 @@ export type Database = {
           updated_at: string | null;
           user_category: string | null; // User-editable category for budgets
           user_id: string;
+          // Auto-categorization metadata
+          auto_category_confidence: number | null; // 0.0 to 1.0 confidence score
+          needs_review: boolean | null; // Flag for transactions needing user review
+          category_suggestion_reason: string | null; // Why this category was suggested
         };
         Insert: {
           amount: number;
@@ -325,6 +329,10 @@ export type Database = {
           updated_at?: string | null;
           user_category?: string | null;
           user_id: string;
+          // Auto-categorization metadata
+          auto_category_confidence?: number | null;
+          needs_review?: boolean | null;
+          category_suggestion_reason?: string | null;
         };
         Update: {
           amount?: number;
@@ -350,6 +358,10 @@ export type Database = {
           updated_at?: string | null;
           user_category?: string | null;
           user_id?: string;
+          // Auto-categorization metadata
+          auto_category_confidence?: number | null;
+          needs_review?: boolean | null;
+          category_suggestion_reason?: string | null;
         };
         Relationships: [
           {

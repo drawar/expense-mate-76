@@ -1,8 +1,7 @@
-
-import React from 'react';
-import { Transaction, PaymentMethod } from '@/types';
-import TransactionTable from '@/components/expense/TransactionTable';
-import TransactionGroupView from './TransactionGroupView';
+import React from "react";
+import { Transaction, PaymentMethod } from "@/types";
+import TransactionTable from "@/components/expense/TransactionTable";
+import TransactionGroupView from "./TransactionGroupView";
 
 interface TransactionContentProps {
   transactions: Transaction[];
@@ -10,8 +9,9 @@ interface TransactionContentProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
-  viewMode: 'table' | 'group';
+  viewMode: "table" | "group";
   sortOption: string;
+  onCategoryEdit?: (transaction: Transaction) => void;
 }
 
 export const TransactionContent: React.FC<TransactionContentProps> = ({
@@ -21,9 +21,10 @@ export const TransactionContent: React.FC<TransactionContentProps> = ({
   onDelete,
   onView,
   viewMode,
-  sortOption
+  sortOption,
+  onCategoryEdit,
 }) => {
-  if (viewMode === 'group') {
+  if (viewMode === "group") {
     return (
       <TransactionGroupView
         transactions={transactions}
@@ -40,6 +41,7 @@ export const TransactionContent: React.FC<TransactionContentProps> = ({
       onEdit={onEdit}
       onDelete={onDelete}
       onView={onView}
+      onCategoryEdit={onCategoryEdit}
     />
   );
 };

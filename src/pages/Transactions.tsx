@@ -1,13 +1,20 @@
-
-import { useState } from 'react';
-import { ViewMode } from '@/components/transaction/TransactionSortAndView';
-import { TransactionDialog } from '@/components/expense/transaction/TransactionDialog';
-import TransactionDeleteDialog from '@/components/transaction/TransactionDeleteDialog';
-import { useTransactionList } from '@/hooks/expense/useTransactionList';
-import { useTransactionManagement } from '@/hooks/useTransactionManagement';
-import TransactionHeader from '@/components/transaction/TransactionHeader';
-import TransactionFilterControls from '@/components/transaction/TransactionFilterControls';
-import TransactionContent from '@/components/transaction/TransactionContent';
+import { useState, useEffect } from "react";
+import { ViewMode } from "@/components/transaction/TransactionSortAndView";
+import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
+import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
+import { useTransactionList } from "@/hooks/expense/useTransactionList";
+import { useTransactionManagement } from "@/hooks/useTransactionManagement";
+import TransactionHeader from "@/components/transaction/TransactionHeader";
+import TransactionFilterControls from "@/components/transaction/TransactionFilterControls";
+import TransactionContent from "@/components/transaction/TransactionContent";
+import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
+import { CategoryReviewQueue } from "@/components/expense/transaction/CategoryReviewQueue";
+import { categorizationService } from "@/core/categorization";
+import { storageService } from "@/core/storage/StorageService";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { Transaction } from "@/types";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, X } from "lucide-react";
 
 const Transactions = () => {
   const {
@@ -23,11 +30,14 @@ const Transactions = () => {
     handleFilterChange,
     activeFilters,
     resetFilters,
-    isLoading
+    isLoading,
   } = useTransactionList();
 
-  const transactionManagement = useTransactionManagement(transactions, setTransactions);
-  
+  const transactionManagement = useTransactionManagement(
+    transactions,
+    setTransactions
+  );
+
   const {
     selectedTransaction,
     isTransactionDialogOpen,
@@ -40,25 +50,152 @@ const Transactions = () => {
     handleEditTransaction,
     handleDeleteTransaction,
     confirmDeleteTransaction,
-    handleSaveEdit
+    handleSaveEdit,
   } = transactionManagement;
 
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  // Category picker state
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [categoryEditTransaction, setCategoryEditTransaction] =
+    useState<Transaction | null>(null);
+
+  // Review queue state
+  const [showReviewQueue, setShowReviewQueue] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  // Check for transactions needing review on load
+  useEffect(() => {
+    const checkReviewCount = async () => {
+      try {
+        const needsReview =
+          await categorizationService.getTransactionsNeedingReview();
+        setReviewCount(needsReview.length);
+      } catch (error) {
+        console.error("Error checking review count:", error);
+      }
+    };
+    checkReviewCount();
+  }, [transactions]);
+
+  // Handle opening category picker
+  const handleCategoryEdit = (transaction: Transaction) => {
+    setCategoryEditTransaction(transaction);
+    setCategoryPickerOpen(true);
+  };
+
+  // Handle category selection with learning
+  const handleCategorySelect = async (
+    category: string,
+    transaction: Transaction
+  ) => {
+    const currentCategory = getEffectiveCategory(transaction);
+    const isChange = category !== currentCategory;
+
+    try {
+      // Update the transaction
+      const updates: Partial<Transaction> = {
+        userCategory: category,
+        isRecategorized: isChange,
+        needsReview: false, // Clear review flag once user selects
+      };
+
+      await storageService.updateTransaction(transaction.id, updates);
+
+      // Record user correction for learning (if category changed)
+      if (isChange) {
+        await categorizationService.recordUserCorrection(
+          transaction.merchant.name,
+          transaction.amount,
+          category
+        );
+      }
+
+      // Update local state
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === transaction.id ? { ...t, ...updates } : t))
+      );
+
+      // Update review count
+      if (transaction.needsReview) {
+        setReviewCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+    }
+  };
+
+  // Handle review queue completion
+  const handleReviewComplete = () => {
+    setShowReviewQueue(false);
+    setReviewCount(0);
+  };
+
+  // Handle transaction update from review queue
+  const handleReviewTransactionUpdate = (updatedTransaction: Transaction) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+    );
+    setReviewCount((prev) => Math.max(0, prev - 1));
+  };
 
   // Get unique categories for filter dropdown
   const categories = Array.from(
-    new Set(
-      transactions
-        .map(t => t.category)
-        .filter(Boolean)
-    )
+    new Set(transactions.map((t) => t.category).filter(Boolean))
   );
 
   return (
     <div className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-16">
         <TransactionHeader />
-        
+
+        {/* Review Queue Banner */}
+        {reviewCount > 0 && !showReviewQueue && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <div>
+                <p className="font-medium text-amber-800">
+                  {reviewCount} transaction{reviewCount > 1 ? "s" : ""} need
+                  {reviewCount === 1 ? "s" : ""} category review
+                </p>
+                <p className="text-sm text-amber-600">
+                  Help improve auto-categorization by reviewing these
+                  transactions
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-300 text-amber-700 hover:bg-amber-100"
+              onClick={() => setShowReviewQueue(true)}
+            >
+              Review Now
+            </Button>
+          </div>
+        )}
+
+        {/* Review Queue */}
+        {showReviewQueue && (
+          <div className="mb-6">
+            <div className="flex justify-end mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReviewQueue(false)}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Close
+              </Button>
+            </div>
+            <CategoryReviewQueue
+              onComplete={handleReviewComplete}
+              onTransactionUpdate={handleReviewTransactionUpdate}
+            />
+          </div>
+        )}
+
         <TransactionFilterControls
           filters={filterOptions}
           onFiltersChange={handleFilterChange}
@@ -66,18 +203,19 @@ const Transactions = () => {
           categories={categories}
           onClearFilters={resetFilters}
         />
-        
-        <TransactionContent 
+
+        <TransactionContent
           transactions={filteredTransactions}
           paymentMethods={paymentMethods}
           onView={handleViewTransaction}
           onEdit={handleEditTransaction}
           onDelete={(transaction) => handleDeleteTransaction(transaction.id)}
-          viewMode={'table'}
+          viewMode={"table"}
           sortOption={sortOption}
+          onCategoryEdit={handleCategoryEdit}
         />
       </div>
-      
+
       {selectedTransaction && (
         <TransactionDialog
           transaction={selectedTransaction}
@@ -87,11 +225,19 @@ const Transactions = () => {
           onTransactionUpdated={handleSaveEdit}
         />
       )}
-      
+
       <TransactionDeleteDialog
         isOpen={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         onConfirmDelete={confirmDeleteTransaction}
+      />
+
+      {/* Category Picker */}
+      <CategoryPicker
+        open={categoryPickerOpen}
+        onOpenChange={setCategoryPickerOpen}
+        transaction={categoryEditTransaction}
+        onCategorySelect={handleCategorySelect}
       />
     </div>
   );

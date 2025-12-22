@@ -56,7 +56,9 @@
       "WebFetch(domain:en.wikipedia.org)",
       "Bash(git restore:*)",
       "Bash(PGPASSWORD=\"$SUPABASE_DB_PASSWORD\" psql -h aws-0-ap-southeast-1.pooler.supabase.com -p 6543 -U postgres.yulueezoyjxobhureuxj -d postgres -f supabase/migrations/20251221300000_create_card_images_storage.sql)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(export VITE_SUPABASE_URL:*)",
+      "Bash(export:*)"
     ]
   }
 }

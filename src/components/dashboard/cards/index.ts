@@ -6,6 +6,7 @@ export { default as CardOptimizationCard } from "./CardOptimizationCard";
 export { default as InsightsCard } from "./InsightsCard";
 export { default as PaymentMethodCard } from "./PaymentMethodCard";
 export { default as SavingsPotentialCard } from "./SavingsPotentialCard";
+export { default as SpendingBreakdownCard } from "./SpendingBreakdownCard";
 export { default as SpendingCategoryCard } from "./SpendingCategoryCard";
 export { default as SpendingDistributionCard } from "./SpendingDistributionCard";
 export { default as SpendingHealthCard } from "./SpendingHealthCard";

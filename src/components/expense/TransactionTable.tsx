@@ -8,14 +8,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Transaction, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import { formatDate } from "@/utils/dates/formatters";
-import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from "lucide-react";
+import {
+  EditIcon,
+  TrashIcon,
+  DownloadIcon,
+  EyeIcon,
+  AlertCircle,
+  Pencil,
+} from "lucide-react";
 import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import {
+  getCategoryEmoji,
+  getCategoryColor,
+} from "@/utils/constants/categories";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 
 /**
  * Format date for group header (Today, Yesterday, or full date)
@@ -33,6 +46,7 @@ interface TransactionTableProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
+  onCategoryEdit?: (transaction: Transaction) => void;
 }
 
 const TransactionTable = ({
@@ -41,6 +55,7 @@ const TransactionTable = ({
   onEdit,
   onDelete,
   onView,
+  onCategoryEdit,
 }: TransactionTableProps) => {
   // Memoize CSV export to prevent recalculation on every render
   const handleExportCSV = useMemo(
@@ -193,7 +208,57 @@ const TransactionTable = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        {transactionCategories[transaction.id]}
+                        <div className="flex items-center gap-2">
+                          <button
+                            className={cn(
+                              "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
+                              "hover:bg-muted/50 transition-colors cursor-pointer",
+                              "border border-transparent hover:border-muted-foreground/20",
+                              onCategoryEdit
+                                ? "cursor-pointer"
+                                : "cursor-default"
+                            )}
+                            onClick={() => onCategoryEdit?.(transaction)}
+                            disabled={!onCategoryEdit}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{
+                                backgroundColor: getCategoryColor(
+                                  transactionCategories[transaction.id]
+                                ),
+                              }}
+                            />
+                            <span>
+                              {getCategoryEmoji(
+                                transactionCategories[transaction.id]
+                              )}
+                            </span>
+                            <span className="truncate max-w-[100px]">
+                              {transactionCategories[transaction.id]}
+                            </span>
+                            {onCategoryEdit && (
+                              <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                            )}
+                          </button>
+                          {transaction.needsReview && (
+                            <Badge
+                              variant="outline"
+                              className="text-amber-600 border-amber-300 bg-amber-50 text-xs px-1.5 py-0"
+                            >
+                              <AlertCircle className="h-3 w-3 mr-0.5" />
+                              Review
+                            </Badge>
+                          )}
+                          {transaction.isRecategorized && (
+                            <Badge
+                              variant="outline"
+                              className="text-blue-600 border-blue-300 bg-blue-50 text-xs px-1.5 py-0"
+                            >
+                              Edited
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div>
