@@ -192,11 +192,26 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             </Button>
           </div>
         ) : monthlyBudget === 0 ? (
-          <div className="text-center py-3 mb-4 border border-dashed border-border rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              Set a budget to track progress
-            </p>
-            <Button size="sm" onClick={handleStartEdit}>
+          <div className="mb-4">
+            <div className="flex items-end justify-between mb-3">
+              <div>
+                <p className="text-3xl font-medium tracking-tight">
+                  {formatCurrency(netExpenses)}
+                </p>
+                <p className="text-sm text-muted-foreground">total spent</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">
+                  {daysRemaining} days left
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStartEdit}
+              className="w-full"
+            >
               Set Budget
             </Button>
           </div>

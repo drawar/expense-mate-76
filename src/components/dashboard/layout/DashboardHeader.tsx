@@ -2,7 +2,6 @@
 import React from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { TimeframeTab } from "@/utils/dashboard";
 
 /**
@@ -50,31 +49,17 @@ function getPeriodLabel(timeframe: TimeframeTab): string {
 }
 
 /**
- * Component that displays the contextual dashboard header with period and spending
+ * Component that displays the contextual dashboard header with period
  */
 const DashboardHeader: React.FC = () => {
-  const { dashboardData, displayCurrency, activeTab } = useDashboardContext();
-  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
-
-  const metrics = dashboardData?.metrics || {
-    totalExpenses: 0,
-    totalReimbursed: 0,
-  };
-  const netExpenses =
-    (metrics.totalExpenses || 0) - (metrics.totalReimbursed || 0);
+  const { activeTab } = useDashboardContext();
   const periodLabel = getPeriodLabel(activeTab);
 
   return (
     <div className="flex items-center justify-between mb-6 mt-4">
-      <div>
-        <h1 className="text-2xl font-medium tracking-tight text-primary">
-          {periodLabel}
-        </h1>
-        <p className="text-muted-foreground mt-0.5 text-sm">
-          {formatCurrency(netExpenses)} spent
-        </p>
-      </div>
-
+      <h1 className="text-2xl font-medium tracking-tight text-primary">
+        {periodLabel}
+      </h1>
       <ThemeToggle />
     </div>
   );
