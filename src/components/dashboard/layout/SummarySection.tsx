@@ -2,7 +2,7 @@
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { SummaryCard, BudgetProgressCard } from "@/components/dashboard/cards";
-import { BarChartIcon, ArrowDownLeftIcon } from "lucide-react";
+import { ArrowDownLeftIcon } from "lucide-react";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 
 /**
@@ -37,31 +37,16 @@ const SummarySection: React.FC = () => {
     );
   }, [dashboardData]);
 
-  // Calculate net expenses (total expenses minus reimbursements)
-  const netExpenses =
-    (metrics?.totalExpenses || 0) - (metrics?.totalReimbursed || 0);
-
   const hasReimbursements = (metrics?.totalReimbursed || 0) > 0;
 
   return (
     <div className="space-y-4 w-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 animate-fadeIn">
-        {/* Net Expenses Card */}
-        <SummaryCard
-          title="Net Expenses"
-          icon={<BarChartIcon className="h-5 w-5 text-primary" />}
-          value={formatCurrency(netExpenses)}
-          trend={
-            metrics?.percentageChange !== undefined
-              ? metrics.percentageChange
-              : 0
-          }
-          cardColor="bg-gradient-to-br from-emerald-500/10 to-teal-600/10"
-          valueColor="text-emerald-800 dark:text-emerald-300"
-        />
-
         {/* Budget Progress Card */}
-        <BudgetProgressCard className="rounded-xl border border-border/50 bg-card" />
+        <BudgetProgressCard
+          className="rounded-xl border border-border/50 bg-card"
+          transactions={dashboardData?.filteredTransactions || []}
+        />
 
         {/* Reimbursements Card - only show when there are reimbursements */}
         {hasReimbursements && (

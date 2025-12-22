@@ -3,17 +3,16 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Currency, Transaction } from "@/types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CreditCardIcon, TagIcon, StoreIcon } from "lucide-react";
+import {
+  CreditCardIcon,
+  TagIcon,
+  StoreIcon,
+  LightbulbIcon,
+} from "lucide-react";
 import { Chevron } from "@/components/ui/chevron";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/core/currency";
-import {
-  SPENDING_TIERS,
-  SpendingTier,
-  getSpendingTier,
-} from "@/utils/constants/categories";
-
 // Color palette for merchants
 const MERCHANT_COLORS = [
   "#10b981",
@@ -27,13 +26,6 @@ const MERCHANT_COLORS = [
   "#6366f1",
   "#84cc16",
 ];
-
-// Colors for spending tiers
-const TIER_COLORS: Record<SpendingTier, string> = {
-  Essentials: "#10b981", // Green
-  Lifestyle: "#f59e0b", // Amber
-  Other: "#6b7280", // Gray
-};
 
 interface SpendingDistributionCardProps {
   categoryData: ChartDataItem[];
@@ -96,31 +88,42 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
     return topCategories;
   }, [categoryData, maxCategories]);
 
-  // Calculate spending tier summary from category data
-  const tierSummary = React.useMemo(() => {
+  // Calculate smart swap suggestions based on spending patterns
+  const smartSwaps = React.useMemo(() => {
     if (!categoryData || categoryData.length === 0) return null;
 
-    const tierTotals: Record<SpendingTier, number> = {
-      Essentials: 0,
-      Lifestyle: 0,
-      Other: 0,
-    };
+    const swaps: { tip: string; savings: number }[] = [];
 
-    let total = 0;
-    categoryData.forEach((item) => {
-      const tier = getSpendingTier(item.name);
-      tierTotals[tier] += item.value;
-      total += item.value;
-    });
+    // Find Food & Drinks spending
+    const foodDrinks = categoryData.find((c) => c.name === "Food & Drinks");
+    if (foodDrinks && foodDrinks.value > 100) {
+      // Suggest 30% savings from cooking at home
+      swaps.push({
+        tip: "Cook 2 more meals/week",
+        savings: Math.round(foodDrinks.value * 0.3),
+      });
+    }
 
-    if (total === 0) return null;
+    // Find Shopping spending
+    const shopping = categoryData.find((c) => c.name === "Shopping");
+    if (shopping && shopping.value > 50) {
+      swaps.push({
+        tip: "Wait 24h before purchases",
+        savings: Math.round(shopping.value * 0.2),
+      });
+    }
 
-    return SPENDING_TIERS.map((tier) => ({
-      name: tier,
-      value: tierTotals[tier],
-      percentage: Math.round((tierTotals[tier] / total) * 100),
-      color: TIER_COLORS[tier],
-    })).filter((item) => item.value > 0);
+    // Find Entertainment spending
+    const entertainment = categoryData.find((c) => c.name === "Entertainment");
+    if (entertainment && entertainment.value > 30) {
+      swaps.push({
+        tip: "Try free activities",
+        savings: Math.round(entertainment.value * 0.4),
+      });
+    }
+
+    // Return top 2 suggestions sorted by savings
+    return swaps.sort((a, b) => b.savings - a.savings).slice(0, 2);
   }, [categoryData]);
 
   // Process payment method data
@@ -232,30 +235,6 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
       <CardContent>
         {activeData && activeData.length > 0 ? (
           <div className="mt-2 space-y-3">
-            {/* Spending Tier Summary - only show in category view */}
-            {viewMode === "category" &&
-              tierSummary &&
-              tierSummary.length > 0 && (
-                <div className="flex gap-2 pb-3 border-b border-border/50">
-                  {tierSummary.map((tier) => (
-                    <div
-                      key={tier.name}
-                      className="flex-1 text-center px-2 py-1.5 rounded-md bg-muted/50"
-                    >
-                      <div className="text-xs text-muted-foreground">
-                        {tier.name}
-                      </div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: tier.color }}
-                      >
-                        {tier.percentage}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
             <div className="space-y-2">
               {activeData.map((item, index) => (
                 <div
@@ -302,6 +281,29 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
                   <Chevron direction="right" size="small" className="ml-1" />
                 </Link>
               )}
+
+            {/* Smart Swaps - only show in category view */}
+            {viewMode === "category" && smartSwaps && smartSwaps.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-primary mb-2">
+                  <LightbulbIcon className="h-3.5 w-3.5" />
+                  Smart swaps
+                </div>
+                <div className="space-y-1.5">
+                  {smartSwaps.map((swap, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <span className="text-muted-foreground">{swap.tip}</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        Save {CurrencyService.format(swap.savings, currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center py-4 text-muted-foreground">

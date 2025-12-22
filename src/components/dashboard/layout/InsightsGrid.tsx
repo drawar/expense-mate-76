@@ -5,7 +5,6 @@ import { Currency, PaymentMethod } from "@/types";
 import {
   SpendingTrendCard,
   CardOptimizationCard,
-  SavingsPotentialCard,
   UnusualSpendingCard,
   SpendingDistributionCard,
 } from "@/components/dashboard/cards";
@@ -82,15 +81,6 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           maxCategories={4}
           maxMerchants={5}
           highlightTopMethod={true}
-        />
-
-        {/* Savings Potential Card */}
-        <SavingsPotentialCard
-          title="Savings Potential"
-          transactions={filteredTransactions}
-          savingsGoalPercentage={20}
-          currency={currency}
-          className={commonCardClass}
         />
 
         {/* Spending Trends Card */}
