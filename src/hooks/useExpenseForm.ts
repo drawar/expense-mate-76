@@ -101,6 +101,9 @@ export const useExpenseForm = ({
       notes: defaultValues?.notes || "",
       mcc: defaultValues?.mcc || null,
       rewardPoints: defaultValues?.rewardPoints || "",
+      promoBonusPoints: defaultValues?.promoBonusPoints || "",
+      basePoints: defaultValues?.basePoints || "",
+      bonusPoints: defaultValues?.bonusPoints || "",
     },
   });
 

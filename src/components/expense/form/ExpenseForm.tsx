@@ -99,17 +99,41 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
       console.log("Form submission - Points calculation:", pointsCalculation);
 
-      // Use edited reward points from form field if provided, otherwise use calculated
-      // Handle empty field as zero points
-      const finalRewardPoints =
-        values.rewardPoints && (values.rewardPoints as string).trim() !== ""
-          ? Number(values.rewardPoints)
-          : pointsCalculation?.totalPoints || 0;
+      // Get all editable point values from form (user can override any of these)
+      const basePoints =
+        values.basePoints && (values.basePoints as string).trim() !== ""
+          ? Number(values.basePoints)
+          : pointsCalculation?.basePoints || 0;
 
-      // Always preserve basePoints and bonusPoints from calculation
-      // This maintains the breakdown for reference even when total is edited
+      const bonusPoints =
+        values.bonusPoints && (values.bonusPoints as string).trim() !== ""
+          ? Number(values.bonusPoints)
+          : pointsCalculation?.bonusPoints || 0;
+
+      const promoBonusPoints =
+        values.promoBonusPoints &&
+        (values.promoBonusPoints as string).trim() !== ""
+          ? Number(values.promoBonusPoints)
+          : 0;
+
+      // Total is always calculated from the three components
+      const finalRewardPoints = basePoints + bonusPoints + promoBonusPoints;
+
+      console.log("Form submission - Points breakdown:", {
+        basePoints,
+        bonusPoints,
+        promoBonusPoints,
+        total: finalRewardPoints,
+      });
+
+      // Preserve the selected date with current time in local timezone
+      // This ensures the date displays correctly regardless of timezone
+      const selectedDate = values.date as Date;
+      const now = new Date();
+      selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
       const transactionData: Omit<Transaction, "id"> = {
-        date: (values.date as Date).toISOString().split("T")[0], // YYYY-MM-DD format
+        date: selectedDate.toISOString(), // Full ISO string preserves timezone correctly
         merchant: merchantData,
         amount: Number(values.amount),
         currency: values.currency as Transaction["currency"],
@@ -117,8 +141,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         paymentAmount: paymentAmount,
         paymentCurrency: paymentMethod.currency,
         rewardPoints: finalRewardPoints,
-        basePoints: pointsCalculation?.basePoints || 0,
-        bonusPoints: pointsCalculation?.bonusPoints || 0,
+        basePoints: basePoints,
+        bonusPoints: bonusPoints,
+        promoBonusPoints: promoBonusPoints,
         notes: values.notes as string,
         isContactless:
           !(values.isOnline as boolean) && (values.isContactless as boolean),

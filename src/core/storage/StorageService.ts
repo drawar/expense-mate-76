@@ -275,6 +275,7 @@ export class StorageService {
         total_points: transaction.rewardPoints,
         base_points: transaction.basePoints,
         bonus_points: transaction.bonusPoints,
+        promo_bonus_points: transaction.promoBonusPoints || 0,
         is_contactless: transaction.isContactless,
         notes: transaction.notes,
         reimbursement_amount: transaction.reimbursementAmount,
@@ -495,6 +496,7 @@ export class StorageService {
         rewardPoints: row.total_points || 0,
         basePoints: row.base_points || 0,
         bonusPoints: row.bonus_points || 0,
+        promoBonusPoints: row.promo_bonus_points || 0,
         isContactless: row.is_contactless || false,
         notes: row.notes || undefined,
         reimbursementAmount:
@@ -575,10 +577,12 @@ export class StorageService {
       const rewardPoints = transactionData.rewardPoints || 0;
       const basePoints = transactionData.basePoints || 0;
       const bonusPoints = transactionData.bonusPoints || 0;
+      const promoBonusPoints = transactionData.promoBonusPoints || 0;
       console.log("Using reward points from transaction data:", {
         rewardPoints,
         basePoints,
         bonusPoints,
+        promoBonusPoints,
       });
 
       // First, ensure merchant exists
@@ -631,6 +635,7 @@ export class StorageService {
         total_points: rewardPoints,
         base_points: basePoints,
         bonus_points: bonusPoints,
+        promo_bonus_points: promoBonusPoints,
         is_contactless: transactionData.isContactless,
         notes: transactionData.notes,
         reimbursement_amount: transactionData.reimbursementAmount,
@@ -717,6 +722,7 @@ export class StorageService {
         rewardPoints: data.total_points || 0,
         basePoints: data.base_points || 0,
         bonusPoints: data.bonus_points || 0,
+        promoBonusPoints: data.promo_bonus_points || 0,
         isContactless: data.is_contactless || false,
         notes: data.notes || undefined,
         reimbursementAmount: data.reimbursement_amount
@@ -831,6 +837,7 @@ export class StorageService {
           total_points: updates.rewardPoints,
           base_points: updates.basePoints ?? 0,
           bonus_points: updates.bonusPoints ?? 0,
+          promo_bonus_points: updates.promoBonusPoints ?? 0,
           is_contactless: updates.isContactless,
           notes: updates.notes,
           reimbursement_amount: updates.reimbursementAmount,

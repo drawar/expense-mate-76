@@ -37,6 +37,39 @@ export const formSchema = z
         },
         { message: "Please enter a number with up to 2 decimal places" }
       ),
+    promoBonusPoints: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true; // Empty is valid (will be treated as 0)
+          const num = Number(val);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: "Please enter a valid non-negative number" }
+      ),
+    basePoints: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          const num = Number(val);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: "Please enter a valid non-negative number" }
+      ),
+    bonusPoints: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          const num = Number(val);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: "Please enter a valid non-negative number" }
+      ),
   })
   .superRefine((data, ctx) => {
     // Validate amount field based on MCC

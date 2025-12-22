@@ -1,17 +1,35 @@
 // components/dashboard/cards/BudgetProgressCard.tsx
-import React, { useState, useEffect } from "react";
-import { TargetIcon, PencilIcon, CheckIcon, XIcon } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  TargetIcon,
+  PencilIcon,
+  CheckIcon,
+  XIcon,
+  LightbulbIcon,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
+import { Transaction } from "@/types";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { getSpendingTier } from "@/utils/constants/categories";
 
 const BUDGET_STORAGE_KEY = "expense-mate-monthly-budget";
 
+// Categories that are typically discretionary and can be cut
+const DISCRETIONARY_CATEGORIES = [
+  "Food & Drinks",
+  "Shopping",
+  "Entertainment",
+  "Travel",
+];
+
 interface BudgetProgressCardProps {
   className?: string;
+  transactions?: Transaction[];
 }
 
 /**
@@ -19,6 +37,7 @@ interface BudgetProgressCardProps {
  */
 const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   className = "",
+  transactions = [],
 }) => {
   const { dashboardData, displayCurrency } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
@@ -101,6 +120,51 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
       handleCancelEdit();
     }
   };
+
+  // Calculate recovery suggestions when over budget
+  const recoverySuggestions = useMemo(() => {
+    if (!isOverBudget || transactions.length === 0) return [];
+
+    // Calculate spending by category
+    const categorySpending: Record<string, number> = {};
+    transactions.forEach((tx) => {
+      const category = getEffectiveCategory(tx);
+      categorySpending[category] =
+        (categorySpending[category] || 0) + tx.amount;
+    });
+
+    // Find discretionary categories that can be cut
+    const suggestions: {
+      category: string;
+      amount: number;
+      suggestion: string;
+    }[] = [];
+    const overAmount = Math.abs(remaining);
+
+    DISCRETIONARY_CATEGORIES.forEach((category) => {
+      const spent = categorySpending[category] || 0;
+      if (spent > 0) {
+        // Suggest cutting 50% of discretionary spending
+        const cutAmount = Math.min(spent * 0.5, overAmount);
+        if (cutAmount >= 10) {
+          let suggestion = "";
+          if (category === "Food & Drinks") {
+            suggestion = "Cook at home more";
+          } else if (category === "Shopping") {
+            suggestion = "Pause non-essential purchases";
+          } else if (category === "Entertainment") {
+            suggestion = "Try free activities";
+          } else if (category === "Travel") {
+            suggestion = "Postpone trips";
+          }
+          suggestions.push({ category, amount: cutAmount, suggestion });
+        }
+      }
+    });
+
+    // Sort by potential savings and take top 3
+    return suggestions.sort((a, b) => b.amount - a.amount).slice(0, 3);
+  }, [isOverBudget, transactions, remaining]);
 
   // Determine status color
   const getStatusColor = () => {
@@ -238,6 +302,31 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
                 </span>
               )}
             </div>
+
+            {/* Recovery suggestions when over budget */}
+            {isOverBudget && recoverySuggestions.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 mb-2">
+                  <LightbulbIcon className="h-3.5 w-3.5" />
+                  How to recover:
+                </div>
+                <div className="space-y-1.5">
+                  {recoverySuggestions.map((item) => (
+                    <div
+                      key={item.category}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <span className="text-muted-foreground">
+                        {item.suggestion}
+                      </span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        Save {formatCurrency(item.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -280,6 +280,7 @@ export type Database = {
           amount: number;
           base_points: number | null;
           bonus_points: number | null;
+          promo_bonus_points: number | null; // One-time promotional bonus points
           category: string | null; // Legacy field (synced with user_category)
           created_at: string | null;
           currency: string | null;
@@ -304,6 +305,7 @@ export type Database = {
           amount: number;
           base_points?: number | null;
           bonus_points?: number | null;
+          promo_bonus_points?: number | null;
           category?: string | null;
           created_at?: string | null;
           currency?: string | null;
@@ -328,6 +330,7 @@ export type Database = {
           amount?: number;
           base_points?: number | null;
           bonus_points?: number | null;
+          promo_bonus_points?: number | null;
           category?: string | null;
           created_at?: string | null;
           currency?: string | null;

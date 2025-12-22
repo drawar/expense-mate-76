@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -16,6 +15,17 @@ import { EditIcon, TrashIcon, DownloadIcon, EyeIcon } from "lucide-react";
 import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { format, isToday, isYesterday, parseISO } from "date-fns";
+
+/**
+ * Format date for group header (Today, Yesterday, or full date)
+ */
+function formatDateGroupHeader(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "EEEE, MMMM d, yyyy");
+}
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -72,6 +82,38 @@ const TransactionTable = ({
     );
   }, [transactions]);
 
+  // Group transactions by date for better organization
+  const groupedTransactions = useMemo(() => {
+    const groups: { date: string; transactions: Transaction[] }[] = [];
+    let currentDate = "";
+    let currentGroup: Transaction[] = [];
+
+    // Transactions are already sorted by date (desc), group them
+    transactions.forEach((tx) => {
+      const txDate =
+        typeof tx.date === "string"
+          ? tx.date.split("T")[0]
+          : format(tx.date, "yyyy-MM-dd");
+
+      if (txDate !== currentDate) {
+        if (currentGroup.length > 0) {
+          groups.push({ date: currentDate, transactions: currentGroup });
+        }
+        currentDate = txDate;
+        currentGroup = [tx];
+      } else {
+        currentGroup.push(tx);
+      }
+    });
+
+    // Don't forget the last group
+    if (currentGroup.length > 0) {
+      groups.push({ date: currentDate, transactions: currentGroup });
+    }
+
+    return groups;
+  }, [transactions]);
+
   return (
     <div className="w-full">
       <div className="flex justify-end mb-4">
@@ -90,7 +132,7 @@ const TransactionTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead className="w-[80px]">Time</TableHead>
               <TableHead>Merchant</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Amount</TableHead>
@@ -107,105 +149,142 @@ const TransactionTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>{formatDate(transaction.date)}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {transaction.merchant.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {transaction.merchant.isOnline ? "Online" : "In-store"}
-                      {transaction.isContactless &&
-                        !transaction.merchant.isOnline &&
-                        " • Contactless"}
-                    </div>
-                  </TableCell>
-                  <TableCell>{transactionCategories[transaction.id]}</TableCell>
-                  <TableCell>
-                    <div>
-                      {CurrencyService.format(
-                        transaction.amount,
-                        transaction.currency
-                      )}
-                    </div>
-                    {transaction.currency !== transaction.paymentCurrency && (
-                      <div className="text-xs text-muted-foreground">
-                        {CurrencyService.format(
-                          transaction.paymentAmount,
-                          transaction.paymentCurrency
+              groupedTransactions.map((group) => (
+                <>
+                  {/* Date Header Row */}
+                  <TableRow
+                    key={`date-${group.date}`}
+                    className="bg-muted/50 hover:bg-muted/50"
+                  >
+                    <TableCell
+                      colSpan={7}
+                      className="py-2 font-semibold text-sm text-muted-foreground"
+                    >
+                      {formatDateGroupHeader(group.date)}
+                    </TableCell>
+                  </TableRow>
+                  {/* Transaction Rows for this date */}
+                  {group.transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {(() => {
+                          const dateStr =
+                            typeof transaction.date === "string"
+                              ? transaction.date
+                              : transaction.date.toISOString();
+                          // Only show time if the date string contains time info (has T and isn't just YYYY-MM-DD)
+                          const hasTime =
+                            dateStr.includes("T") && dateStr.length > 10;
+                          if (!hasTime) return "—";
+                          return format(parseISO(dateStr), "h:mm a");
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {transaction.merchant.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {transaction.merchant.isOnline
+                            ? "Online"
+                            : "In-store"}
+                          {transaction.isContactless &&
+                            !transaction.merchant.isOnline &&
+                            " • Contactless"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {transactionCategories[transaction.id]}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          {CurrencyService.format(
+                            transaction.amount,
+                            transaction.currency
+                          )}
+                        </div>
+                        {transaction.currency !==
+                          transaction.paymentCurrency && (
+                          <div className="text-xs text-muted-foreground">
+                            {CurrencyService.format(
+                              transaction.paymentAmount,
+                              transaction.paymentCurrency
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {transaction.paymentMethod.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {transaction.paymentMethod.issuer}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {transaction.rewardPoints > 0 ? (
-                      <div className="font-medium">
-                        {transaction.rewardPoints.toLocaleString()}
-                      </div>
-                    ) : transaction.paymentMethod.type === "credit_card" ? (
-                      <div className="text-amber-600 font-medium">
-                        {Math.round(transaction.amount * 0.4).toLocaleString()}*
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">-</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onView(transaction)}
-                      >
-                        <EyeIcon
-                          className="h-4 w-4"
-                          style={{
-                            color: "var(--color-icon-secondary)",
-                            strokeWidth: 2.5,
-                          }}
-                        />
-                        <span className="sr-only">View</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(transaction)}
-                      >
-                        <EditIcon
-                          className="h-4 w-4"
-                          style={{
-                            color: "var(--color-icon-secondary)",
-                            strokeWidth: 2.5,
-                          }}
-                        />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(transaction)}
-                      >
-                        <TrashIcon
-                          className="h-4 w-4"
-                          style={{
-                            color: "var(--color-icon-secondary)",
-                            strokeWidth: 2.5,
-                          }}
-                        />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {transaction.paymentMethod.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {transaction.paymentMethod.issuer}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {transaction.rewardPoints > 0 ? (
+                          <div className="font-medium">
+                            {transaction.rewardPoints.toLocaleString()}
+                          </div>
+                        ) : transaction.paymentMethod.type === "credit_card" ? (
+                          <div className="text-amber-600 font-medium">
+                            {Math.round(
+                              transaction.amount * 0.4
+                            ).toLocaleString()}
+                            *
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground">-</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onView(transaction)}
+                          >
+                            <EyeIcon
+                              className="h-4 w-4"
+                              style={{
+                                color: "var(--color-icon-secondary)",
+                                strokeWidth: 2.5,
+                              }}
+                            />
+                            <span className="sr-only">View</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(transaction)}
+                          >
+                            <EditIcon
+                              className="h-4 w-4"
+                              style={{
+                                color: "var(--color-icon-secondary)",
+                                strokeWidth: 2.5,
+                              }}
+                            />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDelete(transaction)}
+                          >
+                            <TrashIcon
+                              className="h-4 w-4"
+                              style={{
+                                color: "var(--color-icon-secondary)",
+                                strokeWidth: 2.5,
+                              }}
+                            />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
               ))
             )}
           </TableBody>

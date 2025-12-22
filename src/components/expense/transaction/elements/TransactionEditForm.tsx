@@ -56,6 +56,15 @@ export const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
           notes: transaction.notes,
           mcc: transaction.merchant.mcc,
           rewardPoints: transaction.rewardPoints.toString(),
+          basePoints: transaction.basePoints
+            ? transaction.basePoints.toString()
+            : "0",
+          bonusPoints: transaction.bonusPoints
+            ? transaction.bonusPoints.toString()
+            : "0",
+          promoBonusPoints: transaction.promoBonusPoints
+            ? transaction.promoBonusPoints.toString()
+            : "",
         }}
       />
 

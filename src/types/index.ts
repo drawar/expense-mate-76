@@ -12,6 +12,7 @@ export type Transaction = {
   rewardPoints: number;
   basePoints: number;
   bonusPoints: number;
+  promoBonusPoints?: number; // One-time promotional bonus points not from regular reward rules
   isContactless: boolean;
   notes?: string;
   reimbursementAmount?: number;
@@ -133,4 +134,109 @@ export interface DbMerchant {
   is_deleted?: boolean;
   created_at: string;
   updated_at?: string;
+}
+
+// =============================================================================
+// Insight Types
+// =============================================================================
+
+export type InsightCategory =
+  | "spending"
+  | "budget"
+  | "savings"
+  | "behavior"
+  | "optimization"
+  | "milestone"
+  | "warning";
+
+export type InsightSeverity = "info" | "success" | "warning" | "danger";
+
+export type InsightConditionType =
+  | "category_ratio"
+  | "category_amount"
+  | "tier_ratio"
+  | "spending_trend"
+  | "budget_status"
+  | "transaction_pattern"
+  | "merchant_pattern"
+  | "reward_optimization"
+  | "savings_rate"
+  | "milestone"
+  | "time_based";
+
+export type InsightActionType = "link" | "modal" | "none";
+
+/**
+ * Insight template from the database
+ */
+export interface Insight {
+  id: string;
+  category: InsightCategory;
+  title: string;
+  messageTemplate: string;
+  icon?: string;
+  severity: InsightSeverity;
+  conditionType: InsightConditionType;
+  conditionParams: Record<string, unknown>;
+  actionText?: string;
+  actionType?: InsightActionType;
+  actionTarget?: string;
+  priority: number;
+  isActive: boolean;
+  isDismissible: boolean;
+  cooldownDays?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Database row type for insights
+ */
+export interface DbInsight {
+  id: string;
+  category: string;
+  title: string;
+  message_template: string;
+  icon: string | null;
+  severity: string;
+  condition_type: string;
+  condition_params: Record<string, unknown>;
+  action_text: string | null;
+  action_type: string | null;
+  action_target: string | null;
+  priority: number;
+  is_active: boolean;
+  is_dismissible: boolean;
+  cooldown_days: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * A rendered insight with template values filled in
+ */
+export interface RenderedInsight {
+  id: string;
+  insightId: string;
+  category: InsightCategory;
+  title: string;
+  message: string; // Template with values filled in
+  icon?: string;
+  severity: InsightSeverity;
+  actionText?: string;
+  actionType?: InsightActionType;
+  actionTarget?: string;
+  priority: number;
+  isDismissible: boolean;
+  dismissedAt?: string;
+}
+
+/**
+ * User insight dismissal tracking
+ */
+export interface UserInsightDismissal {
+  id: string;
+  userId: string;
+  insightId: string;
+  dismissedAt: string;
 }

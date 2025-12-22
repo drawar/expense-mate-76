@@ -3,10 +3,12 @@ export { default as Card } from "./Card";
 export { default as SummaryCard } from "./SummaryCard";
 export { default as BudgetProgressCard } from "./BudgetProgressCard";
 export { default as CardOptimizationCard } from "./CardOptimizationCard";
+export { default as InsightsCard } from "./InsightsCard";
 export { default as PaymentMethodCard } from "./PaymentMethodCard";
 export { default as SavingsPotentialCard } from "./SavingsPotentialCard";
 export { default as SpendingCategoryCard } from "./SpendingCategoryCard";
 export { default as SpendingDistributionCard } from "./SpendingDistributionCard";
+export { default as SpendingHealthCard } from "./SpendingHealthCard";
 export { default as SpendingTrendCard } from "./SpendingTrendCard";
 export { default as UnusualSpendingCard } from "./UnusualSpendingCard";
 
