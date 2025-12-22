@@ -29,6 +29,17 @@ function parseLocalDate(dateString: string): Date {
 }
 
 /**
+ * Get a YYYY-MM-DD key from a Date using LOCAL timezone (not UTC)
+ * This fixes timezone issues where transactions appear on wrong days
+ */
+function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Utility functions for processing transaction data into chart-friendly formats
  */
 export const chartUtils = {
@@ -334,13 +345,14 @@ export const chartUtils = {
 
       switch (groupBy) {
         case "day":
-          key = date.toISOString().split("T")[0]; // YYYY-MM-DD
+          // Use local date key to avoid timezone shift issues
+          key = getLocalDateKey(date);
           break;
         case "week": {
-          // Get the start of the week (Sunday)
+          // Get the start of the week (Sunday) in local time
           const startOfWeek = new Date(date);
           startOfWeek.setDate(date.getDate() - date.getDay());
-          key = startOfWeek.toISOString().split("T")[0];
+          key = getLocalDateKey(startOfWeek);
           break;
         }
         case "month":
@@ -350,7 +362,8 @@ export const chartUtils = {
           key = `${date.getFullYear()}`;
           break;
         default:
-          key = date.toISOString().split("T")[0]; // Default to day
+          // Use local date key to avoid timezone shift issues
+          key = getLocalDateKey(date);
       }
 
       if (!grouped.has(key)) {
