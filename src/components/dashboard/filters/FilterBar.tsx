@@ -1,11 +1,17 @@
 // components/dashboard/filters/FilterBar.tsx
-import React from "react";
-import { Filter } from "lucide-react";
+import React, { useState } from "react";
+import { SlidersHorizontal, Calendar, Check } from "lucide-react";
 import { TimeframeTab } from "@/utils/dashboard";
 import { Currency } from "@/types";
 import DisplayCurrencySelect from "./DisplayCurrencySelect";
-import StatementCycleFilter from "./StatementCycleFilter";
 import TimeframeSelect from "./TimeframeSelect";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import "@/components/dashboard/styles/dashboard-filters.css";
 
 /**
@@ -26,7 +32,7 @@ interface FilterBarProps {
 }
 
 /**
- * Global filter bar component for dashboard that unifies all filter controls
+ * Compact filter bar - single row with currency, timeframe, and filter options
  */
 const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
   const {
@@ -40,36 +46,94 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
     handleStatementCycleDayChange,
   } = filters;
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (isNaN(value)) return;
+    const validDay = Math.max(1, Math.min(31, value));
+    handleStatementCycleDayChange(validDay);
+  };
+
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       {/* Currency Selector */}
-      <div className="flex items-center h-10">
-        <DisplayCurrencySelect
-          value={displayCurrency}
-          onChange={handleCurrencyChange}
-          className="component-hover-box"
-        />
+      <DisplayCurrencySelect
+        value={displayCurrency}
+        onChange={handleCurrencyChange}
+        className="component-hover-box h-9 px-2 rounded-lg"
+      />
+
+      {/* Timeframe Selector */}
+      <div className="component-hover-box h-9 px-2 rounded-lg flex items-center">
+        <TimeframeSelect value={activeTab} onChange={handleTimeframeChange} />
       </div>
 
-      {/* Time Frame Selector */}
-      <div className="flex items-center h-10 component-hover-box">
-        <Filter className="h-5 w-5 text-muted-foreground mr-2" />
-        <TimeframeSelect 
-          value={activeTab} 
-          onChange={handleTimeframeChange} 
-        />
-      </div>
+      {/* Filter Options Popover */}
+      <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-11 w-11 p-0 component-hover-box rounded-lg ${useStatementMonth ? "text-primary" : ""}`}
+            aria-label="Filter options"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3" align="end">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Date Mode
+            </p>
 
-      {/* Statement Month toggle */}
-      <div className="flex items-center h-10">
-        <StatementCycleFilter
-          useStatementMonth={useStatementMonth}
-          setUseStatementMonth={handleStatementMonthToggle}
-          statementCycleDay={statementCycleDay}
-          setStatementCycleDay={handleStatementCycleDayChange}
-          className="component-hover-box"
-        />
-      </div>
+            {/* Calendar Month Option */}
+            <button
+              onClick={() => handleStatementMonthToggle(false)}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors min-h-[44px] ${
+                !useStatementMonth
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm flex-1 text-left">Calendar Month</span>
+              {!useStatementMonth && <Check className="h-4 w-4" />}
+            </button>
+
+            {/* Statement Month Option */}
+            <button
+              onClick={() => handleStatementMonthToggle(true)}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors min-h-[44px] ${
+                useStatementMonth
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted"
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm flex-1 text-left">Statement Month</span>
+              {useStatementMonth && <Check className="h-4 w-4" />}
+            </button>
+
+            {/* Statement Day Input */}
+            {useStatementMonth && (
+              <div className="pt-2 border-t border-border">
+                <label className="text-xs text-muted-foreground">
+                  Statement cycle starts on day:
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={statementCycleDay}
+                  onChange={handleDayChange}
+                  className="h-8 mt-1.5"
+                />
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

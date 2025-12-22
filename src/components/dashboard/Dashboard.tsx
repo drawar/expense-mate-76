@@ -7,10 +7,13 @@ import {
   InsightsGrid,
   RecentTransactions,
   EmptyState,
+  LoadingDashboard,
 } from "./layout";
 import { FilterBar } from "./filters";
 import { PieChartIcon } from "lucide-react";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import FAB from "@/components/common/FAB";
+import PullToRefresh from "@/components/common/PullToRefresh";
 import { TimeframeTab } from "@/utils/dashboard";
 import { Currency } from "@/types";
 import { useBudget } from "@/hooks/useBudget";
@@ -35,6 +38,7 @@ export function Dashboard() {
     setDisplayCurrency,
     setUseStatementMonth,
     setStatementCycleDay,
+    refreshData,
   } = useDashboardContext();
 
   // Get monthly budget for current currency
@@ -83,23 +87,9 @@ export function Dashboard() {
     );
   }
 
-  // Loading state
+  // Loading state - use shimmer skeleton
   if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
-          <DashboardHeader />
-          <div className="animate-pulse space-y-6 mt-10">
-            <div className="h-28 bg-muted rounded-xl" />
-            <div className="h-48 bg-muted rounded-xl" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="h-64 bg-muted rounded-xl" />
-              <div className="h-64 bg-muted rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingDashboard />;
   }
 
   // No transactions state
@@ -123,25 +113,18 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen">
+    <PullToRefresh onRefresh={refreshData} className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
         <DashboardHeader />
 
-        {/* Dashboard Title and Global Filter Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-medium tracking-tight text-primary">
-            Expense Summary
-          </h2>
-
-          {/* Global Filter Bar */}
-          <FilterBar filters={filterState} />
-        </div>
+        {/* Global Filter Bar */}
+        <FilterBar filters={filterState} className="mb-6" />
 
         <ErrorBoundary>
           {/* Summary Section */}
           <SummarySection />
 
-          {/* Insights Grid */}
+          {/* Insights Grid - 24px margin top for section spacing */}
           <InsightsGrid
             dashboardData={dashboardData}
             paymentMethods={paymentMethods}
@@ -156,8 +139,11 @@ export function Dashboard() {
             displayCurrency={displayCurrency}
           />
         </ErrorBoundary>
+
+        {/* Floating Action Button */}
+        <FAB to="/add-expense" label="Add Expense" />
       </div>
-    </div>
+    </PullToRefresh>
   );
 }
 

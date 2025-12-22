@@ -1,36 +1,25 @@
 // components/dashboard/layout/SummarySection.tsx
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { SummaryCard, BudgetProgressCard } from "@/components/dashboard/cards";
+import { SummaryCard, BudgetSpendingCard } from "@/components/dashboard/cards";
 import { ArrowDownLeftIcon } from "lucide-react";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 
 /**
- * Dashboard section displaying summary statistics and key metrics
+ * Dashboard section displaying unified budget + spending card
  */
 const SummarySection: React.FC = () => {
   const { dashboardData, displayCurrency } = useDashboardContext();
-
-  // Use the custom currency formatter hook
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Ensure we have valid data structure to prevent errors
   const metrics = dashboardData?.metrics || {
-    totalExpenses: 0,
-    transactionCount: 0,
-    averageAmount: 0,
-    totalRewardPoints: 0,
-    percentageChange: 0,
     totalReimbursed: 0,
   };
 
   // Calculate count of transactions with reimbursements
   const reimbursedTransactionsCount = React.useMemo(() => {
-    // Get the filtered transactions from dashboardData
     const filteredTransactions = dashboardData?.filteredTransactions || [];
-
     if (!filteredTransactions.length) return 0;
-
     return filteredTransactions.reduce(
       (count, tx) => (tx.reimbursementAmount ? count + 1 : count),
       0
@@ -40,16 +29,16 @@ const SummarySection: React.FC = () => {
   const hasReimbursements = (metrics?.totalReimbursed || 0) > 0;
 
   return (
-    <div className="space-y-4 w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 animate-fadeIn">
-        {/* Budget Progress Card */}
-        <BudgetProgressCard
-          className="rounded-xl border border-border/50 bg-card"
-          transactions={dashboardData?.filteredTransactions || []}
-        />
+    <div className="w-full animate-fadeIn">
+      {/* Unified Budget + Spending Card */}
+      <BudgetSpendingCard
+        className="rounded-xl border border-border/50 bg-card"
+        transactions={dashboardData?.filteredTransactions || []}
+      />
 
-        {/* Reimbursements Card - only show when there are reimbursements */}
-        {hasReimbursements && (
+      {/* Reimbursements Card - only show when there are reimbursements */}
+      {hasReimbursements && (
+        <div className="mt-4">
           <SummaryCard
             title="Reimbursements"
             icon={<ArrowDownLeftIcon className="h-5 w-5 text-primary" />}
@@ -58,8 +47,8 @@ const SummarySection: React.FC = () => {
             cardColor="bg-[var(--color-accent-subtle)]"
             valueColor="text-[var(--color-success)]"
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

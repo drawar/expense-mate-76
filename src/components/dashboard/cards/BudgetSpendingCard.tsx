@@ -1,11 +1,17 @@
-// components/dashboard/cards/BudgetProgressCard.tsx
+// components/dashboard/cards/BudgetSpendingCard.tsx
+/**
+ * Unified Budget + Spending Card
+ * Combines budget progress with top spending categories in a single card
+ */
+
 import React, { useState, useEffect, useMemo } from "react";
 import {
   TargetIcon,
   PencilIcon,
   CheckIcon,
   XIcon,
-  LightbulbIcon,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -14,30 +20,26 @@ import { Input } from "@/components/ui/input";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { Transaction } from "@/types";
-import { getEffectiveCategory } from "@/utils/categoryMapping";
-import { getSpendingTier } from "@/utils/constants/categories";
+import {
+  buildCategoryHierarchy,
+  ParentCategorySpending,
+} from "@/utils/dashboard/categoryHierarchy";
 
 const BUDGET_STORAGE_KEY = "expense-mate-monthly-budget";
 
-// Categories that are typically discretionary and can be cut
-const DISCRETIONARY_CATEGORIES = [
-  "Food & Drinks",
-  "Shopping",
-  "Entertainment",
-  "Travel",
-];
-
-interface BudgetProgressCardProps {
+interface BudgetSpendingCardProps {
   className?: string;
   transactions?: Transaction[];
+  onCategoryClick?: (categoryId: string, categoryName: string) => void;
 }
 
 /**
- * Card component that displays budget progress with editable monthly budget
+ * Unified card showing budget progress + top spending categories
  */
-const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
+const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   className = "",
   transactions = [],
+  onCategoryClick,
 }) => {
   const { dashboardData, displayCurrency } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
@@ -46,8 +48,9 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   const [monthlyBudget, setMonthlyBudget] = useState<number>(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
-  // Load budget from localStorage on mount
+  // Load budget from localStorage
   useEffect(() => {
     const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
     if (stored) {
@@ -89,10 +92,20 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   const progress = monthlyBudget > 0 ? (netExpenses / monthlyBudget) * 100 : 0;
   const remaining = monthlyBudget - netExpenses;
   const isOverBudget = remaining < 0;
-
-  // Calculate expected progress based on days elapsed
   const expectedProgress = (dayOfMonth / daysInMonth) * 100;
-  const isOnTrack = progress <= expectedProgress + 10; // 10% buffer
+  const isOnTrack = progress <= expectedProgress + 10;
+
+  // Build category hierarchy
+  const hierarchyData = useMemo(
+    () => buildCategoryHierarchy(transactions, displayCurrency),
+    [transactions, displayCurrency]
+  );
+
+  // Get top 3 categories (or all if expanded)
+  const displayCategories = useMemo(() => {
+    const maxShow = showAllCategories ? 6 : 3;
+    return hierarchyData.categories.slice(0, maxShow);
+  }, [hierarchyData, showAllCategories]);
 
   // Handle edit
   const handleStartEdit = () => {
@@ -114,59 +127,11 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSaveEdit();
-    } else if (e.key === "Escape") {
-      handleCancelEdit();
-    }
+    if (e.key === "Enter") handleSaveEdit();
+    else if (e.key === "Escape") handleCancelEdit();
   };
 
-  // Calculate recovery suggestions when over budget
-  const recoverySuggestions = useMemo(() => {
-    if (!isOverBudget || transactions.length === 0) return [];
-
-    // Calculate spending by category
-    const categorySpending: Record<string, number> = {};
-    transactions.forEach((tx) => {
-      const category = getEffectiveCategory(tx);
-      categorySpending[category] =
-        (categorySpending[category] || 0) + tx.amount;
-    });
-
-    // Find discretionary categories that can be cut
-    const suggestions: {
-      category: string;
-      amount: number;
-      suggestion: string;
-    }[] = [];
-    const overAmount = Math.abs(remaining);
-
-    DISCRETIONARY_CATEGORIES.forEach((category) => {
-      const spent = categorySpending[category] || 0;
-      if (spent > 0) {
-        // Suggest cutting 50% of discretionary spending
-        const cutAmount = Math.min(spent * 0.5, overAmount);
-        if (cutAmount >= 10) {
-          let suggestion = "";
-          if (category === "Food & Drinks") {
-            suggestion = "Cook at home more";
-          } else if (category === "Shopping") {
-            suggestion = "Pause non-essential purchases";
-          } else if (category === "Entertainment") {
-            suggestion = "Try free activities";
-          } else if (category === "Travel") {
-            suggestion = "Postpone trips";
-          }
-          suggestions.push({ category, amount: cutAmount, suggestion });
-        }
-      }
-    });
-
-    // Sort by potential savings and take top 3
-    return suggestions.sort((a, b) => b.amount - a.amount).slice(0, 3);
-  }, [isOverBudget, transactions, remaining]);
-
-  // Determine status color - using Japandi design tokens
+  // Status colors
   const getStatusColor = () => {
     if (isOverBudget) return "text-[var(--color-error)]";
     if (!isOnTrack) return "text-[var(--color-warning)]";
@@ -185,39 +150,15 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     return "On track";
   };
 
-  // No budget set - show setup prompt
-  if (monthlyBudget === 0 && !isEditing) {
-    return (
-      <Card className={className}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <TargetIcon className="h-5 w-5 text-primary" />
-            Budget Progress
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-3">
-              Set a monthly budget to track your spending
-            </p>
-            <Button size="sm" onClick={handleStartEdit}>
-              Set Budget
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center gap-2">
             <TargetIcon className="h-5 w-5 text-primary" />
-            Budget Progress
+            Budget & Spending
           </CardTitle>
-          {!isEditing && (
+          {!isEditing && monthlyBudget > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -231,8 +172,9 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
         </div>
       </CardHeader>
       <CardContent>
+        {/* Budget Section */}
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-4">
             <Input
               type="number"
               value={editValue}
@@ -249,8 +191,17 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
               <XIcon className="h-4 w-4" />
             </Button>
           </div>
+        ) : monthlyBudget === 0 ? (
+          <div className="text-center py-3 mb-4 border border-dashed border-border rounded-lg">
+            <p className="text-sm text-muted-foreground mb-2">
+              Set a budget to track progress
+            </p>
+            <Button size="sm" onClick={handleStartEdit}>
+              Set Budget
+            </Button>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-4">
             {/* Main progress display */}
             <div className="flex items-end justify-between">
               <div>
@@ -278,7 +229,6 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
                 className="h-2"
                 indicatorClassName={getProgressColor()}
               />
-              {/* Expected progress marker */}
               <div
                 className="absolute top-0 h-2 w-0.5 bg-gray-400 dark:bg-gray-500"
                 style={{ left: `${Math.min(expectedProgress, 100)}%` }}
@@ -303,36 +253,79 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
                 </span>
               )}
             </div>
-
-            {/* Recovery suggestions when over budget */}
-            {isOverBudget && recoverySuggestions.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-warning)] mb-2">
-                  <LightbulbIcon className="h-3.5 w-3.5" />
-                  How to recover:
-                </div>
-                <div className="space-y-1.5">
-                  {recoverySuggestions.map((item) => (
-                    <div
-                      key={item.category}
-                      className="flex items-center justify-between text-xs"
-                    >
-                      <span className="text-muted-foreground">
-                        {item.suggestion}
-                      </span>
-                      <span className="text-[var(--color-success)] font-medium">
-                        Save {formatCurrency(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        {/* Divider */}
+        <div className="border-t border-border/50 my-4" />
+
+        {/* Top Categories Section */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Top Categories
+          </p>
+
+          {displayCategories.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              No spending data
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {displayCategories.map((category: ParentCategorySpending) => (
+                <button
+                  key={category.id}
+                  onClick={() => onCategoryClick?.(category.id, category.name)}
+                  className="w-full flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-muted/50 active:bg-muted/70 transition-colors text-left"
+                >
+                  <span className="text-base">{category.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm truncate">{category.name}</span>
+                      <span className="text-sm font-medium">
+                        {formatCurrency(category.amount)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, category.percentage)}%`,
+                          backgroundColor: category.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground w-10 text-right">
+                    {category.percentage.toFixed(0)}%
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Show more/less toggle */}
+          {hierarchyData.categories.length > 3 && (
+            <button
+              onClick={() => setShowAllCategories(!showAllCategories)}
+              className="w-full flex items-center justify-center gap-1 py-2 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              {showAllCategories ? (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronRight className="h-4 w-4" />
+                  Show {Math.min(hierarchyData.categories.length - 3, 3)} more
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
 };
 
-export default React.memo(BudgetProgressCard);
+export default React.memo(BudgetSpendingCard);

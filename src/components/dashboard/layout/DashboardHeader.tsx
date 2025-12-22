@@ -1,39 +1,81 @@
 // components/dashboard/layout/DashboardHeader.tsx
 import React from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { PlusCircleIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useDashboardContext } from "@/contexts/DashboardContext";
+import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
+import { TimeframeTab } from "@/utils/dashboard";
 
 /**
- * Component that displays the dashboard header with title and actions
+ * Get human-readable period label for the current timeframe
+ */
+function getPeriodLabel(timeframe: TimeframeTab): string {
+  const now = new Date();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  switch (timeframe) {
+    case "thisMonth":
+      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    case "lastMonth": {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return `${monthNames[lastMonth.getMonth()]} ${lastMonth.getFullYear()}`;
+    }
+    case "lastThreeMonths":
+      return "Last 3 Months";
+    case "thisYear":
+      return `${now.getFullYear()}`;
+    case "lastYear":
+      return `${now.getFullYear() - 1}`;
+    case "thisWeek":
+      return "This Week";
+    case "lastWeek":
+      return "Last Week";
+    case "allTime":
+      return "All Time";
+    default:
+      return "Custom Period";
+  }
+}
+
+/**
+ * Component that displays the contextual dashboard header with period and spending
  */
 const DashboardHeader: React.FC = () => {
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const { dashboardData, displayCurrency, activeTab } = useDashboardContext();
+  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
+
+  const metrics = dashboardData?.metrics || {
+    totalExpenses: 0,
+    totalReimbursed: 0,
+  };
+  const netExpenses =
+    (metrics.totalExpenses || 0) - (metrics.totalReimbursed || 0);
+  const periodLabel = getPeriodLabel(activeTab);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-10 mt-4">
-      <div className="mb-4 sm:mb-0">
-        <h1 className="text-3xl font-bold tracking-tight text-gradient">
-          Expense Tracker
+    <div className="flex items-center justify-between mb-6 mt-4">
+      <div>
+        <h1 className="text-2xl font-medium tracking-tight text-primary">
+          {periodLabel}
         </h1>
-        <p className="text-muted-foreground mt-1.5 text-sm">
-          Track and manage your expenses
+        <p className="text-muted-foreground mt-0.5 text-sm">
+          {formatCurrency(netExpenses)} spent
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
-        <Link to="/add-expense">
-          <Button
-            className={`btn-hover-effect bg-primary hover:bg-primary/90 ${!isMobile ? "gap-2" : "w-10 h-10 p-0"}`}
-          >
-            <PlusCircleIcon className="h-4 w-4" />
-            {!isMobile && <span>Add Expense</span>}
-          </Button>
-        </Link>
-      </div>
+      <ThemeToggle />
     </div>
   );
 };

@@ -2,6 +2,7 @@
 export { default as Card } from "./Card";
 export { default as SummaryCard } from "./SummaryCard";
 export { default as BudgetProgressCard } from "./BudgetProgressCard";
+export { default as BudgetSpendingCard } from "./BudgetSpendingCard";
 export { default as CardOptimizationCard } from "./CardOptimizationCard";
 export { default as InsightsCard } from "./InsightsCard";
 export { default as PaymentMethodCard } from "./PaymentMethodCard";

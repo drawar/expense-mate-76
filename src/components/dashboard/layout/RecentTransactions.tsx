@@ -8,10 +8,15 @@ import {
   format,
   isToday,
   isYesterday,
+  startOfDay,
 } from "date-fns";
 import { Transaction, Currency } from "@/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircleIcon, ArrowUpRightIcon } from "lucide-react";
+import {
+  PlusCircleIcon,
+  ArrowUpRightIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { CurrencyService } from "@/core/currency";
@@ -23,6 +28,13 @@ interface RecentTransactionsProps {
   maxItems?: number;
 }
 
+interface GroupedTransaction {
+  dateLabel: string;
+  dateKey: string;
+  transactions: Transaction[];
+  total: number;
+}
+
 /**
  * Format date as "Today", "Yesterday", or "Dec 13"
  */
@@ -31,6 +43,93 @@ function formatTransactionDate(date: Date | string): string {
   if (isToday(d)) return "Today";
   if (isYesterday(d)) return "Yesterday";
   return format(d, "MMM d");
+}
+
+/**
+ * Get date key for grouping (YYYY-MM-DD)
+ */
+function getDateKey(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return format(startOfDay(d), "yyyy-MM-dd");
+}
+
+/**
+ * Format merchant name - show "Card Purchase" for unknown merchants
+ */
+function formatMerchantName(merchant: { name: string }): string {
+  const name = merchant.name?.trim() || "";
+  const lowerName = name.toLowerCase();
+
+  // Check for unknown/empty merchant patterns
+  if (
+    !name ||
+    lowerName === "unknown" ||
+    lowerName === "unknown merchant" ||
+    lowerName.startsWith("unknown ") ||
+    lowerName === "n/a" ||
+    lowerName === "na"
+  ) {
+    return "Card Purchase";
+  }
+
+  return name;
+}
+
+/**
+ * Abbreviate points currency for compact display
+ * Maps full program names to short abbreviations
+ */
+function abbreviatePointsCurrency(currency: string | undefined): string {
+  if (!currency) return "pts";
+
+  const lower = currency.toLowerCase();
+
+  // Common abbreviation mappings
+  const abbreviations: Record<string, string> = {
+    "asia miles": "AM",
+    asiamiles: "AM",
+    krisflyer: "KF",
+    "krisflyer miles": "KF",
+    avios: "Avios",
+    "membership rewards": "MR",
+    mr: "MR",
+    thankyou: "TY",
+    "thankyou points": "TY",
+    "citi thankyou": "TY",
+    aeroplan: "AP",
+    "aeroplan points": "AP",
+    "scene+": "Scene+",
+    "scene plus": "Scene+",
+    "pc optimum": "PC",
+    "air miles": "AM",
+    "hsbc rewards": "HSBC",
+    "rbc avion": "Avion",
+    "td rewards": "TD",
+    "amex points": "MR",
+    "flying blue": "FB",
+    "marriott bonvoy": "MB",
+    velocity: "Vel",
+    points: "pts",
+    pts: "pts",
+  };
+
+  // Check for exact match first
+  if (abbreviations[lower]) {
+    return abbreviations[lower];
+  }
+
+  // Check for partial matches
+  for (const [key, abbrev] of Object.entries(abbreviations)) {
+    if (lower.includes(key)) {
+      return abbrev;
+    }
+  }
+
+  // Return first 2-3 chars uppercase if no match found
+  if (currency.length <= 3) {
+    return currency.toUpperCase();
+  }
+  return currency.slice(0, 3).toUpperCase();
 }
 
 /**
@@ -49,13 +148,38 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   // Limit to max items
   const displayTransactions = transactions.slice(0, maxItems);
 
-  // Apply category mapping logic to transactions using getEffectiveCategory
-  const transactionsWithCategories = useMemo(() => {
-    return displayTransactions.map((transaction) => ({
-      ...transaction,
-      category: getEffectiveCategory(transaction),
-    }));
-  }, [displayTransactions]);
+  // Group transactions by date
+  const groupedTransactions = useMemo((): GroupedTransaction[] => {
+    const groups: Map<string, GroupedTransaction> = new Map();
+
+    displayTransactions.forEach((tx) => {
+      const dateKey = getDateKey(tx.date);
+      const dateLabel = formatTransactionDate(tx.date);
+      const converted = CurrencyService.convert(
+        tx.amount,
+        tx.currency,
+        displayCurrency
+      );
+
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, {
+          dateKey,
+          dateLabel,
+          transactions: [],
+          total: 0,
+        });
+      }
+
+      const group = groups.get(dateKey)!;
+      group.transactions.push(tx);
+      group.total += converted;
+    });
+
+    // Sort by date descending (most recent first)
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(b.dateKey).getTime() - new Date(a.dateKey).getTime()
+    );
+  }, [displayTransactions, displayCurrency]);
 
   // Calculate this week's summary
   const weekSummary = useMemo(() => {
@@ -137,7 +261,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-medium tracking-tight text-primary">
+        <h2 className="text-xl font-medium tracking-tight text-primary">
           Recent Transactions
         </h2>
         <Link
@@ -148,46 +272,65 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Link>
       </div>
 
-      {transactionsWithCategories.length === 0 ? (
+      {groupedTransactions.length === 0 ? (
         renderEmptyState()
       ) : (
-        <div className="rounded-xl border border-border/50 bg-card">
-          {/* Compact Transaction List */}
-          <div className="divide-y divide-border/50">
-            {transactionsWithCategories.map((transaction) => (
-              <Link
-                key={transaction.id}
-                to={`/transactions?id=${transaction.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+          {/* Date-Grouped Transaction List */}
+          {groupedTransactions.map((group, groupIndex) => (
+            <div key={group.dateKey}>
+              {/* Date Header */}
+              <div
+                className={`flex items-center justify-between px-4 py-2 bg-muted/50 ${
+                  groupIndex > 0 ? "border-t border-border/50" : ""
+                }`}
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground truncate">
-                      {transaction.merchant.name}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {formatTransactionDate(transaction.date)} •{" "}
-                    {getEffectiveCategory(transaction)}
-                  </div>
-                </div>
-                <div className="text-right ml-4 flex-shrink-0">
-                  <div className="font-semibold text-foreground">
-                    {CurrencyService.format(
-                      transaction.amount,
-                      transaction.currency
-                    )}
-                  </div>
-                  {transaction.rewardPoints > 0 && (
-                    <div className="text-xs text-primary">
-                      +{transaction.rewardPoints.toLocaleString()}{" "}
-                      {transaction.paymentMethod?.pointsCurrency || "pts"}
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {group.dateLabel}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {CurrencyService.format(group.total, displayCurrency)}
+                </span>
+              </div>
+
+              {/* Transactions for this date */}
+              <div className="divide-y divide-border/30">
+                {group.transactions.map((transaction) => (
+                  <Link
+                    key={transaction.id}
+                    to={`/transactions?id=${transaction.id}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 active:bg-muted/70 transition-colors group"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium text-foreground truncate block">
+                        {formatMerchantName(transaction.merchant)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getEffectiveCategory(transaction)}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-medium text-foreground">
+                        {CurrencyService.format(
+                          transaction.amount,
+                          transaction.currency
+                        )}
+                      </div>
+                      {transaction.rewardPoints > 0 && (
+                        <div className="text-xs text-primary">
+                          +{transaction.rewardPoints.toLocaleString()}{" "}
+                          {abbreviatePointsCurrency(
+                            transaction.paymentMethod?.pointsCurrency
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <ChevronRightIcon className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* Week Summary */}
           {weekSummary && (

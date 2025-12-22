@@ -107,11 +107,70 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     </Select>
   );
 
-  // Display trend and average section
+  // Get previous period name for context
+  const getPreviousPeriodName = React.useMemo(() => {
+    const now = new Date();
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    switch (selectedPeriod) {
+      case "week": {
+        // For daily view within this month, compare to last month
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return monthNames[lastMonth.getMonth()];
+      }
+      case "month": {
+        // For weekly view, show "last month"
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return monthNames[lastMonth.getMonth()];
+      }
+      case "quarter": {
+        // For monthly view, show "last quarter"
+        return "last quarter";
+      }
+      case "year": {
+        return `${now.getFullYear() - 1}`;
+      }
+      default:
+        return "last period";
+    }
+  }, [selectedPeriod]);
+
+  // Calculate current and previous period totals for context
+  const periodComparison = React.useMemo(() => {
+    if (chartData.length === 0) return null;
+
+    const currentTotal = chartData.reduce((sum, d) => sum + (d.amount || 0), 0);
+    // Calculate previous total based on trend percentage
+    // If trend = +20%, then previous = current / 1.20
+    const previousTotal =
+      trend !== 0 ? currentTotal / (1 + trend / 100) : currentTotal;
+
+    return {
+      current: currentTotal,
+      previous: previousTotal,
+    };
+  }, [chartData, trend]);
+
+  // Display trend and average section with improved context
   const TrendAndAverage = () => (
     <div className="flex items-center justify-between mb-4">
       <div>
-        <p className="text-sm text-muted-foreground">vs last period</p>
+        <p className="text-sm text-muted-foreground">
+          vs {getPreviousPeriodName}
+        </p>
         <div className="flex items-center gap-1 mt-1">
           {trend >= 0 ? (
             <TrendingUpIcon className="h-4 w-4 text-[var(--color-error)]" />
@@ -126,8 +185,14 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
             }
           >
             {trend >= 0 ? "+" : ""}
-            {trend.toFixed(1)}%
+            {trend.toFixed(0)}%
           </span>
+          {periodComparison && Math.abs(trend) > 5 && (
+            <span className="text-xs text-muted-foreground ml-1">
+              ({formatCurrency(periodComparison.previous)} →{" "}
+              {formatCurrency(periodComparison.current)})
+            </span>
+          )}
         </div>
       </div>
 
@@ -140,23 +205,61 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     </div>
   );
 
-  // Define custom tooltip
+  // Define custom tooltip with enhanced context
   const CustomTooltip = ({
     active,
     payload,
     label,
   }: {
     active?: boolean;
-    payload?: Array<{ value: number }>;
+    payload?: Array<{
+      value: number;
+      payload?: {
+        topCategories?: Array<{ category: string; amount: number }>;
+        originalKey?: string;
+      };
+    }>;
     label?: string;
   }) => {
     if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const data = payload[0].payload;
+      const topCategories = data?.topCategories || [];
+      const topCategory = topCategories[0];
+
+      // Compare to average
+      const vsAverage = average > 0 ? ((value - average) / average) * 100 : 0;
+      const isAboveAvg = vsAverage > 5;
+      const isBelowAvg = vsAverage < -5;
+
       return (
-        <div className="bg-background border border-border p-3 rounded-md shadow-md">
-          <p className="font-medium">{label}</p>
-          <p className="text-primary text-lg font-semibold">
-            {formatCurrency(payload[0].value)}
+        <div className="bg-background border border-border p-3 rounded-lg shadow-lg min-w-[160px]">
+          <p className="font-medium text-sm text-muted-foreground mb-1">
+            {label}
           </p>
+          <p className="text-primary text-xl font-medium">
+            {formatCurrency(value)}
+          </p>
+
+          {/* Comparison to average */}
+          {average > 0 && (
+            <p
+              className={`text-xs mt-1 ${isAboveAvg ? "text-[var(--color-error)]" : isBelowAvg ? "text-[var(--color-success)]" : "text-muted-foreground"}`}
+            >
+              {isAboveAvg ? "+" : ""}
+              {vsAverage.toFixed(0)}% vs avg
+            </p>
+          )}
+
+          {/* Top category for this period */}
+          {topCategory && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">Top category:</p>
+              <p className="text-sm font-medium truncate">
+                {topCategory.category}
+              </p>
+            </div>
+          )}
         </div>
       );
     }

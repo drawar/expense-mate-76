@@ -6,7 +6,6 @@ import {
   SpendingTrendCard,
   CardOptimizationCard,
   UnusualSpendingCard,
-  SpendingBreakdownCard,
   InsightsCard,
   SpendingHealthCard,
 } from "@/components/dashboard/cards";
@@ -64,8 +63,8 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   // Early return for empty data state
   if (!hasData) {
     return (
-      <div className="my-6 space-y-6">
-        <h2 className="text-2xl font-medium tracking-tight text-primary">
+      <div className="mt-6 space-y-4">
+        <h2 className="text-xl font-medium tracking-tight text-primary">
           Financial Insights
         </h2>
         <div className="p-6 text-center border border-dashed rounded-xl">
@@ -80,21 +79,12 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   }
 
   return (
-    <div className="my-6 space-y-6">
-      <h2 className="text-2xl font-medium tracking-tight text-primary">
+    <div className="mt-6 space-y-4">
+      <h2 className="text-xl font-medium tracking-tight text-primary">
         Financial Insights
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* NEW: Hierarchical Spending Breakdown Card */}
-        <SpendingBreakdownCard
-          transactions={filteredTransactions}
-          currency={currency}
-          className={commonCardClass}
-          onCategoryClick={handleCategoryClick}
-          maxCategories={5}
-        />
-
         {/* Spending Trends Card */}
         <SpendingTrendCard
           transactions={filteredTransactions}
