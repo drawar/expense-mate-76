@@ -94,11 +94,33 @@ export interface PaymentMethodInput {
   pointsCurrency?: string;
 }
 
+/**
+ * Input for reward calculation.
+ *
+ * CRITICAL: When transaction currency differs from payment currency,
+ * `convertedAmount` MUST be provided and will be used for points calculation.
+ * Points are ALWAYS calculated on the payment currency amount, NOT the transaction amount.
+ *
+ * Example: A $100 USD transaction on a SGD card converts to $135 SGD.
+ * - amount = 100 (transaction amount in USD)
+ * - currency = "USD" (transaction currency)
+ * - convertedAmount = 135 (amount in payment/card currency - USE THIS FOR POINTS)
+ * - convertedCurrency = "SGD" (payment method currency)
+ * - Points calculated on $135 SGD, NOT $100 USD
+ */
 export interface CalculationInput {
+  /** Original transaction amount (in transaction currency) */
   amount: number;
+  /** Transaction currency (e.g., "USD" for a foreign purchase) */
   currency: string;
-  convertedAmount?: number; // Amount in payment method currency (when different from transaction currency)
-  convertedCurrency?: string; // Payment method currency
+  /**
+   * Amount in payment method currency (when different from transaction currency).
+   * CRITICAL: When present, this is the amount used for points calculation.
+   * Points are calculated on the card/statement currency, NOT the transaction currency.
+   */
+  convertedAmount?: number;
+  /** Payment method currency (e.g., "SGD" for a Singapore card) */
+  convertedCurrency?: string;
   paymentMethod: PaymentMethodInput;
   mcc?: string;
   merchantName?: string;

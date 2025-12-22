@@ -20,10 +20,20 @@ export class RewardService {
   }
 
   /**
-   * Get the amount to use for calculations
-   * Uses converted amount if provided, otherwise falls back to transaction amount
+   * Get the amount to use for points calculations.
+   *
+   * CRITICAL RULE: When transaction currency != payment currency,
+   * ALWAYS use convertedAmount (the payment/statement currency amount).
+   *
+   * Points are calculated on what appears on the card statement,
+   * NOT the original transaction amount in foreign currency.
+   *
+   * Example: $100 USD transaction → $135 SGD on statement → calculate points on $135
+   *
+   * @returns convertedAmount if available, otherwise falls back to transaction amount
    */
   private getCalculationAmount(input: CalculationInput): number {
+    // ALWAYS use convertedAmount when available - this is the amount in card currency
     return input.convertedAmount ?? input.amount;
   }
 
@@ -1037,49 +1047,55 @@ let rewardServiceInstance: RewardService | null = null;
  * @returns The RewardService singleton instance
  */
 function getRewardService(): RewardService {
-  if (!rewardServiceInstance) {
-    try {
-      const ruleRepository = getRuleRepository();
-      rewardServiceInstance = new RewardService(ruleRepository);
-      console.log("✅ RewardService initialized with real RuleRepository");
-    } catch (error) {
-      console.warn(
-        "⚠️ RuleRepository not initialized, creating mock RewardService"
-      );
-      // Create a mock repository for fallback
-      const mockRepository = {
-        findApplicableRules: async () => [],
-        getRulesForCardType: async () => [],
-        updateRule: async () => {},
-        createRule: async () => ({
-          id: "mock",
-          cardTypeId: "mock",
-          name: "mock",
-          description: "",
-          enabled: true,
-          priority: 1,
-          conditions: [],
-          reward: {
-            calculationMethod: "standard" as const,
-            baseMultiplier: 1,
-            bonusMultiplier: 0,
-            pointsRoundingStrategy: "floor" as const,
-            amountRoundingStrategy: "none" as const,
-            blockSize: 1,
-            bonusTiers: [],
-            pointsCurrency: "points",
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }),
-        deleteRule: async () => {},
-        verifyConnection: async () => ({ isConnected: false, latencyMs: 0 }),
-        verifyAuthentication: async () => ({ isAuthenticated: false }),
-      } as unknown as RuleRepository;
-      rewardServiceInstance = new RewardService(mockRepository);
-    }
+  // If we have a properly initialized instance, return it
+  if (rewardServiceInstance) {
+    return rewardServiceInstance;
   }
-  return rewardServiceInstance;
+
+  // Try to initialize with the real repository
+  try {
+    const ruleRepository = getRuleRepository();
+    rewardServiceInstance = new RewardService(ruleRepository);
+    console.log("✅ RewardService initialized with real RuleRepository");
+    return rewardServiceInstance;
+  } catch (error) {
+    console.warn(
+      "⚠️ RuleRepository not initialized, creating temporary mock RewardService (will retry on next call)"
+    );
+    // Create a mock repository for fallback - but DON'T cache it!
+    // This allows subsequent calls to use the real repository once initialized
+    const mockRepository = {
+      findApplicableRules: async () => [],
+      getRulesForCardType: async () => [],
+      updateRule: async () => {},
+      createRule: async () => ({
+        id: "mock",
+        cardTypeId: "mock",
+        name: "mock",
+        description: "",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard" as const,
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsRoundingStrategy: "floor" as const,
+          amountRoundingStrategy: "none" as const,
+          blockSize: 1,
+          bonusTiers: [],
+          pointsCurrency: "points",
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+      deleteRule: async () => {},
+      verifyConnection: async () => ({ isConnected: false, latencyMs: 0 }),
+      verifyAuthentication: async () => ({ isAuthenticated: false }),
+    } as unknown as RuleRepository;
+    // Return a temporary service WITHOUT caching it
+    return new RewardService(mockRepository);
+  }
 }
 
 // Export as a getter property to ensure lazy initialization
