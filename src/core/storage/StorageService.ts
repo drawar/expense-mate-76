@@ -829,13 +829,17 @@ export class StorageService {
     }
 
     try {
+      // Compute merchantId and mccCode outside the if block so they can be used in the update
+      let merchantId: string | null = null;
+      let mccCode: string | null = null;
+
       // If merchant data is being updated, upsert the merchant first
       if (updates.merchant) {
-        const merchantId =
+        merchantId =
           updates.merchant.id && updates.merchant.id.trim() !== ""
             ? updates.merchant.id
             : crypto.randomUUID();
-        const mccCode = updates.merchant.mcc?.code || null;
+        mccCode = updates.merchant.mcc?.code || null;
         const merchantData = {
           id: merchantId,
           name: updates.merchant.name,
@@ -872,10 +876,8 @@ export class StorageService {
         .from("transactions")
         .update({
           date: updates.date,
-          merchant_id:
-            updates.merchant?.id && updates.merchant.id.trim() !== ""
-              ? updates.merchant.id
-              : null,
+          // Use the computed merchantId (which includes newly generated UUIDs)
+          merchant_id: merchantId,
           amount: updates.amount,
           currency: updates.currency,
           payment_method_id: updates.paymentMethod?.id,
@@ -888,8 +890,8 @@ export class StorageService {
           is_contactless: updates.isContactless,
           notes: updates.notes,
           reimbursement_amount: updates.reimbursementAmount,
-          // Category fields
-          mcc_code: updates.mccCode,
+          // Category fields - use computed mccCode from merchant, or explicit updates.mccCode
+          mcc_code: updates.mccCode ?? mccCode,
           user_category: userCategory,
           is_recategorized: updates.isRecategorized,
           category: userCategory, // Sync legacy field
