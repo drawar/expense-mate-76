@@ -39,7 +39,21 @@ export interface RuleCondition {
 }
 
 export interface RewardConfig {
-  calculationMethod: "standard" | "tiered" | "flat_rate" | "direct";
+  /**
+   * Calculation method for rewards:
+   * - "standard": base and bonus calculated separately, then added
+   * - "total_first": total calculated first using (baseMultiplier + bonusMultiplier),
+   *                  then bonus derived as total - base. Used for Amex Canada cards.
+   * - "tiered": uses bonus tiers based on spending thresholds
+   * - "flat_rate": fixed points regardless of amount
+   * - "direct": points equal to amount (1:1)
+   */
+  calculationMethod:
+    | "standard"
+    | "total_first"
+    | "tiered"
+    | "flat_rate"
+    | "direct";
   baseMultiplier: number;
   bonusMultiplier: number;
   pointsRoundingStrategy: "floor" | "ceiling" | "nearest";
@@ -186,4 +200,9 @@ export interface DbRewardRule {
 export type SpendingPeriodType = "calendar" | "statement" | "statement_month";
 
 // Add missing CalculationMethod type alias
-export type CalculationMethod = "standard" | "tiered" | "flat_rate" | "direct";
+export type CalculationMethod =
+  | "standard"
+  | "total_first"
+  | "tiered"
+  | "flat_rate"
+  | "direct";

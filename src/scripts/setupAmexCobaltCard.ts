@@ -154,7 +154,7 @@ async function setupAmexCobaltCard() {
         },
       ],
       reward: {
-        calculationMethod: "standard",
+        calculationMethod: "total_first", // Amex Canada: total = round(amount * 5), bonus = total - base
         baseMultiplier: 1,
         bonusMultiplier: 4, // 4 bonus + 1 base = 5x total
         pointsCurrency: "Membership Rewards",
@@ -190,7 +190,7 @@ async function setupAmexCobaltCard() {
         },
       ],
       reward: {
-        calculationMethod: "standard",
+        calculationMethod: "total_first", // Amex Canada: total = round(amount * 3), bonus = total - base
         baseMultiplier: 1,
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards",
@@ -225,7 +225,7 @@ async function setupAmexCobaltCard() {
         },
       ],
       reward: {
-        calculationMethod: "standard",
+        calculationMethod: "total_first", // Amex Canada: total = round(amount * 2), bonus = total - base
         baseMultiplier: 1,
         bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
         pointsCurrency: "Membership Rewards",

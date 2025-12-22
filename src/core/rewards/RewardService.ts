@@ -162,6 +162,9 @@ export class RewardService {
         }
 
         // 3. Calculate base points
+        // Track whether we used total_first method (bonus already calculated)
+        let totalFirstUsed = false;
+
         switch (rule.reward.calculationMethod) {
           case "standard": {
             basePoints = this.calculateStandardPoints(
@@ -171,6 +174,43 @@ export class RewardService {
               rule.reward.blockSize,
               rule.reward.amountRoundingStrategy
             );
+            break;
+          }
+          case "total_first": {
+            // Amex Canada formula: calculate total first, then derive bonus
+            // total_points = round(amount * totalMultiplier)
+            // base_points = round(amount * baseMultiplier)
+            // bonus_points = total_points - base_points
+            const totalMultiplier =
+              rule.reward.baseMultiplier + rule.reward.bonusMultiplier;
+
+            const calculatedTotalPoints = this.calculateStandardPoints(
+              calculationAmount,
+              totalMultiplier,
+              rule.reward.pointsRoundingStrategy,
+              rule.reward.blockSize,
+              rule.reward.amountRoundingStrategy
+            );
+
+            basePoints = this.calculateStandardPoints(
+              calculationAmount,
+              rule.reward.baseMultiplier,
+              rule.reward.pointsRoundingStrategy,
+              rule.reward.blockSize,
+              rule.reward.amountRoundingStrategy
+            );
+
+            bonusPoints = calculatedTotalPoints - basePoints;
+            totalFirstUsed = true;
+
+            logger.debug("calculateRewards", "Total-first calculation (Amex)", {
+              calculationAmount,
+              totalMultiplier,
+              baseMultiplier: rule.reward.baseMultiplier,
+              calculatedTotalPoints,
+              basePoints,
+              bonusPoints,
+            });
             break;
           }
           case "tiered": {
@@ -202,8 +242,8 @@ export class RewardService {
           }
         }
 
-        // 4. Calculate bonus points
-        if (rule.reward.bonusMultiplier > 0) {
+        // 4. Calculate bonus points (skip for total_first as bonus is already derived)
+        if (!totalFirstUsed && rule.reward.bonusMultiplier > 0) {
           const calculatedBonusPoints = this.calculateBonusPoints(
             calculationAmount,
             rule.reward.bonusMultiplier,
@@ -313,26 +353,48 @@ export class RewardService {
             const availableBonusPoints = Math.max(0, cap - usedBonusPoints);
 
             // Calculate what the bonus would be without the monthly cap
-            // Apply the same amount rounding as used in the actual calculation
-            let roundedAmountForComparison = calculationAmount;
-            switch (rule.reward.amountRoundingStrategy) {
-              case "floor":
-                roundedAmountForComparison = Math.floor(calculationAmount);
-                break;
-              case "ceiling":
-                roundedAmountForComparison = Math.ceil(calculationAmount);
-                break;
-              case "nearest":
-                roundedAmountForComparison = Math.round(calculationAmount);
-                break;
-              case "floor5":
-                roundedAmountForComparison =
-                  Math.floor(calculationAmount / 5) * 5;
-                break;
+            let uncappedBonusPoints: number;
+            if (totalFirstUsed) {
+              // For total_first: uncapped bonus = total - base (same formula used above)
+              const totalMultiplier =
+                rule.reward.baseMultiplier + rule.reward.bonusMultiplier;
+              const uncappedTotal = this.calculateStandardPoints(
+                calculationAmount,
+                totalMultiplier,
+                rule.reward.pointsRoundingStrategy,
+                rule.reward.blockSize,
+                rule.reward.amountRoundingStrategy
+              );
+              const uncappedBase = this.calculateStandardPoints(
+                calculationAmount,
+                rule.reward.baseMultiplier,
+                rule.reward.pointsRoundingStrategy,
+                rule.reward.blockSize,
+                rule.reward.amountRoundingStrategy
+              );
+              uncappedBonusPoints = uncappedTotal - uncappedBase;
+            } else {
+              // Apply the same amount rounding as used in the actual calculation
+              let roundedAmountForComparison = calculationAmount;
+              switch (rule.reward.amountRoundingStrategy) {
+                case "floor":
+                  roundedAmountForComparison = Math.floor(calculationAmount);
+                  break;
+                case "ceiling":
+                  roundedAmountForComparison = Math.ceil(calculationAmount);
+                  break;
+                case "nearest":
+                  roundedAmountForComparison = Math.round(calculationAmount);
+                  break;
+                case "floor5":
+                  roundedAmountForComparison =
+                    Math.floor(calculationAmount / 5) * 5;
+                  break;
+              }
+              uncappedBonusPoints = Math.floor(
+                roundedAmountForComparison * rule.reward.bonusMultiplier
+              );
             }
-            const uncappedBonusPoints = Math.floor(
-              roundedAmountForComparison * rule.reward.bonusMultiplier
-            );
 
             bonusPoints = Math.min(bonusPoints, availableBonusPoints);
             remainingMonthlyBonusPoints = availableBonusPoints - bonusPoints;

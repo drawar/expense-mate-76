@@ -859,7 +859,7 @@ export async function setupAmexPlatinumCard() {
         },
       ],
       reward: {
-        calculationMethod: "standard",
+        calculationMethod: "total_first", // Amex Canada: total = round(amount * 2), bonus = total - base
         baseMultiplier: 1,
         bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
         pointsCurrency: "Membership Rewards",
@@ -889,7 +889,7 @@ export async function setupAmexPlatinumCard() {
         },
       ],
       reward: {
-        calculationMethod: "standard",
+        calculationMethod: "total_first", // Amex Canada: total = round(amount * 2), bonus = total - base
         baseMultiplier: 1,
         bonusMultiplier: 1, // 1 bonus + 1 base = 2x total
         pointsCurrency: "Membership Rewards",
