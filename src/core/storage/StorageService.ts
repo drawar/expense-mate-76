@@ -10,6 +10,7 @@ import {
 } from "@/types";
 import { initializeRewardSystem, calculateRewardPoints } from "@/core/rewards";
 import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
+import { categorizationService } from "@/core/categorization";
 
 export class StorageService {
   private useLocalStorage: boolean = false;
@@ -421,7 +422,7 @@ export class StorageService {
           *,
           payment_methods:payment_method_id(
             id, name, type, issuer, last_four_digits, currency,
-            icon, color, image_url, is_active,
+            icon, color, image_url, points_currency, is_active,
             reward_rules, selected_categories, statement_start_day,
             is_monthly_statement, conversion_rate
           ),
@@ -479,7 +480,7 @@ export class StorageService {
           icon: row.payment_methods?.icon || undefined,
           color: row.payment_methods?.color || undefined,
           imageUrl: row.payment_methods?.image_url || undefined,
-          pointsCurrency: undefined, // Will be handled separately
+          pointsCurrency: row.payment_methods?.points_currency || undefined,
           active: row.payment_methods?.is_active || true,
           rewardRules: row.payment_methods?.reward_rules || [],
           selectedCategories: row.payment_methods?.selected_categories || [],
@@ -508,6 +509,10 @@ export class StorageService {
         userCategory: row.user_category || undefined,
         isRecategorized: row.is_recategorized || false,
         category: row.category || undefined, // Legacy field
+        // Auto-categorization metadata
+        autoCategoryConfidence: row.auto_category_confidence ?? undefined,
+        needsReview: row.needs_review ?? false,
+        categorySuggestionReason: row.category_suggestion_reason || undefined,
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -616,10 +621,35 @@ export class StorageService {
 
       console.log("Merchant upserted successfully:", merchantResult.data);
 
-      // Determine user category (use provided or derive from MCC/category)
+      // Auto-categorize if not already categorized
+      let autoCategoryResult: {
+        category: string;
+        confidence: number;
+        requiresReview: boolean;
+        reason: string;
+      } | null = null;
+
+      if (!transactionData.userCategory && !transactionData.category) {
+        try {
+          const result =
+            await categorizationService.categorizeTransaction(transactionData);
+          autoCategoryResult = {
+            category: result.category,
+            confidence: result.confidence,
+            requiresReview: result.requiresReview,
+            reason: result.reason,
+          };
+          console.log("Auto-categorization result:", autoCategoryResult);
+        } catch (error) {
+          console.error("Error auto-categorizing transaction:", error);
+        }
+      }
+
+      // Determine user category (use provided, auto-categorized, or derive from MCC)
       const userCategory =
         transactionData.userCategory ||
         transactionData.category ||
+        autoCategoryResult?.category ||
         transactionData.merchant.mcc?.description ||
         "Uncategorized";
 
@@ -644,6 +674,19 @@ export class StorageService {
         user_category: userCategory, // User-editable category for budgets
         is_recategorized: transactionData.isRecategorized || false,
         category: userCategory, // Sync legacy field
+        // Auto-categorization metadata (prefer auto-categorization results if available)
+        auto_category_confidence:
+          transactionData.autoCategoryConfidence ??
+          autoCategoryResult?.confidence ??
+          null,
+        needs_review:
+          transactionData.needsReview ??
+          autoCategoryResult?.requiresReview ??
+          false,
+        category_suggestion_reason:
+          transactionData.categorySuggestionReason ??
+          autoCategoryResult?.reason ??
+          null,
         user_id: session.user.id,
       };
 
@@ -733,6 +776,10 @@ export class StorageService {
         userCategory: data.user_category || undefined,
         isRecategorized: data.is_recategorized || false,
         category: data.category || undefined, // Legacy field
+        // Auto-categorization metadata
+        autoCategoryConfidence: data.auto_category_confidence ?? undefined,
+        needsReview: data.needs_review ?? false,
+        categorySuggestionReason: data.category_suggestion_reason || undefined,
       };
 
       // Check if prepaid card should be deactivated
@@ -846,6 +893,10 @@ export class StorageService {
           user_category: userCategory,
           is_recategorized: updates.isRecategorized,
           category: userCategory, // Sync legacy field
+          // Auto-categorization metadata
+          auto_category_confidence: updates.autoCategoryConfidence,
+          needs_review: updates.needsReview,
+          category_suggestion_reason: updates.categorySuggestionReason,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)

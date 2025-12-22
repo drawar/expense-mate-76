@@ -180,7 +180,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   </div>
                   {transaction.rewardPoints > 0 && (
                     <div className="text-xs text-primary">
-                      +{transaction.rewardPoints.toLocaleString()} pts
+                      +{transaction.rewardPoints.toLocaleString()}{" "}
+                      {transaction.paymentMethod?.pointsCurrency || "pts"}
                     </div>
                   )}
                 </div>
