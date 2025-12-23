@@ -71,25 +71,37 @@ export const PointsDisplay = ({
     showBreakdown || hasExistingBreakdown || isEditMode;
 
   // Auto-update rewardPoints (total) when any component changes
+  // Guard against setting the same value to prevent infinite loops
   useEffect(() => {
     if (form) {
-      form.setValue("rewardPoints", calculatedTotal.toString());
+      const currentValue = form.getValues("rewardPoints");
+      const newValue = calculatedTotal.toString();
+      if (currentValue !== newValue) {
+        form.setValue("rewardPoints", newValue, { shouldDirty: false });
+      }
     }
   }, [basePoints, bonusPoints, promoBonusPoints, form]);
 
   // Sync form fields with calculation result when calculation changes
-  // In non-edit mode, always update form fields to match the latest calculation
-  // This ensures converted amount changes are reflected in the UI
+  // In non-edit mode, update form fields to match the latest calculation
+  // Guard against setting the same values to prevent infinite loops
   useEffect(() => {
     if (form && points && !isEditMode) {
-      // Always update form fields to match the latest calculation
-      // This is critical for foreign currency transactions where the converted
-      // amount may change after initial calculation
+      const currentBase = form.getValues("basePoints");
+      const currentBonus = form.getValues("bonusPoints");
+
+      // Only update if values actually changed
       if (points.basePoints !== undefined) {
-        form.setValue("basePoints", points.basePoints.toString());
+        const newBase = points.basePoints.toString();
+        if (currentBase !== newBase) {
+          form.setValue("basePoints", newBase, { shouldDirty: false });
+        }
       }
       if (points.bonusPoints !== undefined) {
-        form.setValue("bonusPoints", points.bonusPoints.toString());
+        const newBonus = points.bonusPoints.toString();
+        if (currentBonus !== newBonus) {
+          form.setValue("bonusPoints", newBonus, { shouldDirty: false });
+        }
       }
     }
   }, [points?.basePoints, points?.bonusPoints, form, isEditMode]);

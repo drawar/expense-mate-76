@@ -190,9 +190,13 @@ export const useExpenseForm = ({
               selectedPaymentMethod.pointsCurrency || "Flying Blue Points",
           });
 
-          // Update form field with calculated value
+          // Update form field with calculated value (with guard to prevent loops)
           if (!defaultValues?.rewardPoints) {
-            form.setValue("rewardPoints", totalPoints.toString());
+            const currentValue = form.getValues("rewardPoints");
+            const newValue = totalPoints.toString();
+            if (currentValue !== newValue) {
+              form.setValue("rewardPoints", newValue, { shouldDirty: false });
+            }
           }
           return;
         }
@@ -274,9 +278,13 @@ export const useExpenseForm = ({
         });
 
         // If creating a new transaction (no rewardPoints in defaultValues),
-        // update the form field with calculated value
+        // update the form field with calculated value (with guard to prevent loops)
         if (!defaultValues?.rewardPoints) {
-          form.setValue("rewardPoints", result.totalPoints.toString());
+          const currentValue = form.getValues("rewardPoints");
+          const newValue = result.totalPoints.toString();
+          if (currentValue !== newValue) {
+            form.setValue("rewardPoints", newValue, { shouldDirty: false });
+          }
         }
       } catch (error) {
         console.error("Error calculating reward points:", error);
