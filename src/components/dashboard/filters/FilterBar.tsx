@@ -36,7 +36,6 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
       <DisplayCurrencySelect
         value={displayCurrency}
         onChange={handleCurrencyChange}
-        className="component-hover-box h-9 px-2 rounded-lg"
       />
 
       {/* Timeframe Selector */}

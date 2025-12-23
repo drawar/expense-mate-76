@@ -32,12 +32,8 @@ export type TimeframeTab =
   | "thisMonth"
   | "lastMonth"
   | "lastThreeMonths"
-  | "thisYear"
-  | "lastYear"
-  | "thisWeek"
-  | "lastWeek"
-  | "allTime"
-  | "custom";
+  | "lastSixMonths"
+  | "thisYear";
 
 /**
  * Filters transactions based on the selected timeframe.
@@ -61,10 +57,6 @@ export function filterTransactionsByTimeframe(
 
   let startDate: Date;
   let endDate: Date;
-
-  if (timeframe === "allTime") {
-    return transactions;
-  }
 
   if (useStatementMonth) {
     const today = new Date();
@@ -110,6 +102,15 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(); // Current date
         }
         break;
+      case "lastSixMonths":
+        if (previousPeriod) {
+          startDate = subMonths(startDate, 12);
+          endDate = subMonths(endDate, 6);
+        } else {
+          startDate = subMonths(startDate, 6);
+          endDate = new Date(); // Current date
+        }
+        break;
       case "thisYear":
         if (previousPeriod) {
           startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of previous year
@@ -119,41 +120,6 @@ export function filterTransactionsByTimeframe(
           endDate = new Date(currentYear, 11, 31); // End of current year
         }
         break;
-      case "lastYear":
-        if (previousPeriod) {
-          startDate = new Date(currentYear - 2, 0, statementCycleDay); // Start of year before last
-          endDate = new Date(currentYear - 2, 11, 31); // End of year before last
-        } else {
-          startDate = new Date(currentYear - 1, 0, statementCycleDay); // Start of last year
-          endDate = new Date(currentYear - 1, 11, 31); // End of last year
-        }
-        break;
-      case "thisWeek":
-        // For statement month, we adjust the week based on the current statement cycle
-        if (previousPeriod) {
-          const lastWeek = new Date(today);
-          lastWeek.setDate(lastWeek.getDate() - 7);
-          startDate = startOfWeek(lastWeek, { weekStartsOn: 0 });
-          endDate = endOfWeek(lastWeek, { weekStartsOn: 0 });
-        } else {
-          startDate = startOfWeek(today, { weekStartsOn: 0 });
-          endDate = endOfWeek(today, { weekStartsOn: 0 });
-        }
-        break;
-      case "lastWeek": {
-        const lastWeekStart = new Date(today);
-        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-        if (previousPeriod) {
-          const twoWeeksAgo = new Date(today);
-          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-          startDate = startOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
-          endDate = endOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
-        } else {
-          startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
-          endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        }
-        break;
-      }
       default:
         break;
     }
@@ -191,6 +157,15 @@ export function filterTransactionsByTimeframe(
           endDate = endOfMonth(today);
         }
         break;
+      case "lastSixMonths":
+        if (previousPeriod) {
+          startDate = startOfMonth(subMonths(today, 12));
+          endDate = endOfMonth(subMonths(today, 6));
+        } else {
+          startDate = startOfMonth(subMonths(today, 6));
+          endDate = endOfMonth(today);
+        }
+        break;
       case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
@@ -200,40 +175,6 @@ export function filterTransactionsByTimeframe(
           endDate = endOfYear(subYears(today, 1));
         }
         break;
-      case "lastYear":
-        startDate = startOfYear(subYears(today, 1));
-        endDate = endOfYear(subYears(today, 1));
-
-        if (previousPeriod) {
-          startDate = startOfYear(subYears(today, 2));
-          endDate = endOfYear(subYears(today, 2));
-        }
-        break;
-      case "thisWeek":
-        startDate = startOfWeek(today, { weekStartsOn: 0 });
-        endDate = endOfWeek(today, { weekStartsOn: 0 });
-
-        if (previousPeriod) {
-          const lastWeek = new Date(today);
-          lastWeek.setDate(lastWeek.getDate() - 7);
-          startDate = startOfWeek(lastWeek, { weekStartsOn: 0 });
-          endDate = endOfWeek(lastWeek, { weekStartsOn: 0 });
-        }
-        break;
-      case "lastWeek": {
-        const lastWeekStart = new Date(today);
-        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-        startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
-
-        if (previousPeriod) {
-          const twoWeeksAgo = new Date(today);
-          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-          startDate = startOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
-          endDate = endOfWeek(twoWeeksAgo, { weekStartsOn: 0 });
-        }
-        break;
-      }
       default:
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
@@ -288,13 +229,12 @@ export function getDaysInPeriod(
       case "lastThreeMonths":
         startDate = subMonths(startDate, 3);
         break;
+      case "lastSixMonths":
+        startDate = subMonths(startDate, 6);
+        break;
       case "thisYear":
         startDate = new Date(currentYear, 0, statementCycleDay);
         endDate = new Date(currentYear, 11, 31);
-        break;
-      case "lastYear":
-        startDate = new Date(currentYear - 1, 0, statementCycleDay);
-        endDate = new Date(currentYear - 1, 11, 31);
         break;
       default:
         break;
@@ -315,25 +255,14 @@ export function getDaysInPeriod(
         startDate = startOfMonth(subMonths(today, 3));
         endDate = endOfMonth(today);
         break;
+      case "lastSixMonths":
+        startDate = startOfMonth(subMonths(today, 6));
+        endDate = endOfMonth(today);
+        break;
       case "thisYear":
         startDate = startOfYear(today);
         endDate = endOfYear(today);
         break;
-      case "lastYear":
-        startDate = startOfYear(subYears(today, 1));
-        endDate = endOfYear(subYears(today, 1));
-        break;
-      case "thisWeek":
-        startDate = startOfWeek(today, { weekStartsOn: 0 });
-        endDate = endOfWeek(today, { weekStartsOn: 0 });
-        break;
-      case "lastWeek": {
-        const lastWeekStart = new Date(today);
-        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-        startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
-        break;
-      }
       default:
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);

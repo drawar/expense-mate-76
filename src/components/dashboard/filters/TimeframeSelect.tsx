@@ -1,5 +1,5 @@
 // components/dashboard/filters/TimeframeSelect.tsx
-import React from 'react';
+import React from "react";
 import {
   Select,
   SelectContent,
@@ -29,18 +29,17 @@ const TimeframeSelect: React.FC<TimeframeSelectProps> = ({
 
   return (
     <Select value={value} onValueChange={handleChange}>
-      <SelectTrigger className={`w-[120px] h-8 text-sm bg-transparent border-none ${className}`}>
+      <SelectTrigger
+        className={`w-[120px] h-8 text-sm bg-transparent border-none ${className}`}
+      >
         <SelectValue placeholder="This Month" />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="thisMonth">This Month</SelectItem>
         <SelectItem value="lastMonth">Last Month</SelectItem>
         <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
+        <SelectItem value="lastSixMonths">Last 6 Months</SelectItem>
         <SelectItem value="thisYear">This Year</SelectItem>
-        <SelectItem value="lastYear">Last Year</SelectItem>
-        <SelectItem value="thisWeek">This Week</SelectItem>
-        <SelectItem value="lastWeek">Last Week</SelectItem>
-        <SelectItem value="allTime">All Time</SelectItem>
       </SelectContent>
     </Select>
   );

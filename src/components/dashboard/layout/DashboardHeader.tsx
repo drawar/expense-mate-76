@@ -32,18 +32,12 @@ function getPeriodLabel(timeframe: TimeframeTab): string {
     }
     case "lastThreeMonths":
       return "Last 3 Months";
+    case "lastSixMonths":
+      return "Last 6 Months";
     case "thisYear":
       return `${now.getFullYear()}`;
-    case "lastYear":
-      return `${now.getFullYear() - 1}`;
-    case "thisWeek":
-      return "This Week";
-    case "lastWeek":
-      return "Last Week";
-    case "allTime":
-      return "All Time";
     default:
-      return "Custom Period";
+      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
   }
 }
 

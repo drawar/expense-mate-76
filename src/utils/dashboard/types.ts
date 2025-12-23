@@ -5,22 +5,18 @@ import { Currency } from "@/types";
  * Valid timeframes for dashboard filtering
  */
 export type TimeframeTab =
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'lastThreeMonths'
-  | 'thisYear'
-  | 'lastYear'
-  | 'thisWeek'
-  | 'lastWeek'
-  | 'allTime'
-  | 'custom';
+  | "thisMonth"
+  | "lastMonth"
+  | "lastThreeMonths"
+  | "lastSixMonths"
+  | "thisYear";
 
 /**
  * Options for chart data processing
  */
 export interface ChartProcessingOptions {
-  groupBy?: 'category' | 'paymentMethod' | 'day' | 'week' | 'month';
-  period?: 'day' | 'week' | 'month' | 'quarter' | 'year';
+  groupBy?: "category" | "paymentMethod" | "day" | "week" | "month";
+  period?: "day" | "week" | "month" | "quarter" | "year";
   displayCurrency: Currency;
   includeReimbursements?: boolean;
   includeTrend?: boolean;

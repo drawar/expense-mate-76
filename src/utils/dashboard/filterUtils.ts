@@ -190,6 +190,15 @@ export function filterTransactionsByTimeframe(
           startDate = startOfMonth(subMonths(today, 5));
         }
         break;
+      case "lastSixMonths":
+        endDate = endOfMonth(today);
+        startDate = startOfMonth(subMonths(today, 5));
+
+        if (previousPeriod) {
+          endDate = endOfMonth(subMonths(today, 6));
+          startDate = startOfMonth(subMonths(today, 11));
+        }
+        break;
       default:
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
@@ -364,6 +373,10 @@ export function getDaysInPeriod(
       }
       case "lastThreeMonths":
         startDate = startOfMonth(subMonths(today, 2));
+        endDate = endOfMonth(today);
+        break;
+      case "lastSixMonths":
+        startDate = startOfMonth(subMonths(today, 5));
         endDate = endOfMonth(today);
         break;
       default:

@@ -1,4 +1,3 @@
-
 // components/dashboard/filters/DisplayCurrencySelect.tsx
 import React from "react";
 import {
@@ -10,7 +9,24 @@ import {
 } from "@/components/ui/select";
 import { CurrencyService } from "@/core/currency";
 import { Currency } from "@/types";
-import { DollarSign } from "lucide-react";
+
+// Currency to flag emoji mapping
+const currencyFlags: Record<string, string> = {
+  CAD: "🇨🇦",
+  USD: "🇺🇸",
+  SGD: "🇸🇬",
+  EUR: "🇪🇺",
+  GBP: "🇬🇧",
+  JPY: "🇯🇵",
+  AUD: "🇦🇺",
+  CNY: "🇨🇳",
+  INR: "🇮🇳",
+  TWD: "🇹🇼",
+  VND: "🇻🇳",
+  IDR: "🇮🇩",
+  THB: "🇹🇭",
+  MYR: "🇲🇾",
+};
 
 export interface DisplayCurrencySelectProps {
   value: Currency;
@@ -29,25 +45,32 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
   return (
-    <div className={`flex items-center h-full ${className}`}>
-      <DollarSign className="h-5 w-5 text-muted-foreground mr-2" />
-      <Select
-        value={value}
-        onValueChange={(value: string) => onChange(value as Currency)}
-        defaultValue="CAD"
+    <Select
+      value={value}
+      onValueChange={(value: string) => onChange(value as Currency)}
+      defaultValue="CAD"
+    >
+      <SelectTrigger
+        className={`w-[100px] h-8 text-sm bg-transparent border-none ${className}`}
       >
-        <SelectTrigger className="w-[80px] h-8 text-sm bg-transparent border-none">
-          <SelectValue placeholder="CAD" />
-        </SelectTrigger>
-        <SelectContent>
-          {currencyOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.value}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+        <SelectValue>
+          <span className="flex items-center gap-1.5">
+            <span>{currencyFlags[value] || "💰"}</span>
+            <span>{value}</span>
+          </span>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {currencyOptions.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            <span className="flex items-center gap-2">
+              <span>{currencyFlags[option.value] || "💰"}</span>
+              <span>{option.value}</span>
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 
