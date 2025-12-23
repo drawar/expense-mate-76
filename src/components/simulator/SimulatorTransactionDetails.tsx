@@ -1,5 +1,5 @@
 import { useFormContext } from "react-hook-form";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { MossInput } from "@/components/ui/moss-input";
 import { MossCard } from "@/components/ui/moss-card";
 import { CalendarIcon, AlertCircle, Receipt } from "lucide-react";
@@ -199,8 +199,19 @@ export const SimulatorTransactionDetails: React.FC = () => {
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date > new Date()}
+                    onSelect={(date) => {
+                      // Only update if a date is selected (prevent clearing on deselect)
+                      if (date) {
+                        field.onChange(date);
+                      }
+                    }}
+                    disabled={(date) => {
+                      // Compare dates without time to avoid timezone edge cases
+                      // This ensures "today" is always selectable regardless of current time
+                      const today = startOfDay(new Date());
+                      const compareDate = startOfDay(date);
+                      return compareDate > today;
+                    }}
                     initialFocus
                     className="pointer-events-auto"
                   />
