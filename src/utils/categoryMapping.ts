@@ -595,7 +595,8 @@ export const MCC_MAPPINGS: Record<string, MCCMapping> = {
   },
   "7941": {
     mccCode: "7941",
-    description: "Commercial Sports, Athletic Fields, Sports Promoters",
+    description:
+      "Commercial Sports, Professional Sports Clubs, Athletic Fields, and Sports Promoters",
     defaultCategory: "Entertainment",
     confidence: 0.85,
     requiresReview: false,
