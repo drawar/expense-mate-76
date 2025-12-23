@@ -67,8 +67,7 @@ export const PointsDisplay = ({
 
   // Auto-expand breakdown if there are non-zero bonus values
   const hasExistingBreakdown = bonusPoints > 0 || promoBonusPoints > 0;
-  const shouldShowBreakdown =
-    showBreakdown || hasExistingBreakdown || isEditMode;
+  const shouldShowBreakdown = showBreakdown || hasExistingBreakdown;
 
   // Auto-update rewardPoints (total) when any component changes
   // Guard against setting the same value to prevent infinite loops
@@ -112,133 +111,7 @@ export const PointsDisplay = ({
 
   const pointsCurrency = points.pointsCurrency || "points";
 
-  // Edit mode: show all editable fields
-  if (isEditMode && form) {
-    const baseError = form.formState.errors.basePoints;
-    const bonusError = form.formState.errors.bonusPoints;
-    const promoError = form.formState.errors.promoBonusPoints;
-
-    return (
-      <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-800">
-        <CardContent className="p-4 space-y-4">
-          {/* Total Points Display */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <CoinsIcon
-                className="h-5 w-5 text-emerald-600"
-                style={{ strokeWidth: 2.5 }}
-              />
-              <span className="font-medium text-emerald-900 dark:text-emerald-100">
-                Total Points
-              </span>
-            </div>
-            <Badge
-              variant="secondary"
-              className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 text-lg px-3 py-1"
-            >
-              {calculatedTotal.toLocaleString()} {pointsCurrency}
-            </Badge>
-          </div>
-
-          {/* Points Breakdown - Editable */}
-          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-emerald-200 dark:border-emerald-800">
-            {/* Base Points */}
-            <div className="space-y-1">
-              <Label
-                htmlFor="basePoints"
-                className="flex items-center gap-1 text-xs"
-              >
-                <CoinsIcon className="h-3 w-3 text-blue-600" />
-                <span className="text-blue-900 dark:text-blue-100">Base</span>
-              </Label>
-              <Input
-                id="basePoints"
-                type="text"
-                placeholder="0"
-                {...form.register("basePoints")}
-                className={`text-sm h-8 ${baseError ? "border-red-500" : ""}`}
-              />
-              {baseError && (
-                <p className="text-xs text-red-500">
-                  {baseError.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* Bonus Points */}
-            <div className="space-y-1">
-              <Label
-                htmlFor="bonusPoints"
-                className="flex items-center gap-1 text-xs"
-              >
-                <StarIcon className="h-3 w-3 text-amber-600" />
-                <span className="text-amber-900 dark:text-amber-100">
-                  Bonus
-                </span>
-              </Label>
-              <Input
-                id="bonusPoints"
-                type="text"
-                placeholder="0"
-                {...form.register("bonusPoints")}
-                className={`text-sm h-8 ${bonusError ? "border-red-500" : ""}`}
-              />
-              {bonusError && (
-                <p className="text-xs text-red-500">
-                  {bonusError.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* Promo Bonus Points */}
-            <div className="space-y-1">
-              <Label
-                htmlFor="promoBonusPoints"
-                className="flex items-center gap-1 text-xs"
-              >
-                <GiftIcon className="h-3 w-3 text-purple-600" />
-                <span className="text-purple-900 dark:text-purple-100">
-                  Promo
-                </span>
-              </Label>
-              <Input
-                id="promoBonusPoints"
-                type="text"
-                placeholder="0"
-                {...form.register("promoBonusPoints")}
-                className={`text-sm h-8 ${promoError ? "border-red-500" : ""}`}
-              />
-              {promoError && (
-                <p className="text-xs text-red-500">
-                  {promoError.message as string}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Calculation Reference */}
-          <div className="text-xs text-muted-foreground pt-2 border-t border-emerald-200 dark:border-emerald-800">
-            <p>
-              Calculated: {points.basePoints || 0} base +{" "}
-              {points.bonusPoints || 0} bonus = {points.totalPoints}{" "}
-              {pointsCurrency}
-            </p>
-          </div>
-
-          {/* Messages */}
-          {points.messages && points.messages.length > 0 && (
-            <div className="text-xs text-gray-600">
-              {points.messages.map((message, index) => (
-                <div key={index}>{message}</div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Display mode: show total with expandable breakdown
+  // Unified display: show total with expandable breakdown (same for add and edit modes)
   return (
     <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-800">
       <CardContent className="p-4 h-fit">
