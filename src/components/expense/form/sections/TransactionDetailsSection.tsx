@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ClockIcon } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -159,53 +159,98 @@ export const TransactionDetailsSection: React.FC<
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel
-                style={{
-                  fontSize: "var(--font-size-label)",
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                Date
-              </FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  Date
+                </FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => {
+              // Get current time for display when field is empty
+              const getCurrentTimeString = () => format(new Date(), "HH:mm");
+
+              return (
+                <FormItem className="flex flex-col">
+                  <FormLabel
+                    style={{
+                      fontSize: "var(--font-size-label)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
+                    Time
+                  </FormLabel>
                   <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
+                    <div className="relative">
+                      <input
+                        type="time"
+                        className={cn(
+                          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                          "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+                          "placeholder:text-muted-foreground",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          "disabled:cursor-not-allowed disabled:opacity-50",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        value={field.value || getCurrentTimeString()}
+                        onChange={(e) => {
+                          field.onChange(e.target.value || undefined);
+                        }}
+                      />
+                      <ClockIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+                    </div>
                   </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        </div>
       </div>
 
       {/* Optional fields - collapsible */}

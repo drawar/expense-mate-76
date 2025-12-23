@@ -13,6 +13,7 @@ export const formSchema = z
     paymentAmount: z.string().optional(),
     eurFareAmount: z.string().optional(), // For Brim AF/KLM special case: EUR fare amount for bonus calculation
     date: z.date(),
+    time: z.string().optional(), // Optional time in HH:mm format; if not set, current time is used on submission
     notes: z.string().optional(),
     mcc: z.custom<MerchantCategoryCode | null>().optional(),
     rewardPoints: z

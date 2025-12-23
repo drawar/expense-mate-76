@@ -126,11 +126,24 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         total: finalRewardPoints,
       });
 
-      // Preserve the selected date with current time in local timezone
-      // This ensures the date displays correctly regardless of timezone
+      // Combine date with time
+      // If user specified a time, use it; otherwise use current system time
       const selectedDate = values.date as Date;
-      const now = new Date();
-      selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+      const timeValue = values.time as string | undefined;
+
+      if (timeValue) {
+        // User specified a time - use it
+        const [hours, minutes] = timeValue.split(":").map(Number);
+        selectedDate.setHours(hours, minutes, 0, 0);
+      } else {
+        // No time specified - use current system time
+        const now = new Date();
+        selectedDate.setHours(
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds()
+        );
+      }
 
       const transactionData: Omit<Transaction, "id"> = {
         date: selectedDate.toISOString(), // Full ISO string preserves timezone correctly
