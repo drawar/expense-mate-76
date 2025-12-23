@@ -12,6 +12,7 @@ export { default as SpendingCategoryCard } from "./SpendingCategoryCard";
 export { default as SpendingDistributionCard } from "./SpendingDistributionCard";
 export { default as SpendingHealthCard } from "./SpendingHealthCard";
 export { default as SpendingTrendCard } from "./SpendingTrendCard";
+export { default as FrequentMerchantsCard } from "./FrequentMerchantsCard";
 export { default as UnusualSpendingCard } from "./UnusualSpendingCard";
 
 // Also export types

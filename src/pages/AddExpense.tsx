@@ -5,10 +5,12 @@ import { useTransactionSubmit } from "@/hooks/useTransactionSubmit";
 import { ExpenseForm } from "@/components/expense/form/ExpenseForm";
 import StorageModeAlert from "@/components/expense/StorageModeAlert";
 import ErrorAlert from "@/components/expense/ErrorAlert";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 // Import the initialization function from rewards service
 import { initializeRewardSystem } from "@/core/rewards";
+import { MCC_CODES } from "@/utils/constants/mcc";
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -19,9 +21,36 @@ const AddExpense = () => {
     saveError,
   } = useTransactionSubmit(useLocalStorage);
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams();
   const [initializationStatus, setInitializationStatus] = useState<
     "idle" | "loading" | "success" | "error"
-  >("idle");
+  >("loading");
+
+  // Parse URL query parameters for pre-filling the form
+  const defaultValues = useMemo(() => {
+    const merchantName = searchParams.get("merchantName");
+    const mccCode = searchParams.get("mccCode");
+
+    if (!merchantName && !mccCode) {
+      return undefined;
+    }
+
+    const values: Record<string, unknown> = {};
+
+    if (merchantName) {
+      values.merchantName = merchantName;
+    }
+
+    if (mccCode) {
+      // Look up full MCC object from code
+      const mcc = MCC_CODES.find((m) => m.code === mccCode);
+      if (mcc) {
+        values.mcc = mcc;
+      }
+    }
+
+    return values;
+  }, [searchParams]);
 
   // Initialize the reward calculation system when the page loads
   useEffect(() => {
@@ -79,6 +108,7 @@ const AddExpense = () => {
             <ExpenseForm
               paymentMethods={paymentMethods}
               onSubmit={handleSubmit}
+              defaultValues={defaultValues}
               useLocalStorage={useLocalStorage}
               isSaving={isSaving}
             />

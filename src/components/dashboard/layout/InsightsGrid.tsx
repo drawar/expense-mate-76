@@ -4,6 +4,7 @@ import { DashboardData } from "@/types/dashboard";
 import { Currency, PaymentMethod, Transaction } from "@/types";
 import {
   SpendingTrendCard,
+  FrequentMerchantsCard,
   CardOptimizationCard,
   UnusualSpendingCard,
   InsightsCard,
@@ -91,6 +92,13 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           currency={currency}
           className={commonCardClass}
           initialPeriod="day"
+        />
+
+        {/* Frequent Merchants Card - Quick Add */}
+        <FrequentMerchantsCard
+          transactions={filteredTransactions}
+          currency={currency}
+          className={commonCardClass}
         />
 
         {/* Unusual Spending Card */}
