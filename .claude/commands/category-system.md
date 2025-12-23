@@ -1,8 +1,8 @@
-# ExpenseMate Category System Implementation Guide
+# Clairo Category System Implementation Guide
 
-You are implementing a comprehensive category system for ExpenseMate. This
-command provides the complete specification for user-friendly behavioral
-categories, MCC mapping, and auto-categorization.
+You are implementing a comprehensive category system for Clairo. This command
+provides the complete specification for user-friendly behavioral categories, MCC
+mapping, and auto-categorization.
 
 ## Overview
 

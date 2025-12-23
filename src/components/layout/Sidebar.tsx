@@ -98,8 +98,8 @@ const Sidebar = ({
           <div className="flex items-center justify-between h-16 px-4">
             {/* Logo */}
             <div className="flex items-center">
-              <ActivityIcon size={24} className="text-[#00A651]" />
-              <span className="ml-2 font-semibold">ExpenseMate</span>
+              <ActivityIcon size={24} className="text-[#7C9885]" />
+              <span className="ml-2 font-medium">Clairo</span>
             </div>
 
             {/* Menu toggle button */}
@@ -165,30 +165,30 @@ const Sidebar = ({
       {/* Mobile-only logo when sidebar is hidden */}
       {isMobile && !sidebarVisible && (
         <div
-          className="fixed left-0 top-0 z-20 w-12 h-12 m-2 flex items-center justify-center bg-[#0D1F17] rounded-full shadow-lg cursor-pointer"
+          className="fixed left-0 top-0 z-20 w-12 h-12 m-2 flex items-center justify-center bg-[var(--color-card-bg)] rounded-full shadow-lg cursor-pointer"
           onClick={handleLogoClick}
         >
-          <ActivityIcon size={24} className="text-[#00A651]" />
+          <ActivityIcon size={24} className="text-[#7C9885]" />
         </div>
       )}
 
       {/* Full sidebar - hidden on mobile unless toggled */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen z-20 bg-[#0D1F17] text-white transition-all duration-300 border-r border-[#1A3D2E]",
+          "fixed left-0 top-0 h-screen z-20 bg-[var(--color-bg)] text-foreground transition-all duration-300 border-r border-[var(--color-border)]",
           expanded ? "w-48" : "w-20",
           isMobile && !sidebarVisible ? "-translate-x-full" : "translate-x-0"
         )}
       >
         {/* Logo - clickable to toggle sidebar */}
         <div
-          className="flex items-center justify-center h-16 border-b border-[#1A3D2E] cursor-pointer"
+          className="flex items-center justify-center h-16 border-b border-[var(--color-border)] cursor-pointer"
           onClick={handleLogoClick}
         >
           <div className="flex items-center">
-            <ActivityIcon size={24} className="text-[#00A651]" />
+            <ActivityIcon size={24} className="text-[#7C9885]" />
             {expanded && (
-              <span className="ml-2 font-semibold text-white">ExpenseMate</span>
+              <span className="ml-2 font-medium text-foreground">Clairo</span>
             )}
           </div>
         </div>
@@ -203,8 +203,8 @@ const Sidebar = ({
                 className={cn(
                   "flex items-center px-3 py-3 rounded-md transition-colors",
                   isActive(item.path)
-                    ? "bg-[#00A651]/20 text-[#00A651]"
-                    : "text-gray-400 hover:text-white hover:bg-[#1A3D2E]",
+                    ? "bg-[#7C9885]/15 text-[#7C9885]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-[var(--color-surface)]",
                   expanded ? "justify-start" : "justify-center"
                 )}
                 onClick={() => isMobile && setSidebarVisible(false)}

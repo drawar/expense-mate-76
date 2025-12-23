@@ -17,7 +17,7 @@ import { Transaction } from "@/types";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { getSpendingTier } from "@/utils/constants/categories";
 
-const BUDGET_STORAGE_KEY = "expense-mate-monthly-budget";
+const BUDGET_STORAGE_KEY = "clairo-monthly-budget";
 
 // Categories that are typically discretionary and can be cut
 const DISCRETIONARY_CATEGORIES = [

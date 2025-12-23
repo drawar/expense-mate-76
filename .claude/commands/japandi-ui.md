@@ -1,7 +1,7 @@
-# ExpenseMate Japandi UI/UX Design System
+# Clairo Japandi UI/UX Design System
 
-When implementing UI components for ExpenseMate, apply this design system to
-ensure consistent Japandi aesthetics with clean, minimalist styling.
+When implementing UI components for Clairo, apply this design system to ensure
+consistent Japandi aesthetics with clean, minimalist styling.
 
 ## Core Design Principles
 
@@ -453,8 +453,8 @@ color: #8e8a85;
 
 ## Overview
 
-Critical functional issues identified in the ExpenseMate payment methods
-interface, separate from color scheme and visual design considerations.
+Critical functional issues identified in the Clairo payment methods interface,
+separate from color scheme and visual design considerations.
 
 ---
 

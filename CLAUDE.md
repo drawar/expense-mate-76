@@ -1,4 +1,4 @@
-# Claude Code Instructions for expense-mate-76
+# Claude Code Instructions for Clairo
 
 ## CRITICAL RULES - READ BEFORE ANY POINTS CALCULATION WORK
 

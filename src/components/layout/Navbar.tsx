@@ -50,9 +50,9 @@ const Navbar = () => {
             {/* Logo and Desktop Nav */}
             <div className="flex items-center space-x-8">
               <Link to="/" className="flex items-center space-x-2">
-                <ActivityIcon className="h-6 w-6 text-[#00A651]" />
-                <span className="text-xl font-bold bg-gradient-to-r from-[#00A651] to-[#10B981] bg-clip-text text-transparent">
-                  ExpenseMate
+                <ActivityIcon className="h-6 w-6 text-[#7C9885]" />
+                <span className="text-xl font-medium text-[#7C9885]">
+                  Clairo
                 </span>
               </Link>
 
@@ -65,7 +65,7 @@ const Navbar = () => {
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive(item.path)
-                        ? "bg-[#00A651]/10 text-[#00A651]"
+                        ? "bg-[#7C9885]/15 text-[#7C9885]"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
@@ -120,7 +120,7 @@ const Navbar = () => {
                   className={cn(
                     "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                     isActive(item.path)
-                      ? "bg-[#00A651]/10 text-[#00A651]"
+                      ? "bg-[#7C9885]/15 text-[#7C9885]"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                   onClick={() => setMobileMenuOpen(false)}

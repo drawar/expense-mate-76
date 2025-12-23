@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { Currency } from "@/types";
 
-const BUDGET_STORAGE_KEY = "expense-mate-monthly-budget";
+const BUDGET_STORAGE_KEY = "clairo-monthly-budget";
 
 interface BudgetSettings {
   monthlyBudget: number;

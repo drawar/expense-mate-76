@@ -11,7 +11,7 @@ import {
   CheckIcon,
   XIcon,
   ChevronDown,
-  ChevronRight,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -25,7 +25,7 @@ import {
   ParentCategorySpending,
 } from "@/utils/dashboard/categoryHierarchy";
 
-const BUDGET_STORAGE_KEY = "expense-mate-monthly-budget";
+const BUDGET_STORAGE_KEY = "clairo-monthly-budget";
 
 interface BudgetSpendingCardProps {
   className?: string;
@@ -326,13 +326,13 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             >
               {showAllCategories ? (
                 <>
-                  <ChevronDown className="h-4 w-4" />
                   Show less
+                  <ChevronUp className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  <ChevronRight className="h-4 w-4" />
                   Show {Math.min(hierarchyData.categories.length - 3, 3)} more
+                  <ChevronDown className="h-4 w-4" />
                 </>
               )}
             </button>

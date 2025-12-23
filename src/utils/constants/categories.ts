@@ -1,5 +1,5 @@
 /**
- * ExpenseMate Category System
+ * Clairo Category System
  *
  * This file defines the user-friendly behavioral categories for spending analysis.
  * Categories are organized into 6 main groups with subcategories.
@@ -46,7 +46,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "essentials",
     name: "Essentials",
     emoji: "🏠",
-    color: "#10b981", // Green
+    color: "#C09BBC", // Dusty rose
     budgetPriority: "high",
     savingsPotential: "low",
     budgetPercentage: "50-60%",
@@ -56,7 +56,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "lifestyle",
     name: "Lifestyle",
     emoji: "✨",
-    color: "#8b5cf6", // Purple
+    color: "#F0C764", // Golden yellow
     budgetPriority: "medium",
     savingsPotential: "high",
     budgetPercentage: "20-30%",
@@ -66,7 +66,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "home_living",
     name: "Home & Living",
     emoji: "🏡",
-    color: "#f59e0b", // Amber
+    color: "#9DBBCA", // Soft blue
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "5-15%",
@@ -76,7 +76,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "personal_care",
     name: "Personal Care",
     emoji: "👤",
-    color: "#ec4899", // Pink
+    color: "#7A442D", // Warm brown
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "3-8%",
@@ -86,7 +86,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "work_education",
     name: "Work & Education",
     emoji: "💼",
-    color: "#3b82f6", // Blue
+    color: "#2B50CA", // Royal blue
     budgetPriority: "high",
     savingsPotential: "low",
     budgetPercentage: "varies",
@@ -96,7 +96,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "financial_other",
     name: "Financial & Other",
     emoji: "💰",
-    color: "#6b7280", // Gray
+    color: "#F4BBA4", // Soft peach
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "varies",
