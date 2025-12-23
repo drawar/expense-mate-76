@@ -132,7 +132,7 @@ export const MCC_MAPPINGS: Record<string, MCCMapping> = {
   "4112": {
     mccCode: "4112",
     description: "Passenger Railways",
-    defaultCategory: "Transportation",
+    defaultCategory: "Travel & Vacation",
     confidence: 0.95,
     requiresReview: false,
     multiCategory: false,
