@@ -8,7 +8,21 @@ import { TimeframeTab } from "@/utils/dashboard";
  */
 function getPeriodLabel(timeframe: TimeframeTab): string {
   const now = new Date();
-  const monthNames = [
+  const monthNamesShort = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const monthNamesFull = [
     "January",
     "February",
     "March",
@@ -25,19 +39,33 @@ function getPeriodLabel(timeframe: TimeframeTab): string {
 
   switch (timeframe) {
     case "thisMonth":
-      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+      return `${monthNamesFull[now.getMonth()]} ${now.getFullYear()}`;
     case "lastMonth": {
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return `${monthNames[lastMonth.getMonth()]} ${lastMonth.getFullYear()}`;
+      return `${monthNamesFull[lastMonth.getMonth()]} ${lastMonth.getFullYear()}`;
     }
-    case "lastThreeMonths":
-      return "Last 3 Months";
-    case "lastSixMonths":
-      return "Last 6 Months";
+    case "lastThreeMonths": {
+      const startMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      const startYear = startMonth.getFullYear();
+      const endYear = now.getFullYear();
+      if (startYear === endYear) {
+        return `${monthNamesShort[startMonth.getMonth()]} - ${monthNamesShort[now.getMonth()]} ${endYear}`;
+      }
+      return `${monthNamesShort[startMonth.getMonth()]} ${startYear} - ${monthNamesShort[now.getMonth()]} ${endYear}`;
+    }
+    case "lastSixMonths": {
+      const startMonth = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const startYear = startMonth.getFullYear();
+      const endYear = now.getFullYear();
+      if (startYear === endYear) {
+        return `${monthNamesShort[startMonth.getMonth()]} - ${monthNamesShort[now.getMonth()]} ${endYear}`;
+      }
+      return `${monthNamesShort[startMonth.getMonth()]} ${startYear} - ${monthNamesShort[now.getMonth()]} ${endYear}`;
+    }
     case "thisYear":
       return `${now.getFullYear()}`;
     default:
-      return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+      return `${monthNamesFull[now.getMonth()]} ${now.getFullYear()}`;
   }
 }
 
