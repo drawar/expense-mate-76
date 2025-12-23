@@ -1,0 +1,66 @@
+-- Migration: Create storage bucket for receipt images
+-- NOTE: This migration must be run manually via Supabase Dashboard or CLI
+-- because storage bucket operations require special permissions.
+--
+-- MANUAL SETUP INSTRUCTIONS:
+-- 1. Go to Supabase Dashboard > Storage
+-- 2. Click "New bucket"
+-- 3. Name: receipts
+-- 4. Public bucket: YES (for easy image viewing)
+-- 5. File size limit: 10MB
+-- 6. Allowed MIME types: image/jpeg, image/png, image/webp, image/heic
+--
+-- Then create the following policies in Storage > Policies:
+
+-- Policy: Allow authenticated users to upload receipts
+-- CREATE POLICY "Users can upload receipts"
+-- ON storage.objects
+-- FOR INSERT
+-- TO authenticated
+-- WITH CHECK (
+--   bucket_id = 'receipts' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
+
+-- Policy: Users can only view their own receipts
+-- CREATE POLICY "Users can view their own receipts"
+-- ON storage.objects
+-- FOR SELECT
+-- TO authenticated
+-- USING (
+--   bucket_id = 'receipts' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
+
+-- Policy: Users can update their own receipts
+-- CREATE POLICY "Users can update their own receipts"
+-- ON storage.objects
+-- FOR UPDATE
+-- TO authenticated
+-- USING (
+--   bucket_id = 'receipts' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
+
+-- Policy: Users can delete their own receipts
+-- CREATE POLICY "Users can delete their own receipts"
+-- ON storage.objects
+-- FOR DELETE
+-- TO authenticated
+-- USING (
+--   bucket_id = 'receipts' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
+
+-- This file is kept for documentation purposes.
+-- The actual bucket creation should be done through the Supabase Dashboard.
+
+-- Alternative: If you have service_role access, you can use the Supabase Management API:
+-- POST /storage/v1/bucket
+-- {
+--   "id": "receipts",
+--   "name": "receipts",
+--   "public": true,
+--   "file_size_limit": 10485760,
+--   "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/heic"]
+-- }

@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import Index from "./pages/Index";
 import Transactions from "./pages/Transactions";
 import AddExpense from "./pages/AddExpense";
@@ -66,111 +67,113 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <TooltipProvider>
-          <Toaster />
-          <BrowserRouter>
-            <AuthProvider>
-              <Routes>
-                <Route path="/auth" element={<AuthPage />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <Index />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/transactions"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <Transactions />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/add-expense"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <AddExpense />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/payment-methods"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <PaymentMethods />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/reward-points"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <RewardPoints />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/diagnose-rewards"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <DiagnoseRewards />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/card-optimizer"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <CardOptimizerSimulator />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/delete-membership-rewards"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <DeleteMembershipRewards />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <Settings />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <Toaster />
+                <Routes>
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <Index />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/transactions"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <Transactions />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/add-expense"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <AddExpense />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment-methods"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <PaymentMethods />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/reward-points"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <RewardPoints />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/diagnose-rewards"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <DiagnoseRewards />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/card-optimizer"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <CardOptimizerSimulator />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/delete-membership-rewards"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <DeleteMembershipRewards />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <Settings />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
