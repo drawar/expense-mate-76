@@ -1,8 +1,11 @@
-
-import { useState, useEffect, createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { startPeriodicSync, stopPeriodicSync } from '@/utils/syncLocalStorageToSupabase';
+import { useState, useEffect, createContext, useContext } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  startPeriodicSync,
+  stopPeriodicSync,
+} from "@/utils/syncLocalStorageToSupabase";
+import { queryClient } from "@/App";
 
 interface AuthContextType {
   user: User | null;
@@ -20,32 +23,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        // Start periodic sync when user signs in
-        if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            startPeriodicSync(session.user.id);
-          }, 0);
-        }
-        
-        // Stop periodic sync when user signs out
-        if (event === 'SIGNED_OUT') {
-          stopPeriodicSync();
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+
+      // Start periodic sync when user signs in
+      if (event === "SIGNED_IN" && session?.user) {
+        setTimeout(() => {
+          startPeriodicSync(session.user.id);
+        }, 0);
       }
-    );
+
+      // Stop periodic sync when user signs out
+      if (event === "SIGNED_OUT") {
+        stopPeriodicSync();
+      }
+    });
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
+
       // Start periodic sync if user is already logged in
       if (session?.user) {
         setTimeout(() => {
@@ -63,8 +66,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Error signing out:', error);
+      console.error("Error signing out:", error);
     }
+
+    // Clear all user data from localStorage to prevent data leakage between users
+    // Note: We preserve UI preferences like theme settings
+    const userDataKeys = [
+      "expense-tracker-payment-methods",
+      "paymentMethods", // legacy key
+      "transactions",
+      "expense_tracker_transactions",
+      "expense-tracker-budgets",
+    ];
+
+    userDataKeys.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    // Clear React Query cache to prevent cached data from being shown to next user
+    queryClient.clear();
+
+    console.log("User data and query cache cleared after logout");
   };
 
   return (
@@ -77,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

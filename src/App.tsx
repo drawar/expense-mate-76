@@ -22,7 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
 import { toast } from "sonner";
 
-const queryClient = new QueryClient();
+// Export queryClient so it can be cleared on logout
+export const queryClient = new QueryClient();
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
