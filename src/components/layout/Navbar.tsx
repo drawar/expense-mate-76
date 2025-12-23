@@ -14,7 +14,7 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ClairoLogo } from "@/components/ui/clairo-logo";
 
@@ -33,6 +33,24 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Force re-render key to fix Safari iOS rendering bug when waking from sleep
+  const [renderKey, setRenderKey] = useState(0);
+
+  // Handle visibility change to fix Safari iOS backdrop-filter rendering bug
+  // When the screen turns off and back on, Safari can corrupt the rendering
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // Force a re-render to fix corrupted backdrop-filter rendering
+        setRenderKey((k) => k + 1);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -45,7 +63,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav key={renderKey} className="sticky top-0 z-50 border-b bg-background">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Logo and Desktop Nav */}
