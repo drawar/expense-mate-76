@@ -4,30 +4,30 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
 
 :root {
-  /* Define a more refined color palette (TD/Questrade Green) */
-  --primary-lighter: #6ee7b7;
-  --primary-light: #34d399;
-  --primary: #00a651;
-  --primary-dark: #008c45;
-  --primary-darker: #006b35;
+  /* Japandi color palette - muted, natural tones */
+  --primary-lighter: #a8c4af;
+  --primary-light: #8b9a8f;
+  --primary: #7c9885;
+  --primary-dark: #6a8574;
+  --primary-darker: #5d7567;
 
-  --accent-lighter: #a7f3d0;
-  --accent-light: #6ee7b7;
-  --accent: #10b981;
-  --accent-dark: #059669;
-  --accent-darker: #047857;
+  --accent-lighter: #d4c9b8;
+  --accent-light: #c4a57b;
+  --accent: #7c9885;
+  --accent-dark: #6a8574;
+  --accent-darker: #5d7567;
 
-  --success-light: #86efac;
-  --success: #22c55e;
-  --success-dark: #16a34a;
+  --success-light: #8b9a8f;
+  --success: #7c9885;
+  --success-dark: #6a8574;
 
-  --warning-light: #fdba74;
-  --warning: #f97316;
-  --warning-dark: #ea580c;
+  --warning-light: #d4c9b8;
+  --warning: #c4a57b;
+  --warning-dark: #a67c52;
 
-  --danger-light: #fca5a5;
-  --danger: #ef4444;
-  --danger-dark: #dc2626;
+  --danger-light: #c49a93;
+  --danger: #a86f64;
+  --danger-dark: #8b5b52;
 
   /* Typography scale with better differentiation */
   --font-size-xs: 0.75rem;
@@ -60,14 +60,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Apply variable font weights */
+/* Apply variable font weights - Japandi: max 500 */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-variation-settings: "wght" 700;
+  font-variation-settings: "wght" 500;
   letter-spacing: var(--letter-spacing-tight);
 }
 
@@ -83,16 +83,17 @@ h6 {
   font-variation-settings: "wght" 500;
 }
 
+/* Japandi: max font-weight is 500 (medium) */
 .font-semibold {
-  font-variation-settings: "wght" 600;
+  font-variation-settings: "wght" 500;
 }
 
 .font-bold {
-  font-variation-settings: "wght" 700;
+  font-variation-settings: "wght" 500;
 }
 
 .font-black {
-  font-variation-settings: "wght" 900;
+  font-variation-settings: "wght" 500;
 }
 
 /* Enhanced gradients */

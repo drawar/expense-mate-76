@@ -46,10 +46,10 @@
   --color-accent-text: #a8c4af;
 
   /* Semantic Colors */
-  --color-success: #7c9885;
+  --color-success: #808f3a; /* Olive green - healthy/under budget */
   --color-warning: #c4a57b;
-  --color-danger: #a86f64;
-  --color-error: #a86f64;
+  --color-danger: #d64a23; /* Burnt orange-red - unhealthy/over budget */
+  --color-error: #d64a23;
 
   /* Badge Colors */
   --color-badge-bg: rgba(124, 152, 133, 0.15);
@@ -200,10 +200,10 @@
   --color-accent-text: #4e6356;
 
   /* Semantic Colors */
-  --color-success: #5d7567;
+  --color-success: #6b7a32; /* Darker olive green for light mode */
   --color-warning: #a67c52;
-  --color-danger: #8b5b52;
-  --color-error: #8b5b52;
+  --color-danger: #c4421f; /* Darker burnt orange for light mode */
+  --color-error: #c4421f;
 
   /* Badge Colors */
   --color-badge-bg: rgba(93, 117, 103, 0.12);

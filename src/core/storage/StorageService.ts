@@ -870,37 +870,63 @@ export class StorageService {
         }
       }
 
-      // Build update object, syncing category fields
-      const userCategory = updates.userCategory || updates.category;
+      // Build update object with only provided fields
+      // This prevents overwriting existing data when doing partial updates (e.g., category change only)
+      const userCategory = updates.userCategory ?? updates.category;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only include fields that are explicitly provided in updates
+      if (updates.date !== undefined) updateData.date = updates.date;
+      if (merchantId !== null) updateData.merchant_id = merchantId;
+      if (updates.amount !== undefined) updateData.amount = updates.amount;
+      if (updates.currency !== undefined)
+        updateData.currency = updates.currency;
+      if (updates.paymentMethod?.id !== undefined)
+        updateData.payment_method_id = updates.paymentMethod.id;
+      if (updates.paymentAmount !== undefined)
+        updateData.payment_amount = updates.paymentAmount;
+      if (updates.paymentCurrency !== undefined)
+        updateData.payment_currency = updates.paymentCurrency;
+      if (updates.rewardPoints !== undefined)
+        updateData.total_points = updates.rewardPoints;
+      if (updates.basePoints !== undefined)
+        updateData.base_points = updates.basePoints;
+      if (updates.bonusPoints !== undefined)
+        updateData.bonus_points = updates.bonusPoints;
+      if (updates.promoBonusPoints !== undefined)
+        updateData.promo_bonus_points = updates.promoBonusPoints;
+      if (updates.isContactless !== undefined)
+        updateData.is_contactless = updates.isContactless;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.reimbursementAmount !== undefined)
+        updateData.reimbursement_amount = updates.reimbursementAmount;
+
+      // Category fields
+      if (updates.mccCode !== undefined || mccCode !== null)
+        updateData.mcc_code = updates.mccCode ?? mccCode;
+      if (userCategory !== undefined) {
+        updateData.user_category = userCategory;
+        updateData.category = userCategory; // Sync legacy field
+      }
+      if (updates.isRecategorized !== undefined)
+        updateData.is_recategorized = updates.isRecategorized;
+
+      // Auto-categorization metadata
+      if (updates.autoCategoryConfidence !== undefined)
+        updateData.auto_category_confidence = updates.autoCategoryConfidence;
+      if (updates.needsReview !== undefined)
+        updateData.needs_review = updates.needsReview;
+      if (updates.categorySuggestionReason !== undefined)
+        updateData.category_suggestion_reason =
+          updates.categorySuggestionReason;
+
       const { data, error } = await supabase
         .from("transactions")
-        .update({
-          date: updates.date,
-          // Use the computed merchantId (which includes newly generated UUIDs)
-          merchant_id: merchantId,
-          amount: updates.amount,
-          currency: updates.currency,
-          payment_method_id: updates.paymentMethod?.id,
-          payment_amount: updates.paymentAmount,
-          payment_currency: updates.paymentCurrency,
-          total_points: updates.rewardPoints,
-          base_points: updates.basePoints ?? 0,
-          bonus_points: updates.bonusPoints ?? 0,
-          promo_bonus_points: updates.promoBonusPoints ?? 0,
-          is_contactless: updates.isContactless,
-          notes: updates.notes,
-          reimbursement_amount: updates.reimbursementAmount,
-          // Category fields - use computed mccCode from merchant, or explicit updates.mccCode
-          mcc_code: updates.mccCode ?? mccCode,
-          user_category: userCategory,
-          is_recategorized: updates.isRecategorized,
-          category: userCategory, // Sync legacy field
-          // Auto-categorization metadata
-          auto_category_confidence: updates.autoCategoryConfidence,
-          needs_review: updates.needsReview,
-          category_suggestion_reason: updates.categorySuggestionReason,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();

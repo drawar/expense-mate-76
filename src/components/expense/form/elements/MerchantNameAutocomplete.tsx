@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { StoreIcon, MapPinIcon } from "lucide-react";
 import {
@@ -21,6 +21,7 @@ import {
   MerchantSuggestion,
 } from "@/hooks/useMerchantSuggestions";
 import { MerchantCategoryCode } from "@/types";
+import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
 
 interface MerchantNameAutocompleteProps {
   onSelectMerchant?: (suggestion: MerchantSuggestion) => void;
@@ -33,12 +34,31 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
 }) => {
   const form = useFormContext();
   const [open, setOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasAutoAppliedMCCRef = useRef(false);
   const { getNameSuggestions } = useMerchantSuggestions();
 
   const currentValue = form.watch("merchantName") || "";
   const suggestions = getNameSuggestions(currentValue);
   const showDropdown = open && suggestions.length > 0;
+
+  // Auto-lookup MCC when merchant name changes while focused
+  useEffect(() => {
+    if (!isFocused) return;
+
+    const mcc = getMCCFromMerchantName(currentValue);
+    if (mcc) {
+      // Match found - show it
+      form.setValue("mcc", mcc);
+      onSelectMCC?.(mcc);
+      hasAutoAppliedMCCRef.current = true;
+    } else if (hasAutoAppliedMCCRef.current) {
+      // No match - clear to "Select category"
+      form.setValue("mcc", null);
+      hasAutoAppliedMCCRef.current = false;
+    }
+  }, [currentValue, isFocused, form, onSelectMCC]);
 
   const handleSelect = (suggestion: MerchantSuggestion) => {
     form.setValue("merchantName", suggestion.name);
@@ -51,10 +71,19 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
     // Auto-fill isOnline toggle
     form.setValue("isOnline", suggestion.isOnline);
 
-    // Auto-fill MCC if available
+    // Auto-fill MCC if available from suggestion (past data)
     if (suggestion.mcc) {
       form.setValue("mcc", suggestion.mcc);
       onSelectMCC?.(suggestion.mcc);
+      hasAutoAppliedMCCRef.current = true;
+    } else {
+      // Try to lookup MCC from merchant name (airlines/hotels)
+      const mcc = getMCCFromMerchantName(suggestion.name);
+      if (mcc) {
+        form.setValue("mcc", mcc);
+        onSelectMCC?.(mcc);
+        hasAutoAppliedMCCRef.current = true;
+      }
     }
 
     setOpen(false);
@@ -76,18 +105,23 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
                 value={field.value || ""}
                 onChange={(e) => {
                   field.onChange(e);
-                  if (e.target.value.length >= 2) {
+                  const value = e.target.value;
+                  if (value.length >= 2) {
                     setOpen(true);
                   } else {
                     setOpen(false);
                   }
+                  // MCC lookup handled by useEffect watching currentValue
                 }}
                 onFocus={() => {
+                  setIsFocused(true);
                   if (currentValue.length >= 2 && suggestions.length > 0) {
                     setOpen(true);
                   }
+                  // MCC lookup handled by useEffect watching isFocused
                 }}
                 onBlur={() => {
+                  setIsFocused(false);
                   // Delay closing to allow click on suggestion
                   setTimeout(() => setOpen(false), 150);
                 }}

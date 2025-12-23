@@ -77,18 +77,19 @@ export const PointsDisplay = ({
     }
   }, [basePoints, bonusPoints, promoBonusPoints, form]);
 
-  // Initialize base/bonus points from calculation when they're empty (new transaction)
+  // Sync form fields with calculation result when calculation changes
+  // In non-edit mode, always update form fields to match the latest calculation
+  // This ensures converted amount changes are reflected in the UI
   useEffect(() => {
     if (form && points && !isEditMode) {
-      const currentBase = form.getValues("basePoints");
-      const currentBonus = form.getValues("bonusPoints");
-
-      // Only set if empty (not yet initialized)
-      if (!currentBase || currentBase === "") {
-        form.setValue("basePoints", (points.basePoints || 0).toString());
+      // Always update form fields to match the latest calculation
+      // This is critical for foreign currency transactions where the converted
+      // amount may change after initial calculation
+      if (points.basePoints !== undefined) {
+        form.setValue("basePoints", points.basePoints.toString());
       }
-      if (!currentBonus || currentBonus === "") {
-        form.setValue("bonusPoints", (points.bonusPoints || 0).toString());
+      if (points.bonusPoints !== undefined) {
+        form.setValue("bonusPoints", points.bonusPoints.toString());
       }
     }
   }, [points?.basePoints, points?.bonusPoints, form, isEditMode]);

@@ -40,7 +40,7 @@ const ProgressBar: React.FC<{
 }> = ({ percentage, color, className }) => (
   <div
     className={cn(
-      "h-2 w-full bg-muted rounded-full overflow-hidden",
+      "h-1.5 w-full bg-[var(--color-surface)] rounded-full overflow-hidden",
       className
     )}
   >
@@ -81,7 +81,7 @@ const SubcategoryRow: React.FC<{
       <span className="text-xs text-muted-foreground">
         {subcategory.percentage.toFixed(0)}%
       </span>
-      <span className="text-sm font-medium w-20 text-right">
+      <span className="text-sm w-20 text-right">
         {CurrencyService.format(subcategory.amount, currency)}
       </span>
     </div>
@@ -128,13 +128,13 @@ const ParentCategoryRow: React.FC<{
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <span className="text-base">{category.emoji}</span>
-              <span className="font-medium text-sm">{category.name}</span>
+              <span className="text-sm">{category.name}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
                 {category.percentage.toFixed(0)}%
               </span>
-              <span className="font-semibold text-sm w-24 text-right">
+              <span className="font-medium text-sm w-24 text-right">
                 {CurrencyService.format(category.amount, currency)}
               </span>
             </div>
@@ -272,7 +272,7 @@ const SpendingBreakdownCard: React.FC<SpendingBreakdownCardProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl">Spending Breakdown</CardTitle>
           <div className="text-right">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-medium">
               {CurrencyService.format(hierarchyData.totalSpending, currency)}
             </div>
             <div className="text-xs text-muted-foreground">Total spending</div>
@@ -293,28 +293,6 @@ const SpendingBreakdownCard: React.FC<SpendingBreakdownCardProps> = ({
               }
             />
           ))}
-        </div>
-
-        {/* Legend for savings potential - using Japandi muted palette */}
-        <div className="mt-4 pt-3 border-t border-border/50">
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#7c9885]" />
-              <span>Essentials</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#8b9a8f]" />
-              <span>Lifestyle</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#c4a57b]" />
-              <span>Home</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#a86f64]" />
-              <span>Personal</span>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

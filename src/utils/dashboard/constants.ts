@@ -1,18 +1,19 @@
 // utils/dashboard/constants.ts
 
 /**
- * Standard color palette for charts
+ * Japandi color palette for charts
+ * Muted, natural tones that create visual hierarchy through value, not hue
  */
 export const CHART_COLORS = [
-  "#00A651", // primary green (TD/Questrade)
-  "#10B981", // emerald
-  "#14B8A6", // teal
-  "#3B82F6", // blue
-  "#F59E0B", // amber
-  "#EC4899", // pink
-  "#EF4444", // red
-  "#06B6D4", // cyan
-  "#F97316", // orange
+  "#7c9885", // Sage green (primary - Essentials)
+  "#a86f64", // Muted terracotta (Lifestyle)
+  "#c4a57b", // Warm tan (Home & Living)
+  "#9b8b7e", // Stone/taupe (Personal Care)
+  "#6a8574", // Darker sage (Work & Education)
+  "#6b6863", // Warm gray (Financial & Other)
+  "#5d7567", // Deep sage
+  "#b8997b", // Light tan
+  "#8b7355", // Clay
 ];
 
 /**
