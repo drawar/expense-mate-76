@@ -122,6 +122,7 @@ export function Dashboard() {
             paymentMethods={paymentMethods}
             currency={displayCurrency}
             monthlyBudget={monthlyBudget}
+            timeframe={activeTab}
           />
 
           {/* Recent Transactions */}

@@ -14,12 +14,14 @@ import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownShee
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { EmptyState } from ".";
 import { BarChartIcon } from "lucide-react";
+import { TimeframeTab } from "@/utils/dashboard";
 
 interface InsightsGridProps {
   dashboardData: DashboardData | null;
   paymentMethods?: PaymentMethod[];
   currency: Currency;
   monthlyBudget?: number;
+  timeframe?: TimeframeTab;
 }
 
 /**
@@ -30,6 +32,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   paymentMethods = [],
   currency,
   monthlyBudget = 0,
+  timeframe = "thisMonth",
 }) => {
   // State for category drill-down
   const [drilldownOpen, setDrilldownOpen] = useState(false);
@@ -91,7 +94,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           transactions={filteredTransactions}
           currency={currency}
           className={commonCardClass}
-          initialPeriod="day"
+          timeframe={timeframe}
         />
 
         {/* Frequent Merchants Card - Quick Add */}

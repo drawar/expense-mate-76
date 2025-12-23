@@ -1,5 +1,5 @@
 // components/dashboard/cards/SpendingTrendCard.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { TrendingUpIcon, TrendingDownIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import {
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import Card from "./Card";
-import { chartUtils } from "@/utils/dashboard";
+import { chartUtils, TimeframeTab } from "@/utils/dashboard";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import {
   LineChart,
@@ -20,20 +20,65 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+type TrendPeriod = "week" | "month" | "quarter" | "year";
+
 interface SpendingTrendCardProps {
   transactions: Transaction[];
   currency?: Currency;
-  initialPeriod?: "day" | "week" | "month" | "quarter";
+  timeframe?: TimeframeTab;
   className?: string;
 }
 
 const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   transactions,
   currency = "SGD",
-  initialPeriod = "week",
+  timeframe = "thisMonth",
   className = "",
 }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
+  // Get available periods based on timeframe
+  const availablePeriods = useMemo((): TrendPeriod[] => {
+    switch (timeframe) {
+      case "thisMonth":
+      case "lastMonth":
+        // For single month, only show Daily (week) and Weekly (month)
+        return ["week", "month"];
+      case "lastThreeMonths":
+        // For 3 months, show Daily, Weekly, Monthly
+        return ["week", "month", "quarter"];
+      case "lastSixMonths":
+      case "thisYear":
+        // For longer periods, show all options
+        return ["week", "month", "quarter", "year"];
+      default:
+        return ["week", "month", "quarter", "year"];
+    }
+  }, [timeframe]);
+
+  // Get default period based on timeframe
+  const getDefaultPeriod = (): TrendPeriod => {
+    switch (timeframe) {
+      case "thisMonth":
+      case "lastMonth":
+        return "week"; // Daily view for single month
+      case "lastThreeMonths":
+        return "month"; // Weekly view for 3 months
+      case "lastSixMonths":
+      case "thisYear":
+        return "quarter"; // Monthly view for longer periods
+      default:
+        return "week";
+    }
+  };
+
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<TrendPeriod>(getDefaultPeriod());
+
+  // Reset selected period when timeframe changes if current selection is not available
+  useEffect(() => {
+    if (!availablePeriods.includes(selectedPeriod)) {
+      setSelectedPeriod(getDefaultPeriod());
+    }
+  }, [timeframe, availablePeriods]);
   const { formatCurrency } = useCurrencyFormatter(currency);
 
   // Map period values to display labels
@@ -87,22 +132,31 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     };
   }, [chartData, selectedPeriod]);
 
-  // Create period selector
+  // Period options with labels
+  const periodOptions: { value: TrendPeriod; label: string }[] = [
+    { value: "week", label: "Daily" },
+    { value: "month", label: "Weekly" },
+    { value: "quarter", label: "Monthly" },
+    { value: "year", label: "Quarterly" },
+  ];
+
+  // Create period selector with filtered options
   const periodSelector = (
     <Select
       value={selectedPeriod}
-      onValueChange={(value) =>
-        setSelectedPeriod(value as "day" | "week" | "month" | "quarter")
-      }
+      onValueChange={(value) => setSelectedPeriod(value as TrendPeriod)}
     >
       <SelectTrigger className="w-32 h-8">
         <span className="text-sm">{getPeriodLabel(selectedPeriod)}</span>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="week">Daily</SelectItem>
-        <SelectItem value="month">Weekly</SelectItem>
-        <SelectItem value="quarter">Monthly</SelectItem>
-        <SelectItem value="year">Quarterly</SelectItem>
+        {periodOptions
+          .filter((option) => availablePeriods.includes(option.value))
+          .map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
       </SelectContent>
     </Select>
   );
