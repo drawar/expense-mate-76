@@ -1,6 +1,5 @@
 // components/dashboard/layout/DashboardHeader.tsx
 import React from "react";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { TimeframeTab } from "@/utils/dashboard";
 
@@ -56,11 +55,10 @@ const DashboardHeader: React.FC = () => {
   const periodLabel = getPeriodLabel(activeTab);
 
   return (
-    <div className="flex items-center justify-between mb-6 mt-4">
+    <div className="mb-6 mt-4">
       <h1 className="text-2xl font-medium tracking-tight text-primary">
         {periodLabel}
       </h1>
-      <ThemeToggle />
     </div>
   );
 };

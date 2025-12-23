@@ -32,12 +32,8 @@ export function Dashboard() {
     error,
     activeTab,
     displayCurrency,
-    useStatementMonth,
-    statementCycleDay,
     setActiveTab,
     setDisplayCurrency,
-    setUseStatementMonth,
-    setStatementCycleDay,
     refreshData,
   } = useDashboardContext();
 
@@ -58,13 +54,9 @@ export function Dashboard() {
   const filterState = {
     activeTab,
     displayCurrency,
-    useStatementMonth,
-    statementCycleDay,
     handleTimeframeChange: (value: string) =>
       setActiveTab(value as TimeframeTab),
     handleCurrencyChange: (currency: Currency) => setDisplayCurrency(currency),
-    handleStatementMonthToggle: (value: boolean) => setUseStatementMonth(value),
-    handleStatementCycleDayChange: (day: number) => setStatementCycleDay(day),
   };
 
   // Error state
