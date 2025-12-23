@@ -20,7 +20,7 @@ interface InsightsGridProps {
   dashboardData: DashboardData | null;
   paymentMethods?: PaymentMethod[];
   currency: Currency;
-  monthlyBudget?: number;
+  scaledBudget?: number;
   timeframe?: TimeframeTab;
 }
 
@@ -31,7 +31,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   dashboardData,
   paymentMethods = [],
   currency,
-  monthlyBudget = 0,
+  scaledBudget = 0,
   timeframe = "thisMonth",
 }) => {
   // State for category drill-down
@@ -125,7 +125,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Smart Insights Card - AI-powered recommendations */}
         {/* <InsightsCard
           transactions={filteredTransactions}
-          monthlyBudget={monthlyBudget}
+          monthlyBudget={scaledBudget}
           currency={currency}
           paymentMethods={paymentMethods}
           className={commonCardClass}
@@ -135,7 +135,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Spending Health Score Card */}
         {/* <SpendingHealthCard
           transactions={filteredTransactions}
-          monthlyBudget={monthlyBudget}
+          monthlyBudget={scaledBudget}
           totalSpent={dashboardData?.metrics?.totalExpenses || 0}
           currency={currency}
           className={commonCardClass}

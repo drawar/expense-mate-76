@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       "transactions",
       "expense_tracker_transactions",
       "expense-tracker-budgets",
+      "clairo-monthly-budget", // legacy budget key
     ];
 
     userDataKeys.forEach((key) => {

@@ -4,7 +4,7 @@
  * Combines budget progress with top spending categories in a single card
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   TargetIcon,
   PencilIcon,
@@ -17,15 +17,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
+import { useBudget, BudgetPeriodType } from "@/hooks/useBudget";
 import { Transaction } from "@/types";
 import {
   buildCategoryHierarchy,
   ParentCategorySpending,
 } from "@/utils/dashboard/categoryHierarchy";
-
-const BUDGET_STORAGE_KEY = "clairo-monthly-budget";
 
 interface BudgetSpendingCardProps {
   className?: string;
@@ -41,33 +47,30 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   transactions = [],
   onCategoryClick,
 }) => {
-  const { dashboardData, displayCurrency } = useDashboardContext();
+  const { dashboardData, displayCurrency, activeTab } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Budget state
-  const [monthlyBudget, setMonthlyBudget] = useState<number>(0);
+  // Budget from Supabase with timeframe scaling
+  const { scaledBudget, rawBudget, periodType, isLoading, setBudget } =
+    useBudget(displayCurrency, activeTab);
+
+  // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [editPeriodType, setEditPeriodType] =
+    useState<BudgetPeriodType>("monthly");
   const [showAllCategories, setShowAllCategories] = useState(false);
 
-  // Load budget from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed[displayCurrency]) {
-        setMonthlyBudget(parsed[displayCurrency]);
-      }
+  // Save budget to Supabase
+  const saveBudget = async (
+    amount: number,
+    budgetPeriodType: BudgetPeriodType
+  ) => {
+    try {
+      await setBudget(amount, displayCurrency, budgetPeriodType);
+    } catch (error) {
+      console.error("Failed to save budget:", error);
     }
-  }, [displayCurrency]);
-
-  // Save budget to localStorage
-  const saveBudget = (amount: number) => {
-    const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
-    const budgets = stored ? JSON.parse(stored) : {};
-    budgets[displayCurrency] = amount;
-    localStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(budgets));
-    setMonthlyBudget(amount);
   };
 
   // Calculate metrics
@@ -88,9 +91,9 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   const dayOfMonth = now.getDate();
   const daysRemaining = daysInMonth - dayOfMonth;
 
-  // Calculate progress
-  const progress = monthlyBudget > 0 ? (netExpenses / monthlyBudget) * 100 : 0;
-  const remaining = monthlyBudget - netExpenses;
+  // Calculate progress using scaled budget
+  const progress = scaledBudget > 0 ? (netExpenses / scaledBudget) * 100 : 0;
+  const remaining = scaledBudget - netExpenses;
   const isOverBudget = remaining < 0;
   const expectedProgress = (dayOfMonth / daysInMonth) * 100;
   const isOnTrack = progress <= expectedProgress + 10;
@@ -109,14 +112,15 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
 
   // Handle edit
   const handleStartEdit = () => {
-    setEditValue(monthlyBudget > 0 ? monthlyBudget.toString() : "");
+    setEditValue(rawBudget > 0 ? rawBudget.toString() : "");
+    setEditPeriodType(periodType);
     setIsEditing(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     const amount = parseFloat(editValue);
     if (!isNaN(amount) && amount >= 0) {
-      saveBudget(amount);
+      await saveBudget(amount, editPeriodType);
     }
     setIsEditing(false);
   };
@@ -150,6 +154,11 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
     return "On track";
   };
 
+  // Get period label for display
+  const getPeriodLabel = () => {
+    return periodType === "weekly" ? "weekly" : "monthly";
+  };
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
@@ -158,7 +167,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             <TargetIcon className="h-5 w-5 text-primary" />
             Budget & Spending
           </CardTitle>
-          {!isEditing && monthlyBudget > 0 && (
+          {!isEditing && scaledBudget > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -173,25 +182,50 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
       </CardHeader>
       <CardContent>
         {/* Budget Section */}
-        {isEditing ? (
-          <div className="flex items-center gap-2 mb-4">
-            <Input
-              type="number"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter monthly budget"
-              className="h-9"
-              autoFocus
-            />
-            <Button size="sm" variant="ghost" onClick={handleSaveEdit}>
-              <CheckIcon className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-              <XIcon className="h-4 w-4" />
-            </Button>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-pulse text-muted-foreground">
+              Loading budget...
+            </div>
           </div>
-        ) : monthlyBudget === 0 ? (
+        ) : isEditing ? (
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter budget amount"
+                className="h-9 flex-1"
+                autoFocus
+              />
+              <Select
+                value={editPeriodType}
+                onValueChange={(value) =>
+                  setEditPeriodType(value as BudgetPeriodType)
+                }
+              >
+                <SelectTrigger className="w-28 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleSaveEdit} className="flex-1">
+                <CheckIcon className="h-4 w-4 mr-1" />
+                Save
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : scaledBudget === 0 ? (
           <div className="mb-4">
             <div className="flex items-end justify-between mb-3">
               <div>
@@ -224,7 +258,10 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                   {formatCurrency(netExpenses)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  of {formatCurrency(monthlyBudget)}
+                  of {formatCurrency(scaledBudget)}
+                  <span className="text-xs ml-1">
+                    ({formatCurrency(rawBudget)}/{getPeriodLabel()})
+                  </span>
                 </p>
               </div>
               <div className="text-right">

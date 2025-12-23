@@ -37,8 +37,11 @@ export function Dashboard() {
     refreshData,
   } = useDashboardContext();
 
-  // Get monthly budget for current currency
-  const { monthlyBudget } = useBudget(displayCurrency);
+  // Get budget for current currency scaled to timeframe
+  const { scaledBudget, rawBudget, periodType, setBudget } = useBudget(
+    displayCurrency,
+    activeTab
+  );
 
   // Get recent transactions for display
   const recentTransactions = React.useMemo(() => {
@@ -121,7 +124,7 @@ export function Dashboard() {
             dashboardData={dashboardData}
             paymentMethods={paymentMethods}
             currency={displayCurrency}
-            monthlyBudget={monthlyBudget}
+            scaledBudget={scaledBudget}
             timeframe={activeTab}
           />
 
