@@ -5,9 +5,9 @@ import { useTransactionSubmit } from "@/hooks/useTransactionSubmit";
 import { ExpenseForm } from "@/components/expense/form/ExpenseForm";
 import StorageModeAlert from "@/components/expense/StorageModeAlert";
 import ErrorAlert from "@/components/expense/ErrorAlert";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
 // Import the initialization function from rewards service
 import { initializeRewardSystem } from "@/core/rewards";
 import { MCC_CODES } from "@/utils/constants/mcc";
@@ -20,7 +20,6 @@ const AddExpense = () => {
     isLoading: isSaving,
     saveError,
   } = useTransactionSubmit(useLocalStorage);
-  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [initializationStatus, setInitializationStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -105,13 +104,15 @@ const AddExpense = () => {
               Error initializing reward system. Please try refreshing the page.
             </div>
           ) : (
-            <ExpenseForm
-              paymentMethods={paymentMethods}
-              onSubmit={handleSubmit}
-              defaultValues={defaultValues}
-              useLocalStorage={useLocalStorage}
-              isSaving={isSaving}
-            />
+            <ErrorBoundary>
+              <ExpenseForm
+                paymentMethods={paymentMethods}
+                onSubmit={handleSubmit}
+                defaultValues={defaultValues}
+                useLocalStorage={useLocalStorage}
+                isSaving={isSaving}
+              />
+            </ErrorBoundary>
           )}
         </div>
       </div>
