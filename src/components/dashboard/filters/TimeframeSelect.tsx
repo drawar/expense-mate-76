@@ -35,7 +35,8 @@ const TimeframeSelect: React.FC<TimeframeSelectProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="thisMonth">This Month</SelectItem>
-          <SelectItem value="lastMonth">Last Month</SelectItem>
+          {/* <SelectItem value="lastMonth">Last Month</SelectItem> */}
+          <SelectItem value="lastTwoMonths">Last 2 Months</SelectItem>
           <SelectItem value="lastThreeMonths">Last 3 Months</SelectItem>
           <SelectItem value="lastSixMonths">Last 6 Months</SelectItem>
           <SelectItem value="thisYear">This Year</SelectItem>

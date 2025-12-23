@@ -6,7 +6,8 @@ import { Currency } from "@/types";
  */
 export type TimeframeTab =
   | "thisMonth"
-  | "lastMonth"
+  | "lastMonth" // Temporarily disabled in UI
+  | "lastTwoMonths"
   | "lastThreeMonths"
   | "lastSixMonths"
   | "thisYear";

@@ -181,6 +181,15 @@ export function filterTransactionsByTimeframe(
         }
         break;
       }
+      case "lastTwoMonths":
+        endDate = endOfMonth(today);
+        startDate = startOfMonth(subMonths(today, 1));
+
+        if (previousPeriod) {
+          endDate = endOfMonth(subMonths(today, 2));
+          startDate = startOfMonth(subMonths(today, 3));
+        }
+        break;
       case "lastThreeMonths":
         endDate = endOfMonth(today);
         startDate = startOfMonth(subMonths(today, 2));
@@ -371,6 +380,10 @@ export function getDaysInPeriod(
         endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
         break;
       }
+      case "lastTwoMonths":
+        startDate = startOfMonth(subMonths(today, 1));
+        endDate = endOfMonth(today);
+        break;
       case "lastThreeMonths":
         startDate = startOfMonth(subMonths(today, 2));
         endDate = endOfMonth(today);

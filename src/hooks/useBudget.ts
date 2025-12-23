@@ -52,6 +52,7 @@ function scaleBudgetForTimeframe(
   > = {
     thisMonth: { weeks: 4.33, months: 1 },
     lastMonth: { weeks: 4.33, months: 1 },
+    lastTwoMonths: { weeks: 8.66, months: 2 },
     lastThreeMonths: { weeks: 13, months: 3 },
     lastSixMonths: { weeks: 26, months: 6 },
     thisYear: { weeks: 52, months: 12 },

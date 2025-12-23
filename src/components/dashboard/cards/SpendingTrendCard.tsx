@@ -42,6 +42,9 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       case "lastMonth":
         // For single month, only show Daily (week) and Weekly (month)
         return ["week", "month"];
+      case "lastTwoMonths":
+        // For 2 months, show Daily, Weekly, Monthly
+        return ["week", "month", "quarter"];
       case "lastThreeMonths":
         // For 3 months, show Daily, Weekly, Monthly
         return ["week", "month", "quarter"];
@@ -60,6 +63,8 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       case "thisMonth":
       case "lastMonth":
         return "week"; // Daily view for single month
+      case "lastTwoMonths":
+        return "month"; // Weekly view for 2 months
       case "lastThreeMonths":
         return "month"; // Weekly view for 3 months
       case "lastSixMonths":
