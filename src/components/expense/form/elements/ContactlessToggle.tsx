@@ -37,11 +37,9 @@ const ContactlessToggle: React.FC<ContactlessToggleProps> = ({
       control={form.control}
       name="isContactless"
       render={({ field }) => (
-        <FormItem className="!space-y-0 flex flex-row items-center justify-between rounded-lg border h-10 px-3 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <FormLabel className="!mb-0 !mt-0 !leading-none">
-              Contactless Payment
-            </FormLabel>
+        <FormItem className="!space-y-0 flex flex-row items-center justify-between h-10">
+          <FormLabel className="!mb-0 !mt-0 !leading-none inline-flex items-center gap-1.5">
+            Contactless Payment
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -52,7 +50,7 @@ const ContactlessToggle: React.FC<ContactlessToggleProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </FormLabel>
           <FormControl>
             <div className="flex items-center space-x-2">
               <WifiIcon className="h-4 w-4 text-muted-foreground" />

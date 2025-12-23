@@ -1,14 +1,19 @@
 import { useFormContext } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, ClockIcon } from "lucide-react";
+import { CalendarIcon, ClockIcon, InfoIcon } from "lucide-react";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -179,16 +184,16 @@ export const TransactionDetailsSection: React.FC<
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full h-10 px-3 text-left font-normal justify-between",
                           !field.value && "text-muted-foreground"
                         )}
                       >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <span className="truncate">
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
+                        </span>
+                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -235,6 +240,7 @@ export const TransactionDetailsSection: React.FC<
                           "focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
                           "disabled:cursor-not-allowed disabled:opacity-50",
                           "transition-[border-color,box-shadow] duration-150",
+                          "[&::-webkit-calendar-picker-indicator]:hidden",
                           !field.value && "text-muted-foreground"
                         )}
                         value={field.value || getCurrentTimeString()}
@@ -256,7 +262,7 @@ export const TransactionDetailsSection: React.FC<
       {/* Optional fields - collapsible */}
       {minimal && (
         <CollapsibleSection
-          trigger="Show advanced fields"
+          trigger="Show transaction details"
           id="transaction-advanced"
           persistState={true}
         >
@@ -267,13 +273,20 @@ export const TransactionDetailsSection: React.FC<
               name="reimbursementAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel
-                    style={{
-                      fontSize: "var(--font-size-label)",
-                      color: "var(--color-text-secondary)",
-                    }}
-                  >
+                  <FormLabel className="inline-flex items-center gap-1.5">
                     Reimbursement Amount
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            Amount reimbursed for this expense (in {currency})
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </FormLabel>
                   <FormControl>
                     <MossInput
@@ -284,11 +297,6 @@ export const TransactionDetailsSection: React.FC<
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription
-                    style={{ color: "var(--color-text-helper)" }}
-                  >
-                    Amount reimbursed for this expense (in {currency})
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -332,13 +340,20 @@ export const TransactionDetailsSection: React.FC<
             name="reimbursementAmount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel
-                  style={{
-                    fontSize: "var(--font-size-label)",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
+                <FormLabel className="inline-flex items-center gap-1.5">
                   Reimbursement Amount
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Amount reimbursed for this expense (in {currency})
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </FormLabel>
                 <FormControl>
                   <MossInput
@@ -349,9 +364,6 @@ export const TransactionDetailsSection: React.FC<
                     {...field}
                   />
                 </FormControl>
-                <FormDescription style={{ color: "var(--color-text-helper)" }}>
-                  Amount reimbursed for this expense (in {currency})
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

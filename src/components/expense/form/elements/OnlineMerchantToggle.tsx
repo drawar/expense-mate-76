@@ -23,11 +23,9 @@ const OnlineMerchantToggle = () => {
       control={form.control}
       name="isOnline"
       render={({ field }) => (
-        <FormItem className="!space-y-0 flex flex-row items-center justify-between rounded-lg border h-10 px-3 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <FormLabel className="!mb-0 !mt-0 !leading-none">
-              Online Merchant
-            </FormLabel>
+        <FormItem className="!space-y-0 flex flex-row items-center justify-between h-10">
+          <FormLabel className="!mb-0 !mt-0 !leading-none inline-flex items-center gap-1.5">
+            Online Merchant
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -38,7 +36,7 @@ const OnlineMerchantToggle = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </FormLabel>
           <FormControl>
             <Switch
               checked={field.value}

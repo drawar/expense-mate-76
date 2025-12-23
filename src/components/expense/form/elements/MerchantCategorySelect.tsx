@@ -79,9 +79,9 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <Label>Merchant Category</Label>
+    <div className="space-y-2">
+      <Label className="inline-flex items-center gap-1.5">
+        Merchant Category
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -92,18 +92,22 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
+      </Label>
       <Popover open={showMCCDialog} onOpenChange={setShowMCCDialog}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={showMCCDialog}
-            className="w-full justify-between mt-1"
+            className="w-full justify-between h-10 px-3 font-normal"
           >
-            {isValidMCC
-              ? `${selectedMCC.description} (${selectedMCC.code})`
-              : "Select category"}
+            <span
+              className={`truncate ${!isValidMCC ? "text-muted-foreground" : ""}`}
+            >
+              {isValidMCC
+                ? `${selectedMCC.description} (${selectedMCC.code})`
+                : "Select category"}
+            </span>
             <SearchIcon
               className="ml-2 h-4 w-4 shrink-0 opacity-50"
               style={{ strokeWidth: 2.5 }}

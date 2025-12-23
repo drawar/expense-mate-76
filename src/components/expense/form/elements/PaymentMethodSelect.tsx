@@ -113,14 +113,14 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
                   return (
                     <SelectItem key={method.id} value={method.id}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         {renderIcon()}
-                        <span>{displayName}</span>
+                        <span className="truncate">{displayName}</span>
                         {(method.type === "credit_card" ||
                           method.type === "debit_card" ||
                           method.type === "prepaid_card") &&
                           method.lastFourDigits && (
-                            <span className="text-gray-500 text-xs">
+                            <span className="text-gray-500 text-xs shrink-0">
                               ...{method.lastFourDigits}
                             </span>
                           )}

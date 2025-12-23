@@ -61,7 +61,7 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
       {/* Optional fields - collapsible when minimal mode is enabled */}
       {minimal ? (
         <CollapsibleSection
-          trigger="Add more merchant details"
+          trigger="Show merchant details"
           id="merchant-details-advanced"
           persistState={true}
         >
