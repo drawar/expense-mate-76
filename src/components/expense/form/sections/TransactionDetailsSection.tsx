@@ -198,16 +198,16 @@ export const TransactionDetailsSection: React.FC<
                 <FormItem>
                   <FormLabel>Time</FormLabel>
                   <FormControl>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <input
                         type="time"
                         className={cn(
-                          "flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-10 text-sm font-normal",
+                          "h-10 w-full rounded-md border border-input bg-background px-3 text-sm",
                           "placeholder:text-muted-foreground",
                           "focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
                           "disabled:cursor-not-allowed disabled:opacity-50",
                           "transition-[border-color,box-shadow] duration-150",
-                          "[&::-webkit-calendar-picker-indicator]:hidden",
+                          "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           !field.value && "text-muted-foreground"
                         )}
                         value={field.value || getCurrentTimeString()}
