@@ -32,16 +32,16 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Currency Selector */}
       <DisplayCurrencySelect
         value={displayCurrency}
         onChange={handleCurrencyChange}
+        className="flex-1"
       />
-
-      {/* Timeframe Selector */}
-      <div className="component-hover-box h-9 px-2 rounded-lg flex items-center">
-        <TimeframeSelect value={activeTab} onChange={handleTimeframeChange} />
-      </div>
+      <TimeframeSelect
+        value={activeTab}
+        onChange={handleTimeframeChange}
+        className="flex-1"
+      />
     </div>
   );
 };

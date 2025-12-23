@@ -45,32 +45,32 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
   return (
-    <Select
-      value={value}
-      onValueChange={(value: string) => onChange(value as Currency)}
-      defaultValue="CAD"
-    >
-      <SelectTrigger
-        className={`w-[100px] h-8 text-sm bg-transparent border-none ${className}`}
+    <div className={className}>
+      <Select
+        value={value}
+        onValueChange={(value: string) => onChange(value as Currency)}
+        defaultValue="CAD"
       >
-        <SelectValue>
-          <span className="flex items-center gap-1.5">
-            <span>{currencyFlags[value] || "💰"}</span>
-            <span>{value}</span>
-          </span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {currencyOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <span className="flex items-center gap-2">
-              <span>{currencyFlags[option.value] || "💰"}</span>
-              <span>{option.value}</span>
+        <SelectTrigger className="w-full h-9 text-sm bg-transparent border-none">
+          <SelectValue>
+            <span className="flex items-center gap-1.5">
+              <span>{currencyFlags[value] || "💰"}</span>
+              <span>{value}</span>
             </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {currencyOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              <span className="flex items-center gap-2">
+                <span>{currencyFlags[option.value] || "💰"}</span>
+                <span>{option.value}</span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 
