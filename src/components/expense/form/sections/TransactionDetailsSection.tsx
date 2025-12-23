@@ -198,15 +198,18 @@ export const TransactionDetailsSection: React.FC<
                 <FormItem>
                   <FormLabel>Time</FormLabel>
                   <FormControl>
-                    <div className="relative w-full">
+                    <div
+                      className={cn(
+                        "relative flex items-center w-full h-10 px-3 rounded-md border border-input bg-background",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        "focus-within:border-[var(--color-accent)] focus-within:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
+                        "transition-[border-color,box-shadow] duration-150"
+                      )}
+                    >
                       <input
                         type="time"
                         className={cn(
-                          "h-10 w-full rounded-md border border-input bg-background px-3 text-sm",
-                          "placeholder:text-muted-foreground",
-                          "focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
-                          "disabled:cursor-not-allowed disabled:opacity-50",
-                          "transition-[border-color,box-shadow] duration-150",
+                          "flex-1 bg-transparent text-sm font-normal outline-none",
                           "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           !field.value && "text-muted-foreground"
                         )}
@@ -215,7 +218,7 @@ export const TransactionDetailsSection: React.FC<
                           field.onChange(e.target.value || undefined);
                         }}
                       />
-                      <ClockIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+                      <ClockIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </div>
                   </FormControl>
                   <FormMessage />
