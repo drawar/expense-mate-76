@@ -12,6 +12,7 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ClairoLogo } from "@/components/ui/clairo-logo";
 
 interface SidebarProps {
   expanded: boolean;
@@ -97,10 +98,7 @@ const Sidebar = ({
         <div className="fixed top-0 left-0 right-0 z-20 bg-background text-foreground border-b">
           <div className="flex items-center justify-between h-16 px-4">
             {/* Logo */}
-            <div className="flex items-center">
-              <ActivityIcon size={24} className="text-[#7C9885]" />
-              <span className="ml-2 font-medium">Clairo</span>
-            </div>
+            <ClairoLogo size={28} showText />
 
             {/* Menu toggle button */}
             <button
@@ -168,7 +166,7 @@ const Sidebar = ({
           className="fixed left-0 top-0 z-20 w-12 h-12 m-2 flex items-center justify-center bg-[var(--color-card-bg)] rounded-full shadow-lg cursor-pointer"
           onClick={handleLogoClick}
         >
-          <ActivityIcon size={24} className="text-[#7C9885]" />
+          <ClairoLogo size={28} />
         </div>
       )}
 
@@ -185,12 +183,7 @@ const Sidebar = ({
           className="flex items-center justify-center h-16 border-b border-[var(--color-border)] cursor-pointer"
           onClick={handleLogoClick}
         >
-          <div className="flex items-center">
-            <ActivityIcon size={24} className="text-[#7C9885]" />
-            {expanded && (
-              <span className="ml-2 font-medium text-foreground">Clairo</span>
-            )}
-          </div>
+          <ClairoLogo size={28} showText={expanded} />
         </div>
 
         {/* Navigation Links */}

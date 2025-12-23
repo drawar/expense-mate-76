@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ClairoLogo } from "@/components/ui/clairo-logo";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: HomeIcon },
@@ -49,11 +50,8 @@ const Navbar = () => {
           <div className="flex h-16 items-center justify-between">
             {/* Logo and Desktop Nav */}
             <div className="flex items-center space-x-8">
-              <Link to="/" className="flex items-center space-x-2">
-                <ActivityIcon className="h-6 w-6 text-[#7C9885]" />
-                <span className="text-xl font-medium text-[#7C9885]">
-                  Clairo
-                </span>
+              <Link to="/">
+                <ClairoLogo size={28} showText />
               </Link>
 
               {/* Desktop Navigation */}
