@@ -82,22 +82,10 @@ export const TransactionDetailsSection: React.FC<
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel
-                  style={{
-                    fontSize: "var(--font-size-label)",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
+                <FormLabel>
                   Transaction Amount
                   {allowNegativeAmount && (
-                    <span
-                      style={{
-                        fontSize: "var(--font-size-helper)",
-                        color: "var(--color-text-helper)",
-                        marginLeft: "8px",
-                        fontWeight: "normal",
-                      }}
-                    >
+                    <span className="text-xs text-muted-foreground ml-2 font-normal">
                       (positive or negative)
                     </span>
                   )}
@@ -130,14 +118,7 @@ export const TransactionDetailsSection: React.FC<
             name="currency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel
-                  style={{
-                    fontSize: "var(--font-size-label)",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
-                  Currency
-                </FormLabel>
+                <FormLabel>Currency</FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={(value) => {
@@ -169,15 +150,8 @@ export const TransactionDetailsSection: React.FC<
             control={form.control}
             name="date"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel
-                  style={{
-                    fontSize: "var(--font-size-label)",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
-                  Date
-                </FormLabel>
+              <FormItem>
+                <FormLabel>Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -221,15 +195,8 @@ export const TransactionDetailsSection: React.FC<
               const getCurrentTimeString = () => format(new Date(), "HH:mm");
 
               return (
-                <FormItem className="flex flex-col">
-                  <FormLabel
-                    style={{
-                      fontSize: "var(--font-size-label)",
-                      color: "var(--color-text-secondary)",
-                    }}
-                  >
-                    Time
-                  </FormLabel>
+                <FormItem>
+                  <FormLabel>Time</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <input

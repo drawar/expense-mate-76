@@ -79,7 +79,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <Label className="inline-flex items-center gap-1.5">
         Merchant Category
         <TooltipProvider>
