@@ -12,7 +12,7 @@ export const MossInput = React.forwardRef<HTMLInputElement, MossInputProps>(
         ref={ref}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm",
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 text-base md:text-sm",
           "placeholder:text-muted-foreground",
           "focus-visible:outline-none focus-visible:border-[var(--color-accent)] focus-visible:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
           "disabled:cursor-not-allowed disabled:opacity-50",
