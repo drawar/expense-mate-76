@@ -45,7 +45,7 @@ export function ClairoLogo({
         />
       </svg>
       {showText && (
-        <span className="font-semibold text-foreground tracking-tight">
+        <span className="font-medium text-foreground tracking-tight">
           lairo
         </span>
       )}

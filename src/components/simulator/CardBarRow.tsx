@@ -165,7 +165,7 @@ export function CardBarRow({
           {/* Miles value */}
           {hasConversion && (
             <span
-              className="font-semibold"
+              className="font-medium"
               style={{
                 color: "var(--color-text)",
                 fontSize: "var(--font-size-body)",

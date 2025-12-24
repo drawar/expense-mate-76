@@ -204,7 +204,7 @@ export function CategoryReviewQueue({
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
+            <h3 className="text-lg font-medium mb-2">All caught up!</h3>
             <p className="text-muted-foreground mb-4">
               {reviewedCount > 0
                 ? `You reviewed ${reviewedCount} transaction${reviewedCount > 1 ? "s" : ""}. Great job!`
@@ -248,7 +248,7 @@ export function CategoryReviewQueue({
         <div className="bg-muted/30 rounded-lg p-4">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h4 className="font-semibold text-lg">
+              <h4 className="font-medium text-lg">
                 {currentTransaction.merchant.name}
               </h4>
               <p className="text-sm text-muted-foreground">
@@ -257,7 +257,7 @@ export function CategoryReviewQueue({
               </p>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-lg">
+              <p className="font-medium text-lg">
                 {CurrencyService.format(
                   currentTransaction.amount,
                   currentTransaction.currency

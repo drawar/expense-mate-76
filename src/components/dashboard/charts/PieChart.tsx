@@ -152,7 +152,7 @@ const PieChart: React.FC<PieChartProps> = ({
       return (
         <div className="bg-background border border-border p-3 rounded-md shadow-lg">
           <p className="font-medium text-sm mb-1">{item.name}</p>
-          <p className="text-primary font-bold">
+          <p className="text-primary font-medium">
             {CurrencyService.format(item.value, currency)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">

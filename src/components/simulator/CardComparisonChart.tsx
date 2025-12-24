@@ -145,10 +145,9 @@ export function CardComparisonChart({
             </div>
 
             <h2
-              className="font-semibold"
+              className="font-medium"
               style={{
                 fontSize: "var(--font-size-section-header)",
-                fontWeight: "var(--font-weight-semibold)",
                 color: "var(--color-text)",
               }}
             >

@@ -90,7 +90,7 @@ const BarChart: React.FC<BarChartProps> = ({
         return (
           <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
             <p className="font-medium">{label}</p>
-            <p className="text-primary text-lg font-semibold">
+            <p className="text-primary text-lg font-medium">
               {amountFormatted}
             </p>
 

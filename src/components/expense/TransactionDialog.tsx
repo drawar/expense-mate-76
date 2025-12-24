@@ -1,9 +1,8 @@
-
-import React, { useState } from 'react';
-import { Transaction, PaymentMethod } from '@/types';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { Transaction, PaymentMethod } from "@/types";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface TransactionDialogProps {
   transaction: Transaction | null;
@@ -20,7 +19,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
   onClose,
   onEdit,
   onDelete,
-  paymentMethods
+  paymentMethods,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -47,41 +46,43 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
           <CardContent className="p-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold">Transaction Details</h3>
+                <h3 className="text-lg font-medium">Transaction Details</h3>
                 <p className="text-sm text-gray-600">
                   {new Date(transaction.date).toLocaleDateString()}
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Amount</label>
-                  <p className="text-lg">{transaction.currency} {transaction.amount}</p>
+                  <p className="text-lg">
+                    {transaction.currency} {transaction.amount}
+                  </p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium">Merchant</label>
-                  <p>{transaction.merchant?.name || 'Unknown'}</p>
+                  <p>{transaction.merchant?.name || "Unknown"}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium">Payment Method</label>
-                  <p>{transaction.paymentMethod?.name || 'Unknown'}</p>
+                  <p>{transaction.paymentMethod?.name || "Unknown"}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium">Points Earned</label>
                   <p>{transaction.rewardPoints || 0} points</p>
                 </div>
               </div>
-              
+
               {transaction.notes && (
                 <div>
                   <label className="text-sm font-medium">Notes</label>
                   <p className="text-sm text-gray-600">{transaction.notes}</p>
                 </div>
               )}
-              
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={onClose}>
                   Close

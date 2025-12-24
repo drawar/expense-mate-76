@@ -118,7 +118,7 @@ const SavingsPotentialCard: React.FC<SavingsPotentialCardProps> = ({
                 <p className="text-xs text-muted-foreground">
                   Potential savings from discretionary
                 </p>
-                <p className="text-xl font-semibold text-[var(--color-success)]">
+                <p className="text-xl font-medium text-[var(--color-success)]">
                   {formattedValues?.savingsPotentialFormatted}
                 </p>
               </div>

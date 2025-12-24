@@ -388,13 +388,13 @@ export function ConversionRateManager() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold">
+                    <TableHead className="font-medium">
                       Source Currency
                     </TableHead>
                     {targetCurrencies.map((currency) => (
                       <TableHead
                         key={currency.id}
-                        className="text-center font-semibold"
+                        className="text-center font-medium"
                       >
                         {currency.displayName}
                       </TableHead>

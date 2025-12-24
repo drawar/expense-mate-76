@@ -238,7 +238,7 @@ export const RewardRuleManager: React.FC<RewardRuleManagerProps> = ({
       )}
 
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Reward Rules</h2>
+        <h2 className="text-2xl font-medium">Reward Rules</h2>
         <Button
           onClick={handleCreateRule}
           disabled={isOffline}

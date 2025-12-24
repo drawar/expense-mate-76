@@ -170,7 +170,7 @@ export default function DiagnoseRewards() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Reward Rules Diagnostic</h1>
+        <h1 className="text-2xl font-medium mb-2">Reward Rules Diagnostic</h1>
         <p className="text-muted-foreground">
           This page helps identify why reward rules aren't showing up for your
           payment methods.
@@ -225,7 +225,7 @@ export default function DiagnoseRewards() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold">
+                    <p className="font-medium">
                       {paymentMethod.issuer} {paymentMethod.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
@@ -265,7 +265,7 @@ export default function DiagnoseRewards() {
             {result.mismatches.map((pm) => (
               <div key={pm.id} className="border rounded-lg p-4 space-y-2">
                 <div>
-                  <p className="font-semibold">
+                  <p className="font-medium">
                     {pm.issuer} {pm.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -276,7 +276,7 @@ export default function DiagnoseRewards() {
                   </p>
                 </div>
                 <div className="bg-muted p-3 rounded text-sm space-y-1">
-                  <p className="font-semibold">To fix this:</p>
+                  <p className="font-medium">To fix this:</p>
                   <ol className="list-decimal list-inside space-y-1">
                     <li>
                       Edit the payment method to match an existing card type
@@ -322,7 +322,7 @@ export default function DiagnoseRewards() {
                   className="border rounded-lg p-4 space-y-2"
                 >
                   <div>
-                    <p className="font-semibold">Card Type ID: {cardTypeId}</p>
+                    <p className="font-medium">Card Type ID: {cardTypeId}</p>
                     <p className="text-sm text-muted-foreground">
                       {rules.length} rule{rules.length !== 1 ? "s" : ""}:
                     </p>

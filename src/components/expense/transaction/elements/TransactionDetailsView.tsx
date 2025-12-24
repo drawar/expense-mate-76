@@ -39,7 +39,7 @@ const TransactionDetailsView = ({
           <h3 className="text-sm font-medium text-muted-foreground mb-1">
             Amount
           </h3>
-          <p className="text-2xl font-semibold">
+          <p className="text-2xl font-medium">
             {CurrencyService.format(transaction.amount, transaction.currency)}
           </p>
           {transaction.currency !== transaction.paymentCurrency && (

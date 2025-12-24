@@ -28,7 +28,7 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
   return (
     <MossCard>
       <h2
-        className="flex items-center gap-2 font-semibold mb-4"
+        className="flex items-center gap-2 font-medium mb-4"
         style={{
           fontSize: "var(--font-size-section-header)",
           color: "var(--color-text-primary)",

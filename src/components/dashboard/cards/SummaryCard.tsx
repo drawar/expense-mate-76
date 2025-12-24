@@ -92,7 +92,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
 
         <div className="mt-2">
           <div
-            className={`text-2xl font-bold truncate ${valueColor}`}
+            className={`text-2xl font-medium truncate ${valueColor}`}
             title={value}
           >
             {value}

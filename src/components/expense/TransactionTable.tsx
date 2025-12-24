@@ -194,7 +194,7 @@ const TransactionTable = ({
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableCell
                       colSpan={7}
-                      className="py-2 font-semibold text-sm text-muted-foreground"
+                      className="py-2 font-medium text-sm text-muted-foreground"
                     >
                       {formatDateGroupHeader(group.dateObj)}
                     </TableCell>

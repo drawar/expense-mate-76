@@ -234,7 +234,7 @@ const SpendingHealthCard: React.FC<SpendingHealthCardProps> = ({
           {/* Score Display */}
           <div className="flex items-center justify-between">
             <div>
-              <span className={`text-4xl font-bold ${getScoreColor()}`}>
+              <span className={`text-4xl font-medium ${getScoreColor()}`}>
                 {score}
               </span>
               <span className="text-lg text-muted-foreground">/100</span>

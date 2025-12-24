@@ -217,7 +217,7 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
               {Array.from(groupedCards.entries()).map(
                 ([issuer, issuerCards]) => (
                   <div key={issuer}>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-2 sticky top-0 bg-background py-1">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2 sticky top-0 bg-background py-1">
                       {issuer}
                     </h3>
                     <div className="space-y-3">

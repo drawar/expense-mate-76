@@ -1,11 +1,10 @@
-
 // src/components/dashboard/cards/SpendingCategoryCard.tsx
-import React from 'react';
-import { TagIcon } from 'lucide-react';
-import { Currency } from '@/types';
-import { CurrencyService } from '@/core/currency';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ChartDataItem } from '@/types/dashboard';
+import React from "react";
+import { TagIcon } from "lucide-react";
+import { Currency } from "@/types";
+import { CurrencyService } from "@/core/currency";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ChartDataItem } from "@/types/dashboard";
 
 interface SpendingCategoryCardProps {
   title?: string;
@@ -19,50 +18,53 @@ interface SpendingCategoryCardProps {
  * A grid-based card for displaying spending by category
  */
 const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
-  title = 'Expense Categories',
+  title = "Expense Categories",
   data,
-  currency = 'SGD',
-  className = '',
-  maxCategories = 10
+  currency = "SGD",
+  className = "",
+  maxCategories = 10,
 }) => {
   // Log data coming into the component
   React.useEffect(() => {
-    console.log(`SpendingCategoryCard data:`, data?.length || 0, 'items');
+    console.log(`SpendingCategoryCard data:`, data?.length || 0, "items");
   }, [data]);
-  
+
   // Process data to show only the top categories and group others
   const processedData = React.useMemo(() => {
     if (!data || data.length === 0) {
-      console.log('No category data available');
+      console.log("No category data available");
       return [];
     }
-    
+
     if (data.length <= maxCategories) return data;
-    
+
     // Sort by value descending
     const sortedData = [...data].sort((a, b) => b.value - a.value);
-    
+
     // Take top categories
     const topCategories = sortedData.slice(0, maxCategories - 1);
-    
+
     // Group the rest as "Other"
     const otherCategories = sortedData.slice(maxCategories - 1);
-    const otherValue = otherCategories.reduce((sum, item) => sum + item.value, 0);
-    
+    const otherValue = otherCategories.reduce(
+      (sum, item) => sum + item.value,
+      0
+    );
+
     if (otherValue > 0) {
       return [
         ...topCategories,
         {
-          name: 'Other',
+          name: "Other",
           value: otherValue,
-          color: '#9e9e9e' // Gray color for "Other" category
-        }
+          color: "#9e9e9e", // Gray color for "Other" category
+        },
       ];
     }
-    
+
     return topCategories;
   }, [data, maxCategories]);
-  
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
@@ -78,20 +80,18 @@ const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
               {processedData.map((item, index) => (
                 <React.Fragment key={`${item.name}-${index}`}>
                   <div className="flex items-center">
-                    <div 
-                      className="w-3 h-3 rounded-sm mr-2 flex-shrink-0" 
-                      style={{ backgroundColor: item.color }} 
+                    <div
+                      className="w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
                     />
-                    <span 
-                      className="truncate text-[14px] font-medium text-olive-green dark:text-white" 
+                    <span
+                      className="truncate text-[14px] font-medium text-olive-green dark:text-white"
                       title={item.name}
                     >
                       {item.name}
                     </span>
                   </div>
-                  <div 
-                    className="text-right text-[14px] font-semibold text-olive-green dark:text-white"
-                  >
+                  <div className="text-right text-[14px] font-medium text-olive-green dark:text-white">
                     {CurrencyService.format(item.value, currency)}
                   </div>
                 </React.Fragment>

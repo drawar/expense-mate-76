@@ -1,8 +1,7 @@
-
-import React, { useMemo } from 'react';
-import { Transaction } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CoinsIcon } from 'lucide-react';
+import React, { useMemo } from "react";
+import { Transaction } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CoinsIcon } from "lucide-react";
 
 interface PointsCurrencyAggregatorProps {
   transactions: Transaction[];
@@ -12,15 +11,19 @@ interface PointsAggregate {
   [currency: string]: number;
 }
 
-const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ transactions }) => {
+const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({
+  transactions,
+}) => {
   const pointsByCurrency = useMemo(() => {
     return transactions.reduce<PointsAggregate>((acc, transaction) => {
       if (!transaction.paymentMethod || !transaction.rewardPoints) return acc;
-      
+
       // Get points currency from payment method or default to 'points'
-      const pointsCurrency = transaction.paymentMethod?.pointsCurrency || 'points';
-      
-      acc[pointsCurrency] = (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);
+      const pointsCurrency =
+        transaction.paymentMethod?.pointsCurrency || "points";
+
+      acc[pointsCurrency] =
+        (acc[pointsCurrency] || 0) + (transaction.rewardPoints || 0);
       return acc;
     }, {});
   }, [transactions]);
@@ -36,9 +39,12 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({ tra
       <CardContent>
         {Object.keys(pointsByCurrency).length > 0 ? (
           Object.entries(pointsByCurrency).map(([currency, points]) => (
-            <div key={currency} className="flex justify-between items-center mb-2 p-2 border-b">
+            <div
+              key={currency}
+              className="flex justify-between items-center mb-2 p-2 border-b"
+            >
               <span>{currency}</span>
-              <span className="font-bold">{points.toLocaleString()}</span>
+              <span className="font-medium">{points.toLocaleString()}</span>
             </div>
           ))
         ) : (

@@ -83,7 +83,7 @@ const AddExpense = () => {
       <div className="w-full px-4 md:px-0 md:max-w-[600px] lg:max-w-[640px] mx-auto pb-16">
         {/* Page header */}
         <div className="flex flex-col mt-6 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gradient">
+          <h1 className="text-2xl font-medium tracking-tight text-gradient">
             Add Expense
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">

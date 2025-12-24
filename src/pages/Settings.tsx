@@ -7,7 +7,7 @@ export default function Settings() {
   return (
     <div className="container max-w-6xl mx-auto py-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gradient">
+        <h1 className="text-2xl font-medium tracking-tight text-gradient">
           Settings
         </h1>
         <p className="text-muted-foreground mt-2">

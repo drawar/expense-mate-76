@@ -81,7 +81,7 @@ export const SpendingInsightTooltip: React.FC<InsightTooltipProps> = ({
   return (
     <div className="bg-background border border-border p-3 rounded-md shadow-md max-w-xs">
       <p className="font-medium">{label}</p>
-      <p className="text-primary text-lg font-semibold">
+      <p className="text-primary text-lg font-medium">
         {CurrencyService.format(payload[0].value, currency)}
       </p>
 

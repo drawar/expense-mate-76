@@ -40,7 +40,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
             <h3 className="font-medium text-foreground truncate flex-1">
               {transaction.merchant.name}
             </h3>
-            <p className="text-base font-semibold text-foreground whitespace-nowrap">
+            <p className="text-base font-medium text-foreground whitespace-nowrap">
               {CurrencyService.format(transaction.amount, transaction.currency)}
             </p>
           </div>

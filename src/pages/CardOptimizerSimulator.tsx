@@ -201,7 +201,7 @@ export default function CardOptimizerSimulator() {
         <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           <div className="flex items-center gap-3 mb-4">
             <AlertCircle className="w-6 h-6 text-red-500" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
               Initialization Error
             </h2>
           </div>
@@ -229,7 +229,7 @@ export default function CardOptimizerSimulator() {
         <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           <div className="flex items-center gap-3 mb-4">
             <AlertCircle className="w-6 h-6 text-red-500" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
               Error Loading Payment Methods
             </h2>
           </div>
@@ -256,7 +256,7 @@ export default function CardOptimizerSimulator() {
         <div className="container max-w-7xl mx-auto pb-16">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gradient">
+              <h1 className="text-2xl font-medium tracking-tight text-gradient">
                 Card Optimizer Simulator
               </h1>
               <p className="text-muted-foreground mt-1.5 text-sm">
@@ -267,7 +267,7 @@ export default function CardOptimizerSimulator() {
 
           <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
             <CreditCard className="w-16 h-16 text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
               No Active Payment Methods
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md px-4">
@@ -291,7 +291,7 @@ export default function CardOptimizerSimulator() {
       <div className="mx-auto w-full md:max-w-[600px] lg:max-w-[640px] pb-16">
         {/* Page Header */}
         <div className="mb-6 md:mb-8 mt-4 md:mt-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gradient">
+          <h1 className="text-2xl font-medium tracking-tight text-gradient">
             Card Optimizer Simulator
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">

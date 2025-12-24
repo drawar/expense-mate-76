@@ -248,9 +248,7 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
                     />
                     <div className="min-w-0 flex-1">
                       <span
-                        className={`truncate text-[14px] font-medium text-olive-green dark:text-white block ${
-                          item.highlighted ? "font-semibold" : ""
-                        }`}
+                        className="truncate text-[14px] font-medium text-olive-green dark:text-white block"
                         title={item.name}
                       >
                         {item.name}
@@ -263,7 +261,7 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="text-right text-[14px] font-semibold text-olive-green dark:text-white ml-2">
+                  <div className="text-right text-[14px] font-medium text-olive-green dark:text-white ml-2">
                     {CurrencyService.format(item.value, currency)}
                   </div>
                 </div>
