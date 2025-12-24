@@ -19,27 +19,23 @@ CREATE INDEX IF NOT EXISTS idx_budgets_user_currency
 -- Enable RLS
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies - users can only access their own budgets
-CREATE POLICY "budgets_select_own"
-  ON public.budgets FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "budgets_insert_own"
-  ON public.budgets FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "budgets_update_own"
-  ON public.budgets FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "budgets_delete_own"
-  ON public.budgets FOR DELETE
-  TO authenticated
-  USING (auth.uid() = user_id);
+-- Create RLS policies - users can only access their own budgets (skip if exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'budgets' AND policyname = 'budgets_select_own') THEN
+        CREATE POLICY "budgets_select_own" ON public.budgets FOR SELECT TO authenticated USING (auth.uid() = user_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'budgets' AND policyname = 'budgets_insert_own') THEN
+        CREATE POLICY "budgets_insert_own" ON public.budgets FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'budgets' AND policyname = 'budgets_update_own') THEN
+        CREATE POLICY "budgets_update_own" ON public.budgets FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'budgets' AND policyname = 'budgets_delete_own') THEN
+        CREATE POLICY "budgets_delete_own" ON public.budgets FOR DELETE TO authenticated USING (auth.uid() = user_id);
+    END IF;
+END
+$$;
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_budgets_updated_at()
@@ -50,6 +46,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS budgets_updated_at ON public.budgets;
 CREATE TRIGGER budgets_updated_at
   BEFORE UPDATE ON public.budgets
   FOR EACH ROW
