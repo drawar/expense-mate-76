@@ -1,5 +1,6 @@
 export { CurrencyService } from "./CurrencyService";
 export { ConversionService } from "./ConversionService";
+export { ExchangeRateService } from "./ExchangeRateService";
 export {
   SimulatorService,
   type SimulationInput,

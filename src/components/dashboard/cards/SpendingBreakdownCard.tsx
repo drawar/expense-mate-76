@@ -209,7 +209,7 @@ const SpendingBreakdownCard: React.FC<SpendingBreakdownCardProps> = ({
           id: "other",
           name: "Other",
           emoji: "📦",
-          color: "#9e9e9e",
+          color: "var(--color-category-other)",
           amount: otherTotal,
           percentage: otherPercentage,
           subcategories: otherCategories.flatMap((c) =>

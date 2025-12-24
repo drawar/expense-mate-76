@@ -46,7 +46,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "essentials",
     name: "Essentials",
     emoji: "🏠",
-    color: "#C09BBC", // Dusty rose
+    color: "var(--color-category-essentials)",
     budgetPriority: "high",
     savingsPotential: "low",
     budgetPercentage: "50-60%",
@@ -56,7 +56,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "lifestyle",
     name: "Lifestyle",
     emoji: "✨",
-    color: "#F0C764", // Golden yellow
+    color: "var(--color-category-lifestyle)",
     budgetPriority: "medium",
     savingsPotential: "high",
     budgetPercentage: "20-30%",
@@ -66,7 +66,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "home_living",
     name: "Home & Living",
     emoji: "🏡",
-    color: "#9DBBCA", // Soft blue
+    color: "var(--color-category-home)",
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "5-15%",
@@ -76,7 +76,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "personal_care",
     name: "Personal Care",
     emoji: "👤",
-    color: "#7A442D", // Warm brown
+    color: "var(--color-category-personal)",
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "3-8%",
@@ -86,7 +86,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "work_education",
     name: "Work & Education",
     emoji: "💼",
-    color: "#2B50CA", // Royal blue
+    color: "var(--color-category-work)",
     budgetPriority: "high",
     savingsPotential: "low",
     budgetPercentage: "varies",
@@ -96,7 +96,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
     id: "financial_other",
     name: "Financial & Other",
     emoji: "💰",
-    color: "#F4BBA4", // Soft peach
+    color: "var(--color-category-financial)",
     budgetPriority: "medium",
     savingsPotential: "medium",
     budgetPercentage: "varies",
@@ -388,7 +388,7 @@ export function getParentCategory(
  */
 export function getCategoryColor(categoryName: string): string {
   const parent = getParentCategory(categoryName);
-  return parent?.color || "#6b7280"; // Default gray
+  return parent?.color || "var(--color-category-other)";
 }
 
 /**

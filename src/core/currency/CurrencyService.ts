@@ -1,14 +1,34 @@
 import { Currency, PaymentMethod } from "@/types";
+import { ExchangeRateService } from "./ExchangeRateService";
 
 /**
  * Centralized Currency Service for handling all currency-related operations
  * including formatting, conversion, and currency information.
+ *
+ * Supports live exchange rates via ExchangeRateService with fallback to
+ * hardcoded defaults when API is unavailable.
  */
 export class CurrencyService {
   /**
    * List of currencies that don't use decimal places
    */
   private static readonly NO_DECIMAL_CURRENCIES = ["JPY", "VND", "IDR", "TWD"];
+
+  /**
+   * Live exchange rates cache (populated by refreshRates)
+   * Key format: "FROM_TO" (e.g., "USD_EUR")
+   */
+  private static liveRateCache: Map<string, number> = new Map();
+
+  /**
+   * Timestamp of last rate refresh
+   */
+  private static lastRefreshTime: number = 0;
+
+  /**
+   * Cache TTL for live rates (1 hour)
+   */
+  private static readonly LIVE_RATE_TTL = 60 * 60 * 1000;
 
   /**
    * Currency symbols mapping
@@ -381,15 +401,27 @@ export class CurrencyService {
   }
 
   /**
-   * Gets the exchange rate between two currencies
+   * Gets the exchange rate between two currencies.
+   * Checks live rates first, then falls back to defaults.
    *
    * @param fromCurrency - Source currency code
    * @param toCurrency - Target currency code
    * @returns Exchange rate or 1 if conversion not possible
    */
-  public static getExchangeRate(fromCurrency: Currency, toCurrency: Currency): number {
+  public static getExchangeRate(
+    fromCurrency: Currency,
+    toCurrency: Currency
+  ): number {
     if (fromCurrency === toCurrency) return 1;
 
+    // Check live rate cache first
+    const cacheKey = `${fromCurrency}_${toCurrency}`;
+    const liveRate = this.liveRateCache.get(cacheKey);
+    if (liveRate !== undefined && this.isLiveRateFresh()) {
+      return liveRate;
+    }
+
+    // Fall back to default rates
     if (
       !this.DEFAULT_EXCHANGE_RATES[fromCurrency] ||
       !this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency]
@@ -401,5 +433,121 @@ export class CurrencyService {
     }
 
     return this.DEFAULT_EXCHANGE_RATES[fromCurrency][toCurrency];
+  }
+
+  /**
+   * Check if live rate cache is fresh
+   */
+  private static isLiveRateFresh(): boolean {
+    return Date.now() - this.lastRefreshTime < this.LIVE_RATE_TTL;
+  }
+
+  /**
+   * Refresh exchange rates from live API.
+   * Call this on app startup or when rates might be stale.
+   *
+   * @param baseCurrency - Base currency to fetch rates for (default: USD)
+   * @returns Promise that resolves when rates are refreshed
+   */
+  public static async refreshRates(
+    baseCurrency: Currency = "USD"
+  ): Promise<void> {
+    try {
+      const exchangeService = ExchangeRateService.getInstance();
+      const rates = await exchangeService.getRates(baseCurrency);
+
+      // Clear old cache
+      this.liveRateCache.clear();
+
+      // Populate cache with rates from base currency
+      const baseLower = baseCurrency.toLowerCase();
+      for (const [toCurrency, rate] of Object.entries(rates)) {
+        const toUpper = toCurrency.toUpperCase() as Currency;
+        this.liveRateCache.set(`${baseCurrency}_${toUpper}`, rate);
+
+        // Also calculate reverse rate
+        if (rate !== 0) {
+          this.liveRateCache.set(`${toUpper}_${baseCurrency}`, 1 / rate);
+        }
+      }
+
+      // Calculate cross rates (e.g., EUR -> GBP via USD)
+      const supportedCurrencies: Currency[] = [
+        "USD",
+        "EUR",
+        "GBP",
+        "JPY",
+        "AUD",
+        "CAD",
+        "CNY",
+        "INR",
+        "TWD",
+        "SGD",
+        "VND",
+        "IDR",
+        "THB",
+        "MYR",
+      ];
+
+      for (const from of supportedCurrencies) {
+        for (const to of supportedCurrencies) {
+          if (from === to) continue;
+
+          const cacheKey = `${from}_${to}`;
+          if (this.liveRateCache.has(cacheKey)) continue;
+
+          // Calculate via base currency
+          const fromToBase = this.liveRateCache.get(`${from}_${baseCurrency}`);
+          const baseToTo = this.liveRateCache.get(`${baseCurrency}_${to}`);
+
+          if (fromToBase !== undefined && baseToTo !== undefined) {
+            this.liveRateCache.set(cacheKey, fromToBase * baseToTo);
+          }
+        }
+      }
+
+      this.lastRefreshTime = Date.now();
+      console.log(
+        `Exchange rates refreshed: ${this.liveRateCache.size} rates cached`
+      );
+    } catch (error) {
+      console.error("Failed to refresh exchange rates:", error);
+      // Live rates will fall back to defaults
+    }
+  }
+
+  /**
+   * Check if live rates are available and fresh
+   */
+  public static hasLiveRates(): boolean {
+    return this.liveRateCache.size > 0 && this.isLiveRateFresh();
+  }
+
+  /**
+   * Get the timestamp of the last rate refresh
+   */
+  public static getLastRefreshTime(): number {
+    return this.lastRefreshTime;
+  }
+
+  /**
+   * Convert amount using live rates (async)
+   * Use this when you need guaranteed fresh rates
+   *
+   * @param amount - Amount to convert
+   * @param fromCurrency - Source currency code
+   * @param toCurrency - Target currency code
+   * @returns Converted amount
+   */
+  public static async convertAsync(
+    amount: number,
+    fromCurrency: Currency,
+    toCurrency: Currency
+  ): Promise<number> {
+    if (fromCurrency === toCurrency) return amount;
+
+    const exchangeService = ExchangeRateService.getInstance();
+    const rate = await exchangeService.getRate(fromCurrency, toCurrency);
+    return amount * rate;
   }
 }

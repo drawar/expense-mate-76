@@ -13,18 +13,18 @@ import { Chevron } from "@/components/ui/chevron";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ChartDataItem } from "@/types/dashboard";
 import { CurrencyService } from "@/core/currency";
-// Japandi muted color palette for merchants
+// Chart color palette using CSS variables (resolved at runtime)
 const MERCHANT_COLORS = [
-  "#7c9885", // Primary sage
-  "#6a8574", // Deeper sage
-  "#5d7567", // Deep sage
-  "#8b9a8f", // Light gray-green
-  "#a86f64", // Terracotta
-  "#c4a57b", // Clay
-  "#8e8a85", // Warm gray
-  "#5c5854", // Dark warm gray
-  "#9c8f7e", // Taupe
-  "#7a8b7f", // Muted green
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-6)",
+  "var(--color-chart-7)",
+  "var(--color-chart-8)",
+  "var(--color-chart-9)",
+  "var(--color-chart-10)",
 ];
 
 interface SpendingDistributionCardProps {
@@ -80,7 +80,7 @@ const SpendingDistributionCard: React.FC<SpendingDistributionCardProps> = ({
         {
           name: "Other",
           value: otherValue,
-          color: "#9e9e9e", // Gray color for "Other" category
+          color: "var(--color-category-other)",
         },
       ];
     }

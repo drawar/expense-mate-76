@@ -56,6 +56,30 @@
   --color-badge-text: #a8c4af;
   --color-badge-border: rgba(124, 152, 133, 0.3);
 
+  /* Category Colors (Parent Categories) */
+  --color-category-essentials: #c09bbc;
+  --color-category-lifestyle: #f0c764;
+  --color-category-home: #9dbbca;
+  --color-category-personal: #7a442d;
+  --color-category-work: #2b50ca;
+  --color-category-financial: #f4bba4;
+  --color-category-other: #6b7280;
+
+  /* Chart Palette (10 colors for data visualization) */
+  --color-chart-1: #7c9885;
+  --color-chart-2: #c09bbc;
+  --color-chart-3: #f0c764;
+  --color-chart-4: #9dbbca;
+  --color-chart-5: #7a442d;
+  --color-chart-6: #2b50ca;
+  --color-chart-7: #f4bba4;
+  --color-chart-8: #d64a23;
+  --color-chart-9: #808f3a;
+  --color-chart-10: #c4a57b;
+
+  /* Payment Method Colors */
+  --color-payment-cash: #22c55e;
+
   /* ============================================
      SPACING
      ============================================ */

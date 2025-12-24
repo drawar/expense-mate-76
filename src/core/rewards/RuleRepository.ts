@@ -15,12 +15,42 @@ export class RuleRepository {
   private static instance: RuleRepository;
   private ruleMapper: RuleMapper;
 
+  // Caching infrastructure for rules
+  private rulesCache: Map<string, RewardRule[]> = new Map();
+  private ruleCacheTimestamps: Map<string, number> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   private constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient;
     this.ruleMapper = new RuleMapper();
     logger.info("constructor", "RuleRepository instance created", {
       hasSupabaseClient: !!supabaseClient,
     });
+  }
+
+  /**
+   * Check if cache is valid for a specific cardTypeId
+   */
+  private isCacheValid(cardTypeId: string): boolean {
+    const timestamp = this.ruleCacheTimestamps.get(cardTypeId);
+    return timestamp !== undefined && Date.now() - timestamp < this.CACHE_TTL;
+  }
+
+  /**
+   * Invalidate cache for a specific cardTypeId or all caches
+   */
+  public invalidateCache(cardTypeId?: string): void {
+    if (cardTypeId) {
+      this.rulesCache.delete(cardTypeId);
+      this.ruleCacheTimestamps.delete(cardTypeId);
+      logger.debug("invalidateCache", "Cache invalidated for cardTypeId", {
+        cardTypeId,
+      });
+    } else {
+      this.rulesCache.clear();
+      this.ruleCacheTimestamps.clear();
+      logger.debug("invalidateCache", "All caches invalidated");
+    }
   }
 
   /**
@@ -285,6 +315,18 @@ export class RuleRepository {
         );
       }
 
+      // Check cache first
+      if (this.isCacheValid(cardTypeId)) {
+        const cachedRules = this.rulesCache.get(cardTypeId);
+        if (cachedRules) {
+          logger.debug(operation, "Returning cached rules", {
+            cardTypeId,
+            rulesCount: cachedRules.length,
+          });
+          return cachedRules;
+        }
+      }
+
       // Verify authentication
       await this.ensureAuthenticated(operation);
 
@@ -333,6 +375,10 @@ export class RuleRepository {
       const mappedRules = data.map((dbRule) =>
         this.ruleMapper.mapDbRuleToRewardRule(dbRule)
       );
+
+      // Cache the results
+      this.rulesCache.set(cardTypeId, mappedRules);
+      this.ruleCacheTimestamps.set(cardTypeId, Date.now());
 
       logger.info(operation, "Successfully fetched and mapped rules", {
         cardTypeId,
@@ -458,6 +504,9 @@ export class RuleRepository {
           { ruleId: rule.id, rule }
         );
       }
+
+      // Invalidate cache for the card type
+      this.invalidateCache(rule.cardTypeId);
 
       logger.info(operation, "Rule updated successfully", {
         ruleId: rule.id,
@@ -602,6 +651,9 @@ export class RuleRepository {
 
       logger.debug(operation, "Supabase insert response", { data });
 
+      // Invalidate cache for the card type
+      this.invalidateCache(newRule.cardTypeId);
+
       logger.info(operation, "Rule created successfully", {
         ruleId: newRule.id,
         ruleName: newRule.name,
@@ -714,6 +766,9 @@ export class RuleRepository {
       }
 
       logger.debug(operation, "Supabase delete response", { data });
+
+      // Invalidate all caches (we don't have cardTypeId in deleteRule)
+      this.invalidateCache();
 
       logger.info(operation, "Rule deleted successfully", { ruleId });
     } catch (error) {

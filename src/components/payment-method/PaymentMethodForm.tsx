@@ -3,7 +3,6 @@ import { PaymentMethod, Currency } from "@/types";
 import { CurrencyService, ConversionService } from "@/core/currency";
 import { RewardCurrency } from "@/core/currency/types";
 import { CardCatalogEntry } from "@/core/catalog";
-import { v4 as uuidv4 } from "uuid";
 import {
   Dialog,
   DialogClose,
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   CreditCard,
@@ -30,77 +28,13 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import {
-  VisaLogoIcon,
-  MastercardLogoIcon,
-  AmericanExpressLogoIcon,
-} from "react-svg-credit-card-payment-icons";
 import CardCatalogPicker from "./CardCatalogPicker";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Fallback card images for cards without defaultImageUrl
-const CARD_IMAGE_FALLBACKS: Record<string, string> = {
-  "american express:aeroplan reserve":
-    "https://icm.aexp-static.com/Internet/internationalcardshop/en_ca/images/cards/aeroplan-reserve-card.png",
-  "american express:platinum":
-    "https://icm.aexp-static.com/Internet/internationalcardshop/en_ca/images/cards/The_Platinum_Card.png",
-  "american express:cobalt":
-    "https://www.americanexpress.com/content/dam/amex/en-ca/support/cobalt-card/explorer_2019_ca_di_dod_480x304.png",
-  "citibank:rewards visa signature":
-    "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/MY/MY-Rewards-Visa-20Signature2-480x305.png",
-  "neo financial:cathay world elite mastercard":
-    "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
-  "hsbc:revolution visa platinum":
-    "https://storage.googleapis.com/max-sg/assets/cc_appplication_icons/HSBC%20Revolution.png",
-  "brim financial:air france klm world elite":
-    "https://princeoftravel.com/wp-content/uploads/2023/09/AFKLM_WorldElite_FINAL-V2-01-1.png",
-};
-
-/**
- * Get card image URL from catalog entry or fallback
- */
-function getCardImageUrl(card: CardCatalogEntry): string | null {
-  if (card.defaultImageUrl) {
-    return card.defaultImageUrl;
-  }
-
-  const issuer = card.issuer?.toLowerCase() || "";
-  const name = card.name?.toLowerCase() || "";
-  const key = `${issuer}:${name}`;
-
-  if (CARD_IMAGE_FALLBACKS[key]) {
-    return CARD_IMAGE_FALLBACKS[key];
-  }
-
-  // Try partial matches
-  for (const [cardKey, url] of Object.entries(CARD_IMAGE_FALLBACKS)) {
-    const [cardIssuer, cardName] = cardKey.split(":");
-    if (issuer.includes(cardIssuer) && name.includes(cardName)) {
-      return url;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Network logo component
- */
-const NetworkLogo: React.FC<{ network?: string; size?: number }> = ({
-  network,
-  size = 24,
-}) => {
-  switch (network?.toLowerCase()) {
-    case "visa":
-      return <VisaLogoIcon width={size} />;
-    case "mastercard":
-      return <MastercardLogoIcon width={size} />;
-    case "amex":
-      return <AmericanExpressLogoIcon width={size} />;
-    default:
-      return null;
-  }
-};
+import {
+  SelectedCatalogCardDisplay,
+  BillingCycleFields,
+  LastFourDigitsField,
+} from "./form";
 
 // Common credit card issuers
 const CARD_ISSUERS = [
@@ -396,124 +330,20 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         {!isEditing && selectedCatalogEntry ? (
           <>
             {/* Selected card display */}
-            {(() => {
-              const cardImageUrl = getCardImageUrl(selectedCatalogEntry);
-              return (
-                <div
-                  className="border rounded-xl p-4"
-                  style={{
-                    backgroundColor: "var(--color-bg-secondary)",
-                    borderColor: "var(--color-border)",
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Card image */}
-                    <div className="shrink-0 w-12 h-8 rounded overflow-hidden bg-muted flex items-center justify-center">
-                      {cardImageUrl ? (
-                        <img
-                          src={cardImageUrl}
-                          alt={selectedCatalogEntry.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
+            <SelectedCatalogCardDisplay
+              card={selectedCatalogEntry}
+              onClear={handleClearCatalogSelection}
+            />
 
-                    {/* Card details */}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="font-medium"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        {selectedCatalogEntry.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--color-text-secondary)" }}
-                        >
-                          {selectedCatalogEntry.issuer}
-                        </span>
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--color-text-tertiary)" }}
-                        >
-                          {selectedCatalogEntry.currency}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Network logo */}
-                    {selectedCatalogEntry.network && (
-                      <div className="shrink-0">
-                        <NetworkLogo
-                          network={selectedCatalogEntry.network}
-                          size={24}
-                        />
-                      </div>
-                    )}
-
-                    {/* Remove button - consistent 24px icon, tertiary color */}
-                    <button
-                      type="button"
-                      className="shrink-0 p-1 rounded-md hover:bg-accent transition-colors"
-                      onClick={handleClearCatalogSelection}
-                      aria-label="Remove card selection"
-                    >
-                      <X
-                        className="h-5 w-5"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      />
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Last 4 Digits - the only required field */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="lastFourDigits"
-                className="text-sm font-medium"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                Last 4 Digits{" "}
-                <span style={{ color: "var(--color-text-tertiary)" }}>
-                  (optional)
-                </span>
-              </Label>
-              <Input
-                id="lastFourDigits"
-                name="lastFourDigits"
-                placeholder="1234"
-                maxLength={4}
-                inputMode="numeric"
-                autoFocus
-                value={lastFourDigits}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "");
-                  setLastFourDigits(value);
-                }}
-                onBlur={() => handleFieldBlur("lastFourDigits")}
-                className="h-11 rounded-lg text-base"
-                style={{
-                  borderColor:
-                    touched.lastFourDigits && errors.lastFourDigits
-                      ? "var(--color-error)"
-                      : undefined,
-                }}
-              />
-              {touched.lastFourDigits && errors.lastFourDigits && (
-                <p
-                  className="text-xs flex items-center gap-1"
-                  style={{ color: "var(--color-error)" }}
-                >
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.lastFourDigits}
-                </p>
-              )}
-            </div>
+            {/* Last 4 Digits */}
+            <LastFourDigitsField
+              value={lastFourDigits}
+              onChange={setLastFourDigits}
+              onBlur={() => handleFieldBlur("lastFourDigits")}
+              error={errors.lastFourDigits}
+              touched={touched.lastFourDigits}
+              autoFocus
+            />
 
             {/* Collapsible billing details */}
             <div>
@@ -538,69 +368,19 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               </button>
 
               {showBillingDetails && (
-                <div className="space-y-4 pt-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="statementStartDay"
-                        className="text-sm font-medium"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        Statement Day
-                      </Label>
-                      <Input
-                        id="statementStartDay"
-                        name="statementStartDay"
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="28"
-                        placeholder="15"
-                        value={statementStartDay}
-                        onChange={(e) => setStatementStartDay(e.target.value)}
-                        onBlur={() => handleFieldBlur("statementStartDay")}
-                        className="h-11 rounded-lg text-base"
-                        style={{
-                          borderColor:
-                            touched.statementStartDay &&
-                            errors.statementStartDay
-                              ? "var(--color-error)"
-                              : undefined,
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-1.5 flex flex-col justify-end">
-                      <div
-                        className="h-11 px-3 rounded-lg border flex items-center justify-between cursor-pointer"
-                        style={{ borderColor: "var(--color-border)" }}
-                        onClick={() =>
-                          setIsMonthlyStatement(!isMonthlyStatement)
-                        }
-                      >
-                        <span
-                          className="text-sm"
-                          style={{ color: "var(--color-text-secondary)" }}
-                        >
-                          {isMonthlyStatement ? "Statement" : "Calendar"}
-                        </span>
-                        <Switch
-                          id="isMonthlyStatement"
-                          name="isMonthlyStatement"
-                          checked={isMonthlyStatement}
-                          onCheckedChange={setIsMonthlyStatement}
-                          className="scale-90"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
-                    {isMonthlyStatement
-                      ? `Statement month: ${statementStartDay || "2"}th to ${statementStartDay ? parseInt(statementStartDay) - 1 || 1 : "1"}st`
-                      : "Calendar month: 1st to end of month"}
-                  </p>
+                <div className="pt-2">
+                  <BillingCycleFields
+                    statementStartDay={statementStartDay}
+                    isMonthlyStatement={isMonthlyStatement}
+                    onStatementDayChange={setStatementStartDay}
+                    onStatementDayBlur={() =>
+                      handleFieldBlur("statementStartDay")
+                    }
+                    onMonthlyStatementChange={setIsMonthlyStatement}
+                    error={errors.statementStartDay}
+                    touched={touched.statementStartDay}
+                    compact
+                  />
                 </div>
               )}
             </div>
@@ -846,44 +626,13 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 <div className="space-y-4">
                   {/* Last 4 Digits (cards only) */}
                   {isCardType && (
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="lastFourDigits"
-                        className="text-sm font-medium"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        Last 4 Digits
-                      </Label>
-                      <Input
-                        id="lastFourDigits"
-                        name="lastFourDigits"
-                        placeholder="1234"
-                        maxLength={4}
-                        inputMode="numeric"
-                        value={lastFourDigits}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "");
-                          setLastFourDigits(value);
-                        }}
-                        onBlur={() => handleFieldBlur("lastFourDigits")}
-                        className="h-11 rounded-lg text-base"
-                        style={{
-                          borderColor:
-                            touched.lastFourDigits && errors.lastFourDigits
-                              ? "var(--color-error)"
-                              : undefined,
-                        }}
-                      />
-                      {touched.lastFourDigits && errors.lastFourDigits && (
-                        <p
-                          className="text-xs flex items-center gap-1"
-                          style={{ color: "var(--color-error)" }}
-                        >
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.lastFourDigits}
-                        </p>
-                      )}
-                    </div>
+                    <LastFourDigitsField
+                      value={lastFourDigits}
+                      onChange={setLastFourDigits}
+                      onBlur={() => handleFieldBlur("lastFourDigits")}
+                      error={errors.lastFourDigits}
+                      touched={touched.lastFourDigits}
+                    />
                   )}
 
                   {/* Total Loaded (prepaid only) */}
@@ -935,82 +684,17 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
                   {/* Credit card billing fields */}
                   {isCreditCard && (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor="statementStartDay"
-                            className="text-sm font-medium"
-                            style={{ color: "var(--color-text-secondary)" }}
-                          >
-                            Statement Day
-                          </Label>
-                          <Input
-                            id="statementStartDay"
-                            name="statementStartDay"
-                            type="number"
-                            inputMode="numeric"
-                            min="1"
-                            max="28"
-                            placeholder="15"
-                            value={statementStartDay}
-                            onChange={(e) =>
-                              setStatementStartDay(e.target.value)
-                            }
-                            onBlur={() => handleFieldBlur("statementStartDay")}
-                            className="h-11 rounded-lg text-base"
-                            style={{
-                              borderColor:
-                                touched.statementStartDay &&
-                                errors.statementStartDay
-                                  ? "var(--color-error)"
-                                  : undefined,
-                            }}
-                          />
-                          {touched.statementStartDay &&
-                            errors.statementStartDay && (
-                              <p
-                                className="text-xs flex items-center gap-1"
-                                style={{ color: "var(--color-error)" }}
-                              >
-                                <AlertCircle className="h-3 w-3" />
-                                {errors.statementStartDay}
-                              </p>
-                            )}
-                        </div>
-                        <div className="space-y-1.5 flex flex-col justify-end">
-                          <div
-                            className="h-11 px-3 rounded-lg border flex items-center justify-between cursor-pointer"
-                            style={{ borderColor: "var(--color-border)" }}
-                            onClick={() =>
-                              setIsMonthlyStatement(!isMonthlyStatement)
-                            }
-                          >
-                            <span
-                              className="text-sm"
-                              style={{ color: "var(--color-text-secondary)" }}
-                            >
-                              {isMonthlyStatement ? "Statement" : "Calendar"}
-                            </span>
-                            <Switch
-                              id="isMonthlyStatement"
-                              name="isMonthlyStatement"
-                              checked={isMonthlyStatement}
-                              onCheckedChange={setIsMonthlyStatement}
-                              className="scale-90"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <p
-                        className="text-xs -mt-2"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      >
-                        {isMonthlyStatement
-                          ? `Statement: ${statementStartDay || "2"}th to ${statementStartDay ? parseInt(statementStartDay) - 1 || 1 : "1"}st`
-                          : "Calendar: 1st to end of month"}
-                      </p>
-                    </>
+                    <BillingCycleFields
+                      statementStartDay={statementStartDay}
+                      isMonthlyStatement={isMonthlyStatement}
+                      onStatementDayChange={setStatementStartDay}
+                      onStatementDayBlur={() =>
+                        handleFieldBlur("statementStartDay")
+                      }
+                      onMonthlyStatementChange={setIsMonthlyStatement}
+                      error={errors.statementStartDay}
+                      touched={touched.statementStartDay}
+                    />
                   )}
                 </div>
               </>

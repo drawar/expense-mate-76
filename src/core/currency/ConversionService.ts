@@ -18,7 +18,7 @@ export class ConversionService {
   private static instance: ConversionService;
   private conversionRateCache: Map<string, number> = new Map();
   private cacheTimestamp: number = 0;
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_TTL = 15 * 60 * 1000; // 15 minutes (rates don't change frequently)
 
   private constructor() {}
 

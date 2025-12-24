@@ -57,7 +57,7 @@ const SpendingCategoryCard: React.FC<SpendingCategoryCardProps> = ({
         {
           name: "Other",
           value: otherValue,
-          color: "#9e9e9e", // Gray color for "Other" category
+          color: "var(--color-category-other)",
         },
       ];
     }

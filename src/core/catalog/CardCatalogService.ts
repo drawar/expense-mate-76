@@ -17,7 +17,42 @@ import {
 export class CardCatalogService {
   private static instance: CardCatalogService;
 
+  // Caching infrastructure
+  private cardByIdCache: Map<string, CardCatalogEntry> = new Map();
+  private cardByTypeIdCache: Map<string, CardCatalogEntry> = new Map();
+  private allCardsCache: CardCatalogEntry[] | null = null;
+  private issuersCache: Map<string, string[]> = new Map(); // keyed by region or "all"
+  private regionsCache: string[] | null = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes (catalog rarely changes)
+
   private constructor() {}
+
+  /**
+   * Check if cache is still valid
+   */
+  private isCacheValid(): boolean {
+    return Date.now() - this.cacheTimestamp < this.CACHE_TTL;
+  }
+
+  /**
+   * Clear all caches (call when catalog is updated)
+   */
+  public clearCache(): void {
+    this.cardByIdCache.clear();
+    this.cardByTypeIdCache.clear();
+    this.allCardsCache = null;
+    this.issuersCache.clear();
+    this.regionsCache = null;
+    this.cacheTimestamp = 0;
+  }
+
+  /**
+   * Update cache timestamp
+   */
+  private touchCache(): void {
+    this.cacheTimestamp = Date.now();
+  }
 
   /**
    * Get singleton instance
@@ -31,8 +66,20 @@ export class CardCatalogService {
 
   /**
    * Get all cards from the catalog with optional filtering
+   * Results are cached when no filter is applied (default active-only query)
    */
   async getCards(filter?: CardCatalogFilter): Promise<CardCatalogEntry[]> {
+    // Use cache for default query (no filters except active status)
+    const isDefaultQuery =
+      !filter?.includeInactive &&
+      !filter?.region &&
+      !filter?.issuer &&
+      !filter?.search;
+
+    if (isDefaultQuery && this.isCacheValid() && this.allCardsCache) {
+      return this.allCardsCache;
+    }
+
     let query = supabase
       .from("card_catalog")
       .select("*")
@@ -67,13 +114,35 @@ export class CardCatalogService {
       throw error;
     }
 
-    return ((data as DbCardCatalogEntry[]) || []).map(mapDbToCardCatalogEntry);
+    const cards = ((data as DbCardCatalogEntry[]) || []).map(
+      mapDbToCardCatalogEntry
+    );
+
+    // Cache default query result and populate individual caches
+    if (isDefaultQuery) {
+      this.allCardsCache = cards;
+      this.touchCache();
+
+      // Also populate individual card caches
+      for (const card of cards) {
+        this.cardByIdCache.set(card.id, card);
+        this.cardByTypeIdCache.set(card.cardTypeId, card);
+      }
+    }
+
+    return cards;
   }
 
   /**
    * Get a single card by its UUID
+   * Results are cached for 30 minutes
    */
   async getCardById(id: string): Promise<CardCatalogEntry | null> {
+    // Check cache first
+    if (this.isCacheValid() && this.cardByIdCache.has(id)) {
+      return this.cardByIdCache.get(id) || null;
+    }
+
     const { data, error } = await supabase
       .from("card_catalog")
       .select("*")
@@ -89,13 +158,26 @@ export class CardCatalogService {
       throw error;
     }
 
-    return mapDbToCardCatalogEntry(data as DbCardCatalogEntry);
+    const card = mapDbToCardCatalogEntry(data as DbCardCatalogEntry);
+
+    // Cache the result
+    this.cardByIdCache.set(id, card);
+    this.cardByTypeIdCache.set(card.cardTypeId, card);
+    this.touchCache();
+
+    return card;
   }
 
   /**
    * Get a single card by its card_type_id
+   * Results are cached for 30 minutes
    */
   async getCardByTypeId(cardTypeId: string): Promise<CardCatalogEntry | null> {
+    // Check cache first
+    if (this.isCacheValid() && this.cardByTypeIdCache.has(cardTypeId)) {
+      return this.cardByTypeIdCache.get(cardTypeId) || null;
+    }
+
     const { data, error } = await supabase
       .from("card_catalog")
       .select("*")
@@ -111,13 +193,28 @@ export class CardCatalogService {
       throw error;
     }
 
-    return mapDbToCardCatalogEntry(data as DbCardCatalogEntry);
+    const card = mapDbToCardCatalogEntry(data as DbCardCatalogEntry);
+
+    // Cache the result
+    this.cardByIdCache.set(card.id, card);
+    this.cardByTypeIdCache.set(cardTypeId, card);
+    this.touchCache();
+
+    return card;
   }
 
   /**
    * Get unique issuers from the catalog for filtering
+   * Results are cached for 30 minutes
    */
   async getIssuers(region?: string): Promise<string[]> {
+    const cacheKey = region || "all";
+
+    // Check cache first
+    if (this.isCacheValid() && this.issuersCache.has(cacheKey)) {
+      return this.issuersCache.get(cacheKey) || [];
+    }
+
     let query = supabase
       .from("card_catalog")
       .select("issuer")
@@ -136,13 +233,25 @@ export class CardCatalogService {
 
     // Get unique issuers and sort alphabetically
     const uniqueIssuers = [...new Set(data?.map((d) => d.issuer) || [])];
-    return uniqueIssuers.sort();
+    const sortedIssuers = uniqueIssuers.sort();
+
+    // Cache the result
+    this.issuersCache.set(cacheKey, sortedIssuers);
+    this.touchCache();
+
+    return sortedIssuers;
   }
 
   /**
    * Get unique regions from the catalog
+   * Results are cached for 30 minutes
    */
   async getRegions(): Promise<string[]> {
+    // Check cache first
+    if (this.isCacheValid() && this.regionsCache) {
+      return this.regionsCache;
+    }
+
     const { data, error } = await supabase
       .from("card_catalog")
       .select("region")
@@ -155,7 +264,13 @@ export class CardCatalogService {
 
     // Get unique regions and sort alphabetically
     const uniqueRegions = [...new Set(data?.map((d) => d.region) || [])];
-    return uniqueRegions.sort();
+    const sortedRegions = uniqueRegions.sort();
+
+    // Cache the result
+    this.regionsCache = sortedRegions;
+    this.touchCache();
+
+    return sortedRegions;
   }
 
   /**

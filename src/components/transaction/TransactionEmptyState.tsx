@@ -1,38 +1,50 @@
-
-import { PlusCircleIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from "react-router-dom";
+import { EmptyState } from "@/components/dashboard/layout/EmptyState";
 
 interface TransactionEmptyStateProps {
   hasTransactions: boolean;
   onResetFilters: () => void;
 }
 
+/**
+ * Empty state for transaction list.
+ * Shows different content based on whether filters are applied.
+ * Uses the consolidated EmptyState component.
+ */
 const TransactionEmptyState = ({
   hasTransactions,
   onResetFilters,
 }: TransactionEmptyStateProps) => {
+  const navigate = useNavigate();
+
+  if (hasTransactions) {
+    // Filtered view - no matching results
+    return (
+      <EmptyState
+        variant="card"
+        title="No matching transactions"
+        description="No transactions match your filters."
+        secondaryAction={{
+          label: "Reset Filters",
+          onClick: onResetFilters,
+          variant: "outline",
+        }}
+        hideAction
+      />
+    );
+  }
+
+  // No transactions at all
   return (
-    <div className="glass-card rounded-xl p-8 text-center">
-      <p className="text-muted-foreground mb-4">
-        {hasTransactions
-          ? 'No transactions match your filters.'
-          : 'No transactions recorded yet.'}
-      </p>
-      
-      {hasTransactions ? (
-        <Button variant="outline" onClick={onResetFilters}>
-          Reset Filters
-        </Button>
-      ) : (
-        <Link to="/add-expense">
-          <Button>
-            <PlusCircleIcon className="mr-2 h-4 w-4" />
-            Record Your First Expense
-          </Button>
-        </Link>
-      )}
-    </div>
+    <EmptyState
+      variant="card"
+      title="No transactions yet"
+      description="No transactions recorded yet."
+      action={{
+        label: "Record Your First Expense",
+        onClick: () => navigate("/add-expense"),
+      }}
+    />
   );
 };
 
