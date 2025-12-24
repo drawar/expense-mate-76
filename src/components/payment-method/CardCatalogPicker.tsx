@@ -194,7 +194,7 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
         </div>
 
         {/* Card List */}
-        <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-6 px-6">
+        <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-5 px-5">
           {isLoadingCards ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -220,7 +220,7 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2 sticky top-0 bg-background py-1">
                       {issuer}
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {issuerCards.map((card) => {
                         const imageUrl = getCardImageUrl(card);
                         return (
@@ -273,7 +273,7 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
         </div>
 
         {/* Custom Card Option */}
-        <div className="border-t pt-4 -mx-6 px-6">
+        <div className="border-t pt-4 -mx-5 px-5">
           <Button
             onClick={handleCreateCustomCard}
             variant="outline"
