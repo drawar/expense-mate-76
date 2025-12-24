@@ -48,7 +48,7 @@ const PointsCurrencyAggregator: React.FC<PointsCurrencyAggregatorProps> = ({
             </div>
           ))
         ) : (
-          <div className="text-center py-6 text-gray-500">
+          <div className="text-center py-6 text-muted-foreground">
             No reward points in this period
           </div>
         )}

@@ -39,7 +39,7 @@ export default function DeleteMembershipRewards() {
         <h1 className="text-2xl font-medium mb-4">
           Delete Old Membership Rewards
         </h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           This will delete all conversion rates for "Membership Rewards"
           (without "Points").
         </p>

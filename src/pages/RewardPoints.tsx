@@ -94,7 +94,7 @@ const RewardPoints = () => {
               {filteredTransactions.length > 0 ? (
                 <PointsByPaymentMethod transactions={filteredTransactions} />
               ) : (
-                <div className="text-center py-6 text-gray-500">
+                <div className="text-center py-6 text-muted-foreground">
                   No transactions in this period
                 </div>
               )}

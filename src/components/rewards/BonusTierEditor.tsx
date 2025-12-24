@@ -53,7 +53,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Label style={{ color: "var(--color-text-primary)" }}>
+          <Label style={{ color: "var(--color-text-secondary)" }}>
             Bonus Tiers
           </Label>
           <TooltipProvider>
@@ -121,7 +121,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={`tier-${index}-min-amount`}
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Min Amount
                   </Label>
@@ -162,7 +162,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={`tier-${index}-max-amount`}
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Max Amount
                   </Label>
@@ -208,7 +208,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={`tier-${index}-multiplier`}
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Multiplier
                   </Label>
@@ -250,7 +250,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={`tier-${index}-min-spend`}
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Min Monthly Spend
                   </Label>
@@ -295,7 +295,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor={`tier-${index}-name`}
-                  style={{ color: "var(--color-text-primary)" }}
+                  style={{ color: "var(--color-text-secondary)" }}
                 >
                   Tier Name
                 </Label>
@@ -333,7 +333,7 @@ export const BonusTierEditor: React.FC<BonusTierEditorProps> = ({
             <div>
               <Label
                 htmlFor={`tier-${index}-description`}
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Description
               </Label>

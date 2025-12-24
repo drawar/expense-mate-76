@@ -151,7 +151,7 @@ export const PointsDisplay = ({
 
         {/* Messages and warnings */}
         {points.messages && points.messages.length > 0 && (
-          <div className="mt-2 text-xs text-gray-600">
+          <div className="mt-2 text-xs text-muted-foreground">
             {points.messages.map((message, index) => (
               <div key={index}>{message}</div>
             ))}

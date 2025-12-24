@@ -120,7 +120,7 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                           method.type === "debit_card" ||
                           method.type === "prepaid_card") &&
                           method.lastFourDigits && (
-                            <span className="text-gray-500 text-xs shrink-0">
+                            <span className="text-muted-foreground text-xs shrink-0">
                               ...{method.lastFourDigits}
                             </span>
                           )}

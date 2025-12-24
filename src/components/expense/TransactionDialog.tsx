@@ -47,39 +47,66 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium">Transaction Details</h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {new Date(transaction.date).toLocaleDateString()}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Amount</label>
+                  <label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Amount
+                  </label>
                   <p className="text-lg">
                     {transaction.currency} {transaction.amount}
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Merchant</label>
+                  <label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Merchant
+                  </label>
                   <p>{transaction.merchant?.name || "Unknown"}</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Payment Method</label>
+                  <label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Payment Method
+                  </label>
                   <p>{transaction.paymentMethod?.name || "Unknown"}</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Points Earned</label>
+                  <label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Points Earned
+                  </label>
                   <p>{transaction.rewardPoints || 0} points</p>
                 </div>
               </div>
 
               {transaction.notes && (
                 <div>
-                  <label className="text-sm font-medium">Notes</label>
-                  <p className="text-sm text-gray-600">{transaction.notes}</p>
+                  <label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Notes
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    {transaction.notes}
+                  </p>
                 </div>
               )}
 

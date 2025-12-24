@@ -56,7 +56,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 MCC Codes
               </Label>
               <TooltipProvider>
@@ -107,7 +107,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Merchant Names
               </Label>
               <TooltipProvider>
@@ -155,7 +155,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Transaction Type
               </Label>
               <TooltipProvider>
@@ -210,7 +210,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Currencies
               </Label>
               <TooltipProvider>
@@ -261,7 +261,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Amount
               </Label>
               <TooltipProvider>
@@ -308,7 +308,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         return (
           <div>
             <div className="flex items-center gap-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Categories
               </Label>
               <TooltipProvider>
@@ -353,7 +353,9 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
       default:
         return (
           <div>
-            <Label style={{ color: "var(--color-text-primary)" }}>Values</Label>
+            <Label style={{ color: "var(--color-text-secondary)" }}>
+              Values
+            </Label>
             <Input
               placeholder="Enter values separated by commas"
               value={(condition.values as string[])?.join(",") || ""}
@@ -372,7 +374,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Condition Type
               </Label>
               <TooltipProvider>
@@ -419,7 +421,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
 
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label style={{ color: "var(--color-text-primary)" }}>
+              <Label style={{ color: "var(--color-text-secondary)" }}>
                 Operation
               </Label>
               <TooltipProvider>

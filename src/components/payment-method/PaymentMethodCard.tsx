@@ -257,7 +257,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
               </div>
             )}
             <div className="flex items-center text-sm">
-              <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
+              <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
               <span>
                 {method.statementStartDay
                   ? `Statement Cycle: Day ${method.statementStartDay}`
@@ -280,7 +280,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                   <RewardRuleBadge key={rule.id} rule={rule} />
                 ))}
                 {method.rewardRules.length > 2 && (
-                  <span className="text-xs text-gray-500 self-center">
+                  <span className="text-xs text-muted-foreground self-center">
                     +{method.rewardRules.length - 2} more
                   </span>
                 )}

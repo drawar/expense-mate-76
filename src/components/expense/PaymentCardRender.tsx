@@ -1,22 +1,33 @@
-
-import React from 'react';
-import { PaymentMethod } from '@/types';
-import { CreditCardIcon, BanknoteIcon } from 'lucide-react';
-import { SelectItem, SelectContent, SelectTrigger, SelectValue, Select } from '@/components/ui/select';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useFormContext } from 'react-hook-form';
+import React from "react";
+import { PaymentMethod } from "@/types";
+import { CreditCardIcon, BanknoteIcon } from "lucide-react";
+import {
+  SelectItem,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+  Select,
+} from "@/components/ui/select";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useFormContext } from "react-hook-form";
 
 interface PaymentMethodSelectProps {
   paymentMethods: PaymentMethod[];
   onSelectPaymentMethod?: (value: string) => void;
 }
 
-const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({ 
+const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
   paymentMethods,
-  onSelectPaymentMethod 
+  onSelectPaymentMethod,
 }) => {
   const form = useFormContext();
-  
+
   return (
     <FormField
       control={form.control}
@@ -24,14 +35,14 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
       render={({ field }) => (
         <FormItem>
           <FormLabel>Payment Method</FormLabel>
-          <Select 
-            value={field.value ? String(field.value) : ''} 
+          <Select
+            value={field.value ? String(field.value) : ""}
             onValueChange={(value) => {
-              console.log('Payment method selected:', value);
+              console.log("Payment method selected:", value);
               field.onChange(value);
               if (onSelectPaymentMethod) onSelectPaymentMethod(value);
               // Force form validation after selection
-              setTimeout(() => form.trigger('paymentMethodId'), 100);
+              setTimeout(() => form.trigger("paymentMethodId"), 100);
             }}
           >
             <FormControl>
@@ -44,20 +55,31 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                 paymentMethods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
                     <div className="flex items-center gap-2">
-                      {method.type === 'credit_card' ? (
-                        <CreditCardIcon className="h-4 w-4" style={{ color: method.color || '#333' }} />
+                      {method.type === "credit_card" ? (
+                        <CreditCardIcon
+                          className="h-4 w-4"
+                          style={{ color: method.color || "#333" }}
+                        />
                       ) : (
-                        <BanknoteIcon className="h-4 w-4" style={{ color: method.color || '#333' }} />
+                        <BanknoteIcon
+                          className="h-4 w-4"
+                          style={{ color: method.color || "#333" }}
+                        />
                       )}
                       <span>{method.name}</span>
-                      {method.type === 'credit_card' && method.lastFourDigits && (
-                        <span className="text-gray-500 text-xs">...{method.lastFourDigits}</span>
-                      )}
+                      {method.type === "credit_card" &&
+                        method.lastFourDigits && (
+                          <span className="text-muted-foreground text-xs">
+                            ...{method.lastFourDigits}
+                          </span>
+                        )}
                     </div>
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="no-methods" disabled>No payment methods available</SelectItem>
+                <SelectItem value="no-methods" disabled>
+                  No payment methods available
+                </SelectItem>
               )}
             </SelectContent>
           </Select>

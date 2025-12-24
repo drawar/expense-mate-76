@@ -476,7 +476,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               <Label
                 htmlFor="lastFourDigits"
                 className="text-sm font-medium"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Last 4 Digits{" "}
                 <span style={{ color: "var(--color-text-tertiary)" }}>
@@ -656,7 +656,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   <Label
                     htmlFor="nickname"
                     className="text-sm font-medium"
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Nickname
                   </Label>
@@ -681,7 +681,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   <Label
                     htmlFor="name"
                     className="text-sm font-medium"
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Name <span style={{ color: "var(--color-error)" }}>*</span>
                   </Label>
@@ -720,7 +720,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     <Label
                       htmlFor="type"
                       className="text-sm font-medium"
-                      style={{ color: "var(--color-text-primary)" }}
+                      style={{ color: "var(--color-text-secondary)" }}
                     >
                       Type
                     </Label>
@@ -744,7 +744,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     <Label
                       htmlFor="currency"
                       className="text-sm font-medium"
-                      style={{ color: "var(--color-text-primary)" }}
+                      style={{ color: "var(--color-text-secondary)" }}
                     >
                       Currency
                     </Label>
@@ -770,7 +770,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   <Label
                     htmlFor="issuer"
                     className="text-sm font-medium"
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Issuer
                   </Label>
@@ -796,7 +796,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   <Label
                     htmlFor="rewardCurrency"
                     className="text-sm font-medium"
-                    style={{ color: "var(--color-text-primary)" }}
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     Rewards Currency
                   </Label>

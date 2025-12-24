@@ -193,7 +193,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div>
             <Label
               htmlFor="name"
-              style={{ color: "var(--color-text-primary)" }}
+              style={{ color: "var(--color-text-secondary)" }}
             >
               Name <span style={{ color: "var(--color-error)" }}>*</span>
             </Label>
@@ -225,7 +225,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div>
             <Label
               htmlFor="description"
-              style={{ color: "var(--color-text-primary)" }}
+              style={{ color: "var(--color-text-secondary)" }}
             >
               Description
             </Label>
@@ -238,7 +238,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div className="flex items-center justify-between">
             <Label
               htmlFor="enabled"
-              style={{ color: "var(--color-text-primary)" }}
+              style={{ color: "var(--color-text-secondary)" }}
             >
               Enabled
             </Label>
@@ -251,7 +251,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div>
             <Label
               htmlFor="priority"
-              style={{ color: "var(--color-text-primary)" }}
+              style={{ color: "var(--color-text-secondary)" }}
             >
               Priority <span style={{ color: "var(--color-error)" }}>*</span>
             </Label>
@@ -324,7 +324,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="baseMultiplier"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Base Multiplier{" "}
                 <span style={{ color: "var(--color-error)" }}>*</span>
@@ -367,7 +367,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="bonusMultiplier"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Bonus Multiplier
               </Label>
@@ -411,7 +411,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="blockSize"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Block Size{" "}
                 <span style={{ color: "var(--color-error)" }}>*</span>
@@ -454,7 +454,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="monthlyCap"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Monthly Cap
               </Label>
@@ -494,7 +494,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="monthlyCapType"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Cap Type
               </Label>
@@ -524,7 +524,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
             <div>
               <Label
                 htmlFor="capGroupId"
-                style={{ color: "var(--color-text-primary)" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Cap Group ID
               </Label>
@@ -546,7 +546,7 @@ export const RewardRuleEditor: React.FC<RewardRuleEditorProps> = ({
           <div>
             <Label
               htmlFor="monthlyMinSpend"
-              style={{ color: "var(--color-text-primary)" }}
+              style={{ color: "var(--color-text-secondary)" }}
             >
               Monthly Minimum Spend
             </Label>

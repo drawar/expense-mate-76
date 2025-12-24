@@ -85,6 +85,7 @@ export function MilesCurrencySelector({
       <label
         htmlFor="miles-currency-select"
         className="text-sm font-medium whitespace-nowrap"
+        style={{ color: "var(--color-text-secondary)" }}
       >
         Miles currency:
       </label>
