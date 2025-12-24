@@ -126,10 +126,10 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
         }}
       >
         <DialogHeader>
-          <DialogTitle style={{ color: "var(--color-text-primary)" }}>
+          <DialogTitle>
             {hasExistingImage ? "Change Card Image" : "Upload Card Image"}
           </DialogTitle>
-          <DialogDescription style={{ color: "var(--color-text-secondary)" }}>
+          <DialogDescription>
             {hasExistingImage
               ? `Replace the current image for ${paymentMethod?.name}`
               : `Upload a custom image for your ${paymentMethod?.name} card`}

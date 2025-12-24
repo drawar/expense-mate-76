@@ -1802,12 +1802,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
           }}
         >
           <AlertDialogHeader>
-            <AlertDialogTitle style={{ color: "var(--color-text-primary)" }}>
-              Delete Reward Rule
-            </AlertDialogTitle>
-            <AlertDialogDescription
-              style={{ color: "var(--color-text-secondary)" }}
-            >
+            <AlertDialogTitle>Delete Reward Rule</AlertDialogTitle>
+            <AlertDialogDescription>
               Are you sure you want to delete "{deleteConfirmRule?.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
