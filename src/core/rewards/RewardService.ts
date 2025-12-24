@@ -11,12 +11,53 @@ import { RuleRepository } from "./RuleRepository";
 import { cardTypeIdService } from "./CardTypeIdService";
 import { bonusPointsTracker } from "./BonusPointsTracker";
 import { logger } from "./logger";
+import { cardCatalogService } from "@/core/catalog";
 
 export class RewardService {
   private ruleRepository: RuleRepository;
 
   constructor(ruleRepository: RuleRepository) {
     this.ruleRepository = ruleRepository;
+  }
+
+  /**
+   * Get the card type ID for a payment method.
+   * If linked to a catalog entry, uses the catalog's cardTypeId for consistent reward rule lookup.
+   * Falls back to generating from issuer + name for custom cards.
+   *
+   * @param paymentMethod The payment method to get the card type ID for
+   * @returns The card type ID (either from catalog or generated)
+   */
+  private async getCardTypeId(paymentMethod: PaymentMethod): Promise<string> {
+    // If linked to a catalog entry, use the catalog's cardTypeId
+    if (paymentMethod.cardCatalogId) {
+      try {
+        const catalog = await cardCatalogService.getCardById(
+          paymentMethod.cardCatalogId
+        );
+        if (catalog?.cardTypeId) {
+          logger.debug("getCardTypeId", "Using catalog cardTypeId", {
+            paymentMethodId: paymentMethod.id,
+            cardCatalogId: paymentMethod.cardCatalogId,
+            catalogCardTypeId: catalog.cardTypeId,
+          });
+          return catalog.cardTypeId;
+        }
+      } catch (error) {
+        logger.warn("getCardTypeId", "Failed to fetch catalog entry", {
+          paymentMethodId: paymentMethod.id,
+          cardCatalogId: paymentMethod.cardCatalogId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Fall through to generate from issuer + name
+      }
+    }
+
+    // Fallback: generate from issuer + name
+    return cardTypeIdService.generateCardTypeIdFromPaymentMethod({
+      issuer: paymentMethod.issuer,
+      name: paymentMethod.name,
+    });
   }
 
   /**
@@ -50,11 +91,9 @@ export class RewardService {
       // Determine which amount to use for calculations
       const calculationAmount = this.getCalculationAmount(input);
 
-      // 1. Generate card type ID for the payment method
-      const cardTypeId = cardTypeIdService.generateCardTypeIdFromPaymentMethod({
-        issuer: input.paymentMethod.issuer,
-        name: input.paymentMethod.name,
-      });
+      // 1. Get card type ID for the payment method
+      // Uses catalog cardTypeId if linked, otherwise generates from issuer + name
+      const cardTypeId = await this.getCardTypeId(input.paymentMethod);
 
       // Log card type ID generation (Requirement 4.1)
       logger.info("calculateRewards", "Generated card type ID", {

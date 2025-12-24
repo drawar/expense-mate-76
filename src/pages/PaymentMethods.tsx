@@ -144,6 +144,17 @@ const PaymentMethods = () => {
         }
 
         method.isMonthlyStatement = formData.get("isMonthlyStatement") === "on";
+
+        // Card catalog linkage
+        const cardCatalogId = formData.get("cardCatalogId") as string;
+        if (cardCatalogId) {
+          method.cardCatalogId = cardCatalogId;
+        }
+
+        const nickname = formData.get("nickname") as string;
+        if (nickname) {
+          method.nickname = nickname;
+        }
       }
 
       // Add prepaid card specific fields if applicable

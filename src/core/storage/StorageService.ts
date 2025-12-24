@@ -135,6 +135,9 @@ export class StorageService {
         conversionRate:
           (row.conversion_rate as Record<string, number>) || undefined,
         totalLoaded: row.total_loaded ?? undefined,
+        // Card catalog linkage
+        cardCatalogId: row.card_catalog_id || undefined,
+        nickname: row.nickname || undefined,
       }));
 
       console.log(
@@ -219,6 +222,9 @@ export class StorageService {
         is_monthly_statement: pm.isMonthlyStatement ?? null,
         conversion_rate: pm.conversionRate as unknown,
         total_loaded: pm.totalLoaded ?? null,
+        // Card catalog linkage
+        card_catalog_id: pm.cardCatalogId ?? null,
+        nickname: pm.nickname ?? null,
         user_id: session.user.id,
       }));
 

@@ -79,6 +79,12 @@ export interface PaymentMethod {
   statementStartDay?: number;
   isMonthlyStatement?: boolean;
   totalLoaded?: number; // For prepaid cards: total amount loaded onto the card
+
+  // Card Catalog linkage
+  /** Reference to card_catalog for inherited properties. Null for custom cards. */
+  cardCatalogId?: string;
+  /** User's custom display name for the card (e.g., "My Travel Card") */
+  nickname?: string;
 }
 
 export interface Merchant {

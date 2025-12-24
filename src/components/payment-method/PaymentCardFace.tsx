@@ -184,7 +184,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
         {/* Card Image */}
         <img
           src={cardImageUrl}
-          alt={`${paymentMethod.issuer || ""} ${paymentMethod.name}`}
+          alt={`${paymentMethod.issuer || ""} ${paymentMethod.nickname || paymentMethod.name}`}
           className="w-full h-full object-cover"
         />
 
@@ -248,14 +248,15 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
               </div>
             </div>
 
-            {/* Card name */}
+            {/* Card name - show nickname if set, otherwise issuer + name */}
             <div className="text-xs font-medium truncate opacity-90">
-              {`${paymentMethod.issuer || ""} ${paymentMethod.name}`}
+              {paymentMethod.nickname ||
+                `${paymentMethod.issuer || ""} ${paymentMethod.name}`}
             </div>
           </>
         ) : (
           <div className="text-xs font-medium">
-            {`${paymentMethod.name} (${paymentMethod.currency})`}
+            {`${paymentMethod.nickname || paymentMethod.name} (${paymentMethod.currency})`}
           </div>
         )}
       </div>
