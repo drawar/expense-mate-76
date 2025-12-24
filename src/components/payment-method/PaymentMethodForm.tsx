@@ -616,7 +616,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12 rounded-xl"
+                className="w-full h-12 rounded-xl text-base"
                 onClick={() => setShowCatalogPicker(true)}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
@@ -1104,7 +1104,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
           }}
         >
           <DialogHeader
-            className="px-5 py-4 border-b"
+            className="px-5 py-3 border-b"
             style={{
               borderColor: "var(--color-border)",
               flexShrink: 0,
