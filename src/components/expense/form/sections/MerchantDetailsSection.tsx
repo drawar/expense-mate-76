@@ -53,13 +53,20 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
           <OnlineMerchantToggle />
         </div>
 
-        <MerchantCategorySelect
-          selectedMCC={selectedMCC}
-          onSelectMCC={(mcc) => {
-            onSelectMCC(mcc);
-            form.setValue("mcc", mcc);
-          }}
-        />
+        {/* Merchant Category with spacer to align with name input above */}
+        <div className="flex items-end gap-4">
+          <div className="flex-1">
+            <MerchantCategorySelect
+              selectedMCC={selectedMCC}
+              onSelectMCC={(mcc) => {
+                onSelectMCC(mcc);
+                form.setValue("mcc", mcc);
+              }}
+            />
+          </div>
+          {/* Invisible spacer matching Online toggle width */}
+          <div className="w-[140px] h-10 shrink-0" />
+        </div>
       </div>
 
       {/* Optional fields - collapsible when minimal mode is enabled */}
