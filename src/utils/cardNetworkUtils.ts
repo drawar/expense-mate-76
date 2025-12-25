@@ -39,3 +39,46 @@ export function formatCardDisplayName(issuer: string, name: string): string {
 
   return `${issuer} ${name}`;
 }
+
+// Terms to strip from card names for compact display
+const NETWORK_TERMS = [
+  "visa",
+  "mastercard",
+  "master card",
+  "amex",
+  "american express",
+  "discover",
+];
+
+const RANK_TERMS = [
+  "infinite privilege",
+  "world elite",
+  "world select",
+  "infinite",
+  "signature",
+  "platinum",
+  "world",
+];
+
+/**
+ * Format card name for compact display by removing network and rank terms
+ * e.g., "Neo Financial Cathay World Elite MasterCard" → "Neo Financial Cathay"
+ */
+export function formatCardShortName(issuer: string, name: string): string {
+  let result = formatCardDisplayName(issuer, name);
+
+  // Remove network terms (case-insensitive)
+  for (const term of NETWORK_TERMS) {
+    const regex = new RegExp(`\\b${term}\\b`, "gi");
+    result = result.replace(regex, "");
+  }
+
+  // Remove rank terms (case-insensitive, order matters - longer terms first)
+  for (const term of RANK_TERMS) {
+    const regex = new RegExp(`\\b${term}\\b`, "gi");
+    result = result.replace(regex, "");
+  }
+
+  // Clean up extra whitespace
+  return result.replace(/\s+/g, " ").trim();
+}

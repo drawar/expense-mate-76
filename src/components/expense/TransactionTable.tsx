@@ -9,16 +9,24 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Transaction, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/core/currency";
-import { formatDate } from "@/utils/dates/formatters";
 import {
-  EditIcon,
-  TrashIcon,
   DownloadIcon,
   EyeIcon,
   AlertCircle,
   Pencil,
+  MoreHorizontal,
+  Trash2,
+  Globe,
+  Wifi,
 } from "lucide-react";
 import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
@@ -27,8 +35,10 @@ import {
   getCategoryEmoji,
   getCategoryColor,
 } from "@/utils/constants/categories";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PaymentMethodIcon } from "@/components/ui/payment-method-select-item";
+import { formatCardShortName } from "@/utils/cardNetworkUtils";
 
 /**
  * Get a YYYY-MM-DD key from a Date using LOCAL timezone (not UTC)
@@ -48,7 +58,7 @@ function getLocalDateKey(date: Date): string {
 function formatDateGroupHeader(date: Date): string {
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "EEEE, MMMM d, yyyy");
+  return format(date, "EEE, MMM d, yyyy");
 }
 
 interface TransactionTableProps {
@@ -155,7 +165,7 @@ const TransactionTable = ({
 
   return (
     <div className="w-full">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-3">
         <Button
           variant="outline"
           size="sm"
@@ -171,19 +181,16 @@ const TransactionTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">Time</TableHead>
               <TableHead>Merchant</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Payment Method</TableHead>
-              <TableHead>Points</TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
+              <TableHead className="w-[120px]">Amount</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead className="w-[50px] text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={4} className="h-24 text-center">
                   No transactions found.
                 </TableCell>
               </TableRow>
@@ -193,183 +200,201 @@ const TransactionTable = ({
                   {/* Date Header Row */}
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableCell
-                      colSpan={7}
-                      className="py-2 font-medium text-sm text-muted-foreground"
+                      colSpan={4}
+                      className="py-1.5 font-medium text-xs text-muted-foreground"
                     >
                       {formatDateGroupHeader(group.dateObj)}
                     </TableCell>
                   </TableRow>
                   {/* Transaction Rows for this date */}
-                  {group.transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {(() => {
-                          const dateStr =
-                            typeof transaction.date === "string"
-                              ? transaction.date
-                              : transaction.date.toISOString();
-                          // Only show time if the date string contains time info (has T and isn't just YYYY-MM-DD)
-                          const hasTime =
-                            dateStr.includes("T") && dateStr.length > 10;
-                          if (!hasTime) return "—";
-                          return format(parseISO(dateStr), "h:mm a");
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">
-                          {transaction.merchant.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {transaction.merchant.isOnline
-                            ? "Online"
-                            : "In-store"}
-                          {transaction.isContactless &&
-                            !transaction.merchant.isOnline &&
-                            " • Contactless"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <button
-                            className={cn(
-                              "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
-                              "hover:bg-muted/50 transition-colors cursor-pointer",
-                              "border border-transparent hover:border-muted-foreground/20",
-                              onCategoryEdit
-                                ? "cursor-pointer"
-                                : "cursor-default"
-                            )}
-                            onClick={() => onCategoryEdit?.(transaction)}
-                            disabled={!onCategoryEdit}
-                          >
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{
-                                backgroundColor: getCategoryColor(
-                                  transactionCategories[transaction.id]
-                                ),
-                              }}
+                  {group.transactions.map((transaction) => {
+                    const category = transactionCategories[transaction.id];
+                    const categoryColor = getCategoryColor(category);
+
+                    return (
+                      <TableRow
+                        key={transaction.id}
+                        className="group cursor-pointer"
+                        onClick={() => onView(transaction)}
+                      >
+                        {/* Merchant + Category Column */}
+                        <TableCell>
+                          <div className="flex items-start gap-2">
+                            {/* Category color indicator */}
+                            <div
+                              className="w-1 h-8 rounded-full flex-shrink-0 mt-0.5"
+                              style={{ backgroundColor: categoryColor }}
                             />
-                            <span>
-                              {getCategoryEmoji(
-                                transactionCategories[transaction.id]
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium truncate">
+                                  {transaction.merchant.name}
+                                </span>
+                                {/* Online/Contactless indicators */}
+                                {transaction.merchant.isOnline ? (
+                                  <Globe
+                                    className="h-3 w-3 text-muted-foreground flex-shrink-0"
+                                    title="Online"
+                                  />
+                                ) : (
+                                  transaction.isContactless && (
+                                    <Wifi
+                                      className="h-3 w-3 text-muted-foreground flex-shrink-0"
+                                      title="Contactless"
+                                    />
+                                  )
+                                )}
+                              </div>
+                              {/* Category with badges */}
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <button
+                                  className={cn(
+                                    "flex items-center gap-1 hover:underline",
+                                    onCategoryEdit
+                                      ? "cursor-pointer"
+                                      : "cursor-default"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCategoryEdit?.(transaction);
+                                  }}
+                                  disabled={!onCategoryEdit}
+                                >
+                                  <span>{getCategoryEmoji(category)}</span>
+                                  <span className="truncate max-w-[100px]">
+                                    {category}
+                                  </span>
+                                  {onCategoryEdit && (
+                                    <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100" />
+                                  )}
+                                </button>
+                                {transaction.needsReview && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] px-1 py-0 h-4"
+                                  >
+                                    <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                                    Review
+                                  </Badge>
+                                )}
+                                {transaction.isRecategorized && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-blue-600 border-blue-300 bg-blue-50 text-[10px] px-1 py-0 h-4"
+                                  >
+                                    Edited
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Amount + Points Column */}
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {CurrencyService.format(
+                                transaction.amount,
+                                transaction.currency
+                              )}
+                            </div>
+                            {transaction.currency !==
+                              transaction.paymentCurrency && (
+                              <div className="text-xs text-muted-foreground">
+                                {CurrencyService.format(
+                                  transaction.paymentAmount,
+                                  transaction.paymentCurrency
+                                )}
+                              </div>
+                            )}
+                            {/* Points */}
+                            {transaction.rewardPoints > 0 ? (
+                              <div
+                                className="text-xs font-medium"
+                                style={{ color: "var(--color-accent)" }}
+                              >
+                                +{transaction.rewardPoints.toLocaleString()} pts
+                              </div>
+                            ) : transaction.paymentMethod.type ===
+                              "credit_card" ? (
+                              <div className="text-xs text-amber-600">
+                                ~
+                                {Math.round(
+                                  transaction.amount * 0.4
+                                ).toLocaleString()}
+                                *
+                              </div>
+                            ) : null}
+                          </div>
+                        </TableCell>
+
+                        {/* Payment Method Column */}
+                        <TableCell>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <PaymentMethodIcon
+                              method={transaction.paymentMethod}
+                              size="sm"
+                            />
+                            <span className="truncate text-sm">
+                              {formatCardShortName(
+                                transaction.paymentMethod.issuer || "",
+                                transaction.paymentMethod.name
                               )}
                             </span>
-                            <span className="truncate max-w-[100px]">
-                              {transactionCategories[transaction.id]}
-                            </span>
-                            {onCategoryEdit && (
-                              <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                            )}
-                          </button>
-                          {transaction.needsReview && (
-                            <Badge
-                              variant="outline"
-                              className="text-amber-600 border-amber-300 bg-amber-50 text-xs px-1.5 py-0"
-                            >
-                              <AlertCircle className="h-3 w-3 mr-0.5" />
-                              Review
-                            </Badge>
-                          )}
-                          {transaction.isRecategorized && (
-                            <Badge
-                              variant="outline"
-                              className="text-blue-600 border-blue-300 bg-blue-50 text-xs px-1.5 py-0"
-                            >
-                              Edited
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          {CurrencyService.format(
-                            transaction.amount,
-                            transaction.currency
-                          )}
-                        </div>
-                        {transaction.currency !==
-                          transaction.paymentCurrency && (
-                          <div className="text-xs text-muted-foreground">
-                            {CurrencyService.format(
-                              transaction.paymentAmount,
-                              transaction.paymentCurrency
-                            )}
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">
-                          {transaction.paymentMethod.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {transaction.paymentMethod.issuer}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {transaction.rewardPoints > 0 ? (
-                          <div className="font-medium">
-                            {transaction.rewardPoints.toLocaleString()}
-                          </div>
-                        ) : transaction.paymentMethod.type === "credit_card" ? (
-                          <div className="text-amber-600 font-medium">
-                            {Math.round(
-                              transaction.amount * 0.4
-                            ).toLocaleString()}
-                            *
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground">-</div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onView(transaction)}
-                          >
-                            <EyeIcon
-                              className="h-4 w-4"
-                              style={{
-                                color: "var(--color-icon-secondary)",
-                                strokeWidth: 2.5,
-                              }}
-                            />
-                            <span className="sr-only">View</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onEdit(transaction)}
-                          >
-                            <EditIcon
-                              className="h-4 w-4"
-                              style={{
-                                color: "var(--color-icon-secondary)",
-                                strokeWidth: 2.5,
-                              }}
-                            />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onDelete(transaction)}
-                          >
-                            <TrashIcon
-                              className="h-4 w-4"
-                              style={{
-                                color: "var(--color-icon-secondary)",
-                                strokeWidth: 2.5,
-                              }}
-                            />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+
+                        {/* Actions Column - Dropdown Menu */}
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onView(transaction);
+                                }}
+                              >
+                                <EyeIcon className="mr-2 h-4 w-4" />
+                                View details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEdit(transaction);
+                                }}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDelete(transaction);
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </React.Fragment>
               ))
             )}
