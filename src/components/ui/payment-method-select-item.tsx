@@ -18,45 +18,57 @@ interface PaymentMethodItemContentProps {
 
 /**
  * Renders a payment method icon based on card network
+ * Wrapped in fixed-width container for consistent alignment
  */
 export const PaymentMethodIcon: React.FC<{
   method: PaymentMethod;
   size?: "sm" | "md";
 }> = ({ method, size = "md" }) => {
-  const iconWidth = size === "sm" ? 32 : 40;
+  const iconWidth = size === "sm" ? 28 : 36;
+  const containerWidth = size === "sm" ? "w-7" : "w-9";
   const lucideSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
-  if (
-    method.type === "credit_card" ||
-    method.type === "debit_card" ||
-    method.type === "prepaid_card"
-  ) {
-    const network = getCardNetwork(method.issuer || "", method.name);
+  const renderIcon = () => {
+    if (
+      method.type === "credit_card" ||
+      method.type === "debit_card" ||
+      method.type === "prepaid_card"
+    ) {
+      const network = getCardNetwork(method.issuer || "", method.name);
 
-    switch (network) {
-      case "visa":
-        return <VisaLogoIcon width={iconWidth} />;
-      case "mastercard":
-        return <MastercardLogoIcon width={iconWidth} />;
-      case "amex":
-        return <AmericanExpressLogoIcon width={iconWidth} />;
-      case "discover":
-        return <DiscoverLogoIcon width={iconWidth} />;
-      default:
-        return (
-          <CreditCardIcon
-            className={`flex-shrink-0 ${lucideSize}`}
-            style={{ color: method.color || "var(--color-text-secondary)" }}
-          />
-        );
+      switch (network) {
+        case "visa":
+          return <VisaLogoIcon width={iconWidth} />;
+        case "mastercard":
+          return <MastercardLogoIcon width={iconWidth} />;
+        case "amex":
+          return <AmericanExpressLogoIcon width={iconWidth} />;
+        case "discover":
+          return <DiscoverLogoIcon width={iconWidth} />;
+        default:
+          return (
+            <CreditCardIcon
+              className={lucideSize}
+              style={{ color: method.color || "var(--color-text-secondary)" }}
+            />
+          );
+      }
     }
-  }
+
+    return (
+      <BanknoteIcon
+        className={lucideSize}
+        style={{ color: method.color || "var(--color-text-secondary)" }}
+      />
+    );
+  };
 
   return (
-    <BanknoteIcon
-      className={`flex-shrink-0 ${lucideSize}`}
-      style={{ color: method.color || "var(--color-text-secondary)" }}
-    />
+    <span
+      className={`${containerWidth} flex-shrink-0 flex items-center justify-center`}
+    >
+      {renderIcon()}
+    </span>
   );
 };
 
