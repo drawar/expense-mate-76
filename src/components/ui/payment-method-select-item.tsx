@@ -2,10 +2,7 @@
 import React from "react";
 import { PaymentMethod } from "@/types";
 import { CreditCardIcon, BanknoteIcon } from "lucide-react";
-import {
-  getCardNetwork,
-  formatCardDisplayName,
-} from "@/utils/cardNetworkUtils";
+import { getCardNetwork, formatCardShortName } from "@/utils/cardNetworkUtils";
 import {
   VisaLogoIcon,
   MastercardLogoIcon,
@@ -17,8 +14,6 @@ interface PaymentMethodItemContentProps {
   method: PaymentMethod;
   /** Size variant for icons - 'sm' for filters, 'md' for forms */
   size?: "sm" | "md";
-  /** Whether to show last 4 digits */
-  showLastFour?: boolean;
 }
 
 /**
@@ -67,28 +62,17 @@ export const PaymentMethodIcon: React.FC<{
 
 /**
  * Standard content for payment method select items
- * Use this inside SelectItem to ensure consistent rendering across the app
+ * Uses short card names (network/rank stripped) for compact display
  */
 export const PaymentMethodItemContent: React.FC<
   PaymentMethodItemContentProps
-> = ({ method, size = "md", showLastFour = true }) => {
-  const displayName = formatCardDisplayName(method.issuer || "", method.name);
-  const hasLastFour =
-    showLastFour &&
-    (method.type === "credit_card" ||
-      method.type === "debit_card" ||
-      method.type === "prepaid_card") &&
-    method.lastFourDigits;
+> = ({ method, size = "md" }) => {
+  const displayName = formatCardShortName(method.issuer || "", method.name);
 
   return (
     <div className="flex items-center gap-2 min-w-0">
       <PaymentMethodIcon method={method} size={size} />
       <span className="truncate">{displayName}</span>
-      {hasLastFour && (
-        <span className="text-muted-foreground text-xs shrink-0">
-          ...{method.lastFourDigits}
-        </span>
-      )}
     </div>
   );
 };
