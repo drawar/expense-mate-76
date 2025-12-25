@@ -3,7 +3,6 @@ import { MerchantCategoryCode } from "@/types";
 import { StoreIcon } from "lucide-react";
 // Import Moss Dark UI components
 import { MossCard } from "@/components/ui/moss-card";
-import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 // Import sub-components
 import OnlineMerchantToggle from "../elements/OnlineMerchantToggle";
@@ -14,13 +13,11 @@ import MerchantAddressAutocomplete from "../elements/MerchantAddressAutocomplete
 interface MerchantDetailsSectionProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
   selectedMCC?: MerchantCategoryCode | null;
-  minimal?: boolean; // Enable progressive disclosure mode
 }
 
 export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
   onSelectMCC,
   selectedMCC,
-  minimal = true, // Default to minimal view with progressive disclosure
 }) => {
   const form = useFormContext();
   const isOnline = form.watch("isOnline");
@@ -43,9 +40,8 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
         Merchant Details
       </h2>
 
-      {/* Essential fields - always visible */}
       <div className="space-y-4">
-        {/* Merchant Name and Online toggle on same line */}
+        {/* Row 1: Merchant Name and Online toggle */}
         <div className="flex items-end gap-4">
           <div className="flex-1">
             <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
@@ -53,39 +49,22 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
           <OnlineMerchantToggle />
         </div>
 
-        {/* Merchant Category with spacer to align with name input above */}
-        <div className="flex items-end gap-4">
-          <div className="flex-1">
-            <MerchantCategorySelect
-              selectedMCC={selectedMCC}
-              onSelectMCC={(mcc) => {
-                onSelectMCC(mcc);
-                form.setValue("mcc", mcc);
-              }}
-            />
-          </div>
-          {/* Invisible spacer matching Online toggle width */}
-          <div className="w-[140px] h-10 shrink-0" />
+        {/* Row 2: Merchant Category and Address side by side */}
+        <div className="grid grid-cols-2 gap-4">
+          <MerchantCategorySelect
+            selectedMCC={selectedMCC}
+            onSelectMCC={(mcc) => {
+              onSelectMCC(mcc);
+              form.setValue("mcc", mcc);
+            }}
+          />
+          {!isOnline ? (
+            <MerchantAddressAutocomplete />
+          ) : (
+            <div /> // Empty spacer when online
+          )}
         </div>
       </div>
-
-      {/* Optional fields - collapsible when minimal mode is enabled */}
-      {minimal ? (
-        <CollapsibleSection
-          trigger="Show merchant details"
-          id="merchant-details-advanced"
-          persistState={true}
-        >
-          <div className="space-y-4">
-            {!isOnline && <MerchantAddressAutocomplete />}
-          </div>
-        </CollapsibleSection>
-      ) : (
-        // Non-minimal mode: show all fields
-        <div className="space-y-4 mt-4">
-          {!isOnline && <MerchantAddressAutocomplete />}
-        </div>
-      )}
     </MossCard>
   );
 };
