@@ -1,8 +1,8 @@
-
 // pages/Index.tsx
 import React from "react";
 import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { CurrencyService } from "@/core/currency";
 
 /**
  * Index page component that serves as the main dashboard entry point
@@ -11,11 +11,11 @@ import { Dashboard } from "@/components/dashboard/Dashboard";
 const IndexPage: React.FC = () => {
   // Default configuration values centralized here
   const dashboardConfig = {
-    defaultCurrency: "CAD",
+    defaultCurrency: CurrencyService.getDefaultCurrency(),
     defaultTimeframe: "thisMonth",
     defaultStatementDay: 15,
     defaultUseStatementMonth: false,
-  } as const;
+  };
 
   return (
     <DashboardProvider config={dashboardConfig}>

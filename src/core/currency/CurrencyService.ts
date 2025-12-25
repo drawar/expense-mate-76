@@ -1,5 +1,6 @@
 import { Currency, PaymentMethod } from "@/types";
 import { ExchangeRateService } from "./ExchangeRateService";
+import { LocaleService } from "@/core/locale";
 
 /**
  * Centralized Currency Service for handling all currency-related operations
@@ -392,12 +393,42 @@ export class CurrencyService {
   }
 
   /**
+   * Gets the default currency based on user's locale
+   * Uses IP geolocation with localStorage caching
+   *
+   * @returns Default currency code
+   */
+  public static getDefaultCurrency(): Currency {
+    return LocaleService.getDefaultCurrency();
+  }
+
+  /**
+   * Detect and set the default currency based on IP location
+   * Call this on app initialization
+   */
+  public static async detectDefaultCurrency(): Promise<Currency> {
+    const locale = await LocaleService.detectLocale();
+    return locale.currency;
+  }
+
+  /**
    * Gets the list of currency options for dropdown menus
+   * The detected default currency is placed first in the list
    *
    * @returns Array of currency options with value and label
    */
   public static getCurrencyOptions(): { value: Currency; label: string }[] {
-    return [...this.CURRENCY_OPTIONS];
+    const defaultCurrency = this.getDefaultCurrency();
+    const options = [...this.CURRENCY_OPTIONS];
+
+    // Move default currency to the top of the list
+    const defaultIndex = options.findIndex((o) => o.value === defaultCurrency);
+    if (defaultIndex > 0) {
+      const [defaultOption] = options.splice(defaultIndex, 1);
+      options.unshift(defaultOption);
+    }
+
+    return options;
   }
 
   /**

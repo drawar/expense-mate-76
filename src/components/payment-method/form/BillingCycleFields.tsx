@@ -89,7 +89,6 @@ export const BillingCycleFields: React.FC<BillingCycleFieldsProps> = ({
               name="isMonthlyStatement"
               checked={isMonthlyStatement}
               onCheckedChange={onMonthlyStatementChange}
-              className="scale-90"
             />
           </div>
         </div>

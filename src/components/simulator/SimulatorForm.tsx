@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { MerchantCategoryCode } from "@/types";
 import { SimulationInput } from "@/core/currency/SimulatorService";
+import { CurrencyService } from "@/core/currency";
 
 // Import reused form sections
 import { MerchantDetailsSection } from "@/components/expense/form/sections/MerchantDetailsSection";
@@ -49,9 +50,11 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
       isOnline: initialValues?.isOnline ?? false,
       isContactless: initialValues?.isContactless ?? false,
       amount: initialValues?.amount?.toString() || "",
-      currency: initialValues?.currency || "CAD",
+      currency: initialValues?.currency || CurrencyService.getDefaultCurrency(),
       convertedAmount: initialValues?.convertedAmount?.toString() || "",
-      convertedCurrency: initialValues?.convertedCurrency || "CAD",
+      convertedCurrency:
+        initialValues?.convertedCurrency ||
+        CurrencyService.getDefaultCurrency(),
       date: initialValues?.date || new Date(),
       notes: "",
       mcc: null,

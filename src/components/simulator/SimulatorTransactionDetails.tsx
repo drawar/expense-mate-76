@@ -98,9 +98,11 @@ export const SimulatorTransactionDetails: React.FC = () => {
                     field.onChange(value);
                     // Reset converted amount when currency changes
                     form.setValue("convertedAmount", "");
-                    form.setValue("convertedCurrency", "CAD");
+                    form.setValue(
+                      "convertedCurrency",
+                      CurrencyService.getDefaultCurrency()
+                    );
                   }}
-                  defaultValue="CAD"
                 >
                   <FormControl>
                     <SelectTrigger>

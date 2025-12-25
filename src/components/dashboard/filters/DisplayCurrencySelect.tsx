@@ -49,7 +49,6 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
       <Select
         value={value}
         onValueChange={(value: string) => onChange(value as Currency)}
-        defaultValue="CAD"
       >
         <SelectTrigger className="w-full h-9 text-sm bg-transparent border-none">
           <SelectValue>

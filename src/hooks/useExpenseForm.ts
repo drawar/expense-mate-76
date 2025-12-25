@@ -10,6 +10,7 @@ import { useMerchantData } from "@/hooks/expense/expense-form/useMerchantData";
 import { usePaymentMethodLogic } from "@/hooks/expense/expense-form/usePaymentMethodLogic";
 import { useState, useEffect } from "react";
 import { rewardService } from "@/core/rewards/RewardService";
+import { CurrencyService } from "@/core/currency";
 
 // Air France (MCC 3007) and KLM (MCC 3010) detection for Brim AF/KLM special case
 const AFKLM_MCCS = ["3007", "3010"];
@@ -93,7 +94,7 @@ export const useExpenseForm = ({
       isOnline: defaultValues?.isOnline ?? false,
       isContactless: defaultValues?.isContactless ?? false,
       amount: defaultValues?.amount || "",
-      currency: defaultValues?.currency || "CAD",
+      currency: defaultValues?.currency || CurrencyService.getDefaultCurrency(),
       paymentMethodId: defaultValues?.paymentMethodId || "",
       paymentAmount: defaultValues?.paymentAmount || "",
       eurFareAmount: defaultValues?.eurFareAmount || "",

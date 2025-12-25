@@ -702,34 +702,27 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
             {/* === STATUS TOGGLE (Edit mode only) === */}
             {isEditing && (
-              <div className="pt-2">
-                <div
-                  className="px-4 py-3 rounded-xl flex items-center justify-between"
-                  style={{ backgroundColor: "var(--color-bg-secondary)" }}
-                >
-                  <div>
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "var(--color-text-primary)" }}
-                    >
-                      Status
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "var(--color-text-tertiary)" }}
-                    >
-                      {active
-                        ? "This card is active and available"
-                        : "Card is hidden from selection"}
-                    </p>
-                  </div>
-                  <Switch
-                    id="active"
-                    name="active"
-                    checked={active}
-                    onCheckedChange={setActive}
-                  />
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Status
+                  </Label>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    {active ? "Card is active" : "Card is hidden"}
+                  </p>
                 </div>
+                <Switch
+                  id="active"
+                  name="active"
+                  checked={active}
+                  onCheckedChange={setActive}
+                />
               </div>
             )}
           </>

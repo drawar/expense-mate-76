@@ -1,20 +1,23 @@
-
 // components/dashboard/DashboardProvider.tsx
 import React from "react";
 import {
   DashboardContext,
   DashboardProviderProps,
-  DashboardConfig
+  DashboardConfig,
 } from "@/contexts/DashboardContext";
 import { useDashboard } from "@/hooks/dashboard";
+import { CurrencyService } from "@/core/currency";
 
 /**
  * Provider component that makes dashboard data available to all components
  */
-export function DashboardProvider({ children, config }: DashboardProviderProps) {
+export function DashboardProvider({
+  children,
+  config,
+}: DashboardProviderProps) {
   // Default configuration values
   const defaultConfig: DashboardConfig = {
-    defaultCurrency: "CAD",
+    defaultCurrency: CurrencyService.getDefaultCurrency(),
     defaultTimeframe: "thisMonth",
     defaultStatementDay: 15,
     defaultUseStatementMonth: false,
@@ -22,7 +25,7 @@ export function DashboardProvider({ children, config }: DashboardProviderProps) 
 
   // Merge provided config with defaults
   const mergedConfig = { ...defaultConfig, ...config };
-  
+
   // Use the dashboard hook to manage all data and state
   const dashboardState = useDashboard({
     defaultTimeframe: mergedConfig.defaultTimeframe,

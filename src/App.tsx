@@ -21,6 +21,7 @@ import Settings from "./pages/Settings";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
+import { LocaleService } from "@/core/locale";
 import { toast } from "sonner";
 
 // Export queryClient so it can be cleared on logout
@@ -50,6 +51,11 @@ function App() {
         duration: 5000,
       });
     }
+
+    // Detect user locale (non-blocking)
+    LocaleService.detectLocale().then((locale) => {
+      console.log(`Locale detected: ${locale.country} → ${locale.currency}`);
+    });
   }, []);
 
   // Show loading state while initializing
