@@ -116,6 +116,7 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
         <MerchantDetailsSection
           onSelectMCC={setSelectedMCC}
           selectedMCC={selectedMCC}
+          hideAddress
         />
 
         <SimulatorTransactionDetails />

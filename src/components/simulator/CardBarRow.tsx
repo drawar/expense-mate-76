@@ -103,7 +103,7 @@ export function CardBarRow({
       {/* Container with optional glow effect for best card (Requirement 9.4) */}
       <div
         className={cn(
-          "card-bar-row",
+          "card-bar-row relative",
           isBest && "card-bar-row-best",
           !hasConversion && "opacity-50"
         )}
@@ -116,48 +116,48 @@ export function CardBarRow({
           }),
         }}
       >
-        {/* Card name, issuer, and badge row */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col">
-              <span
-                className="font-medium"
-                style={{
-                  color: "var(--color-text)",
-                  fontSize: "var(--font-size-body)",
-                }}
-              >
-                {card.name}
-              </span>
-              {card.issuer && (
-                <span
-                  style={{
-                    color: "var(--color-text-muted)",
-                    fontSize: "var(--font-size-helper)",
-                  }}
-                >
-                  {card.issuer}
-                </span>
-              )}
-            </div>
+        {/* BEST badge for best card - positioned top right (Requirement 9.5) */}
+        {isBest && hasConversion && (
+          <span
+            className="best-badge absolute"
+            style={{
+              top: "var(--space-xs)",
+              right: "var(--space-xs)",
+              padding: "1px 5px",
+              borderRadius: "var(--radius-pill)",
+              border: "1px solid var(--color-accent)",
+              backgroundColor: "var(--color-accent-subtle)",
+              color: "var(--color-accent)",
+              fontSize: "9px",
+              fontWeight: "var(--font-weight-semibold)",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            BEST
+          </span>
+        )}
 
-            {/* BEST badge for best card (Requirement 9.5) */}
-            {isBest && hasConversion && (
+        {/* Card name, issuer, and miles value row */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col">
+            <span
+              className="font-medium"
+              style={{
+                color: "var(--color-text)",
+                fontSize: "var(--font-size-body)",
+              }}
+            >
+              {card.name}
+            </span>
+            {card.issuer && (
               <span
-                className="best-badge"
                 style={{
-                  padding: "var(--space-xs) var(--space-sm)",
-                  borderRadius: "var(--radius-pill)",
-                  border: "1px solid var(--color-accent)",
-                  backgroundColor: "var(--color-accent-subtle)",
-                  color: "var(--color-accent)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--font-size-helper)",
-                  fontWeight: "var(--font-weight-semibold)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
                 }}
               >
-                BEST
+                {card.issuer}
               </span>
             )}
           </div>

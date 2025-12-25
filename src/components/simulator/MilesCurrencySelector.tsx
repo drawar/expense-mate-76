@@ -84,7 +84,7 @@ export function MilesCurrencySelector({
     <div className="flex items-center gap-2">
       <label
         htmlFor="miles-currency-select"
-        className="text-sm font-medium whitespace-nowrap"
+        className="text-sm font-medium whitespace-nowrap hidden sm:block"
         style={{ color: "var(--color-text-secondary)" }}
       >
         Miles currency:
@@ -92,7 +92,7 @@ export function MilesCurrencySelector({
       <Select value={value} onValueChange={onChange} disabled={isLoading}>
         <SelectTrigger
           id="miles-currency-select"
-          className="w-[200px] h-9 focus:ring-[#a3b18a] dark:focus:ring-[#a3b18a]"
+          className="w-auto min-w-[140px] max-w-[200px] h-9 focus:ring-[#a3b18a] dark:focus:ring-[#a3b18a]"
         >
           <SelectValue
             placeholder={isLoading ? "Loading..." : "Select currency"}

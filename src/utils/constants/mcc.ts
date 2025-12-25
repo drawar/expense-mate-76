@@ -103,7 +103,7 @@ export const MCC_CODES = [
   { code: "3096", description: "easyJet" },
   { code: "3097", description: "AirAsia" },
   { code: "3098", description: "WestJet" },
-  { code: "3099", description: "Scoot" },
+  { code: "3099", description: "Cathay Pacific" },
   { code: "3100", description: "Frontier Airlines" },
   { code: "3101", description: "Allegiant Air" },
   { code: "3102", description: "Alaska Airlines" },

@@ -1,8 +1,7 @@
 import { useFormContext } from "react-hook-form";
-import { format, startOfDay } from "date-fns";
 import { MossInput } from "@/components/ui/moss-input";
 import { MossCard } from "@/components/ui/moss-card";
-import { CalendarIcon, AlertCircle, Receipt } from "lucide-react";
+import { AlertCircle, Receipt } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -18,15 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Import from our centralized currency service
@@ -168,79 +158,6 @@ export const SimulatorTransactionDetails: React.FC = () => {
             </AlertDescription>
           </Alert>
         )}
-
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full h-10 pl-3 text-left text-base md:text-sm font-normal justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon
-                        className="ml-auto h-4 w-4 opacity-50"
-                        style={{ strokeWidth: 2.5 }}
-                      />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={(date) => {
-                      // Only update if a date is selected (prevent clearing on deselect)
-                      if (date) {
-                        field.onChange(date);
-                      }
-                    }}
-                    disabled={(date) => {
-                      // Compare dates without time to avoid timezone edge cases
-                      // This ensures "today" is always selectable regardless of current time
-                      const today = startOfDay(new Date());
-                      const compareDate = startOfDay(date);
-                      return compareDate > today;
-                    }}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Add any notes about this transaction"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
     </MossCard>
   );

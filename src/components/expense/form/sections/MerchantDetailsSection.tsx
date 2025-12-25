@@ -13,14 +13,18 @@ import MerchantAddressAutocomplete from "../elements/MerchantAddressAutocomplete
 interface MerchantDetailsSectionProps {
   onSelectMCC: (mcc: MerchantCategoryCode) => void;
   selectedMCC?: MerchantCategoryCode | null;
+  hideAddress?: boolean;
 }
 
 export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
   onSelectMCC,
   selectedMCC,
+  hideAddress = false,
 }) => {
   const form = useFormContext();
   const isOnline = form.watch("isOnline");
+
+  const showAddress = !hideAddress && !isOnline;
 
   return (
     <MossCard>
@@ -42,13 +46,15 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
 
       <div className="space-y-4">
         {/* Row 1: Merchant Name and Online toggle */}
-        <div className="grid grid-cols-2 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
           <OnlineMerchantToggle />
         </div>
 
         {/* Row 2: Merchant Category and Address side by side */}
-        <div className="grid grid-cols-2 gap-4">
+        <div
+          className={hideAddress ? "" : "grid grid-cols-1 md:grid-cols-2 gap-4"}
+        >
           <MerchantCategorySelect
             selectedMCC={selectedMCC}
             onSelectMCC={(mcc) => {
@@ -56,11 +62,7 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
               form.setValue("mcc", mcc);
             }}
           />
-          {!isOnline ? (
-            <MerchantAddressAutocomplete />
-          ) : (
-            <div /> // Empty spacer when online
-          )}
+          {showAddress && <MerchantAddressAutocomplete />}
         </div>
       </div>
     </MossCard>

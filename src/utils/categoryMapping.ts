@@ -905,8 +905,8 @@ export const MCC_MAPPINGS: Record<string, MCCMapping> = {
     requiresReview: false,
     multiCategory: false,
   },
-  "3097": {
-    mccCode: "3097",
+  "3099": {
+    mccCode: "3099",
     description: "Cathay Pacific",
     defaultCategory: "Travel & Vacation",
     confidence: 0.98,

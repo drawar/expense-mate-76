@@ -4,7 +4,7 @@ import { MilesCurrencySelector } from "./MilesCurrencySelector";
 import { CardBarRow } from "./CardBarRow";
 import { getSimulatorTheme } from "@/core/currency/SimulatorTheme";
 import { useTheme } from "@/components/theme/theme-provider";
-import { Loader2, Sparkles, Leaf, Zap } from "lucide-react";
+import { Loader2, Leaf } from "lucide-react";
 import { MossCard } from "@/components/ui/moss-card";
 
 interface CardComparisonChartProps {
@@ -125,25 +125,16 @@ export function CardComparisonChart({
       </style>
 
       <MossCard>
-        {/* Chart Header with olive icon cluster and miles currency selector (Requirement 11.2) */}
+        {/* Chart Header with olive icon and miles currency selector (Requirement 11.2) */}
         <div
-          className="flex items-center justify-between"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           style={{ marginBottom: "var(--space-xl)" }}
         >
           <div className="flex items-center" style={{ gap: "var(--space-md)" }}>
-            {/* Olive icon cluster */}
-            <div
-              className="flex items-center"
-              style={{
-                gap: "var(--space-xs)",
-                color: "var(--color-accent)",
-              }}
-            >
-              <Leaf className="w-5 h-5" style={{ strokeWidth: 2.5 }} />
-              <Sparkles className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
-              <Zap className="w-4 h-4" style={{ strokeWidth: 2.5 }} />
-            </div>
-
+            <Leaf
+              className="w-5 h-5"
+              style={{ strokeWidth: 2.5, color: "var(--color-accent)" }}
+            />
             <h2
               className="font-medium"
               style={{

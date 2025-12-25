@@ -107,7 +107,7 @@ INSERT INTO mcc (code, description) VALUES
 ('3096', 'easyJet'),
 ('3097', 'AirAsia'),
 ('3098', 'WestJet'),
-('3099', 'Scoot'),
+('3099', 'Cathay Pacific'),
 ('3100', 'Frontier Airlines'),
 ('3101', 'Allegiant Air'),
 ('3102', 'Alaska Airlines'),
