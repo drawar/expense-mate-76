@@ -40,42 +40,43 @@ export function formatCardDisplayName(issuer: string, name: string): string {
   return `${issuer} ${name}`;
 }
 
-// Terms to strip from card names for compact display
-const NETWORK_TERMS = [
-  "visa",
+// Rank + Network combinations to strip (order matters - longer patterns first)
+// Ranks should only be stripped when paired with a network name
+const RANK_NETWORK_PATTERNS = [
+  // Mastercard ranks
+  "world elite mastercard",
+  "world elite master card",
+  "world select mastercard",
+  "world select master card",
+  "world mastercard",
+  "world master card",
+  "platinum mastercard",
+  "platinum master card",
+  // Visa ranks
+  "visa infinite privilege",
+  "visa infinite",
+  "visa signature",
+  "visa platinum",
+  // Standalone networks (no rank)
   "mastercard",
   "master card",
-  "amex",
+  "visa",
   "american express",
+  "amex",
   "discover",
-];
-
-const RANK_TERMS = [
-  "infinite privilege",
-  "world elite",
-  "world select",
-  "infinite",
-  "signature",
-  "platinum",
-  "world",
 ];
 
 /**
  * Format card name for compact display by removing network and rank terms
+ * Only removes rank terms when paired with a network (e.g., "World Elite MasterCard")
  * e.g., "Neo Financial Cathay World Elite MasterCard" → "Neo Financial Cathay"
  */
 export function formatCardShortName(issuer: string, name: string): string {
   let result = formatCardDisplayName(issuer, name);
 
-  // Remove network terms (case-insensitive)
-  for (const term of NETWORK_TERMS) {
-    const regex = new RegExp(`\\b${term}\\b`, "gi");
-    result = result.replace(regex, "");
-  }
-
-  // Remove rank terms (case-insensitive, order matters - longer terms first)
-  for (const term of RANK_TERMS) {
-    const regex = new RegExp(`\\b${term}\\b`, "gi");
+  // Remove rank+network combinations (case-insensitive, order matters - longer patterns first)
+  for (const pattern of RANK_NETWORK_PATTERNS) {
+    const regex = new RegExp(`\\b${pattern}\\b`, "gi");
     result = result.replace(regex, "");
   }
 
