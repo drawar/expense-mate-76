@@ -45,9 +45,13 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
 
       {/* Essential fields - always visible */}
       <div className="space-y-4">
-        <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
-
-        <OnlineMerchantToggle />
+        {/* Merchant Name and Online toggle on same line */}
+        <div className="flex items-end gap-4">
+          <div className="flex-1">
+            <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
+          </div>
+          <OnlineMerchantToggle />
+        </div>
 
         <MerchantCategorySelect
           selectedMCC={selectedMCC}
