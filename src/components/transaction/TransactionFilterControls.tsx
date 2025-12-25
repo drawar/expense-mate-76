@@ -89,55 +89,58 @@ export const TransactionFilterControls: React.FC<
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="text-sm font-medium mb-1 block">
-              Payment Method
-            </label>
-            <Select
-              value={safeFilters.paymentMethods?.[0] || "all"}
-              onValueChange={(value) =>
-                updateFilter("paymentMethods", value === "all" ? [] : [value])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All methods" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All methods</SelectItem>
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method.id} value={method.id}>
-                    <PaymentMethodItemContent method={method} size="sm" />
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-4">
+          {/* Payment Method and Category - side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">
+                Payment Method
+              </label>
+              <Select
+                value={safeFilters.paymentMethods?.[0] || "all"}
+                onValueChange={(value) =>
+                  updateFilter("paymentMethods", value === "all" ? [] : [value])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All methods" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All methods</SelectItem>
+                  {paymentMethods.map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      <PaymentMethodItemContent method={method} size="sm" />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1 block">Category</label>
-            <Select
-              value={safeFilters.categories?.[0] || "all"}
-              onValueChange={(value) =>
-                updateFilter("categories", value === "all" ? [] : [value])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Category</label>
+              <Select
+                value={safeFilters.categories?.[0] || "all"}
+                onValueChange={(value) =>
+                  updateFilter("categories", value === "all" ? [] : [value])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Date Range - side by side */}
-          <div className="grid grid-cols-2 gap-4 md:col-span-2">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">
                 Start Date
