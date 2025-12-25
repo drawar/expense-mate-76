@@ -136,64 +136,69 @@ export const TransactionFilterControls: React.FC<
             </Select>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1 block">Start Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left text-base md:text-sm font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {safeFilters.dateRange?.from
-                    ? format(safeFilters.dateRange.from, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={safeFilters.dateRange?.from || undefined}
-                  onSelect={(date) =>
-                    updateFilter("dateRange", {
-                      ...safeFilters.dateRange,
-                      from: date,
-                    })
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {/* Date Range - side by side */}
+          <div className="grid grid-cols-2 gap-4 md:col-span-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">
+                Start Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left text-base md:text-sm font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {safeFilters.dateRange?.from
+                      ? format(safeFilters.dateRange.from, "PPP")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={safeFilters.dateRange?.from || undefined}
+                    onSelect={(date) =>
+                      updateFilter("dateRange", {
+                        ...safeFilters.dateRange,
+                        from: date,
+                      })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1 block">End Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left text-base md:text-sm font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {safeFilters.dateRange?.to
-                    ? format(safeFilters.dateRange.to, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={safeFilters.dateRange?.to || undefined}
-                  onSelect={(date) =>
-                    updateFilter("dateRange", {
-                      ...safeFilters.dateRange,
-                      to: date,
-                    })
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div>
+              <label className="text-sm font-medium mb-1 block">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left text-base md:text-sm font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {safeFilters.dateRange?.to
+                      ? format(safeFilters.dateRange.to, "PPP")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={safeFilters.dateRange?.to || undefined}
+                    onSelect={(date) =>
+                      updateFilter("dateRange", {
+                        ...safeFilters.dateRange,
+                        to: date,
+                      })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
       </CardContent>
