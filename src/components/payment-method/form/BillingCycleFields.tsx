@@ -57,7 +57,7 @@ export const BillingCycleFields: React.FC<BillingCycleFieldsProps> = ({
             value={statementStartDay}
             onChange={(e) => onStatementDayChange(e.target.value)}
             onBlur={onStatementDayBlur}
-            className="h-11 rounded-lg text-base"
+            className="h-11 rounded-lg text-base md:text-sm"
             style={{
               borderColor: touched && error ? "var(--color-error)" : undefined,
             }}

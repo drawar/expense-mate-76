@@ -55,7 +55,7 @@ export const LastFourDigitsField: React.FC<LastFourDigitsFieldProps> = ({
           onChange(newValue);
         }}
         onBlur={onBlur}
-        className="h-11 rounded-lg text-base"
+        className="h-11 rounded-lg text-base md:text-sm"
         style={{
           borderColor: touched && error ? "var(--color-error)" : undefined,
         }}

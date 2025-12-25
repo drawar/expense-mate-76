@@ -1,6 +1,5 @@
 import React from "react";
 import { PaymentMethod } from "@/types";
-import { CreditCardIcon, BanknoteIcon } from "lucide-react";
 import {
   SelectItem,
   SelectContent,
@@ -16,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useFormContext } from "react-hook-form";
+import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
 
 interface PaymentMethodSelectProps {
   paymentMethods: PaymentMethod[];
@@ -54,26 +54,7 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
               {paymentMethods && paymentMethods.length > 0 ? (
                 paymentMethods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
-                    <div className="flex items-center gap-2">
-                      {method.type === "credit_card" ? (
-                        <CreditCardIcon
-                          className="h-4 w-4"
-                          style={{ color: method.color || "#333" }}
-                        />
-                      ) : (
-                        <BanknoteIcon
-                          className="h-4 w-4"
-                          style={{ color: method.color || "#333" }}
-                        />
-                      )}
-                      <span>{method.name}</span>
-                      {method.type === "credit_card" &&
-                        method.lastFourDigits && (
-                          <span className="text-muted-foreground text-xs">
-                            ...{method.lastFourDigits}
-                          </span>
-                        )}
-                    </div>
+                    <PaymentMethodItemContent method={method} />
                   </SelectItem>
                 ))
               ) : (

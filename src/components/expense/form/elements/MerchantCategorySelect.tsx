@@ -99,7 +99,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
             variant="outline"
             role="combobox"
             aria-expanded={showMCCDialog}
-            className="w-full justify-between h-10 px-3 font-normal"
+            className="w-full justify-between h-10 px-3 text-base md:text-sm font-normal"
           >
             <span
               className={`truncate ${!isValidMCC ? "text-muted-foreground" : ""}`}

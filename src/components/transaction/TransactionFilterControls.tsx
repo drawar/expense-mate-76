@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { PaymentMethod } from "@/types";
 import { FilterOptions } from "@/hooks/expense/useTransactionList";
+import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
 
 interface TransactionFilterControlsProps {
   filters: FilterOptions;
@@ -106,7 +107,7 @@ export const TransactionFilterControls: React.FC<
                 <SelectItem value="all">All methods</SelectItem>
                 {paymentMethods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
-                    {method.name}
+                    <PaymentMethodItemContent method={method} size="sm" />
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -141,7 +142,7 @@ export const TransactionFilterControls: React.FC<
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-start text-left text-base md:text-sm font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {safeFilters.dateRange?.from
@@ -171,7 +172,7 @@ export const TransactionFilterControls: React.FC<
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-start text-left text-base md:text-sm font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {safeFilters.dateRange?.to

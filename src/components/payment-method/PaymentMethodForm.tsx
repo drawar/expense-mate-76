@@ -446,7 +446,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     placeholder="e.g. My Travel Card (optional)"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    className="h-11 rounded-lg text-base"
+                    className="h-11 rounded-lg text-base md:text-sm"
                   />
                   <p
                     className="text-xs"
@@ -473,7 +473,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     onChange={(e) => setName(e.target.value)}
                     onBlur={() => handleFieldBlur("name")}
                     required
-                    className="h-11 rounded-lg text-base"
+                    className="h-11 rounded-lg text-base md:text-sm"
                     style={{
                       borderColor:
                         touched.name && errors.name
@@ -508,7 +508,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       value={selectedType}
                       onValueChange={setSelectedType}
                     >
-                      <SelectTrigger className="h-11 rounded-lg text-base">
+                      <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -529,7 +529,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       Currency
                     </Label>
                     <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger className="h-11 rounded-lg text-base">
+                      <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
                         <SelectValue placeholder="Currency" />
                       </SelectTrigger>
                       <SelectContent>
@@ -555,7 +555,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     Issuer
                   </Label>
                   <Select value={issuer} onValueChange={setIssuer}>
-                    <SelectTrigger className="h-11 rounded-lg text-base">
+                    <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
                       <SelectValue placeholder="Select issuer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -594,7 +594,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     }}
                     disabled={isLoadingCurrencies}
                   >
-                    <SelectTrigger className="h-11 rounded-lg text-base">
+                    <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
                       <SelectValue
                         placeholder={
                           isLoadingCurrencies
@@ -656,7 +656,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                         value={totalLoaded}
                         onChange={(e) => setTotalLoaded(e.target.value)}
                         onBlur={() => handleFieldBlur("totalLoaded")}
-                        className="h-11 rounded-lg text-base"
+                        className="h-11 rounded-lg text-base md:text-sm"
                         style={{
                           borderColor:
                             touched.totalLoaded && errors.totalLoaded

@@ -158,7 +158,7 @@ export const TransactionDetailsSection: React.FC<
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full h-10 px-3 text-left font-normal justify-between",
+                          "w-full h-10 px-3 text-left text-base md:text-sm font-normal justify-between",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -220,7 +220,7 @@ export const TransactionDetailsSection: React.FC<
                       <input
                         type="time"
                         className={cn(
-                          "flex-1 bg-transparent text-sm font-normal outline-none",
+                          "flex-1 bg-transparent text-base md:text-sm font-normal outline-none",
                           "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           !field.value && "text-muted-foreground"
                         )}

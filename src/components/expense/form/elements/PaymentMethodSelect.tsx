@@ -1,17 +1,6 @@
 // components/expense/form/PaymentMethodSelect.tsx
 import React from "react";
 import { PaymentMethod } from "@/types";
-import { CreditCardIcon, BanknoteIcon } from "lucide-react";
-import {
-  getCardNetwork,
-  formatCardDisplayName,
-} from "@/utils/cardNetworkUtils";
-import {
-  VisaLogoIcon,
-  MastercardLogoIcon,
-  AmericanExpressLogoIcon,
-  DiscoverLogoIcon,
-} from "react-svg-credit-card-payment-icons";
 import {
   SelectItem,
   SelectContent,
@@ -27,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useFormContext } from "react-hook-form";
+import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
 
 interface PaymentMethodSelectProps {
   paymentMethods: PaymentMethod[];
@@ -63,71 +53,11 @@ const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
             </FormControl>
             <SelectContent>
               {paymentMethods && paymentMethods.length > 0 ? (
-                paymentMethods.map((method) => {
-                  const network = getCardNetwork(method.issuer, method.name);
-                  const displayName = formatCardDisplayName(
-                    method.issuer,
-                    method.name
-                  );
-
-                  // Select appropriate icon based on card network for credit cards
-                  const renderIcon = () => {
-                    if (
-                      method.type === "credit_card" ||
-                      method.type === "debit_card" ||
-                      method.type === "prepaid_card"
-                    ) {
-                      switch (network) {
-                        case "visa":
-                          return <VisaLogoIcon width={40} />;
-                        case "mastercard":
-                          return <MastercardLogoIcon width={40} />;
-                        case "amex":
-                          return <AmericanExpressLogoIcon width={40} />;
-                        case "discover":
-                          return <DiscoverLogoIcon width={40} />;
-                        default:
-                          return (
-                            <CreditCardIcon
-                              className="flex-shrink-0"
-                              style={{
-                                width: 40,
-                                height: 26,
-                                color: method.color || "#333",
-                              }}
-                            />
-                          );
-                      }
-                    }
-                    return (
-                      <BanknoteIcon
-                        className="flex-shrink-0"
-                        style={{
-                          width: 40,
-                          height: 26,
-                          color: method.color || "#333",
-                        }}
-                      />
-                    );
-                  };
-
-                  return (
-                    <SelectItem key={method.id} value={method.id}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        {renderIcon()}
-                        <span className="truncate">{displayName}</span>
-                        {(method.type === "credit_card" ||
-                          method.type === "debit_card" ||
-                          method.type === "prepaid_card") &&
-                          method.lastFourDigits && (
-                            <span className="text-muted-foreground text-xs shrink-0">
-                              ...{method.lastFourDigits}
-                            </span>
-                          )}
-                      </div>
-                    </SelectItem>
-                  );
-                })
+                paymentMethods.map((method) => (
+                  <SelectItem key={method.id} value={method.id}>
+                    <PaymentMethodItemContent method={method} />
+                  </SelectItem>
+                ))
               ) : (
                 <SelectItem value="no-methods" disabled>
                   No payment methods available

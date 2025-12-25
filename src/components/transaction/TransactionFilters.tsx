@@ -1,4 +1,3 @@
-
 import { FilterIcon, XIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { PaymentMethod, Currency } from "@/types";
 import { CurrencyService } from "@/core/currency";
+import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
 
 export type FilterOptions = {
   merchantName: string;
@@ -87,7 +87,7 @@ const TransactionFilters = ({
                   <SelectItem value="all">All Payment Methods</SelectItem>
                   {paymentMethods.map((method) => (
                     <SelectItem key={method.id} value={method.id}>
-                      {method.name}
+                      <PaymentMethodItemContent method={method} size="sm" />
                     </SelectItem>
                   ))}
                 </SelectContent>

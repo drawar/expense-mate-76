@@ -179,7 +179,7 @@ export const SimulatorTransactionDetails: React.FC = () => {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
+                        "w-full h-10 pl-3 text-left text-base md:text-sm font-normal justify-between",
                         !field.value && "text-muted-foreground"
                       )}
                     >
