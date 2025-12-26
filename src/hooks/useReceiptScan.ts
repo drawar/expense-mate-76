@@ -86,7 +86,7 @@ export function useReceiptScan(
   }, [isModelsLoaded]);
 
   /**
-   * Scan a receipt image
+   * Scan a receipt image (local-only mode - no Supabase storage)
    */
   const scanReceipt = useCallback(
     async (file: File) => {
@@ -102,36 +102,37 @@ export function useReceiptScan(
           setIsModelsLoaded(true);
         }
 
-        // Step 2: Process image with OCR
+        // Step 2: Process image with OCR (local only, no upload)
         setState("scanning");
         setProgress(30);
 
-        const scanResult = await ocrService.scanReceipt(file);
+        const extractedData = await ocrService.processImageOnly(file);
 
         setProgress(70);
         setState("processing");
 
-        if (scanResult.error || !scanResult.extractedData) {
-          throw new Error(scanResult.error || "Failed to extract receipt data");
+        if (!extractedData) {
+          throw new Error("Failed to extract receipt data");
         }
 
         // Step 3: Convert to form prefill
         setProgress(90);
 
+        // Generate a local ID for this scan session
+        const localReceiptId = `local-${Date.now()}`;
+
         const prefill = ocrService.toExpenseFormPrefill(
-          scanResult.extractedData,
-          scanResult.receiptImage.id,
+          extractedData,
+          localReceiptId,
           defaultCurrency
         );
 
-        // Get receipt image URL
-        const receiptImageUrl = ocrService.getReceiptImageUrl(
-          scanResult.receiptImage.storagePath
-        );
+        // Create a local blob URL for preview
+        const receiptImageUrl = URL.createObjectURL(file);
 
         const finalResult: ScanResult = {
           prefill,
-          receiptImageId: scanResult.receiptImage.id,
+          receiptImageId: localReceiptId,
           receiptImageUrl,
         };
 
