@@ -6,11 +6,17 @@ import { ExpenseForm } from "@/components/expense/form/ExpenseForm";
 import StorageModeAlert from "@/components/expense/StorageModeAlert";
 import ErrorAlert from "@/components/expense/ErrorAlert";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 // Import the initialization function from rewards service
 import { initializeRewardSystem } from "@/core/rewards";
 import { MCC_CODES } from "@/utils/constants/mcc";
+// Receipt scanning
+import { ReceiptScanDialog } from "@/components/receipt/ReceiptScanDialog";
+import { ScanResult } from "@/hooks/useReceiptScan";
+import { Camera, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CurrencyService } from "@/core/currency";
 
 const AddExpense = () => {
   const { useLocalStorage } = useSupabaseConnectionCheck();
@@ -25,8 +31,48 @@ const AddExpense = () => {
     "idle" | "loading" | "success" | "error"
   >("loading");
 
-  // Parse URL query parameters for pre-filling the form
+  // Receipt scanning state
+  const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
+  const [scannedData, setScannedData] = useState<ScanResult | null>(null);
+
+  // Handle scan complete - store the result to pre-fill form
+  const handleScanComplete = useCallback((result: ScanResult) => {
+    setScannedData(result);
+    setIsScanDialogOpen(false);
+  }, []);
+
+  // Clear scanned data
+  const clearScannedData = useCallback(() => {
+    setScannedData(null);
+  }, []);
+
+  // Parse URL query parameters and scanned data for pre-filling the form
   const defaultValues = useMemo(() => {
+    // Priority: scanned data > URL params
+    if (scannedData?.prefill) {
+      const prefill = scannedData.prefill;
+      const values: Record<string, unknown> = {};
+
+      if (prefill.merchantName) {
+        values.merchantName = prefill.merchantName;
+      }
+      if (prefill.amount !== undefined) {
+        values.amount = prefill.amount;
+      }
+      if (prefill.currency) {
+        values.currency = prefill.currency;
+      }
+      if (prefill.date) {
+        values.date = prefill.date;
+      }
+      if (prefill.time) {
+        values.time = prefill.time;
+      }
+
+      return Object.keys(values).length > 0 ? values : undefined;
+    }
+
+    // Fall back to URL params
     const merchantName = searchParams.get("merchantName");
     const mccCode = searchParams.get("mccCode");
 
@@ -49,7 +95,7 @@ const AddExpense = () => {
     }
 
     return values;
-  }, [searchParams]);
+  }, [searchParams, scannedData]);
 
   // Initialize the reward calculation system when the page loads
   useEffect(() => {
@@ -91,6 +137,49 @@ const AddExpense = () => {
           </p>
         </div>
 
+        {/* Scan Receipt Button */}
+        {!scannedData ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsScanDialogOpen(true)}
+            className="w-full mb-6 h-12 border-dashed"
+          >
+            <Camera className="h-5 w-5 mr-2" />
+            Scan Receipt
+          </Button>
+        ) : (
+          <div className="mb-6 p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Receipt scanned
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearScannedData}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Clear</span>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Form pre-filled with extracted data. Review and adjust as needed.
+            </p>
+          </div>
+        )}
+
+        {/* Receipt Scan Dialog */}
+        <ReceiptScanDialog
+          open={isScanDialogOpen}
+          onOpenChange={setIsScanDialogOpen}
+          onScanComplete={handleScanComplete}
+          defaultCurrency={CurrencyService.getDefaultCurrency()}
+        />
+
         {/* Spacing between header and content: 24px (xl) */}
         <div style={{ marginTop: "var(--space-xl)" }}>
           <StorageModeAlert useLocalStorage={useLocalStorage} />
@@ -106,6 +195,7 @@ const AddExpense = () => {
           ) : (
             <ErrorBoundary>
               <ExpenseForm
+                key={scannedData?.receiptImageId || "manual"}
                 paymentMethods={paymentMethods}
                 onSubmit={handleSubmit}
                 defaultValues={defaultValues}

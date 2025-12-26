@@ -1,44 +1,49 @@
 /**
  * OCR Module - Receipt scanning and data extraction
  *
- * This module provides receipt scanning capabilities using Mindee's OCR API.
+ * This module provides receipt scanning capabilities using PaddleOCR (PP-OCRv4).
+ * All OCR processing runs client-side via ONNX Runtime - no API costs!
  *
  * Usage:
  * ```typescript
  * import { ocrService, OcrError } from '@/core/ocr';
  *
- * // Check if OCR is available (API key configured)
- * if (ocrService.isAvailable()) {
- *   try {
- *     // Scan a receipt image
- *     const result = await ocrService.scanReceipt(imageFile);
+ * // Optional: Pre-load models on app startup for faster first scan
+ * // (models are ~15MB and loaded lazily on first use)
+ * await ocrService.preloadModels();
  *
- *     if (result.extractedData) {
- *       // Convert to expense form prefill
- *       const prefill = ocrService.toExpenseFormPrefill(
- *         result.extractedData,
- *         result.receiptImage.id
- *       );
+ * // Scan a receipt image
+ * try {
+ *   const result = await ocrService.scanReceipt(imageFile);
  *
- *       // Use prefill data to populate expense form
- *       console.log(prefill.merchantName, prefill.amount, prefill.currency);
- *     }
- *
- *     // After saving expense, link the receipt
- *     await ocrService.linkReceiptToExpense(
+ *   if (result.extractedData) {
+ *     // Convert to expense form prefill
+ *     const prefill = ocrService.toExpenseFormPrefill(
+ *       result.extractedData,
  *       result.receiptImage.id,
- *       savedExpenseId
+ *       'SGD' // default currency
  *     );
- *   } catch (error) {
- *     if (error instanceof OcrError) {
- *       console.error('OCR Error:', error.code, error.message);
- *     }
+ *
+ *     // Use prefill data to populate expense form
+ *     console.log(prefill.merchantName, prefill.amount, prefill.currency);
+ *   }
+ *
+ *   // After saving expense, link the receipt
+ *   await ocrService.linkReceiptToExpense(
+ *     result.receiptImage.id,
+ *     savedExpenseId
+ *   );
+ * } catch (error) {
+ *   if (error instanceof OcrError) {
+ *     console.error('OCR Error:', error.code, error.message);
  *   }
  * }
  * ```
  *
- * Environment Variables Required:
- * - VITE_MINDEE_API_KEY: Mindee API key for receipt OCR
+ * Model Files Required (in public/ocr-models/):
+ * - ch_PP-OCRv4_det_infer.onnx (~4.7MB) - Text detection model
+ * - ch_PP-OCRv4_rec_infer.onnx (~10.8MB) - Text recognition model
+ * - ppocr_keys_v1.txt (~26KB) - Character dictionary
  *
  * Database Tables:
  * - receipt_images: Stores uploaded receipt image metadata
@@ -52,9 +57,10 @@
 export { OcrService, ocrService } from "./OcrService";
 
 // Providers
-export { MindeeProvider, mindeeProvider } from "./MindeeProvider";
+export { PaddleOcrProvider, paddleOcrProvider } from "./PaddleOcrProvider";
 
-// Parser
+// Parsers
+export { ReceiptTextParser, receiptTextParser } from "./ReceiptTextParser";
 export { ReceiptParser, receiptParser } from "./ReceiptParser";
 
 // Types
@@ -75,8 +81,9 @@ export type {
   ReceiptScanResult,
   // Form integration
   ExpenseFormPrefill,
-  // Provider response types
-  MindeeReceiptResponse,
+  // PaddleOCR response types
+  PaddleOcrTextLine,
+  PaddleOcrResponse,
 } from "./types";
 
 // Error types

@@ -14,7 +14,8 @@ import {
   mapDbReceiptImage,
   mapDbReceiptOcrData,
 } from "./types";
-import { MindeeProvider } from "./MindeeProvider";
+import { PaddleOcrProvider } from "./PaddleOcrProvider";
+import { ReceiptTextParser } from "./ReceiptTextParser";
 import { ReceiptParser } from "./ReceiptParser";
 import { Currency } from "@/types";
 
@@ -35,25 +36,43 @@ const STORAGE_BUCKET = "receipts";
  *
  * Handles the complete flow:
  * 1. Image upload to Supabase Storage
- * 2. OCR processing via Mindee
+ * 2. OCR processing via PaddleOCR (runs client-side, no API costs)
  * 3. Data extraction and normalization
  * 4. Database persistence
  * 5. Expense form pre-fill generation
  */
 export class OcrService {
-  private mindeeProvider: MindeeProvider;
+  private paddleOcrProvider: PaddleOcrProvider;
+  private receiptTextParser: ReceiptTextParser;
   private receiptParser: ReceiptParser;
 
   constructor() {
-    this.mindeeProvider = new MindeeProvider();
+    this.paddleOcrProvider = new PaddleOcrProvider();
+    this.receiptTextParser = new ReceiptTextParser();
     this.receiptParser = new ReceiptParser();
   }
 
   /**
-   * Check if OCR service is available (API key configured)
+   * Check if OCR service is available
+   * PaddleOCR runs client-side, so always available
    */
   isAvailable(): boolean {
-    return this.mindeeProvider.isAvailable();
+    return this.paddleOcrProvider.isAvailable();
+  }
+
+  /**
+   * Check if OCR models are loaded and ready
+   */
+  isReady(): boolean {
+    return this.paddleOcrProvider.isReady();
+  }
+
+  /**
+   * Pre-load OCR models for faster first scan
+   * Call this early (e.g., on app load) to warm up the models
+   */
+  async preloadModels(): Promise<void> {
+    await this.paddleOcrProvider.initialize();
   }
 
   /**
@@ -95,6 +114,15 @@ export class OcrService {
       ocrData,
       extractedData: ocrResult.data,
     };
+  }
+
+  /**
+   * Process image with OCR only (without uploading)
+   * Useful for preview before saving
+   */
+  async processImageOnly(imageFile: File | Blob): Promise<OcrExtractedData> {
+    const ocrResponse = await this.paddleOcrProvider.processImage(imageFile);
+    return this.receiptTextParser.parseReceiptText(ocrResponse.lines);
   }
 
   /**
@@ -175,9 +203,9 @@ export class OcrService {
   async processWithOcr(
     imageFile: File | Blob,
     receiptImageId: string,
-    options?: OcrProcessingOptions
+    _options?: OcrProcessingOptions
   ): Promise<OcrProcessingResult> {
-    const provider = options?.provider || "mindee";
+    const provider = "paddleocr";
 
     // Get current user
     const {
@@ -209,19 +237,13 @@ export class OcrService {
     }
 
     try {
-      // Call OCR provider
-      let extractedData: OcrExtractedData;
+      // Step 1: Run PaddleOCR to get raw text
+      const ocrResponse = await this.paddleOcrProvider.processImage(imageFile);
 
-      if (provider === "mindee") {
-        extractedData = await this.mindeeProvider.processReceipt(imageFile);
-      } else {
-        // Taggun fallback - not implemented in MVP
-        return {
-          success: false,
-          error: "OCR provider not available",
-          ocrDataId: ocrRecord.id,
-        };
-      }
+      // Step 2: Parse raw text into structured receipt data
+      const extractedData = this.receiptTextParser.parseReceiptText(
+        ocrResponse.lines
+      );
 
       // Update OCR record with results
       const { error: updateError } = await supabase

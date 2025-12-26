@@ -4,7 +4,7 @@ import { Currency } from "@/types";
 // OCR Provider Types
 // =============================================================================
 
-export type OcrProvider = "mindee" | "taggun";
+export type OcrProvider = "paddleocr";
 
 export type ProcessingStatus =
   | "pending"
@@ -101,56 +101,25 @@ export interface DbReceiptOcrData {
 // =============================================================================
 
 /**
- * Raw response from Mindee API
+ * Raw text line from PaddleOCR
  */
-export interface MindeeReceiptResponse {
-  document: {
-    inference: {
-      prediction: {
-        locale: {
-          currency: string;
-          language: string;
-        };
-        total_amount: {
-          value: number;
-          confidence: number;
-        };
-        total_tax: {
-          value: number;
-          confidence: number;
-        };
-        date: {
-          value: string;
-          confidence: number;
-        };
-        time: {
-          value: string;
-          confidence: number;
-        };
-        supplier_name: {
-          value: string;
-          confidence: number;
-        };
-        supplier_address: {
-          value: string;
-          confidence: number;
-        };
-        line_items: Array<{
-          description: string;
-          quantity: number;
-          unit_price: number;
-          total_amount: number;
-          confidence: number;
-        }>;
-      };
-      pages: Array<{
-        id: number;
-        orientation: {
-          value: number;
-        };
-      }>;
-    };
+export interface PaddleOcrTextLine {
+  text: string;
+  score: number;
+  frame: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
   };
+}
+
+/**
+ * Raw response from PaddleOCR
+ */
+export interface PaddleOcrResponse {
+  lines: PaddleOcrTextLine[];
+  processingTimeMs: number;
 }
 
 /**
