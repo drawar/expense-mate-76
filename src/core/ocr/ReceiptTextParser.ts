@@ -10,11 +10,16 @@ import { PaddleOcrTextLine, OcrExtractedData } from "./types";
  * - Currency
  */
 export class ReceiptTextParser {
-  // Patterns for total amount extraction
+  // Patterns for total amount extraction (ordered by priority - final charged amount first)
   private totalPatterns = [
-    /(?:grand\s*)?total\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    // Credit card / payment amount (final amount with tip)
+    /(?:credit\s*card|debit\s*card|card)\s*(?:sale|payment|charge)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /(?:charged?|paid|payment)\s*(?:amount)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    // Grand total (usually final)
+    /grand\s*total\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    // Regular total
+    /\btotal\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /amount\s*(?:due|paid|owing)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /(?:sub)?total\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /balance\s*(?:due)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /(?:net|gross)\s*amount\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /to\s*pay\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
@@ -172,23 +177,21 @@ export class ReceiptTextParser {
 
     if (cleanLines.length === 0) return undefined;
 
-    // Try to find and combine lines that form a merchant name
-    // Look for lines that might be a split name (e.g., "CITY AVENUE" + "* MARKET")
-    for (let i = 0; i < cleanLines.length; i++) {
+    // First pass: look for a line that already looks like a complete merchant name
+    for (const line of cleanLines) {
+      if (this.looksLikeMerchantName(line.text)) {
+        return this.normalizeMerchantName(line.text);
+      }
+    }
+
+    // Second pass: try to combine adjacent lines that might form a merchant name
+    for (let i = 0; i < cleanLines.length - 1; i++) {
       const current = cleanLines[i];
       const next = cleanLines[i + 1];
 
-      // Try to combine with next line if it looks like a continuation
-      if (next) {
-        const combined = this.tryCombineMerchantLines(current.text, next.text);
-        if (combined) {
-          return this.normalizeMerchantName(combined);
-        }
-      }
-
-      // If current line looks like a complete merchant name (has business word), use it
-      if (this.looksLikeMerchantName(current.text)) {
-        return this.normalizeMerchantName(current.text);
+      const combined = this.tryCombineMerchantLines(current.text, next.text);
+      if (combined) {
+        return this.normalizeMerchantName(combined);
       }
     }
 
