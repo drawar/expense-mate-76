@@ -493,7 +493,7 @@ export class ReceiptTextParser {
   }
 
   /**
-   * Convert string to Title Case
+   * Convert string to Title Case, preserving brand names with internal capitals
    */
   private toTitleCase(str: string): string {
     // Words that should stay lowercase (unless first word)
@@ -516,13 +516,20 @@ export class ReceiptTextParser {
     ]);
 
     return str
-      .toLowerCase()
       .split(" ")
       .map((word, index) => {
-        if (index === 0 || !lowercaseWords.has(word)) {
-          return word.charAt(0).toUpperCase() + word.slice(1);
+        // Preserve words with internal capitals (e.g., "PriceSmart", "McDonald's")
+        const hasInternalCaps = /[a-z][A-Z]/.test(word);
+        if (hasInternalCaps) {
+          return word;
         }
-        return word;
+
+        // Convert to title case
+        const lowerWord = word.toLowerCase();
+        if (index === 0 || !lowercaseWords.has(lowerWord)) {
+          return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
+        }
+        return lowerWord;
       })
       .join(" ");
   }
