@@ -165,6 +165,7 @@ export type InsightSeverity = "info" | "success" | "warning" | "danger";
 export type InsightConditionType =
   | "category_ratio"
   | "category_amount"
+  | "category_comparison"
   | "tier_ratio"
   | "spending_trend"
   | "budget_status"

@@ -297,6 +297,7 @@ export class InsightService {
     const evaluators: Record<string, ConditionEvaluator> = {
       category_ratio: this.evaluateCategoryRatio.bind(this),
       category_amount: this.evaluateCategoryAmount.bind(this),
+      category_comparison: this.evaluateCategoryComparison.bind(this),
       tier_ratio: this.evaluateTierRatio.bind(this),
       spending_trend: this.evaluateSpendingTrend.bind(this),
       budget_status: this.evaluateBudgetStatus.bind(this),
@@ -395,6 +396,95 @@ export class InsightService {
         count,
         yearly_projection: yearlyProjection,
         savings_estimate: Math.round(total * 0.5), // Estimate 50% savings
+      },
+    };
+  }
+
+  /**
+   * Evaluate category comparison conditions (e.g., groceries vs dining out)
+   * Params: {
+   *   categories_a: string[],      // First group (e.g., ["Groceries"])
+   *   categories_b: string[],      // Second group (e.g., ["Dining Out", "Fast Food & Takeout", "Food Delivery"])
+   *   label_a?: string,            // Label for first group (e.g., "groceries")
+   *   label_b?: string,            // Label for second group (e.g., "dining out")
+   *   cost_multiplier?: number,    // Estimated cost multiplier (dining typically costs 2-3x groceries per meal)
+   *   min_transactions?: number,   // Minimum transactions to trigger
+   * }
+   */
+  private evaluateCategoryComparison(
+    context: InsightContext,
+    params: Record<string, unknown>
+  ): EvaluationResult {
+    const {
+      categories_a = [],
+      categories_b = [],
+      label_a = "Category A",
+      label_b = "Category B",
+      cost_multiplier = 2.5,
+      min_transactions = 3,
+    } = params as {
+      categories_a: string[];
+      categories_b: string[];
+      label_a?: string;
+      label_b?: string;
+      cost_multiplier?: number;
+      min_transactions?: number;
+    };
+
+    // Calculate totals for each category group
+    let totalA = 0;
+    let countA = 0;
+    let totalB = 0;
+    let countB = 0;
+
+    context.currentMonthTransactions.forEach((tx) => {
+      const category = getEffectiveCategory(tx);
+      if (categories_a.includes(category)) {
+        totalA += tx.amount;
+        countA += 1;
+      }
+      if (categories_b.includes(category)) {
+        totalB += tx.amount;
+        countB += 1;
+      }
+    });
+
+    // Calculate number of days in the current period
+    const daysInPeriod = Math.max(
+      1,
+      differenceInDays(new Date(), startOfMonth(new Date())) + 1
+    );
+
+    // Scale to weekly average (7 days)
+    const weeksInPeriod = daysInPeriod / 7;
+    const weeklyA = weeksInPeriod > 0 ? totalA / weeksInPeriod : 0;
+    const weeklyB = weeksInPeriod > 0 ? totalB / weeksInPeriod : 0;
+
+    // Calculate estimated savings
+    // Assumption: If you replaced dining out with groceries, you'd save the difference
+    // But groceries for same meals would cost ~1/cost_multiplier of dining out
+    const equivalentGroceryCost = totalB / cost_multiplier;
+    const potentialSavingsFromB = totalB - equivalentGroceryCost;
+
+    // Trigger if there's meaningful activity in both categories
+    const triggered = countA >= min_transactions || countB >= min_transactions;
+
+    return {
+      triggered,
+      data: {
+        total_a: totalA,
+        total_b: totalB,
+        count_a: countA,
+        count_b: countB,
+        weekly_a: Math.round(weeklyA * 100) / 100,
+        weekly_b: Math.round(weeklyB * 100) / 100,
+        label_a,
+        label_b,
+        days_tracked: daysInPeriod,
+        potential_savings: Math.round(potentialSavingsFromB),
+        weekly_savings:
+          Math.round((potentialSavingsFromB / weeksInPeriod) * 100) / 100,
+        ratio: totalA > 0 ? Math.round((totalB / totalA) * 100) / 100 : 0,
       },
     };
   }
