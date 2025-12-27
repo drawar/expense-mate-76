@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 // Import the initialization function from rewards service
 import { initializeRewardSystem } from "@/core/rewards";
 import { MCC_CODES } from "@/utils/constants/mcc";
+import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
 // Receipt scanning
 import { ReceiptScanDialog } from "@/components/receipt/ReceiptScanDialog";
 import { ScanResult } from "@/hooks/useReceiptScan";
@@ -55,6 +56,11 @@ const AddExpense = () => {
 
       if (prefill.merchantName) {
         values.merchantName = prefill.merchantName;
+        // Auto-lookup MCC from merchant name (airlines, hotels, travel agencies)
+        const mcc = getMCCFromMerchantName(prefill.merchantName);
+        if (mcc) {
+          values.mcc = mcc;
+        }
       }
       if (prefill.amount !== undefined) {
         values.amount = prefill.amount;
