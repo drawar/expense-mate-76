@@ -73,6 +73,13 @@ export class ReceiptTextParser {
     /^www\./i,
     /^http/i,
     /^thank/i,
+    // Receipt paper/printer noise
+    /ecopaper/i,
+    /bpa\s*free/i,
+    /thermal/i,
+    // Random characters/symbols
+    /^[^\w\s]+$/,
+    /^[\W\d]+$/,
   ];
 
   /**
@@ -125,14 +132,16 @@ export class ReceiptTextParser {
   private extractMerchantName(
     sortedLines: PaddleOcrTextLine[]
   ): string | undefined {
-    // Look at the first 5 lines for merchant name
-    const topLines = sortedLines.slice(0, 5);
+    // Look at the first 8 lines for merchant name
+    const topLines = sortedLines.slice(0, 8);
 
-    for (const line of topLines) {
-      const text = line.text.trim();
+    // Filter out noise lines first
+    const cleanLines: { text: string; index: number }[] = [];
+    for (let i = 0; i < topLines.length; i++) {
+      const text = topLines[i].text.trim();
 
-      // Skip short lines or numbers-only
-      if (text.length < 3) continue;
+      // Skip short lines
+      if (text.length < 2) continue;
 
       // Skip excluded patterns
       const isExcluded = this.merchantExcludePatterns.some((pattern) =>
@@ -141,15 +150,91 @@ export class ReceiptTextParser {
       if (isExcluded) continue;
 
       // Skip if mostly numbers (like phone numbers, addresses)
-      const digitRatio =
-        (text.match(/\d/g) || []).length / text.replace(/\s/g, "").length;
-      if (digitRatio > 0.5) continue;
+      const alphaCount = (text.match(/[a-zA-Z]/g) || []).length;
+      const digitCount = (text.match(/\d/g) || []).length;
+      if (digitCount > alphaCount) continue;
 
-      // Found a good candidate
-      return this.normalizeMerchantName(text);
+      // Skip lines that look like addresses (contain street indicators)
+      if (
+        /^\s*#?\d+\s*[-–]\s*\d+|^\d+\s+\w+\s+(st|street|ave|avenue|rd|road|dr|drive|blvd|boulevard)/i.test(
+          text
+        )
+      )
+        continue;
+
+      cleanLines.push({ text, index: i });
+    }
+
+    if (cleanLines.length === 0) return undefined;
+
+    // Try to find and combine lines that form a merchant name
+    // Look for consecutive lines that might be a split name (e.g., "CITY AVENUE" + "* MARKET")
+    for (let i = 0; i < cleanLines.length; i++) {
+      const current = cleanLines[i];
+      const next = cleanLines[i + 1];
+
+      // Check if current line looks like a partial name that continues on next line
+      // Common patterns: ends with word, next starts with *, &, or word
+      if (next && next.index === current.index + 1) {
+        const combined = this.tryCombineMerchantLines(current.text, next.text);
+        if (combined) {
+          return this.normalizeMerchantName(combined);
+        }
+      }
+
+      // If current line looks like a complete merchant name, use it
+      if (this.looksLikeMerchantName(current.text)) {
+        return this.normalizeMerchantName(current.text);
+      }
+    }
+
+    // Fallback: use first clean line
+    if (cleanLines.length > 0) {
+      return this.normalizeMerchantName(cleanLines[0].text);
     }
 
     return undefined;
+  }
+
+  /**
+   * Check if a line looks like a merchant/store name
+   */
+  private looksLikeMerchantName(text: string): boolean {
+    // Contains common business words
+    const businessWords =
+      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre)\b/i;
+    if (businessWords.test(text)) return true;
+
+    // Is mostly uppercase (common for store names)
+    const upperCount = (text.match(/[A-Z]/g) || []).length;
+    const lowerCount = (text.match(/[a-z]/g) || []).length;
+    if (upperCount > lowerCount * 2 && text.length > 4) return true;
+
+    return false;
+  }
+
+  /**
+   * Try to combine two lines that might form a split merchant name
+   */
+  private tryCombineMerchantLines(line1: string, line2: string): string | null {
+    // Clean up the lines
+    const clean1 = line1.trim();
+    const clean2 = line2.trim().replace(/^[*&\-–]\s*/, ""); // Remove leading *, &, -
+
+    // Check if combining makes sense
+    // Line 2 should look like a continuation (contains business word, or is short)
+    const businessWords =
+      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre|supermarket|grocery)\b/i;
+
+    if (businessWords.test(clean2) || clean2.length < 15) {
+      const combined = `${clean1} ${clean2}`;
+      // Only combine if result looks reasonable
+      if (combined.length < 50 && this.looksLikeMerchantName(combined)) {
+        return combined;
+      }
+    }
+
+    return null;
   }
 
   /**

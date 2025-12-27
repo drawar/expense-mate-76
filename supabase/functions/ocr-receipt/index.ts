@@ -200,7 +200,7 @@ serve(async (req) => {
     const processingTimeMs = Date.now() - startTime;
 
     console.log(
-      `OCR processed: ${lines.length} lines in ${processingTimeMs}ms (mimeType: ${mimeType || "unknown"})`
+      `OCR processed: ${lines.length} lines in ${processingTimeMs}ms (mimeType: ${mimeType || "unknown"})\n\nFull raw text:\n${fullText}`
     );
 
     return new Response(
