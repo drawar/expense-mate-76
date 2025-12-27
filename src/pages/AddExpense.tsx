@@ -57,8 +57,7 @@ const AddExpense = () => {
         values.merchantName = prefill.merchantName;
       }
       if (prefill.amount !== undefined) {
-        // Form expects amount as string
-        values.amount = String(prefill.amount);
+        values.amount = prefill.amount;
       }
       if (prefill.currency) {
         values.currency = prefill.currency;
