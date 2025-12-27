@@ -194,8 +194,16 @@ serve(async (req) => {
     // Get the full raw text (first annotation contains complete text with newlines)
     const fullText = textAnnotations[0]?.description ?? "";
 
-    // Transform to PaddleOcrResponse format
-    const lines = groupWordsIntoLines(textAnnotations);
+    // Use fullText lines instead of word grouping - preserves visual reading order
+    // which is critical for correct merchant name and amount detection
+    const lines: OcrTextLine[] = fullText
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line, index) => ({
+        text: line.trim(),
+        score: 0.95,
+        frame: { top: index * 20, left: 0, width: 300, height: 20 },
+      }));
 
     const processingTimeMs = Date.now() - startTime;
 

@@ -13,8 +13,9 @@ export class ReceiptTextParser {
   // Patterns for total amount extraction (ordered by priority - final charged amount first)
   private totalPatterns = [
     // Credit card / payment amount (final amount with tip)
-    /(?:credit\s*card|debit\s*card|card)\s*(?:sale|payment|charge)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /(?:charged?|paid|payment)\s*(?:amount)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /(?:credit\s+card|debit\s+card)\s*(?:sale|payment|charge)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /\bcard\s+(?:sale|payment|charge)\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /(?:charged?|paid|payment)\s+(?:amount)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     // Grand total (usually final)
     /grand\s*total\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     // Regular total
