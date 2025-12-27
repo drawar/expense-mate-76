@@ -7,7 +7,7 @@ export const formSchema = z
     merchantAddress: z.string().optional(),
     isOnline: z.boolean().default(false),
     isContactless: z.boolean().default(false),
-    amount: z.number().positive("Amount must be greater than zero"),
+    amount: z.coerce.number().positive("Amount must be greater than zero"),
     currency: z.string().min(1, "Currency is required"),
     paymentMethodId: z.string().min(1, "Payment method is required"),
     paymentAmount: z.string().optional(),
