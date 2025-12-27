@@ -38,10 +38,10 @@ export class ReceiptTextParser {
     /(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/,
     // YYYY/MM/DD or YYYY-MM-DD
     /(\d{4})[-/](\d{1,2})[-/](\d{1,2})/,
-    // Month DD, YYYY
-    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
-    // DD Month YYYY
-    /(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{4})/i,
+    // Month DD, YYYY (e.g., "Dec 23, 2025" or "Dec-23-2025")
+    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s]+(\d{1,2}),?[-\s]+(\d{4})/i,
+    // DD Month YYYY (e.g., "23 Dec 2025" or "23-Dec-2025")
+    /(\d{1,2})[-\s]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s]+(\d{4})/i,
   ];
 
   // Patterns for time extraction
@@ -171,21 +171,20 @@ export class ReceiptTextParser {
     if (cleanLines.length === 0) return undefined;
 
     // Try to find and combine lines that form a merchant name
-    // Look for consecutive lines that might be a split name (e.g., "CITY AVENUE" + "* MARKET")
+    // Look for lines that might be a split name (e.g., "CITY AVENUE" + "* MARKET")
     for (let i = 0; i < cleanLines.length; i++) {
       const current = cleanLines[i];
       const next = cleanLines[i + 1];
 
-      // Check if current line looks like a partial name that continues on next line
-      // Common patterns: ends with word, next starts with *, &, or word
-      if (next && next.index === current.index + 1) {
+      // Try to combine with next line if it looks like a continuation
+      if (next) {
         const combined = this.tryCombineMerchantLines(current.text, next.text);
         if (combined) {
           return this.normalizeMerchantName(combined);
         }
       }
 
-      // If current line looks like a complete merchant name, use it
+      // If current line looks like a complete merchant name (has business word), use it
       if (this.looksLikeMerchantName(current.text)) {
         return this.normalizeMerchantName(current.text);
       }
