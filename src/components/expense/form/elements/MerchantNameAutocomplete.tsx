@@ -43,6 +43,28 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
   const suggestions = getNameSuggestions(currentValue);
   const showDropdown = open && suggestions.length > 0;
 
+  // Auto-lookup MCC on initial mount if merchant name is pre-filled
+  useEffect(() => {
+    // Only run once on mount when there's a pre-filled merchant name
+    if (!currentValue || currentValue.length < 3) return;
+
+    // Check if MCC is already set (from defaultValues)
+    const existingMCC = form.getValues("mcc");
+    if (existingMCC) {
+      hasAutoAppliedMCCRef.current = true;
+      return;
+    }
+
+    // Try to lookup MCC from pre-filled merchant name
+    const mcc = getMCCFromMerchantName(currentValue);
+    if (mcc) {
+      form.setValue("mcc", mcc);
+      onSelectMCC?.(mcc);
+      hasAutoAppliedMCCRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
+
   // Auto-lookup MCC when merchant name changes while focused
   useEffect(() => {
     if (!isFocused) return;
