@@ -37,7 +37,11 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasAutoAppliedMCCRef = useRef(false);
-  const { getNameSuggestions } = useMerchantSuggestions();
+  const {
+    getNameSuggestions,
+    getMerchantByName,
+    isLoading: isMerchantsLoading,
+  } = useMerchantSuggestions();
 
   const currentValue = form.watch("merchantName") || "";
   const suggestions = getNameSuggestions(currentValue);
@@ -57,6 +61,9 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
     // Skip if user is actively typing (focused)
     if (isFocused) return;
 
+    // Wait for historical merchants to load
+    if (isMerchantsLoading) return;
+
     // Mark that we've done the initial lookup
     hasInitialLookupRef.current = true;
 
@@ -67,18 +74,34 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
       return;
     }
 
-    // Try to lookup MCC from pre-filled merchant name
-    const mcc = getMCCFromMerchantName(currentValue);
-    console.log("[MerchantNameAutocomplete] Initial MCC lookup:", {
-      currentValue,
-      mcc,
-    });
+    // Try to lookup MCC from airline/hotel mapping first
+    let mcc = getMCCFromMerchantName(currentValue);
+
+    // If no match in static mapping, try historical merchant data
+    if (!mcc) {
+      const historicalMerchant = getMerchantByName(currentValue);
+      if (historicalMerchant?.mcc) {
+        mcc = historicalMerchant.mcc;
+        console.log("[MerchantNameAutocomplete] Found historical MCC:", {
+          currentValue,
+          mcc,
+        });
+      }
+    }
+
     if (mcc) {
       form.setValue("mcc", mcc);
       onSelectMCC?.(mcc);
       hasAutoAppliedMCCRef.current = true;
     }
-  }, [currentValue, isFocused, form, onSelectMCC]);
+  }, [
+    currentValue,
+    isFocused,
+    isMerchantsLoading,
+    form,
+    onSelectMCC,
+    getMerchantByName,
+  ]);
 
   // Auto-lookup MCC when merchant name changes while focused
   useEffect(() => {
