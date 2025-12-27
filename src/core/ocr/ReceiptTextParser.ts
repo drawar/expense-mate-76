@@ -210,13 +210,8 @@ export class ReceiptTextParser {
   private looksLikeMerchantName(text: string): boolean {
     // Contains common business words
     const businessWords =
-      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre)\b/i;
+      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre|mart|smart|foods|grocer|grocery|kitchen|deli|bakery|butcher|supermarket|express|depot|warehouse)\b/i;
     if (businessWords.test(text)) return true;
-
-    // Is mostly uppercase (common for store names)
-    const upperCount = (text.match(/[A-Z]/g) || []).length;
-    const lowerCount = (text.match(/[a-z]/g) || []).length;
-    if (upperCount > lowerCount * 2 && text.length > 4) return true;
 
     return false;
   }
@@ -232,7 +227,7 @@ export class ReceiptTextParser {
     // Check if combining makes sense
     // Line 2 should look like a continuation (contains business word, or is short)
     const businessWords =
-      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre|supermarket|grocery)\b/i;
+      /\b(market|store|shop|cafe|restaurant|bistro|grill|bar|pub|hotel|inn|pharmacy|clinic|salon|spa|gym|fitness|bank|mall|plaza|center|centre|mart|smart|foods|grocer|grocery|kitchen|deli|bakery|butcher|supermarket|express|depot|warehouse)\b/i;
 
     if (businessWords.test(clean2) || clean2.length < 15) {
       const combined = `${clean1} ${clean2}`;
