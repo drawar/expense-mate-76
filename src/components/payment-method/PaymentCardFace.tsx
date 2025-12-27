@@ -34,7 +34,7 @@ const CARD_IMAGES: Record<string, string> = {
   "hsbc:revolution visa platinum":
     "https://storage.googleapis.com/max-sg/assets/cc_appplication_icons/HSBC%20Revolution.png",
   // Brim Financial cards
-  "brim financial:air france klm world elite":
+  "brim financial:air france-klm world elite":
     "https://princeoftravel.com/wp-content/uploads/2023/09/AFKLM_WorldElite_FINAL-V2-01-1.png",
 };
 

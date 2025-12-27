@@ -44,11 +44,13 @@ const CARD_IMAGE_FALLBACKS: Record<string, string> = {
     "https://www.americanexpress.com/content/dam/amex/en-ca/support/cobalt-card/explorer_2019_ca_di_dod_480x304.png",
   "citibank:rewards visa signature":
     "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/MY/MY-Rewards-Visa-20Signature2-480x305.png",
+  "citibank:rewards world mastercard":
+    "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/ID/Citi%20ID_Rewards_Mastercard-480x305.png/jcr:content/renditions/cq5dam.crop.900.600.png",
   "neo financial:cathay world elite mastercard":
     "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
   "hsbc:revolution visa platinum":
     "https://storage.googleapis.com/max-sg/assets/cc_appplication_icons/HSBC%20Revolution.png",
-  "brim financial:air france klm world elite":
+  "brim financial:air france-klm world elite":
     "https://princeoftravel.com/wp-content/uploads/2023/09/AFKLM_WorldElite_FINAL-V2-01-1.png",
 };
 
