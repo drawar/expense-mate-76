@@ -175,9 +175,11 @@ serve(async (req) => {
     });
 
     if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error("Google Vision API error:", errorText);
-      throw new Error(`Google Vision API error: ${visionResponse.status}`);
+      const errorData = await visionResponse.json().catch(() => ({}));
+      console.error("Google Vision API error:", JSON.stringify(errorData));
+      const errorMessage =
+        errorData?.error?.message || `HTTP ${visionResponse.status}`;
+      throw new Error(`Google Vision API: ${errorMessage}`);
     }
 
     const visionData: VisionApiResponse = await visionResponse.json();
@@ -188,6 +190,9 @@ serve(async (req) => {
     }
 
     const textAnnotations = visionData.responses[0]?.textAnnotations ?? [];
+
+    // Get the full raw text (first annotation contains complete text with newlines)
+    const fullText = textAnnotations[0]?.description ?? "";
 
     // Transform to PaddleOcrResponse format
     const lines = groupWordsIntoLines(textAnnotations);
@@ -201,6 +206,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         lines,
+        fullText,
         processingTimeMs,
       }),
       {

@@ -83,6 +83,14 @@ export class CloudOcrProvider {
         `CloudOCR: Completed in ${clientProcessingTime}ms (server: ${data.processingTimeMs}ms), found ${data.lines?.length ?? 0} lines`
       );
 
+      // Log full raw text for debugging
+      if (data.fullText) {
+        console.log(
+          "CloudOCR: Full raw text from Google Vision:\n",
+          data.fullText
+        );
+      }
+
       return {
         lines: data.lines ?? [],
         processingTimeMs: clientProcessingTime,
