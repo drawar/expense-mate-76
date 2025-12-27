@@ -80,6 +80,8 @@ export class ReceiptTextParser {
     // Random characters/symbols
     /^[^\w\s]+$/,
     /^[\W\d]+$/,
+    // Contains non-ASCII letters (likely OCR noise like "dooǝ")
+    /[^\x20-\x7E]/,
   ];
 
   /**
