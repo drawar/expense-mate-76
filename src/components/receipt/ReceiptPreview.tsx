@@ -64,7 +64,10 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "Not detected";
     try {
-      const date = new Date(dateStr);
+      // Parse as local date to avoid timezone issues
+      // dateStr is in "YYYY-MM-DD" format from OCR
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
       return date.toLocaleDateString("en-US", {
         weekday: "short",
         year: "numeric",
