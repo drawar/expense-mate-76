@@ -117,12 +117,35 @@ export class PaddleOcrProvider {
         `PaddleOCR: Processed in ${processingTimeMs}ms, found ${result.length} text regions`
       );
 
-      // Map to our type
-      const lines: PaddleOcrTextLine[] = result.map((line) => ({
-        text: line.text,
-        score: line.score,
-        frame: line.frame,
-      }));
+      // Map library output to our type
+      // Library returns: { text, mean, box?: number[][] }
+      // We need: { text, score, frame: { top, left, width, height } }
+      const lines: PaddleOcrTextLine[] = result.map((line) => {
+        // Convert box (4 corner points) to frame (bounding box)
+        // box is [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] - 4 corners of quadrilateral
+        let frame = { top: 0, left: 0, width: 0, height: 0 };
+
+        if (line.box && line.box.length >= 4) {
+          const xs = line.box.map((p) => p[0]);
+          const ys = line.box.map((p) => p[1]);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          frame = {
+            left: minX,
+            top: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+          };
+        }
+
+        return {
+          text: line.text,
+          score: line.mean ?? 0.9, // Use 'mean' as confidence score
+          frame,
+        };
+      });
 
       return {
         lines,
