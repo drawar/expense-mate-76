@@ -50,21 +50,6 @@ export class ReceiptTextParser {
     /(\d{1,2})\.(\d{2})\s*(am|pm)?/i,
   ];
 
-  // Currency detection patterns
-  private currencyPatterns: Array<{ pattern: RegExp; currency: string }> = [
-    { pattern: /\bsgd\b|\bsg\$|\$\s*s/i, currency: "SGD" },
-    { pattern: /\busd\b|\bus\$|\$\s*(?!\s*s)/i, currency: "USD" },
-    { pattern: /\bcad\b|\bc\$/i, currency: "CAD" },
-    { pattern: /\baud\b|\ba\$/i, currency: "AUD" },
-    { pattern: /\beur\b|€/i, currency: "EUR" },
-    { pattern: /\bgbp\b|£/i, currency: "GBP" },
-    { pattern: /\bjpy\b|¥/i, currency: "JPY" },
-    { pattern: /\bvnd\b|₫/i, currency: "VND" },
-    { pattern: /\bmyr\b|\brm\b/i, currency: "MYR" },
-    { pattern: /\bthb\b|฿/i, currency: "THB" },
-    { pattern: /\bidr\b|\brp\b/i, currency: "IDR" },
-  ];
-
   // Words to exclude from merchant names
   private merchantExcludePatterns = [
     /^receipt$/i,
@@ -113,14 +98,12 @@ export class ReceiptTextParser {
     const taxAmount = this.extractTaxAmount(allText);
     const { date: transactionDate, time: transactionTime } =
       this.extractDateTime(allText);
-    const currencyCode = this.extractCurrency(allText);
 
     // Calculate confidence based on what we found
     const confidence = this.calculateConfidence({
       merchantName,
       totalAmount,
       transactionDate,
-      currencyCode,
     });
 
     return {
@@ -129,7 +112,8 @@ export class ReceiptTextParser {
       taxAmount,
       transactionDate,
       transactionTime,
-      currencyCode,
+      // Currency is not detected from receipt - use locale default instead
+      currencyCode: undefined,
       confidence,
       rawResponse: { lines: sortedLines },
     };
@@ -264,18 +248,6 @@ export class ReceiptTextParser {
     }
 
     return { date, time };
-  }
-
-  /**
-   * Extract currency from text
-   */
-  private extractCurrency(allText: string): string | undefined {
-    for (const { pattern, currency } of this.currencyPatterns) {
-      if (pattern.test(allText)) {
-        return currency;
-      }
-    }
-    return undefined;
   }
 
   /**
@@ -434,16 +406,15 @@ export class ReceiptTextParser {
     merchantName?: string;
     totalAmount?: number;
     transactionDate?: string;
-    currencyCode?: string;
   }): number {
     let score = 0;
     let weights = 0;
 
-    // Total amount is most important (40%)
+    // Total amount is most important (50%)
     if (data.totalAmount !== undefined && data.totalAmount > 0) {
-      score += 0.4;
+      score += 0.5;
     }
-    weights += 0.4;
+    weights += 0.5;
 
     // Merchant name (30%)
     if (data.merchantName && data.merchantName.length > 2) {
@@ -456,12 +427,6 @@ export class ReceiptTextParser {
       score += 0.2;
     }
     weights += 0.2;
-
-    // Currency (10%)
-    if (data.currencyCode) {
-      score += 0.1;
-    }
-    weights += 0.1;
 
     return Math.round((score / weights) * 100) / 100;
   }
