@@ -1,5 +1,6 @@
 import { Currency } from "@/types";
 import { OcrExtractedData, ExpenseFormPrefill } from "./types";
+import { CurrencyService } from "@/core/currency";
 
 // Confidence threshold for flagging review
 const REVIEW_THRESHOLD = 0.7;
@@ -124,18 +125,21 @@ export class ReceiptParser {
   /**
    * Validate currency
    * - Must be in supported list
-   * - Fall back to default currency
+   * - Fall back to locale-detected default currency
    */
   private validateCurrency(currencyCode?: string): Currency {
-    if (!currencyCode) return this.defaultCurrency;
+    if (!currencyCode) {
+      // Use locale-detected currency as default
+      return CurrencyService.getDefaultCurrency();
+    }
 
     const upper = currencyCode.toUpperCase() as Currency;
     if (SUPPORTED_CURRENCIES.includes(upper)) {
       return upper;
     }
 
-    console.warn("Unsupported currency, using default:", currencyCode);
-    return this.defaultCurrency;
+    console.warn("Unsupported currency detected:", currencyCode);
+    return CurrencyService.getDefaultCurrency();
   }
 
   /**

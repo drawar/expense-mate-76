@@ -12,10 +12,29 @@ let ocrInstance: Awaited<ReturnType<typeof createOcrInstance>> | null = null;
 let initPromise: Promise<void> | null = null;
 
 /**
+ * Configure ONNX Runtime WASM paths
+ * Must be called before creating OCR instance
+ */
+async function configureOnnxRuntime() {
+  // Import onnxruntime-web to configure WASM paths
+  const ort = await import("onnxruntime-web");
+
+  // In development, serve from node_modules; in production, from root
+  const isDev = import.meta.env.DEV;
+  ort.env.wasm.wasmPaths = isDev ? "/node_modules/onnxruntime-web/dist/" : "/";
+
+  // Disable multi-threading to simplify WASM loading
+  ort.env.wasm.numThreads = 1;
+}
+
+/**
  * Dynamically import and create OCR instance
  * This is done lazily to avoid loading 15MB of models until needed
  */
 async function createOcrInstance() {
+  // Configure ONNX Runtime WASM paths first
+  await configureOnnxRuntime();
+
   const { default: Ocr } = await import("@gutenye/ocr-browser");
   return Ocr.create({
     models: MODEL_PATHS,

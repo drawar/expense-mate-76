@@ -32,7 +32,9 @@ export class ReceiptTextParser {
 
   // Patterns for date extraction
   private datePatterns = [
-    // DD/MM/YYYY or DD-MM-YYYY
+    // Labeled date/time (e.g., "DATE/TIME: 11/25/2025 18:26:17" or "DATE/TIMEL 11/25/2025")
+    /date[/:]?\s*time[:\s]*(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/i,
+    // DD/MM/YYYY or MM/DD/YYYY
     /(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/,
     // YYYY/MM/DD or YYYY-MM-DD
     /(\d{4})[-/](\d{1,2})[-/](\d{1,2})/,
@@ -328,19 +330,41 @@ export class ReceiptTextParser {
         month = monthNames[match[2].toLowerCase().slice(0, 3)];
         year = parseInt(match[3]);
       } else {
-        // DD/MM/YYYY or MM/DD/YYYY - assume DD/MM/YYYY for most regions
-        day = parseInt(match[1]);
-        month = parseInt(match[2]) - 1;
+        // Numeric format: could be DD/MM/YYYY or MM/DD/YYYY
+        const first = parseInt(match[1]);
+        const second = parseInt(match[2]);
         year = parseInt(match[3]);
 
         // Handle 2-digit years
         if (year < 100) {
           year += year < 50 ? 2000 : 1900;
         }
+
+        // Smart detection: if first > 12, it must be day (DD/MM/YYYY)
+        // If second > 12, it must be day (MM/DD/YYYY)
+        // Otherwise, prefer MM/DD/YYYY for US receipts (more common in apps)
+        if (first > 12 && second <= 12) {
+          // DD/MM/YYYY format (first is day)
+          day = first;
+          month = second - 1;
+        } else if (second > 12 && first <= 12) {
+          // MM/DD/YYYY format (second is day)
+          month = first - 1;
+          day = second;
+        } else {
+          // Ambiguous - default to MM/DD/YYYY (US format, common for receipts)
+          month = first - 1;
+          day = second;
+        }
       }
 
       const date = new Date(year, month, day);
       if (isNaN(date.getTime())) return undefined;
+
+      // Validate the date components match what we set (catches invalid dates like Feb 30)
+      if (date.getMonth() !== month || date.getDate() !== day) {
+        return undefined;
+      }
 
       // Validate date is reasonable (within last 2 years and not in future)
       const now = new Date();
@@ -349,7 +373,12 @@ export class ReceiptTextParser {
 
       if (date > now || date < twoYearsAgo) return undefined;
 
-      return date.toISOString().split("T")[0];
+      // Format as YYYY-MM-DD without timezone conversion
+      // Don't use toISOString() as it converts to UTC and can shift the date
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
     } catch {
       return undefined;
     }

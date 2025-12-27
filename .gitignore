@@ -27,3 +27,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# ONNX Runtime files (copied from node_modules during postinstall)
+public/*.wasm
+public/ort-*.mjs
