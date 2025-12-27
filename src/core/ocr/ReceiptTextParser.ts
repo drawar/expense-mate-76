@@ -77,6 +77,7 @@ export class ReceiptTextParser {
     /ecopaper/i,
     /bpa\s*free/i,
     /thermal/i,
+    /\bfree\b/i,
     // Random characters/symbols
     /^[^\w\s]+$/,
     /^[\W\d]+$/,
@@ -483,7 +484,45 @@ export class ReceiptTextParser {
     // Clean up whitespace
     normalized = normalized.replace(/\s+/g, " ");
 
+    // Convert to Title Case (init cap)
+    normalized = this.toTitleCase(normalized);
+
     return normalized || name;
+  }
+
+  /**
+   * Convert string to Title Case
+   */
+  private toTitleCase(str: string): string {
+    // Words that should stay lowercase (unless first word)
+    const lowercaseWords = new Set([
+      "a",
+      "an",
+      "the",
+      "and",
+      "but",
+      "or",
+      "for",
+      "nor",
+      "on",
+      "at",
+      "to",
+      "by",
+      "of",
+      "in",
+      "with",
+    ]);
+
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word, index) => {
+        if (index === 0 || !lowercaseWords.has(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      })
+      .join(" ");
   }
 
   /**
