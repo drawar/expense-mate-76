@@ -99,6 +99,7 @@ export const useExpenseForm = ({
       paymentAmount: defaultValues?.paymentAmount || "",
       eurFareAmount: defaultValues?.eurFareAmount || "",
       date: defaultValues?.date || new Date(),
+      time: defaultValues?.time || "",
       notes: defaultValues?.notes || "",
       mcc: defaultValues?.mcc || null,
       rewardPoints: defaultValues?.rewardPoints || "",
