@@ -61,6 +61,14 @@ export class OcrService {
   }
 
   /**
+   * Check if OCR is recommended on this device
+   * Returns false for iOS due to memory constraints that can cause crashes
+   */
+  isRecommended(): boolean {
+    return this.paddleOcrProvider.isRecommended();
+  }
+
+  /**
    * Check if OCR models are loaded and ready
    */
   isReady(): boolean {

@@ -28,6 +28,7 @@ export interface UseReceiptScanReturn {
   result: ScanResult | null;
   progress: number;
   isModelsLoaded: boolean;
+  isRecommended: boolean;
   scanReceipt: (file: File) => Promise<void>;
   preloadModels: () => Promise<void>;
   reset: () => void;
@@ -173,6 +174,7 @@ export function useReceiptScan(
     result,
     progress,
     isModelsLoaded,
+    isRecommended: ocrService.isRecommended(),
     scanReceipt,
     preloadModels,
     reset,

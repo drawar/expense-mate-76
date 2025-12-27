@@ -57,11 +57,10 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const { state, error, result, progress, scanReceipt, reset } = useReceiptScan(
-    {
+  const { state, error, result, progress, scanReceipt, reset, isRecommended } =
+    useReceiptScan({
       defaultCurrency,
-    }
-  );
+    });
 
   // Create preview URL when file is selected
   const handleFileSelect = useCallback(
@@ -121,6 +120,17 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
 
   const content = (
     <div className="flex flex-col gap-4">
+      {/* iOS warning */}
+      {state === "idle" && !isRecommended && (
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700 dark:text-amber-400">
+            Receipt scanning may not work well on this device due to memory
+            limitations. Consider using a desktop browser for best results.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Idle state - show capture options */}
       {state === "idle" && (
         <ReceiptCapture onFileSelect={handleFileSelect} variant="dropzone" />

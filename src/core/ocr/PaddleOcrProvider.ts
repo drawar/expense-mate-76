@@ -12,6 +12,18 @@ let ocrInstance: Awaited<ReturnType<typeof createOcrInstance>> | null = null;
 let initPromise: Promise<void> | null = null;
 
 /**
+ * Detect if running on iOS (iPhone/iPad)
+ * iOS Safari has memory limitations that can cause crashes with large WASM files
+ */
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
  * Configure ONNX Runtime WASM paths
  * Must be called before creating OCR instance
  */
@@ -23,8 +35,13 @@ async function configureOnnxRuntime() {
   const isDev = import.meta.env.DEV;
   ort.env.wasm.wasmPaths = isDev ? "/node_modules/onnxruntime-web/dist/" : "/";
 
-  // Disable multi-threading to simplify WASM loading
+  // Disable multi-threading - required for iOS and simplifies loading
   ort.env.wasm.numThreads = 1;
+
+  // Disable SIMD on iOS to reduce memory pressure
+  if (isIOS()) {
+    ort.env.wasm.simd = false;
+  }
 }
 
 /**
@@ -89,10 +106,22 @@ export class PaddleOcrProvider {
 
   /**
    * Check if the provider is available
+   * Note: iOS devices may crash due to memory limitations with large WASM models
    */
   isAvailable(): boolean {
-    // PaddleOCR is always available (runs client-side)
+    // Check for WebAssembly support
+    if (typeof WebAssembly === "undefined") {
+      return false;
+    }
     return true;
+  }
+
+  /**
+   * Check if OCR is recommended on this device
+   * Returns false for iOS due to memory constraints
+   */
+  isRecommended(): boolean {
+    return !isIOS();
   }
 
   /**
