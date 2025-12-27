@@ -1057,20 +1057,44 @@ export class StorageService {
   private static CARD_IMAGES_BUCKET = "card-images";
 
   /**
+   * Convert issuer and card name to kebab-case card type ID
+   * e.g., "Brim Financial" + "Air France-KLM World Elite" => "brim-financial-air-france-klm-world-elite"
+   */
+  private static toCardTypeId(issuer: string, name: string): string {
+    const combined = `${issuer}-${name}`;
+    return combined
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-") // Replace non-alphanumeric with dashes
+      .replace(/-+/g, "-") // Collapse multiple dashes
+      .replace(/^-|-$/g, ""); // Trim leading/trailing dashes
+  }
+
+  /**
    * Upload a card image to Supabase Storage
    * Returns the public URL of the uploaded image
+   * @param file - The image file to upload
+   * @param issuer - Card issuer name
+   * @param cardName - Card name
    */
-  async uploadCardImage(file: File): Promise<string> {
-    // Generate a unique filename using timestamp and random string
+  async uploadCardImage(
+    file: File,
+    issuer?: string,
+    cardName?: string
+  ): Promise<string> {
     const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
-    const fileName = `card-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    // Generate filename from issuer + card name in kebab-case, or fall back to timestamp
+    const fileName =
+      issuer && cardName
+        ? `${StorageService.toCardTypeId(issuer, cardName)}.${fileExt}`
+        : `card-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
     // Upload to Supabase Storage
+    // Use upsert when issuer/cardName provided to allow replacing existing images
     const { data, error } = await supabase.storage
       .from(StorageService.CARD_IMAGES_BUCKET)
       .upload(fileName, file, {
         cacheControl: "3600",
-        upsert: false,
+        upsert: !!(issuer && cardName),
       });
 
     if (error) {

@@ -45,13 +45,13 @@ const CARD_IMAGE_FALLBACKS: Record<string, string> = {
   "citibank:rewards visa signature":
     "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/MY/MY-Rewards-Visa-20Signature2-480x305.png",
   "citibank:rewards world mastercard":
-    "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/ID/Citi%20ID_Rewards_Mastercard-480x305.png/jcr:content/renditions/cq5dam.crop.900.600.png",
+    "https://mhgprod.blob.core.windows.net/singsaver/strapi-uploads/bltea3680481263edcb_492d0be83f.png",
   "neo financial:cathay world elite mastercard":
     "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
   "hsbc:revolution visa platinum":
-    "https://storage.googleapis.com/max-sg/assets/cc_appplication_icons/HSBC%20Revolution.png",
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/hsbc-revolution-visa-platinum.png",
   "brim financial:air france-klm world elite":
-    "https://princeoftravel.com/wp-content/uploads/2023/09/AFKLM_WorldElite_FINAL-V2-01-1.png",
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/brim-financial-air-france-klm-world-elite.png",
 };
 
 /**
@@ -239,7 +239,7 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
                                   <img
                                     src={imageUrl}
                                     alt={card.name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain"
                                   />
                                 ) : (
                                   <CreditCard className="h-5 w-5 text-muted-foreground" />

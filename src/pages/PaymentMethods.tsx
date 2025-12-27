@@ -248,7 +248,11 @@ const PaymentMethods = () => {
     setIsUploading(true);
 
     try {
-      const imageUrl = await storageService.uploadCardImage(file);
+      const imageUrl = await storageService.uploadCardImage(
+        file,
+        imageUploadMethod.issuer,
+        imageUploadMethod.name
+      );
 
       if (imageUrl) {
         const updatedMethods = paymentMethods.map((method) =>
