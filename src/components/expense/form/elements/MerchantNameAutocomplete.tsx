@@ -43,12 +43,24 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
   const suggestions = getNameSuggestions(currentValue);
   const showDropdown = open && suggestions.length > 0;
 
-  // Auto-lookup MCC on initial mount if merchant name is pre-filled
+  // Track if we've done the initial MCC lookup for pre-filled values
+  const hasInitialLookupRef = useRef(false);
+
+  // Auto-lookup MCC when merchant name is pre-filled (runs once when value becomes available)
   useEffect(() => {
-    // Only run once on mount when there's a pre-filled merchant name
+    // Skip if we've already done the initial lookup
+    if (hasInitialLookupRef.current) return;
+
+    // Skip if no merchant name or too short
     if (!currentValue || currentValue.length < 3) return;
 
-    // Check if MCC is already set (from defaultValues)
+    // Skip if user is actively typing (focused)
+    if (isFocused) return;
+
+    // Mark that we've done the initial lookup
+    hasInitialLookupRef.current = true;
+
+    // Check if MCC is already set
     const existingMCC = form.getValues("mcc");
     if (existingMCC) {
       hasAutoAppliedMCCRef.current = true;
@@ -57,13 +69,16 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
 
     // Try to lookup MCC from pre-filled merchant name
     const mcc = getMCCFromMerchantName(currentValue);
+    console.log("[MerchantNameAutocomplete] Initial MCC lookup:", {
+      currentValue,
+      mcc,
+    });
     if (mcc) {
       form.setValue("mcc", mcc);
       onSelectMCC?.(mcc);
       hasAutoAppliedMCCRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only on mount
+  }, [currentValue, isFocused, form, onSelectMCC]);
 
   // Auto-lookup MCC when merchant name changes while focused
   useEffect(() => {
