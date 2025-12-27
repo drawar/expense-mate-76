@@ -57,13 +57,17 @@ const AddExpense = () => {
         values.merchantName = prefill.merchantName;
       }
       if (prefill.amount !== undefined) {
-        values.amount = prefill.amount;
+        // Form expects amount as string
+        values.amount = String(prefill.amount);
       }
       if (prefill.currency) {
         values.currency = prefill.currency;
       }
       if (prefill.date) {
-        values.date = prefill.date;
+        // Form expects date as Date object, prefill.date is ISO string "YYYY-MM-DD"
+        // Parse as local date to avoid timezone issues
+        const [year, month, day] = prefill.date.split("-").map(Number);
+        values.date = new Date(year, month - 1, day);
       }
       if (prefill.time) {
         values.time = prefill.time;
