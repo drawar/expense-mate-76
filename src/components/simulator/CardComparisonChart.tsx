@@ -219,7 +219,10 @@ export function CardComparisonChart({
                   convertedMiles={result.convertedMiles}
                   conversionRate={result.conversionRate}
                   rank={result.rank}
-                  isBest={index === 0 && result.convertedMiles !== null}
+                  isBest={
+                    result.convertedMiles !== null &&
+                    result.convertedMiles === maxMiles
+                  }
                   maxMiles={maxMiles}
                   isDarkMode={isDarkMode}
                   isInitialLoad={isInitialLoad}
