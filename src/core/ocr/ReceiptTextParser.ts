@@ -38,16 +38,18 @@ export class ReceiptTextParser {
     /(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/,
     // YYYY/MM/DD or YYYY-MM-DD
     /(\d{4})[-/](\d{1,2})[-/](\d{1,2})/,
-    // Month DD, YYYY (e.g., "Dec 23, 2025" or "Dec-23-2025")
-    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s]+(\d{1,2}),?[-\s]+(\d{4})/i,
-    // DD Month YYYY (e.g., "23 Dec 2025" or "23-Dec-2025")
-    /(\d{1,2})[-\s]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s]+(\d{4})/i,
+    // Month DD, YYYY (e.g., "Dec 23, 2025" or "Dec-23-2025" or "Dec.-23-2025")
+    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?[-\s]+(\d{1,2}),?[-\s]+(\d{4})/i,
+    // DD Month YYYY (e.g., "23 Dec 2025" or "23-Dec-2025" or "23-Dec.-2025")
+    /(\d{1,2})[-\s]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?[-\s]+(\d{4})/i,
   ];
 
   // Patterns for time extraction
   private timePatterns = [
-    /(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i,
-    /(\d{1,2})\.(\d{2})\s*(am|pm)?/i,
+    // Standard time (e.g., "7:20:12 PM" or "7:20:12p.m." or "19:20")
+    /(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/i,
+    // Dot separator (e.g., "7.20 PM")
+    /(\d{1,2})\.(\d{2})\s*(a\.?m\.?|p\.?m\.?)?/i,
   ];
 
   // Words to exclude from merchant names
@@ -450,7 +452,9 @@ export class ReceiptTextParser {
     try {
       let hours = parseInt(match[1]);
       const minutes = parseInt(match[2]);
-      const ampm = match[match.length - 1]?.toLowerCase();
+      const ampmRaw = match[match.length - 1]?.toLowerCase() || "";
+      // Normalize "p.m." -> "pm", "a.m." -> "am"
+      const ampm = ampmRaw.replace(/\./g, "");
 
       // Handle AM/PM
       if (ampm === "pm" && hours < 12) hours += 12;
