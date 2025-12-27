@@ -4,7 +4,7 @@ import { Currency } from "@/types";
 // OCR Provider Types
 // =============================================================================
 
-export type OcrProvider = "paddleocr";
+export type OcrProvider = "paddleocr" | "cloudvision";
 
 export type ProcessingStatus =
   | "pending"

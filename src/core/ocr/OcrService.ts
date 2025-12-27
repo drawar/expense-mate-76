@@ -15,6 +15,7 @@ import {
   mapDbReceiptOcrData,
 } from "./types";
 import { PaddleOcrProvider } from "./PaddleOcrProvider";
+import { CloudOcrProvider } from "./CloudOcrProvider";
 import { ReceiptTextParser } from "./ReceiptTextParser";
 import { ReceiptParser } from "./ReceiptParser";
 import { Currency } from "@/types";
@@ -43,26 +44,46 @@ const STORAGE_BUCKET = "receipts";
  */
 export class OcrService {
   private paddleOcrProvider: PaddleOcrProvider;
+  private cloudOcrProvider: CloudOcrProvider;
   private receiptTextParser: ReceiptTextParser;
   private receiptParser: ReceiptParser;
 
   constructor() {
     this.paddleOcrProvider = new PaddleOcrProvider();
+    this.cloudOcrProvider = new CloudOcrProvider();
     this.receiptTextParser = new ReceiptTextParser();
     this.receiptParser = new ReceiptParser();
   }
 
   /**
+   * Get the active OCR provider based on device capabilities
+   * Uses cloud provider on iOS/mobile where client-side OCR is not recommended
+   */
+  private getActiveProvider(): PaddleOcrProvider | CloudOcrProvider {
+    if (!this.paddleOcrProvider.isRecommended()) {
+      console.log(
+        "OcrService: Using cloud provider (device not recommended for local OCR)"
+      );
+      return this.cloudOcrProvider;
+    }
+    return this.paddleOcrProvider;
+  }
+
+  /**
    * Check if OCR service is available
-   * PaddleOCR runs client-side, so always available
+   * Available if either client-side or cloud provider works
    */
   isAvailable(): boolean {
-    return this.paddleOcrProvider.isAvailable();
+    return (
+      this.paddleOcrProvider.isAvailable() ||
+      this.cloudOcrProvider.isAvailable()
+    );
   }
 
   /**
    * Check if OCR is recommended on this device
    * Returns false for iOS due to memory constraints that can cause crashes
+   * (cloud provider will be used as fallback)
    */
   isRecommended(): boolean {
     return this.paddleOcrProvider.isRecommended();
@@ -72,15 +93,21 @@ export class OcrService {
    * Check if OCR models are loaded and ready
    */
   isReady(): boolean {
-    return this.paddleOcrProvider.isReady();
+    const activeProvider = this.getActiveProvider();
+    return activeProvider.isReady();
   }
 
   /**
    * Pre-load OCR models for faster first scan
    * Call this early (e.g., on app load) to warm up the models
+   * Only loads for PaddleOCR; cloud provider doesn't need preloading
    */
   async preloadModels(): Promise<void> {
-    await this.paddleOcrProvider.initialize();
+    // Only preload if using PaddleOCR (client-side)
+    if (this.paddleOcrProvider.isRecommended()) {
+      await this.paddleOcrProvider.initialize();
+    }
+    // Cloud provider doesn't need preloading
   }
 
   /**
@@ -127,9 +154,11 @@ export class OcrService {
   /**
    * Process image with OCR only (without uploading)
    * Useful for preview before saving
+   * Uses cloud provider on iOS/mobile devices
    */
   async processImageOnly(imageFile: File | Blob): Promise<OcrExtractedData> {
-    const ocrResponse = await this.paddleOcrProvider.processImage(imageFile);
+    const provider = this.getActiveProvider();
+    const ocrResponse = await provider.processImage(imageFile);
     return this.receiptTextParser.parseReceiptText(ocrResponse.lines);
   }
 
@@ -207,13 +236,16 @@ export class OcrService {
 
   /**
    * Process an uploaded image with OCR
+   * Uses cloud provider on iOS/mobile devices
    */
   async processWithOcr(
     imageFile: File | Blob,
     receiptImageId: string,
     _options?: OcrProcessingOptions
   ): Promise<OcrProcessingResult> {
-    const provider = "paddleocr";
+    const activeProvider = this.getActiveProvider();
+    const providerName =
+      activeProvider === this.cloudOcrProvider ? "cloudvision" : "paddleocr";
 
     // Get current user
     const {
@@ -231,7 +263,7 @@ export class OcrService {
       .insert({
         receipt_image_id: receiptImageId,
         user_id: user.id,
-        ocr_provider: provider,
+        ocr_provider: providerName,
         processing_status: "processing",
       })
       .select()
@@ -245,8 +277,8 @@ export class OcrService {
     }
 
     try {
-      // Step 1: Run PaddleOCR to get raw text
-      const ocrResponse = await this.paddleOcrProvider.processImage(imageFile);
+      // Step 1: Run OCR to get raw text (uses cloud or local provider based on device)
+      const ocrResponse = await activeProvider.processImage(imageFile);
 
       // Step 2: Parse raw text into structured receipt data
       const extractedData = this.receiptTextParser.parseReceiptText(

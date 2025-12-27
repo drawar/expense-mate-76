@@ -1,8 +1,11 @@
 /**
  * OCR Module - Receipt scanning and data extraction
  *
- * This module provides receipt scanning capabilities using PaddleOCR (PP-OCRv4).
- * All OCR processing runs client-side via ONNX Runtime - no API costs!
+ * This module provides receipt scanning capabilities using:
+ * - PaddleOCR (PP-OCRv4): Client-side via ONNX Runtime for desktop browsers
+ * - Google Cloud Vision: Server-side fallback for mobile devices (iOS)
+ *
+ * The service automatically selects the appropriate provider based on device.
  *
  * Usage:
  * ```typescript
@@ -58,6 +61,7 @@ export { OcrService, ocrService } from "./OcrService";
 
 // Providers
 export { PaddleOcrProvider, paddleOcrProvider } from "./PaddleOcrProvider";
+export { CloudOcrProvider, cloudOcrProvider } from "./CloudOcrProvider";
 
 // Parsers
 export { ReceiptTextParser, receiptTextParser } from "./ReceiptTextParser";
