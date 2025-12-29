@@ -158,6 +158,18 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
         return;
       }
 
+      // Handle "View food spending" - navigate to transactions filtered by Dining Out category
+      if (insight.actionText === "View food spending") {
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const fromDate = format(monthStart, "yyyy-MM-dd");
+        const toDate = format(now, "yyyy-MM-dd");
+        navigate(
+          `/transactions?from=${fromDate}&to=${toDate}&category=Dining Out`
+        );
+        return;
+      }
+
       // If actionTarget contains a transaction ID, find and show that transaction
       if (insight.actionTarget) {
         const transaction = transactions.find(

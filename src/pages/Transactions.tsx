@@ -37,18 +37,30 @@ const Transactions = () => {
     isLoading,
   } = useTransactionList();
 
-  // Apply URL date filters on mount
+  // Apply URL filters on mount (date range and category)
   useEffect(() => {
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
+    const categoryParam = searchParams.get("category");
+
+    let hasFilters = false;
 
     if (fromParam || toParam) {
       const from = fromParam ? startOfDay(parseISO(fromParam)) : null;
       const to = toParam ? endOfDay(parseISO(toParam)) : null;
-
       handleFilterChange("dateRange", { from, to });
+      hasFilters = true;
+    }
 
-      // Clear the URL params after applying (so refresh doesn't re-apply)
+    if (categoryParam) {
+      // Support multiple categories separated by comma
+      const categories = categoryParam.split(",").map((c) => c.trim());
+      handleFilterChange("categories", categories);
+      hasFilters = true;
+    }
+
+    // Clear the URL params after applying (so refresh doesn't re-apply)
+    if (hasFilters) {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams, handleFilterChange]);
