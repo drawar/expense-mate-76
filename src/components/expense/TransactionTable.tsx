@@ -183,7 +183,7 @@ const TransactionTable = ({
             <TableRow>
               <TableHead>Merchant</TableHead>
               <TableHead className="w-[120px]">Amount</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead className="w-[140px]">Payment</TableHead>
               <TableHead className="w-[50px] text-right"></TableHead>
             </TableRow>
           </TableHeader>
