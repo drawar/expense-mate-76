@@ -184,7 +184,7 @@ Sent by Clairo - Your expense tracking assistant
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "noreply@mail.clairo.app",
+        from: "noreply@clairoapp.com",
         to: userEmail,
         subject,
         html: htmlContent,
