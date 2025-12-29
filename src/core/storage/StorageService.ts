@@ -788,9 +788,15 @@ export class StorageService {
         categorySuggestionReason: data.category_suggestion_reason || undefined,
       };
 
-      // Check if prepaid card should be deactivated
-      await this.checkAndDeactivatePrepaidCard(
-        transactionData.paymentMethod.id
+      // Check prepaid card balance and send notification
+      await this.checkPrepaidBalanceAndNotify(
+        transactionData.paymentMethod.id,
+        {
+          merchantName: transactionData.merchant.name,
+          amount: transactionData.paymentAmount || transactionData.amount,
+          currency: (transactionData.paymentCurrency ||
+            transactionData.currency) as Currency,
+        }
       );
 
       console.log("Returning completed transaction:", newTransaction);
@@ -819,8 +825,13 @@ export class StorageService {
     transactions.unshift(newTransaction);
     this.saveTransactionsToLocalStorage(transactions);
 
-    // Check if prepaid card should be deactivated
-    await this.checkAndDeactivatePrepaidCard(transactionData.paymentMethod.id);
+    // Check prepaid card balance and send notification
+    await this.checkPrepaidBalanceAndNotify(transactionData.paymentMethod.id, {
+      merchantName: transactionData.merchant.name,
+      amount: transactionData.paymentAmount || transactionData.amount,
+      currency: (transactionData.paymentCurrency ||
+        transactionData.currency) as Currency,
+    });
 
     console.log("Transaction added to localStorage:", newTransaction);
     return newTransaction;
@@ -1146,6 +1157,123 @@ export class StorageService {
     if (error) {
       console.error("Error deleting card image:", error);
       throw new Error(`Failed to delete image: ${error.message}`);
+    }
+  }
+
+  /**
+   * Send email notification for prepaid card balance update
+   */
+  async sendPrepaidBalanceNotification(
+    paymentMethod: PaymentMethod,
+    transaction: { merchantName: string; amount: number; currency: Currency },
+    previousBalance: number,
+    newBalance: number
+  ): Promise<void> {
+    try {
+      // Get the user's email from the session
+      const { data: authData } = await supabase.auth.getSession();
+      const userEmail = authData?.session?.user?.email;
+
+      if (!userEmail) {
+        console.log(
+          "No user email found, skipping prepaid balance notification"
+        );
+        return;
+      }
+
+      // Call the Edge Function to send the email
+      const { error } = await supabase.functions.invoke(
+        "prepaid-balance-notification",
+        {
+          body: {
+            userEmail,
+            cardName: paymentMethod.name,
+            merchantName: transaction.merchantName,
+            transactionAmount: transaction.amount,
+            transactionCurrency: transaction.currency,
+            previousBalance,
+            newBalance,
+            cardCurrency: paymentMethod.paymentCurrency || "SGD",
+          },
+        }
+      );
+
+      if (error) {
+        console.error("Error sending prepaid balance notification:", error);
+      } else {
+        console.log(
+          `Prepaid balance notification sent for ${paymentMethod.name}: ${previousBalance} -> ${newBalance}`
+        );
+      }
+    } catch (error) {
+      console.error("Error sending prepaid balance notification:", error);
+      // Don't fail the transaction if notification fails
+    }
+  }
+
+  /**
+   * Check prepaid card balance and send notification
+   * Returns the new balance for use in deactivation check
+   */
+  async checkPrepaidBalanceAndNotify(
+    paymentMethodId: string,
+    transaction: { merchantName: string; amount: number; currency: Currency }
+  ): Promise<void> {
+    try {
+      // Get the payment method
+      const paymentMethods = await this.getPaymentMethods();
+      const paymentMethod = paymentMethods.find(
+        (pm) => pm.id === paymentMethodId
+      );
+
+      // Only process prepaid cards that are active and have a total loaded value
+      if (
+        !paymentMethod ||
+        paymentMethod.type !== "prepaid_card" ||
+        !paymentMethod.active ||
+        paymentMethod.totalLoaded === undefined
+      ) {
+        return;
+      }
+
+      // Get all transactions for this payment method (including the new one)
+      const transactions = await this.getTransactions();
+      const cardTransactions = transactions.filter(
+        (t) => t.paymentMethod.id === paymentMethodId && !t.is_deleted
+      );
+
+      // Calculate total spent (sum of paymentAmount for transactions in card's currency)
+      const totalSpent = cardTransactions.reduce((sum, t) => {
+        return sum + (t.paymentAmount || t.amount);
+      }, 0);
+
+      // Calculate balances
+      const newBalance = paymentMethod.totalLoaded - totalSpent;
+      const previousBalance = newBalance + transaction.amount;
+
+      // Send notification
+      await this.sendPrepaidBalanceNotification(
+        paymentMethod,
+        transaction,
+        previousBalance,
+        newBalance
+      );
+
+      // Check if balance is depleted and deactivate
+      if (newBalance <= 0) {
+        console.log(
+          `Deactivating prepaid card ${paymentMethod.name} - balance depleted`
+        );
+
+        const updatedMethods = paymentMethods.map((pm) =>
+          pm.id === paymentMethodId ? { ...pm, active: false } : pm
+        );
+
+        await this.savePaymentMethods(updatedMethods);
+      }
+    } catch (error) {
+      console.error("Error checking prepaid card balance:", error);
+      // Don't fail the transaction if this check fails
     }
   }
 
