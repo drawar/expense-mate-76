@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ViewMode } from "@/components/transaction/TransactionSortAndView";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
 import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
@@ -15,8 +16,11 @@ import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { Transaction } from "@/types";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
+import { parseISO, startOfDay, endOfDay } from "date-fns";
 
 const Transactions = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const {
     transactions,
     setTransactions,
@@ -32,6 +36,22 @@ const Transactions = () => {
     resetFilters,
     isLoading,
   } = useTransactionList();
+
+  // Apply URL date filters on mount
+  useEffect(() => {
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+
+    if (fromParam || toParam) {
+      const from = fromParam ? startOfDay(parseISO(fromParam)) : null;
+      const to = toParam ? endOfDay(parseISO(toParam)) : null;
+
+      handleFilterChange("dateRange", { from, to });
+
+      // Clear the URL params after applying (so refresh doesn't re-apply)
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, handleFilterChange]);
 
   const transactionManagement = useTransactionManagement(
     transactions,

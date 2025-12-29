@@ -16,6 +16,8 @@ import {
   getBehavioralCategory,
 } from "@/utils/constants/categories";
 import { CurrencyService } from "@/core/currency";
+import { rewardService } from "@/core/rewards";
+import { CalculationInput } from "@/core/rewards/types";
 import { InsightContext, EvaluationResult, ConditionEvaluator } from "./types";
 import {
   startOfMonth,
@@ -27,6 +29,7 @@ import {
   isWeekend,
   parseISO,
 } from "date-fns";
+import { DateTime } from "luxon";
 
 /**
  * Service for evaluating and rendering financial insights
@@ -179,7 +182,10 @@ export class InsightService {
       const evaluator = this.getEvaluator(insight.conditionType);
       if (!evaluator) continue;
 
-      const result = evaluator(context, insight.conditionParams);
+      // Await the evaluator result (supports both sync and async evaluators)
+      const result = await Promise.resolve(
+        evaluator(context, insight.conditionParams)
+      );
 
       if (result.triggered) {
         const rendered = this.renderInsight(insight, result.data, context);
@@ -217,14 +223,28 @@ export class InsightService {
       return date >= prevMonthStart && date <= prevMonthEnd;
     });
 
-    // Calculate totals
+    // Helper to convert transaction amount to display currency
+    const getConvertedAmount = (tx: Transaction): number => {
+      try {
+        return CurrencyService.convert(
+          tx.amount,
+          tx.currency as Currency,
+          currency,
+          tx.paymentMethod
+        );
+      } catch {
+        return tx.amount;
+      }
+    };
+
+    // Calculate totals with currency conversion
     const totalSpent = currentMonthTransactions.reduce(
-      (sum, tx) => sum + tx.amount,
+      (sum, tx) => sum + getConvertedAmount(tx),
       0
     );
 
     const previousMonthTotal = previousMonthTransactions.reduce(
-      (sum, tx) => sum + tx.amount,
+      (sum, tx) => sum + getConvertedAmount(tx),
       0
     );
 
@@ -244,20 +264,23 @@ export class InsightService {
     const merchantTotals: Record<string, { total: number; count: number }> = {};
 
     currentMonthTransactions.forEach((tx) => {
+      const convertedAmount = getConvertedAmount(tx);
       const category = getEffectiveCategory(tx);
-      categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+      categoryTotals[category] =
+        (categoryTotals[category] || 0) + convertedAmount;
 
       const tier = getSpendingTier(category);
-      tierTotals[tier] = (tierTotals[tier] || 0) + tx.amount;
+      tierTotals[tier] = (tierTotals[tier] || 0) + convertedAmount;
 
       const behavior = getBehavioralCategory(category);
-      behaviorTotals[behavior] = (behaviorTotals[behavior] || 0) + tx.amount;
+      behaviorTotals[behavior] =
+        (behaviorTotals[behavior] || 0) + convertedAmount;
 
       const merchantName = tx.merchant.name;
       if (!merchantTotals[merchantName]) {
         merchantTotals[merchantName] = { total: 0, count: 0 };
       }
-      merchantTotals[merchantName].total += tx.amount;
+      merchantTotals[merchantName].total += convertedAmount;
       merchantTotals[merchantName].count += 1;
     });
 
@@ -303,6 +326,7 @@ export class InsightService {
       budget_status: this.evaluateBudgetStatus.bind(this),
       transaction_pattern: this.evaluateTransactionPattern.bind(this),
       merchant_pattern: this.evaluateMerchantPattern.bind(this),
+      merchant_anomaly: this.evaluateMerchantAnomaly.bind(this),
       reward_optimization: this.evaluateRewardOptimization.bind(this),
       savings_rate: this.evaluateSavingsRate.bind(this),
       milestone: this.evaluateMilestone.bind(this),
@@ -409,6 +433,7 @@ export class InsightService {
    *   label_b?: string,            // Label for second group (e.g., "dining out")
    *   cost_multiplier?: number,    // Estimated cost multiplier (dining typically costs 2-3x groceries per meal)
    *   min_transactions?: number,   // Minimum transactions to trigger
+   *   meals_per_week?: number,     // Meals to project per week for category B (default 7 = daily dinner)
    * }
    */
   private evaluateCategoryComparison(
@@ -422,6 +447,7 @@ export class InsightService {
       label_b = "Category B",
       cost_multiplier = 2.5,
       min_transactions = 3,
+      meals_per_week = 7,
     } = params as {
       categories_a: string[];
       categories_b: string[];
@@ -429,6 +455,7 @@ export class InsightService {
       label_b?: string;
       cost_multiplier?: number;
       min_transactions?: number;
+      meals_per_week?: number;
     };
 
     // Calculate totals for each category group
@@ -455,16 +482,21 @@ export class InsightService {
       differenceInDays(new Date(), startOfMonth(new Date())) + 1
     );
 
-    // Scale to weekly average (7 days)
+    // Scale groceries to weekly average (by days)
     const weeksInPeriod = daysInPeriod / 7;
     const weeklyA = weeksInPeriod > 0 ? totalA / weeksInPeriod : 0;
-    const weeklyB = weeksInPeriod > 0 ? totalB / weeksInPeriod : 0;
 
-    // Calculate estimated savings
-    // Assumption: If you replaced dining out with groceries, you'd save the difference
-    // But groceries for same meals would cost ~1/cost_multiplier of dining out
-    const equivalentGroceryCost = totalB / cost_multiplier;
-    const potentialSavingsFromB = totalB - equivalentGroceryCost;
+    // For dining out: calculate average cost per meal, then project if dining out every lunch + dinner
+    // This answers: "What would it cost if I dined out for lunch and dinner every day?"
+    const avgMealCost = countB > 0 ? totalB / countB : 0;
+    const projectedWeeklyDining = avgMealCost * meals_per_week;
+
+    // Calculate savings: projected dining cost vs actual weekly grocery spending
+    // Savings = what dining out would cost - what you actually spend on groceries
+    const weeklySavings = projectedWeeklyDining - weeklyA;
+
+    // Monthly projection (scaled by actual days tracked)
+    const monthlyProjectedSavings = weeklySavings * weeksInPeriod;
 
     // Trigger if there's meaningful activity in both categories
     const triggered = countA >= min_transactions || countB >= min_transactions;
@@ -477,13 +509,15 @@ export class InsightService {
         count_a: countA,
         count_b: countB,
         weekly_a: Math.round(weeklyA * 100) / 100,
-        weekly_b: Math.round(weeklyB * 100) / 100,
+        weekly_b: Math.round((totalB / weeksInPeriod) * 100) / 100, // Actual weekly dining spend
+        avg_meal_cost: Math.round(avgMealCost * 100) / 100,
+        projected_weekly_dining: Math.round(projectedWeeklyDining * 100) / 100,
         label_a,
         label_b,
         days_tracked: daysInPeriod,
-        potential_savings: Math.round(potentialSavingsFromB),
-        weekly_savings:
-          Math.round((potentialSavingsFromB / weeksInPeriod) * 100) / 100,
+        meals_per_week,
+        potential_savings: Math.round(monthlyProjectedSavings),
+        weekly_savings: Math.round(weeklySavings * 100) / 100,
         ratio: totalA > 0 ? Math.round((totalB / totalA) * 100) / 100 : 0,
       },
     };
@@ -768,6 +802,7 @@ export class InsightService {
         data.multiplier = Math.round(
           largest.amount / context.averageTransaction!
         );
+        data.transactionId = largest.id;
       }
     }
 
@@ -888,32 +923,143 @@ export class InsightService {
   }
 
   /**
-   * Evaluate reward optimization conditions
+   * Evaluate per-merchant anomaly conditions
+   * Detects transactions that are unusually high compared to the merchant's historical average
+   * Params: {
+   *   lookback_days?: number,      // Days to look back for recent transactions (default: 7)
+   *   min_history?: number,        // Minimum historical transactions needed (default: 3)
+   *   threshold_multiplier?: number // Standard deviations above mean to trigger (default: 1.5)
+   * }
    */
-  private evaluateRewardOptimization(
+  private evaluateMerchantAnomaly(
     context: InsightContext,
     params: Record<string, unknown>
   ): EvaluationResult {
-    const { optimization_type, min_amount } = params as {
-      optimization_type: string;
-      min_amount?: number;
+    const {
+      lookback_days = 7,
+      min_history = 3,
+      threshold_multiplier = 1.5,
+    } = params as {
+      lookback_days?: number;
+      min_history?: number;
+      threshold_multiplier?: number;
     };
 
-    // Simplified - real implementation would analyze card reward rules
+    const now = new Date();
+    const lookbackDate = new Date(
+      now.getTime() - lookback_days * 24 * 60 * 60 * 1000
+    );
+    const historyDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Historical baseline excludes last 7 days
+
+    // Get recent transactions (within lookback period)
+    const recentTransactions = context.transactions.filter((tx) => {
+      const txDate = new Date(tx.date);
+      return txDate >= lookbackDate && txDate <= now;
+    });
+
+    // Get historical transactions (before the lookback period) for baseline
+    const historicalTransactions = context.transactions.filter((tx) => {
+      const txDate = new Date(tx.date);
+      return txDate < historyDate;
+    });
+
+    // Build merchant stats from historical transactions
+    const merchantStats = new Map<
+      string,
+      { avgAmount: number; stdDev: number; count: number }
+    >();
+
+    // Group historical transactions by merchant
+    const merchantGroups = new Map<string, number[]>();
+    historicalTransactions.forEach((tx) => {
+      const name = tx.merchant.name;
+      if (!merchantGroups.has(name)) {
+        merchantGroups.set(name, []);
+      }
+      merchantGroups.get(name)!.push(tx.amount);
+    });
+
+    // Calculate stats for each merchant
+    merchantGroups.forEach((amounts, merchantName) => {
+      if (amounts.length < min_history) return;
+
+      const avg = amounts.reduce((sum, a) => sum + a, 0) / amounts.length;
+      const squareDiffs = amounts.map((a) => Math.pow(a - avg, 2));
+      const avgSquareDiff =
+        squareDiffs.reduce((sum, d) => sum + d, 0) / squareDiffs.length;
+      const stdDev = Math.sqrt(avgSquareDiff);
+
+      merchantStats.set(merchantName, {
+        avgAmount: avg,
+        stdDev,
+        count: amounts.length,
+      });
+    });
+
+    // Find anomalies in recent transactions
+    let triggered = false;
+    const data: Record<string, unknown> = {};
+
+    // Sort recent transactions by amount (highest first) to find the biggest anomaly
+    const sortedRecent = [...recentTransactions].sort(
+      (a, b) => b.amount - a.amount
+    );
+
+    for (const tx of sortedRecent) {
+      const stats = merchantStats.get(tx.merchant.name);
+      if (!stats) continue;
+
+      const threshold = stats.avgAmount + stats.stdDev * threshold_multiplier;
+      if (tx.amount > threshold && stats.avgAmount > 0) {
+        const multiplier = Math.round((tx.amount / stats.avgAmount) * 10) / 10;
+
+        triggered = true;
+        data.amount = tx.amount;
+        data.merchant = tx.merchant.name;
+        data.multiplier = multiplier;
+        data.transactionId = tx.id;
+        data.merchant_avg = Math.round(stats.avgAmount * 100) / 100;
+        break; // Only report the largest anomaly
+      }
+    }
+
+    return { triggered, data };
+  }
+
+  /**
+   * Evaluate reward optimization conditions
+   */
+  private async evaluateRewardOptimization(
+    context: InsightContext,
+    params: Record<string, unknown>
+  ): Promise<EvaluationResult> {
+    const { optimization_type, min_amount, min_points_lost } = params as {
+      optimization_type: string;
+      min_amount?: number;
+      min_points_lost?: number;
+    };
+
     const data: Record<string, unknown> = {};
     let triggered = false;
 
     switch (optimization_type) {
-      case "category_mismatch":
-        // Would need to compare actual card used vs optimal card for category
-        // Simplified: just check if user has multiple cards
-        triggered = context.paymentMethods.length > 1;
-        data.card_used = "Current Card";
-        data.better_card = "Another Card";
-        data.category = "Dining";
-        data.amount = 100;
-        data.multiplier = 4;
+      case "category_mismatch": {
+        // Find transactions where a better card could have been used
+        const mismatch = await this.findCardMismatch(
+          context,
+          min_points_lost || 100
+        );
+        if (mismatch) {
+          triggered = true;
+          data.card_used = mismatch.currentCard;
+          data.better_card = mismatch.betterCard;
+          data.category = mismatch.category;
+          data.amount = mismatch.amount;
+          data.points_lost = mismatch.pointsLost;
+          data.multiplier = mismatch.multiplier;
+        }
         break;
+      }
 
       case "fcf_fees": {
         // Check for foreign currency transactions
@@ -943,6 +1089,123 @@ export class InsightService {
     }
 
     return { triggered, data };
+  }
+
+  /**
+   * Find the biggest card mismatch opportunity
+   * Uses RewardService to calculate what points would have been earned with different cards
+   */
+  private async findCardMismatch(
+    context: InsightContext,
+    minPointsLost: number
+  ): Promise<{
+    currentCard: string;
+    betterCard: string;
+    category: string;
+    amount: number;
+    pointsLost: number;
+    multiplier: number;
+  } | null> {
+    // Need at least 2 active credit cards
+    const activeCreditCards = context.paymentMethods.filter(
+      (pm) => pm.active && (pm.type === "credit" || pm.type === "credit_card")
+    );
+    if (activeCreditCards.length < 2) {
+      return null;
+    }
+
+    // Use the reward service singleton for calculating potential points
+
+    // Track best mismatch found
+    let bestMismatch: {
+      currentCard: string;
+      betterCard: string;
+      category: string;
+      amount: number;
+      pointsLost: number;
+      multiplier: number;
+    } | null = null;
+
+    // Analyze each current month transaction
+    for (const tx of context.currentMonthTransactions) {
+      // Skip non-credit card transactions
+      if (
+        tx.paymentMethod?.type !== "credit" &&
+        tx.paymentMethod?.type !== "credit_card"
+      )
+        continue;
+      if (!tx.paymentMethod || tx.amount <= 0) continue;
+
+      const currentCard = tx.paymentMethod;
+      const actualPoints = tx.rewardPoints || 0;
+      const category = getEffectiveCategory(tx);
+
+      // Calculate potential points for each alternative card with same points currency
+      for (const altCard of activeCreditCards) {
+        // Skip same card
+        if (altCard.id === currentCard.id) continue;
+
+        // Only compare cards with same points currency (fair comparison)
+        if (altCard.pointsCurrency !== currentCard.pointsCurrency) continue;
+
+        try {
+          // Build calculation input exactly like SimulatorService does
+          const calculationInput: CalculationInput = {
+            amount: tx.amount,
+            currency: tx.currency,
+            convertedAmount: tx.paymentAmount,
+            convertedCurrency: tx.paymentCurrency,
+            paymentMethod: {
+              id: altCard.id,
+              issuer: altCard.issuer,
+              name: altCard.name,
+              pointsCurrency: altCard.pointsCurrency,
+            },
+            mcc: tx.mccCode || tx.merchant?.mcc?.code,
+            merchantName: tx.merchant?.name || "",
+            transactionType: "purchase",
+            isOnline: tx.merchant?.isOnline || false,
+            isContactless: tx.isContactless,
+            date: DateTime.fromISO(tx.date),
+          };
+
+          // Calculate what points would have been earned with the alternative card
+          const altResult =
+            await rewardService.calculateRewards(calculationInput);
+
+          const altPoints = altResult.totalPoints;
+          const pointsDiff = altPoints - actualPoints;
+
+          // Check if alternative card would earn significantly more
+          if (pointsDiff >= minPointsLost) {
+            const multiplier =
+              actualPoints > 0
+                ? Math.round((altPoints / actualPoints) * 10) / 10
+                : altPoints;
+
+            // Update best mismatch if this is bigger
+            if (!bestMismatch || pointsDiff > bestMismatch.pointsLost) {
+              bestMismatch = {
+                currentCard: currentCard.name,
+                betterCard: altCard.name,
+                category,
+                amount: tx.amount,
+                pointsLost: pointsDiff,
+                multiplier,
+              };
+            }
+          }
+        } catch (error) {
+          // Skip cards that fail to calculate (e.g., missing rules)
+          console.warn(
+            `[findCardMismatch] Failed to calculate for ${altCard.name}:`,
+            error
+          );
+        }
+      }
+    }
+
+    return bestMismatch;
   }
 
   /**
@@ -1155,6 +1418,12 @@ export class InsightService {
       }
 
       // Format based on key name
+      // Check percentage/ratio FIRST since keys like "overage_percentage" would match "overage" otherwise
+      // Don't add % here - templates include the % symbol after the placeholder
+      if (key.includes("percentage") || key.includes("ratio")) {
+        return String(value);
+      }
+
       if (
         key.includes("amount") ||
         key.includes("total") ||
@@ -1168,16 +1437,15 @@ export class InsightService {
         return CurrencyService.format(value as number, context.currency);
       }
 
-      if (key.includes("percentage") || key.includes("ratio")) {
-        return `${value}%`;
-      }
-
       if (key.includes("points")) {
         return (value as number).toLocaleString();
       }
 
       return String(value);
     });
+
+    // Use transactionId from data as actionTarget if available (for review transaction actions)
+    const actionTarget = (data.transactionId as string) || insight.actionTarget;
 
     return {
       id: `${insight.id}-${Date.now()}`,
@@ -1189,7 +1457,7 @@ export class InsightService {
       severity: insight.severity,
       actionText: insight.actionText,
       actionType: insight.actionType,
-      actionTarget: insight.actionTarget,
+      actionTarget,
       priority: insight.priority,
       isDismissible: insight.isDismissible,
       dismissedAt: this.dismissals.has(insight.id)

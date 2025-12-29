@@ -42,11 +42,12 @@ export interface EvaluationResult {
 
 /**
  * Condition evaluator function type
+ * Supports both sync and async evaluators
  */
 export type ConditionEvaluator = (
   context: InsightContext,
   params: Record<string, unknown>
-) => EvaluationResult;
+) => EvaluationResult | Promise<EvaluationResult>;
 
 /**
  * Map of condition types to their evaluators

@@ -171,6 +171,7 @@ export type InsightConditionType =
   | "budget_status"
   | "transaction_pattern"
   | "merchant_pattern"
+  | "merchant_anomaly"
   | "reward_optimization"
   | "savings_rate"
   | "milestone"

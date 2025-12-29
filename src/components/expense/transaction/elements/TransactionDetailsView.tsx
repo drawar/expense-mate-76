@@ -119,7 +119,8 @@ const TransactionDetailsView = ({
             <div className="flex items-center gap-2">
               <CoinsIcon className="h-4 w-4 text-amber-500" />
               <p className="font-medium">
-                {transaction.rewardPoints.toLocaleString()} points
+                {transaction.rewardPoints.toLocaleString()}{" "}
+                {transaction.paymentMethod.pointsCurrency || "points"}
               </p>
             </div>
           </div>
@@ -144,13 +145,6 @@ const TransactionDetailsView = ({
             <p>{transaction.notes}</p>
           </div>
         )}
-
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-1">
-            Transaction ID
-          </h3>
-          <p className="text-xs font-mono">{transaction.id}</p>
-        </div>
       </div>
     </div>
   );

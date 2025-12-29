@@ -1,5 +1,6 @@
 // src/components/dashboard/cards/InsightsCard.tsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LightbulbIcon,
   XIcon,
@@ -15,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Transaction, Currency, PaymentMethod, RenderedInsight } from "@/types";
 import { useInsights } from "@/hooks/useInsights";
 import { cn } from "@/lib/utils";
+import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
+import { startOfMonth, format } from "date-fns";
 
 interface InsightsCardProps {
   transactions: Transaction[];
@@ -69,7 +72,8 @@ function getSeverityBgClass(severity: string) {
 const InsightItem: React.FC<{
   insight: RenderedInsight;
   onDismiss?: () => void;
-}> = ({ insight, onDismiss }) => {
+  onAction?: (insight: RenderedInsight) => void;
+}> = ({ insight, onDismiss, onAction }) => {
   return (
     <div
       className={cn(
@@ -88,8 +92,11 @@ const InsightItem: React.FC<{
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             {insight.message}
           </p>
-          {insight.actionText && (
-            <button className="text-xs text-primary font-medium mt-1.5 flex items-center hover:underline">
+          {insight.actionText && onAction && (
+            <button
+              onClick={() => onAction(insight)}
+              className="text-xs text-primary font-medium mt-1.5 flex items-center hover:underline"
+            >
               {insight.actionText}
               <ChevronRightIcon className="h-3 w-3 ml-0.5" />
             </button>
@@ -123,7 +130,10 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   className = "",
   maxInsights = 4,
 }) => {
+  const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
 
   const { insights, isLoading, dismissInsight, urgentCount } = useInsights(
     transactions,
@@ -133,6 +143,32 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
       paymentMethods,
       maxResults: 10,
     }
+  );
+
+  // Handle insight action clicks (e.g., "Review transaction", "Review spending")
+  const handleInsightAction = useCallback(
+    (insight: RenderedInsight) => {
+      // Handle "Review spending" - navigate to transactions with current month filter
+      if (insight.actionText === "Review spending") {
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const fromDate = format(monthStart, "yyyy-MM-dd");
+        const toDate = format(now, "yyyy-MM-dd");
+        navigate(`/transactions?from=${fromDate}&to=${toDate}`);
+        return;
+      }
+
+      // If actionTarget contains a transaction ID, find and show that transaction
+      if (insight.actionTarget) {
+        const transaction = transactions.find(
+          (tx) => tx.id === insight.actionTarget
+        );
+        if (transaction) {
+          setSelectedTransaction(transaction);
+        }
+      }
+    },
+    [transactions, navigate]
   );
 
   // Determine how many to display
@@ -197,6 +233,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
                     ? () => dismissInsight(insight.insightId)
                     : undefined
                 }
+                onAction={handleInsightAction}
               />
             ))}
 
@@ -214,6 +251,14 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
             )}
           </div>
         )}
+
+        {/* Transaction review dialog */}
+        <TransactionDialog
+          transaction={selectedTransaction}
+          paymentMethods={paymentMethods}
+          isOpen={selectedTransaction !== null}
+          onClose={() => setSelectedTransaction(null)}
+        />
       </CardContent>
     </Card>
   );

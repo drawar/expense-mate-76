@@ -6,12 +6,10 @@ import {
   SpendingTrendCard,
   FrequentMerchantsCard,
   CardOptimizationCard,
-  UnusualSpendingCard,
   InsightsCard,
   SpendingHealthCard,
 } from "@/components/dashboard/cards";
 import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { EmptyState } from ".";
 import { BarChartIcon } from "lucide-react";
 import { TimeframeTab } from "@/utils/dashboard";
@@ -47,9 +45,6 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
 
   // Early return if no data to prevent rendering empty charts
   const hasData = filteredTransactions.length > 0;
-
-  // Use media query hook
-  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Memoize common card class for consistency
   const commonCardClass = React.useMemo(
@@ -104,14 +99,6 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           className={commonCardClass}
         />
 
-        {/* Unusual Spending Card */}
-        <UnusualSpendingCard
-          transactions={filteredTransactions}
-          currency={currency}
-          className={commonCardClass}
-          maxDisplayedAnomalies={isMobile ? 2 : 3}
-        />
-
         {/* Card Optimization Card - only renders when suggestions exist */}
         <CardOptimizationCard
           title="Card Optimization"
@@ -121,16 +108,15 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           className={commonCardClass}
         />
 
-        {/* TODO: Re-enable when insights are refined
         {/* Smart Insights Card - AI-powered recommendations */}
-        {/* <InsightsCard
+        <InsightsCard
           transactions={filteredTransactions}
           monthlyBudget={scaledBudget}
           currency={currency}
           paymentMethods={paymentMethods}
           className={commonCardClass}
           maxInsights={4}
-        /> */}
+        />
 
         {/* Spending Health Score Card */}
         {/* <SpendingHealthCard

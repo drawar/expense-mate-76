@@ -77,7 +77,7 @@ export const TransactionDetailsSection: React.FC<
       {/* Essential fields - always visible */}
       <div className="space-y-4">
         {/* Row 1: Amount and Currency */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="amount"
@@ -146,7 +146,7 @@ export const TransactionDetailsSection: React.FC<
         </div>
 
         {/* Row 2: Date and Time */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="date"
