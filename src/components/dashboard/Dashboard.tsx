@@ -93,7 +93,8 @@ export function Dashboard() {
       <div className="min-h-screen">
         <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
           <DashboardHeader />
-          <div className="mt-10 border border-dashed rounded-xl">
+          <FilterBar filters={filterState} className="mb-6" />
+          <div className="border border-dashed rounded-xl">
             <EmptyState
               title="No Transactions Found"
               description="Add your first transaction to start tracking your expenses."
