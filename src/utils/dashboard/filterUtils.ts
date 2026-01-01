@@ -20,6 +20,74 @@ import {
 } from "date-fns";
 
 /**
+ * Gets the date range for a given timeframe.
+ * Returns start and end dates formatted as YYYY-MM-DD strings.
+ */
+export function getTimeframeDateRange(timeframe: TimeframeTab): {
+  from: string;
+  to: string;
+} | null {
+  if (timeframe === "allTime") {
+    return null;
+  }
+
+  const today = new Date();
+  let startDate: Date;
+  let endDate: Date;
+
+  switch (timeframe) {
+    case "thisMonth":
+      startDate = startOfMonth(today);
+      endDate = endOfMonth(today);
+      break;
+    case "lastMonth":
+      startDate = startOfMonth(subMonths(today, 1));
+      endDate = endOfMonth(subMonths(today, 1));
+      break;
+    case "thisYear":
+      startDate = startOfYear(today);
+      endDate = endOfYear(today);
+      break;
+    case "lastYear":
+      startDate = startOfYear(subYears(today, 1));
+      endDate = endOfYear(subYears(today, 1));
+      break;
+    case "thisWeek":
+      startDate = startOfWeek(today, { weekStartsOn: 0 });
+      endDate = endOfWeek(today, { weekStartsOn: 0 });
+      break;
+    case "lastWeek": {
+      const lastWeekStart = new Date(today);
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      startDate = startOfWeek(lastWeekStart, { weekStartsOn: 0 });
+      endDate = endOfWeek(lastWeekStart, { weekStartsOn: 0 });
+      break;
+    }
+    case "lastTwoMonths":
+      startDate = startOfMonth(subMonths(today, 1));
+      endDate = endOfMonth(today);
+      break;
+    case "lastThreeMonths":
+      startDate = startOfMonth(subMonths(today, 2));
+      endDate = endOfMonth(today);
+      break;
+    case "lastSixMonths":
+      startDate = startOfMonth(subMonths(today, 5));
+      endDate = endOfMonth(today);
+      break;
+    default:
+      startDate = startOfMonth(today);
+      endDate = endOfMonth(today);
+      break;
+  }
+
+  return {
+    from: format(startDate, "yyyy-MM-dd"),
+    to: format(endDate, "yyyy-MM-dd"),
+  };
+}
+
+/**
  * Filters transactions based on the selected timeframe.
  *
  * @param transactions An array of transactions to filter.

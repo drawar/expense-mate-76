@@ -14,6 +14,7 @@ export { default as SpendingHealthCard } from "./SpendingHealthCard";
 export { default as SpendingTrendCard } from "./SpendingTrendCard";
 export { default as FrequentMerchantsCard } from "./FrequentMerchantsCard";
 export { default as UnusualSpendingCard } from "./UnusualSpendingCard";
+export { default as PointsEarnedCard } from "./PointsEarnedCard";
 
 // Also export types
 export type { DashboardCardProps } from "./Card";

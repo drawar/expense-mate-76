@@ -9,8 +9,9 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import Card from "./Card";
-import { chartUtils, TimeframeTab } from "@/utils/dashboard";
+import { chartUtils, TimeframeTab, metricsUtils } from "@/utils/dashboard";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
+import { CurrencyService } from "@/core/currency";
 import {
   LineChart,
   Line,
@@ -24,6 +25,7 @@ type TrendPeriod = "week" | "month" | "quarter" | "year";
 
 interface SpendingTrendCardProps {
   transactions: Transaction[];
+  previousPeriodTransactions?: Transaction[];
   currency?: Currency;
   timeframe?: TimeframeTab;
   className?: string;
@@ -31,6 +33,7 @@ interface SpendingTrendCardProps {
 
 const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   transactions,
+  previousPeriodTransactions = [],
   currency = "SGD",
   timeframe = "thisMonth",
   className = "",
@@ -130,10 +133,28 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     const daysRemaining = daysInMonth - now.getDate();
     const projectedTotal = totalSpent + dailyAvg * daysRemaining;
 
+    // Get month name for display
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const monthName = monthNames[now.getMonth()];
+
     return {
       dailyAvg,
       projectedTotal,
       daysRemaining,
+      monthName,
     };
   }, [chartData, selectedPeriod]);
 
@@ -207,46 +228,73 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     }
   }, [selectedPeriod]);
 
-  // Calculate current and previous period totals for context
+  // Calculate current and previous period totals from actual transaction data
   const periodComparison = React.useMemo(() => {
-    if (chartData.length === 0) return null;
-
+    // Calculate current period total from chart data
     const currentTotal = chartData.reduce((sum, d) => sum + (d.amount || 0), 0);
-    // Calculate previous total based on trend percentage
-    // If trend = +20%, then previous = current / 1.20
-    const previousTotal =
-      trend !== 0 ? currentTotal / (1 + trend / 100) : currentTotal;
+
+    // Calculate previous period total from actual previous period transactions
+    const previousTotal = previousPeriodTransactions.reduce((sum, tx) => {
+      const convertedAmount = CurrencyService.convert(
+        tx.amount,
+        tx.currency as Currency,
+        currency,
+        tx.paymentMethod
+      );
+      // Adjust for reimbursements
+      let finalAmount = convertedAmount;
+      if (tx.reimbursementAmount) {
+        const reimbursedAmount = CurrencyService.convert(
+          tx.reimbursementAmount,
+          tx.currency as Currency,
+          currency,
+          tx.paymentMethod
+        );
+        finalAmount -= reimbursedAmount;
+      }
+      return sum + finalAmount;
+    }, 0);
 
     return {
       current: currentTotal,
       previous: previousTotal,
     };
-  }, [chartData, trend]);
+  }, [chartData, previousPeriodTransactions, currency]);
+
+  // Calculate actual period-over-period trend
+  const actualTrend = React.useMemo(() => {
+    if (!periodComparison) return 0;
+    return metricsUtils.calculatePercentageChange(
+      periodComparison.current,
+      periodComparison.previous
+    );
+  }, [periodComparison]);
 
   // Display trend and average section with improved context
   const TrendAndAverage = () => (
     <div className="flex items-center justify-between mb-4">
+      {/* TODO: Re-enable period comparison when logic is refined
       <div>
         <p className="text-sm text-muted-foreground">
           vs {getPreviousPeriodName}
         </p>
         <div className="flex items-center gap-1 mt-1">
-          {trend >= 0 ? (
+          {actualTrend >= 0 ? (
             <TrendingUpIcon className="h-4 w-4 text-[var(--color-error)]" />
           ) : (
             <TrendingDownIcon className="h-4 w-4 text-[var(--color-success)]" />
           )}
           <span
             className={
-              trend >= 0
+              actualTrend >= 0
                 ? "font-medium text-[var(--color-error)]"
                 : "font-medium text-[var(--color-success)]"
             }
           >
-            {trend >= 0 ? "+" : ""}
-            {trend.toFixed(0)}%
+            {actualTrend >= 0 ? "+" : ""}
+            {actualTrend.toFixed(0)}%
           </span>
-          {periodComparison && Math.abs(trend) > 5 && (
+          {periodComparison && periodComparison.previous > 0 && (
             <span className="text-xs text-muted-foreground ml-1">
               ({formatCurrency(periodComparison.previous)} →{" "}
               {formatCurrency(periodComparison.current)})
@@ -254,6 +302,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
           )}
         </div>
       </div>
+      */}
 
       <div className="text-right">
         <p className="text-sm text-muted-foreground">
@@ -337,7 +386,9 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         icon: <TrendingUpIcon className="h-8 w-8 text-muted-foreground mb-2" />,
       }}
     >
-      {chartData.length >= 2 && <TrendAndAverage />}
+      {(chartData.length >= 2 || previousPeriodTransactions.length > 0) && (
+        <TrendAndAverage />
+      )}
 
       {chartData.length > 0 && (
         <div className="h-40 w-full">
@@ -386,7 +437,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
           <span className="font-medium text-foreground">
             {formatCurrency(spendingPace.projectedTotal)}
           </span>
-          <span> by month end ({spendingPace.daysRemaining} days left)</span>
+          <span>
+            {" "}
+            by end of {spendingPace.monthName} ({spendingPace.daysRemaining}{" "}
+            days left)
+          </span>
         </div>
       )}
     </Card>

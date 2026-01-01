@@ -8,6 +8,7 @@ import {
   CardOptimizationCard,
   InsightsCard,
   SpendingHealthCard,
+  PointsEarnedCard,
 } from "@/components/dashboard/cards";
 import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
 import { EmptyState } from ".";
@@ -20,6 +21,7 @@ interface InsightsGridProps {
   currency: Currency;
   scaledBudget?: number;
   timeframe?: TimeframeTab;
+  previousPeriodTransactions?: Transaction[];
 }
 
 /**
@@ -31,6 +33,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   currency,
   scaledBudget = 0,
   timeframe = "thisMonth",
+  previousPeriodTransactions = [],
 }) => {
   // State for category drill-down
   const [drilldownOpen, setDrilldownOpen] = useState(false);
@@ -87,6 +90,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Spending Trends Card */}
         <SpendingTrendCard
           transactions={filteredTransactions}
+          previousPeriodTransactions={previousPeriodTransactions}
           currency={currency}
           className={commonCardClass}
           timeframe={timeframe}
@@ -116,6 +120,13 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           paymentMethods={paymentMethods}
           className={commonCardClass}
           maxInsights={4}
+        />
+
+        {/* Points Earned Card */}
+        <PointsEarnedCard
+          transactions={filteredTransactions}
+          displayCurrency={currency}
+          className={commonCardClass}
         />
 
         {/* Spending Health Score Card */}

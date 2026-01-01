@@ -183,7 +183,7 @@ const TransactionTable = ({
             <TableRow>
               <TableHead>Merchant</TableHead>
               <TableHead className="w-[120px]">Amount</TableHead>
-              <TableHead className="w-[140px]">Payment</TableHead>
+              <TableHead className="w-[180px]">Payment</TableHead>
               <TableHead className="w-[50px] text-right"></TableHead>
             </TableRow>
           </TableHeader>
@@ -335,8 +335,9 @@ const TransactionTable = ({
                             <PaymentMethodIcon
                               method={transaction.paymentMethod}
                               size="sm"
+                              className="flex-shrink-0"
                             />
-                            <span className="truncate text-sm">
+                            <span className="text-sm line-clamp-2">
                               {formatCardShortName(
                                 transaction.paymentMethod.issuer || "",
                                 transaction.paymentMethod.name

@@ -119,13 +119,23 @@ export const TransactionFilterControls: React.FC<
             <div>
               <label className="text-sm font-medium mb-1 block">Category</label>
               <Select
-                value={safeFilters.categories?.[0] || "all"}
+                value={
+                  safeFilters.categories?.length === 1
+                    ? safeFilters.categories[0]
+                    : "all"
+                }
                 onValueChange={(value) =>
                   updateFilter("categories", value === "all" ? [] : [value])
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
+                  {safeFilters.categories?.length > 1 ? (
+                    <span className="truncate">
+                      {safeFilters.categories.length} categories
+                    </span>
+                  ) : (
+                    <SelectValue placeholder="All categories" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All categories</SelectItem>
@@ -149,12 +159,14 @@ export const TransactionFilterControls: React.FC<
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left text-base md:text-sm font-normal"
+                    className="w-full justify-start text-left text-base md:text-sm font-normal overflow-hidden"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {safeFilters.dateRange?.from
-                      ? format(safeFilters.dateRange.from, "PPP")
-                      : "Pick a date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {safeFilters.dateRange?.from
+                        ? format(safeFilters.dateRange.from, "MMM d, yyyy")
+                        : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -179,12 +191,14 @@ export const TransactionFilterControls: React.FC<
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left text-base md:text-sm font-normal"
+                    className="w-full justify-start text-left text-base md:text-sm font-normal overflow-hidden"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {safeFilters.dateRange?.to
-                      ? format(safeFilters.dateRange.to, "PPP")
-                      : "Pick a date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {safeFilters.dateRange?.to
+                        ? format(safeFilters.dateRange.to, "MMM d, yyyy")
+                        : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">

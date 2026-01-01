@@ -119,6 +119,7 @@ const FrequentMerchantsCard: React.FC<FrequentMerchantsCardProps> = ({
 
               {/* Total Spent */}
               <div className="text-right mr-3">
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="font-medium">
                   {CurrencyService.format(merchant.totalSpent, currency)}
                 </p>

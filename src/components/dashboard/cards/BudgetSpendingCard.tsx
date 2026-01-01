@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   TargetIcon,
   PencilIcon,
@@ -32,6 +33,7 @@ import {
   buildCategoryHierarchy,
   ParentCategorySpending,
 } from "@/utils/dashboard/categoryHierarchy";
+import { getTimeframeDateRange } from "@/utils/dashboard";
 
 interface BudgetSpendingCardProps {
   className?: string;
@@ -47,6 +49,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   transactions = [],
   onCategoryClick,
 }) => {
+  const navigate = useNavigate();
   const { dashboardData, displayCurrency, activeTab } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
@@ -326,7 +329,22 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               {displayCategories.map((category: ParentCategorySpending) => (
                 <button
                   key={category.id}
-                  onClick={() => onCategoryClick?.(category.id, category.name)}
+                  onClick={() => {
+                    // Navigate to transactions page with category and date filters
+                    const dateRange = getTimeframeDateRange(activeTab);
+                    const params = new URLSearchParams();
+                    // Pass all subcategory names as comma-separated list
+                    const subcategoryNames = category.subcategories
+                      .map((sub) => sub.name)
+                      .join(",");
+                    params.set("category", subcategoryNames);
+                    if (dateRange) {
+                      params.set("from", dateRange.from);
+                      params.set("to", dateRange.to);
+                    }
+                    navigate(`/transactions?${params.toString()}`);
+                    onCategoryClick?.(category.id, category.name);
+                  }}
                   className="w-full flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-muted/50 active:bg-muted/70 transition-colors text-left"
                 >
                   <span className="text-base">{category.emoji}</span>
