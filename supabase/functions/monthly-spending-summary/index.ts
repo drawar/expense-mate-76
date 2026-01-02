@@ -656,15 +656,40 @@ serve(async (req) => {
           continue;
         }
 
-        // Get prepaid card balances
+        // Get prepaid card balances (remaining = total_loaded - spent)
         const { data: prepaidCards, error: prepaidError } = await supabase
           .from("payment_methods")
-          .select("name, total_loaded, currency")
+          .select("id, name, total_loaded, currency")
           .eq("user_id", user.id)
           .eq("type", "prepaid_card")
           .eq("is_active", true);
 
         if (prepaidError) throw prepaidError;
+
+        // Calculate spent amount for each prepaid card from ALL transactions (not just this month)
+        const prepaidCardIds = (prepaidCards || []).map((c) => c.id);
+        const prepaidSpentMap = new Map<string, number>();
+
+        if (prepaidCardIds.length > 0) {
+          const { data: prepaidTxns, error: prepaidTxnError } = await supabase
+            .from("transactions")
+            .select("payment_method_id, payment_amount, amount")
+            .eq("user_id", user.id)
+            .eq("is_deleted", false)
+            .in("payment_method_id", prepaidCardIds);
+
+          if (prepaidTxnError) throw prepaidTxnError;
+
+          // Sum up spent amounts per card (use payment_amount for card currency)
+          (prepaidTxns || []).forEach((tx) => {
+            const cardId = tx.payment_method_id;
+            const spent = tx.payment_amount || tx.amount || 0;
+            prepaidSpentMap.set(
+              cardId,
+              (prepaidSpentMap.get(cardId) || 0) + spent
+            );
+          });
+        }
 
         // Calculate all metrics - grouped by currency
         const spendingByCurrency = calculateSpendingByCurrency(transactions);
@@ -677,11 +702,15 @@ serve(async (req) => {
         const pointsEarned = calculatePointsEarned(transactions);
 
         const prepaidBalances: PrepaidCardBalance[] = (prepaidCards || []).map(
-          (card) => ({
-            name: card.name,
-            balance: card.total_loaded || 0,
-            currency: card.currency || "CAD",
-          })
+          (card) => {
+            const totalLoaded = card.total_loaded || 0;
+            const totalSpent = prepaidSpentMap.get(card.id) || 0;
+            return {
+              name: card.name,
+              balance: totalLoaded - totalSpent,
+              currency: card.currency || "CAD",
+            };
+          }
         );
 
         // Generate email content
