@@ -36,12 +36,14 @@ interface CategorySpending {
   category: string;
   amount: number;
   count: number;
+  currency: string;
 }
 
 interface MerchantData {
   name: string;
   amount: number;
   count: number;
+  currency: string;
 }
 
 interface PointsData {
@@ -55,6 +57,12 @@ interface PrepaidCardBalance {
   name: string;
   balance: number;
   currency: string;
+}
+
+interface SpendingByCurrency {
+  currency: string;
+  total: number;
+  transactionCount: number;
 }
 
 /**
@@ -120,93 +128,138 @@ function getPreviousMonthRange(): {
 }
 
 /**
- * Calculate spending breakdown by category
+ * Calculate total spending grouped by currency
  */
-function calculateCategorySpending(
-  transactions: Transaction[],
-  displayCurrency: string
-): CategorySpending[] {
-  const categoryMap = new Map<string, { amount: number; count: number }>();
+function calculateSpendingByCurrency(
+  transactions: Transaction[]
+): SpendingByCurrency[] {
+  const currencyMap = new Map<string, { total: number; count: number }>();
 
   transactions.forEach((tx) => {
-    // Use amount (original transaction amount) for consistent currency display
-    const amount = tx.amount;
-    const category = tx.category || "Uncategorized";
-
-    const existing = categoryMap.get(category) || { amount: 0, count: 0 };
-    categoryMap.set(category, {
-      amount: existing.amount + amount,
+    const currency = tx.currency || "CAD";
+    const existing = currencyMap.get(currency) || { total: 0, count: 0 };
+    currencyMap.set(currency, {
+      total: existing.total + tx.amount,
       count: existing.count + 1,
     });
   });
 
-  return Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category,
-      amount: data.amount,
-      count: data.count,
+  return Array.from(currencyMap.entries())
+    .map(([currency, data]) => ({
+      currency,
+      total: data.total,
+      transactionCount: data.count,
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => b.total - a.total);
 }
 
 /**
- * Get top merchants by frequency
+ * Calculate spending breakdown by category, grouped by currency
+ */
+function calculateCategorySpending(
+  transactions: Transaction[]
+): CategorySpending[] {
+  // Group by category+currency composite key
+  const categoryMap = new Map<
+    string,
+    { amount: number; count: number; currency: string; category: string }
+  >();
+
+  transactions.forEach((tx) => {
+    const amount = tx.amount;
+    const category = tx.category || "Uncategorized";
+    const currency = tx.currency || "CAD";
+    const key = `${category}|${currency}`;
+
+    const existing = categoryMap.get(key) || {
+      amount: 0,
+      count: 0,
+      currency,
+      category,
+    };
+    categoryMap.set(key, {
+      amount: existing.amount + amount,
+      count: existing.count + 1,
+      currency,
+      category,
+    });
+  });
+
+  return Array.from(categoryMap.values()).sort((a, b) => b.amount - a.amount);
+}
+
+/**
+ * Get top merchants by frequency, grouped by currency
  */
 function getFrequentMerchants(
   transactions: Transaction[],
   limit = 5
 ): MerchantData[] {
-  const merchantMap = new Map<string, { amount: number; count: number }>();
+  // Group by merchant+currency composite key
+  const merchantMap = new Map<
+    string,
+    { amount: number; count: number; currency: string; name: string }
+  >();
 
   transactions.forEach((tx) => {
     const merchantName = tx.merchants?.name || "Unknown";
-    // Use amount (original transaction amount) for consistent currency display
     const amount = tx.amount;
+    const currency = tx.currency || "CAD";
+    const key = `${merchantName}|${currency}`;
 
-    const existing = merchantMap.get(merchantName) || { amount: 0, count: 0 };
-    merchantMap.set(merchantName, {
+    const existing = merchantMap.get(key) || {
+      amount: 0,
+      count: 0,
+      currency,
+      name: merchantName,
+    };
+    merchantMap.set(key, {
       amount: existing.amount + amount,
       count: existing.count + 1,
+      currency,
+      name: merchantName,
     });
   });
 
-  return Array.from(merchantMap.entries())
-    .map(([name, data]) => ({
-      name,
-      amount: data.amount,
-      count: data.count,
-    }))
+  return Array.from(merchantMap.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);
 }
 
 /**
- * Get top merchants by spending amount
+ * Get top merchants by spending amount, grouped by currency
  */
 function getHighestSpendingMerchants(
   transactions: Transaction[],
   limit = 5
 ): MerchantData[] {
-  const merchantMap = new Map<string, { amount: number; count: number }>();
+  // Group by merchant+currency composite key
+  const merchantMap = new Map<
+    string,
+    { amount: number; count: number; currency: string; name: string }
+  >();
 
   transactions.forEach((tx) => {
     const merchantName = tx.merchants?.name || "Unknown";
-    // Use amount (original transaction amount) for consistent currency display
     const amount = tx.amount;
+    const currency = tx.currency || "CAD";
+    const key = `${merchantName}|${currency}`;
 
-    const existing = merchantMap.get(merchantName) || { amount: 0, count: 0 };
-    merchantMap.set(merchantName, {
+    const existing = merchantMap.get(key) || {
+      amount: 0,
+      count: 0,
+      currency,
+      name: merchantName,
+    };
+    merchantMap.set(key, {
       amount: existing.amount + amount,
       count: existing.count + 1,
+      currency,
+      name: merchantName,
     });
   });
 
-  return Array.from(merchantMap.entries())
-    .map(([name, data]) => ({
-      name,
-      amount: data.amount,
-      count: data.count,
-    }))
+  return Array.from(merchantMap.values())
     .sort((a, b) => b.amount - a.amount)
     .slice(0, limit);
 }
@@ -249,49 +302,57 @@ function calculatePointsEarned(transactions: Transaction[]): PointsData[] {
 function generateEmailHtml(
   monthName: string,
   year: number,
-  totalSpending: number,
-  displayCurrency: string,
+  spendingByCurrency: SpendingByCurrency[],
   categorySpending: CategorySpending[],
   frequentMerchants: MerchantData[],
   highestSpendingMerchants: MerchantData[],
   pointsEarned: PointsData[],
   prepaidBalances: PrepaidCardBalance[]
 ): string {
-  const formattedTotal = formatCurrency(totalSpending, displayCurrency);
+  // Format total spending - show each currency
+  const totalSpendingHtml =
+    spendingByCurrency.length === 1
+      ? `<p style="margin: 0; font-size: 32px; font-weight: 700; color: #1a1a1a;">${formatCurrency(spendingByCurrency[0].total, spendingByCurrency[0].currency)}</p>`
+      : spendingByCurrency
+          .map(
+            (s) =>
+              `<p style="margin: 4px 0; font-size: 24px; font-weight: 700; color: #1a1a1a;">${formatCurrency(s.total, s.currency)} <span style="font-size: 14px; font-weight: 400; color: #6c757d;">(${s.transactionCount} txns)</span></p>`
+          )
+          .join("");
 
-  // Category spending table rows
+  // Category spending table rows (now includes currency)
   const categoryRows = categorySpending
     .map(
       (cat) => `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef;">${cat.category}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(cat.amount, displayCurrency)}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(cat.amount, cat.currency)}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: center;">${cat.count}</td>
       </tr>
     `
     )
     .join("");
 
-  // Frequent merchants table rows
+  // Frequent merchants table rows (now includes currency)
   const frequentMerchantRows = frequentMerchants
     .map(
       (m, i) => `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef;">${i + 1}. ${m.name}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: center;">${m.count} visits</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(m.amount, displayCurrency)}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(m.amount, m.currency)}</td>
       </tr>
     `
     )
     .join("");
 
-  // Highest spending merchants table rows
+  // Highest spending merchants table rows (now includes currency)
   const highSpendingRows = highestSpendingMerchants
     .map(
       (m, i) => `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef;">${i + 1}. ${m.name}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(m.amount, displayCurrency)}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: right;">${formatCurrency(m.amount, m.currency)}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #e9ecef; text-align: center;">${m.count} txns</td>
       </tr>
     `
@@ -353,7 +414,7 @@ function generateEmailHtml(
       <td style="padding: 24px;">
         <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center;">
           <p style="margin: 0 0 8px; color: #6c757d; font-size: 14px;">Total Spending</p>
-          <p style="margin: 0; font-size: 32px; font-weight: 700; color: #1a1a1a;">${formattedTotal}</p>
+          ${totalSpendingHtml}
         </div>
       </td>
     </tr>
@@ -472,33 +533,34 @@ function generateEmailHtml(
 function generateEmailText(
   monthName: string,
   year: number,
-  totalSpending: number,
-  displayCurrency: string,
+  spendingByCurrency: SpendingByCurrency[],
   categorySpending: CategorySpending[],
   frequentMerchants: MerchantData[],
   highestSpendingMerchants: MerchantData[],
   pointsEarned: PointsData[],
   prepaidBalances: PrepaidCardBalance[]
 ): string {
-  const formattedTotal = formatCurrency(totalSpending, displayCurrency);
-
   let text = `${monthName} ${year} - Monthly Spending Summary\n`;
   text += `${"=".repeat(50)}\n\n`;
-  text += `Total Spending: ${formattedTotal}\n\n`;
 
-  text += `SPENDING BY CATEGORY\n${"-".repeat(30)}\n`;
+  text += `TOTAL SPENDING\n${"-".repeat(30)}\n`;
+  spendingByCurrency.forEach((s) => {
+    text += `${formatCurrency(s.total, s.currency)} (${s.transactionCount} txns)\n`;
+  });
+
+  text += `\nSPENDING BY CATEGORY\n${"-".repeat(30)}\n`;
   categorySpending.forEach((cat) => {
-    text += `${cat.category}: ${formatCurrency(cat.amount, displayCurrency)} (${cat.count} txns)\n`;
+    text += `${cat.category}: ${formatCurrency(cat.amount, cat.currency)} (${cat.count} txns)\n`;
   });
 
   text += `\nTOP 5 FREQUENT MERCHANTS\n${"-".repeat(30)}\n`;
   frequentMerchants.forEach((m, i) => {
-    text += `${i + 1}. ${m.name}: ${m.count} visits, ${formatCurrency(m.amount, displayCurrency)}\n`;
+    text += `${i + 1}. ${m.name}: ${m.count} visits, ${formatCurrency(m.amount, m.currency)}\n`;
   });
 
   text += `\nTOP 5 HIGHEST SPENDING\n${"-".repeat(30)}\n`;
   highestSpendingMerchants.forEach((m, i) => {
-    text += `${i + 1}. ${m.name}: ${formatCurrency(m.amount, displayCurrency)} (${m.count} txns)\n`;
+    text += `${i + 1}. ${m.name}: ${formatCurrency(m.amount, m.currency)} (${m.count} txns)\n`;
   });
 
   text += `\nPOINTS EARNED\n${"-".repeat(30)}\n`;
@@ -604,27 +666,9 @@ serve(async (req) => {
 
         if (prepaidError) throw prepaidError;
 
-        // Determine display currency (use most common payment currency)
-        const currencyCounts = new Map<string, number>();
-        transactions.forEach((tx: Transaction) => {
-          const curr = tx.payment_currency || tx.currency || "CAD";
-          currencyCounts.set(curr, (currencyCounts.get(curr) || 0) + 1);
-        });
-        const displayCurrency =
-          Array.from(currencyCounts.entries()).sort(
-            (a, b) => b[1] - a[1]
-          )[0]?.[0] || "CAD";
-
-        // Calculate all metrics
-        // Use amount (original transaction amount) for consistent currency display
-        const totalSpending = transactions.reduce(
-          (sum: number, tx: Transaction) => sum + tx.amount,
-          0
-        );
-        const categorySpending = calculateCategorySpending(
-          transactions,
-          displayCurrency
-        );
+        // Calculate all metrics - grouped by currency
+        const spendingByCurrency = calculateSpendingByCurrency(transactions);
+        const categorySpending = calculateCategorySpending(transactions);
         const frequentMerchants = getFrequentMerchants(transactions, 5);
         const highestSpendingMerchants = getHighestSpendingMerchants(
           transactions,
@@ -644,8 +688,7 @@ serve(async (req) => {
         const htmlContent = generateEmailHtml(
           monthName,
           year,
-          totalSpending,
-          displayCurrency,
+          spendingByCurrency,
           categorySpending,
           frequentMerchants,
           highestSpendingMerchants,
@@ -656,8 +699,7 @@ serve(async (req) => {
         const textContent = generateEmailText(
           monthName,
           year,
-          totalSpending,
-          displayCurrency,
+          spendingByCurrency,
           categorySpending,
           frequentMerchants,
           highestSpendingMerchants,
