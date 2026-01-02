@@ -69,31 +69,53 @@ function formatCurrency(amount: number, currency: string): string {
 }
 
 /**
- * Get the previous month's date range
+ * Get the previous month's date range (using UTC to avoid timezone issues)
+ * Returns start (first day of prev month) and endExclusive (first day of current month)
+ * for use with gte/lt queries to properly include all timestamps on the last day
  */
 function getPreviousMonthRange(): {
   start: string;
-  end: string;
+  endExclusive: string;
   monthName: string;
   year: number;
 } {
   const now = new Date();
-  const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastOfPrevMonth = new Date(firstOfThisMonth.getTime() - 1);
-  const firstOfPrevMonth = new Date(
-    lastOfPrevMonth.getFullYear(),
-    lastOfPrevMonth.getMonth(),
-    1
-  );
 
-  const monthName = firstOfPrevMonth.toLocaleString("en-US", { month: "long" });
-  const year = firstOfPrevMonth.getFullYear();
+  // Use UTC to avoid timezone issues
+  const thisYear = now.getUTCFullYear();
+  const thisMonth = now.getUTCMonth();
+
+  // Previous month (handle January -> December of previous year)
+  const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+  const prevYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+  // Format dates as YYYY-MM-DD
+  // Start: first day of previous month
+  const startDate = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-01`;
+  // End (exclusive): first day of current month - use lt() not lte() to include all Dec 31 timestamps
+  const endDateExclusive = `${thisYear}-${String(thisMonth + 1).padStart(2, "0")}-01`;
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const monthName = monthNames[prevMonth];
 
   return {
-    start: firstOfPrevMonth.toISOString().split("T")[0],
-    end: lastOfPrevMonth.toISOString().split("T")[0],
+    start: startDate,
+    endExclusive: endDateExclusive,
     monthName,
-    year,
+    year: prevYear,
   };
 }
 
@@ -107,8 +129,8 @@ function calculateCategorySpending(
   const categoryMap = new Map<string, { amount: number; count: number }>();
 
   transactions.forEach((tx) => {
-    // Use payment_amount if available (converted to card currency), otherwise amount
-    const amount = tx.payment_amount || tx.amount;
+    // Use amount (original transaction amount) for consistent currency display
+    const amount = tx.amount;
     const category = tx.category || "Uncategorized";
 
     const existing = categoryMap.get(category) || { amount: 0, count: 0 };
@@ -138,7 +160,8 @@ function getFrequentMerchants(
 
   transactions.forEach((tx) => {
     const merchantName = tx.merchants?.name || "Unknown";
-    const amount = tx.payment_amount || tx.amount;
+    // Use amount (original transaction amount) for consistent currency display
+    const amount = tx.amount;
 
     const existing = merchantMap.get(merchantName) || { amount: 0, count: 0 };
     merchantMap.set(merchantName, {
@@ -168,7 +191,8 @@ function getHighestSpendingMerchants(
 
   transactions.forEach((tx) => {
     const merchantName = tx.merchants?.name || "Unknown";
-    const amount = tx.payment_amount || tx.amount;
+    // Use amount (original transaction amount) for consistent currency display
+    const amount = tx.amount;
 
     const existing = merchantMap.get(merchantName) || { amount: 0, count: 0 };
     merchantMap.set(merchantName, {
@@ -507,12 +531,21 @@ serve(async (req) => {
   }
 
   try {
+    // Parse optional filter from request body
+    let filterEmail: string | undefined;
+    try {
+      const body = await req.json();
+      filterEmail = body?.email;
+    } catch {
+      // No body or invalid JSON, proceed without filter
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get date range for previous month
-    const { start, end, monthName, year } = getPreviousMonthRange();
+    const { start, endExclusive, monthName, year } = getPreviousMonthRange();
     console.log(
-      `Generating summary for ${monthName} ${year} (${start} to ${end})`
+      `Generating summary for ${monthName} ${year} (${start} to ${endExclusive})`
     );
 
     // Get all users
@@ -524,6 +557,9 @@ serve(async (req) => {
 
     for (const user of usersData.users) {
       if (!user.email) continue;
+
+      // If filter is provided, skip users that don't match
+      if (filterEmail && user.email !== filterEmail) continue;
 
       try {
         console.log(`Processing user: ${user.email}`);
@@ -541,7 +577,7 @@ serve(async (req) => {
           .eq("user_id", user.id)
           .eq("is_deleted", false)
           .gte("date", start)
-          .lte("date", end)
+          .lt("date", endExclusive)
           .order("date", { ascending: false });
 
         if (txError) throw txError;
@@ -580,9 +616,9 @@ serve(async (req) => {
           )[0]?.[0] || "CAD";
 
         // Calculate all metrics
+        // Use amount (original transaction amount) for consistent currency display
         const totalSpending = transactions.reduce(
-          (sum: number, tx: Transaction) =>
-            sum + (tx.payment_amount || tx.amount),
+          (sum: number, tx: Transaction) => sum + tx.amount,
           0
         );
         const categorySpending = calculateCategorySpending(
