@@ -226,9 +226,10 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const chartData = chartResult?.data || [];
   const average = chartResult?.average || 0;
 
-  // Calculate forecast average for the next 7 days only
-  const next7DaysForecastAvg = useMemo(() => {
-    if (!forecastChartData?.data) return 0;
+  // Calculate forecast total and average for the next 7 days only
+  const { next7DaysForecastTotal, next7DaysForecastAvg } = useMemo(() => {
+    if (!forecastChartData?.data)
+      return { next7DaysForecastTotal: 0, next7DaysForecastAvg: 0 };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -245,13 +246,17 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       return itemDate >= today && itemDate <= cutoffDate;
     });
 
-    if (next7DaysData.length === 0) return 0;
+    if (next7DaysData.length === 0)
+      return { next7DaysForecastTotal: 0, next7DaysForecastAvg: 0 };
 
     const totalForecast = next7DaysData.reduce(
       (sum, item) => sum + item.forecastAmount,
       0
     );
-    return totalForecast / next7DaysData.length;
+    return {
+      next7DaysForecastTotal: totalForecast,
+      next7DaysForecastAvg: totalForecast / next7DaysData.length,
+    };
   }, [forecastChartData]);
 
   // Period options with labels
@@ -328,11 +333,19 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       <div className="text-right">
         <p className="text-sm text-muted-foreground">
           {shouldShowForecast
-            ? "Next 7 days avg"
+            ? displayMode === "cumulative"
+              ? "Next 7 days total"
+              : "Next 7 days avg"
             : `${getPeriodLabel(selectedPeriod)} avg`}
         </p>
         <p className="font-medium mt-1">
-          {formatCurrency(shouldShowForecast ? next7DaysForecastAvg : average)}
+          {formatCurrency(
+            shouldShowForecast
+              ? displayMode === "cumulative"
+                ? next7DaysForecastTotal
+                : next7DaysForecastAvg
+              : average
+          )}
         </p>
       </div>
     </div>
