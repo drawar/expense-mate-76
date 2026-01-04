@@ -111,9 +111,9 @@ export function useForecast(
       return {
         period: format(date, "MMM d"),
         originalKey: day.date,
-        amount: day.actualAmount ?? 0,
+        amount: isPast ? (day.actualAmount ?? 0) : undefined,
         forecastAmount: day.forecastAmount,
-        cumulativeAmount: day.cumulativeActual ?? 0,
+        cumulativeAmount: isPast ? (day.cumulativeActual ?? 0) : undefined,
         cumulativeForecast: day.cumulativeForecast,
         isProjected: !isPast,
         variance: isPast
