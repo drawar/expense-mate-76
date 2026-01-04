@@ -292,7 +292,35 @@ export class RewardService {
         }
 
         // 4. Calculate bonus points (skip for total_first as bonus is already derived)
-        if (!totalFirstUsed && rule.reward.bonusMultiplier > 0) {
+        // Check for compound bonus multipliers first (each multiplier rounded separately, then summed)
+        if (
+          !totalFirstUsed &&
+          rule.reward.compoundBonusMultipliers &&
+          rule.reward.compoundBonusMultipliers.length > 0
+        ) {
+          // Compound bonus: each multiplier is calculated and rounded separately, then summed
+          // Example: [1.5, 2.5] for $25 = round(25*1.5) + round(25*2.5) = 38 + 63 = 101
+          let compoundBonusTotal = 0;
+          for (const multiplier of rule.reward.compoundBonusMultipliers) {
+            const componentBonus = this.calculateBonusPoints(
+              calculationAmount,
+              multiplier,
+              rule.reward.pointsRoundingStrategy,
+              rule.reward.blockSize,
+              rule.reward.amountRoundingStrategy
+            );
+            compoundBonusTotal += componentBonus;
+          }
+          bonusPoints += compoundBonusTotal;
+
+          logger.debug("calculateRewards", "Compound bonus points calculated", {
+            calculationAmount,
+            compoundBonusMultipliers: rule.reward.compoundBonusMultipliers,
+            compoundBonusTotal,
+            totalBonusPoints: bonusPoints,
+          });
+        } else if (!totalFirstUsed && rule.reward.bonusMultiplier > 0) {
+          // Standard bonus: single multiplier
           const calculatedBonusPoints = this.calculateBonusPoints(
             calculationAmount,
             rule.reward.bonusMultiplier,
@@ -324,6 +352,9 @@ export class RewardService {
               : input.date.toJSDate()
             : new Date();
 
+          // Get promo start date for promotional caps
+          const promoStartDate = rule.reward.promoStartDate;
+
           if (capType === "spend_amount") {
             // Cap is on spend amount - track how much has been spent
             let usedSpendAmount = 0;
@@ -337,7 +368,8 @@ export class RewardService {
                   date,
                   1,
                   capGroupId,
-                  "spend_amount"
+                  "spend_amount",
+                  promoStartDate
                 );
               } catch (error) {
                 console.warn(
@@ -389,7 +421,8 @@ export class RewardService {
                   date,
                   1,
                   capGroupId,
-                  "bonus_points"
+                  "bonus_points",
+                  promoStartDate
                 );
               } catch (error) {
                 console.warn(

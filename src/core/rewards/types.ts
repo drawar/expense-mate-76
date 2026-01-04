@@ -64,7 +64,11 @@ export interface RewardConfig {
   /** What the monthly cap refers to: "bonus_points" (default) or "spend_amount" */
   monthlyCapType?: "bonus_points" | "spend_amount";
   monthlyMinSpend?: number;
-  monthlySpendPeriodType?: "calendar" | "statement" | "statement_month";
+  monthlySpendPeriodType?:
+    | "calendar"
+    | "statement"
+    | "statement_month"
+    | "promotional";
   /**
    * @deprecated Points currency is no longer stored per rule.
    * Use PaymentMethod.pointsCurrency instead.
@@ -73,6 +77,19 @@ export interface RewardConfig {
   pointsCurrency?: string;
   /** Optional cap group ID for sharing monthly cap across multiple rules */
   capGroupId?: string;
+  /**
+   * For promotional caps: when the cap tracking period starts.
+   * All transactions from this date until validUntil accumulate toward the same cap.
+   * Distinct from RewardRule.validFrom which controls when the rule is active.
+   */
+  promoStartDate?: Date;
+  /**
+   * Compound bonus multipliers for rules that combine multiple bonus rates.
+   * Each multiplier is calculated and rounded separately, then summed.
+   * Example: [1.5, 2.5] for a $25 transaction = round(25*1.5) + round(25*2.5) = 38 + 63 = 101
+   * Use this instead of bonusMultiplier when you need separate rounding for each component.
+   */
+  compoundBonusMultipliers?: number[];
 }
 
 export interface BonusTier {
@@ -206,6 +223,10 @@ export interface DbRewardRule {
   valid_from: string | null;
   /** Optional end date for time-limited/promotional rules (ISO string) */
   valid_until: string | null;
+  /** For promotional caps: when the cap tracking period starts (ISO date string) */
+  promo_start_date: string | null;
+  /** Compound bonus multipliers as JSON array */
+  compound_bonus_multipliers: number[] | null;
   // Legacy fields (kept for backward compatibility)
   monthly_bonus_cap?: number | null;
   min_spend?: number | null;
@@ -219,7 +240,11 @@ export interface DbRewardRule {
   updated_at: string | null;
 }
 
-export type SpendingPeriodType = "calendar" | "statement" | "statement_month";
+export type SpendingPeriodType =
+  | "calendar"
+  | "statement"
+  | "statement_month"
+  | "promotional";
 
 // Add missing CalculationMethod type alias
 export type CalculationMethod =

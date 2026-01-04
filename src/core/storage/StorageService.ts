@@ -739,14 +739,24 @@ export class StorageService {
           });
 
           // Track the bonus points if a rule was applied
-          if (result.appliedRuleId && result.monthlyCap) {
+          if (result.appliedRuleId && result.monthlyCap && result.appliedRule) {
+            const rule = result.appliedRule;
+            const capType = rule.reward.monthlyCapType || "bonus_points";
+            const valueToTrack =
+              capType === "spend_amount"
+                ? transactionData.paymentAmount || transactionData.amount
+                : bonusPoints;
+
             await bonusPointsTracker.trackBonusPointsUsage(
               result.appliedRuleId,
               transactionData.paymentMethod.id,
-              bonusPoints,
+              valueToTrack,
               result.periodType || "calendar",
               new Date(transactionData.date),
-              1 // Default statement day
+              1, // Default statement day
+              rule.reward.capGroupId,
+              capType,
+              rule.reward.promoStartDate
             );
           }
         } catch (error) {
@@ -1170,19 +1180,27 @@ export class StorageService {
     newBalance: number
   ): Promise<void> {
     try {
+      console.log(
+        `[PrepaidNotification] Starting notification for ${paymentMethod.name}`
+      );
+
       // Get the user's email from the session
       const { data: authData } = await supabase.auth.getSession();
       const userEmail = authData?.session?.user?.email;
 
       if (!userEmail) {
         console.log(
-          "No user email found, skipping prepaid balance notification"
+          "[PrepaidNotification] No user email found, skipping notification"
         );
         return;
       }
 
+      console.log(
+        `[PrepaidNotification] Sending to ${userEmail} for ${paymentMethod.name}: ${previousBalance} -> ${newBalance}`
+      );
+
       // Call the Edge Function to send the email
-      const { error } = await supabase.functions.invoke(
+      const { data, error } = await supabase.functions.invoke(
         "prepaid-balance-notification",
         {
           body: {
@@ -1193,20 +1211,21 @@ export class StorageService {
             transactionCurrency: transaction.currency,
             previousBalance,
             newBalance,
-            cardCurrency: paymentMethod.paymentCurrency || "SGD",
+            cardCurrency: paymentMethod.currency,
           },
         }
       );
 
       if (error) {
-        console.error("Error sending prepaid balance notification:", error);
+        console.error("[PrepaidNotification] Error:", error);
       } else {
         console.log(
-          `Prepaid balance notification sent for ${paymentMethod.name}: ${previousBalance} -> ${newBalance}`
+          `[PrepaidNotification] Success for ${paymentMethod.name}:`,
+          data
         );
       }
     } catch (error) {
-      console.error("Error sending prepaid balance notification:", error);
+      console.error("[PrepaidNotification] Exception:", error);
       // Don't fail the transaction if notification fails
     }
   }
@@ -1220,6 +1239,10 @@ export class StorageService {
     transaction: { merchantName: string; amount: number; currency: Currency }
   ): Promise<void> {
     try {
+      console.log(
+        `[PrepaidBalance] Checking balance for payment method ${paymentMethodId}`
+      );
+
       // Get the payment method
       const paymentMethods = await this.getPaymentMethods();
       const paymentMethod = paymentMethods.find(
@@ -1227,14 +1250,31 @@ export class StorageService {
       );
 
       // Only process prepaid cards that are active and have a total loaded value
-      if (
-        !paymentMethod ||
-        paymentMethod.type !== "prepaid_card" ||
-        !paymentMethod.active ||
-        paymentMethod.totalLoaded === undefined
-      ) {
+      if (!paymentMethod) {
+        console.log("[PrepaidBalance] Payment method not found");
         return;
       }
+
+      if (paymentMethod.type !== "prepaid_card") {
+        console.log(
+          `[PrepaidBalance] Not a prepaid card (type: ${paymentMethod.type})`
+        );
+        return;
+      }
+
+      if (!paymentMethod.active) {
+        console.log("[PrepaidBalance] Card is not active, skipping");
+        return;
+      }
+
+      if (paymentMethod.totalLoaded === undefined) {
+        console.log("[PrepaidBalance] No totalLoaded set, skipping");
+        return;
+      }
+
+      console.log(
+        `[PrepaidBalance] Processing ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}`
+      );
 
       // Get all transactions for this payment method (including the new one)
       const transactions = await this.getTransactions();

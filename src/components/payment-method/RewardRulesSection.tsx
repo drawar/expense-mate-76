@@ -135,6 +135,15 @@ function getQuickSetupConfig(
     };
   }
 
+  if (issuer.includes("mbna") && name.includes("amazon")) {
+    return {
+      type: "mbna-amazon",
+      name: "MBNA Amazon.ca Rewards",
+      description:
+        "2.5x promo (groceries/dining/Amazon, $3K cap until Apr 2026), 1.5x Amazon, 1x other",
+    };
+  }
+
   return null;
 }
 
@@ -2195,6 +2204,227 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
     }
   };
 
+  const runMBNAAmazonSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "MBNA",
+        "Amazon.ca Rewards World MasterCard"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // Amazon ecosystem merchants
+      const amazonMerchants = [
+        "Amazon",
+        "AMAZON",
+        "AMZN",
+        "Amazon.ca",
+        "Amazon.com",
+        "Prime",
+        "PRIME",
+        "Amazon Prime",
+        "Audible",
+        "AUDIBLE",
+        "Whole Foods",
+        "WHOLE FOODS",
+        "Whole Foods Market",
+      ];
+
+      // Promotional cap group ID (shared between promo rules)
+      const promoCapGroupId = "mbna-amazon-promo-2025";
+      const promoStartDate = new Date("2025-10-25");
+      const promoEndDate = new Date("2026-04-25");
+
+      // Rule 4: 2.5x Promo on Groceries & Dining (MCCs)
+      addSetupLog("Creating 2.5x Promo rule (Groceries & Dining MCCs)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2.5x Promo (Groceries & Dining)",
+        description:
+          "Earn 2.5 Amazon Rewards per $1 at grocery stores and restaurants. Valid until Apr 25, 2026 or $3,000 total spend.",
+        enabled: true,
+        priority: 4,
+        conditions: [
+          {
+            type: "mcc",
+            operation: "include",
+            values: ["5411", "5812", "5814"], // Grocery, Restaurant, Fast Food
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1.5, // Total 2.5x
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: 3000,
+          monthlyCapType: "spend_amount",
+          monthlySpendPeriodType: "promotional",
+          capGroupId: promoCapGroupId,
+          promoStartDate: promoStartDate,
+          bonusTiers: [],
+        },
+        validFrom: promoStartDate,
+        validUntil: promoEndDate,
+      });
+      addSetupLog("✅ 2.5x Promo rule created (MCCs 5411, 5812, 5814)");
+
+      // Rule 3: 2.5x Promo on Amazon Ecosystem
+      addSetupLog("Creating 2.5x Promo rule (Amazon Ecosystem)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "2.5x Promo (Amazon & Affiliates)",
+        description:
+          "Earn 2.5 Amazon Rewards per $1 at Amazon, Prime, Audible, and Whole Foods. Valid until Apr 25, 2026 or $3,000 total spend.",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: amazonMerchants,
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 1.5, // Total 2.5x
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: 3000,
+          monthlyCapType: "spend_amount",
+          monthlySpendPeriodType: "promotional",
+          capGroupId: promoCapGroupId,
+          promoStartDate: promoStartDate,
+          bonusTiers: [],
+        },
+        validFrom: promoStartDate,
+        validUntil: promoEndDate,
+      });
+      addSetupLog("✅ 2.5x Promo rule created (Amazon ecosystem)");
+
+      // Rule 2: 1.5x Permanent on Amazon Ecosystem
+      addSetupLog("Creating 1.5x Permanent rule (Amazon Ecosystem)...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1.5x Amazon & Affiliates",
+        description:
+          "Earn 1.5 Amazon Rewards per $1 at Amazon, Prime, Audible, and Whole Foods Market stores",
+        enabled: true,
+        priority: 2,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: amazonMerchants,
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0.5, // Total 1.5x
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1.5x Permanent rule created (Amazon ecosystem)");
+
+      // Rule 1: 1x Base on Everything Else
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Base Rewards",
+        description: "Earn 1 Amazon Reward point per $1 on all other purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "nearest", // Base rule rounds amount
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x Base rule created");
+
+      // Update payment method's reward currency to Amazon Rewards
+      addSetupLog("Setting reward currency to Amazon Rewards...");
+      const { data: amazonCurrency } = await supabase
+        .from("reward_currencies")
+        .select("id, display_name")
+        .eq("code", "amazon_rewards_ca")
+        .maybeSingle();
+
+      if (amazonCurrency) {
+        const { error: updateError } = await supabase
+          .from("payment_methods")
+          .update({
+            reward_currency_id: amazonCurrency.id,
+            points_currency: amazonCurrency.display_name,
+          })
+          .eq("id", paymentMethod.id);
+
+        if (updateError) {
+          addSetupLog(
+            `⚠️ Warning: Could not set reward currency: ${updateError.message}`
+          );
+        } else {
+          addSetupLog(
+            `✅ Reward currency set to ${amazonCurrency.display_name}`
+          );
+        }
+      } else {
+        addSetupLog(
+          "⚠️ Warning: Amazon Rewards currency not found in database. Please create amazon_rewards_ca currency."
+        );
+      }
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      addSetupLog(
+        "📝 Note: Promotional rules share a $3,000 total spend cap until Apr 25, 2026."
+      );
+      toast.success("MBNA Amazon.ca Rewards rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
   const handleQuickSetup = () => {
     if (!quickSetupConfig) return;
 
@@ -2216,6 +2446,9 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         break;
       case "brim-afklm":
         runBrimAFKLMSetup();
+        break;
+      case "mbna-amazon":
+        runMBNAAmazonSetup();
         break;
     }
   };

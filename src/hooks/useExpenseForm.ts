@@ -106,6 +106,7 @@ export const useExpenseForm = ({
       promoBonusPoints: defaultValues?.promoBonusPoints || "",
       basePoints: defaultValues?.basePoints || "",
       bonusPoints: defaultValues?.bonusPoints || "",
+      reimbursementAmount: defaultValues?.reimbursementAmount || "",
     },
   });
 

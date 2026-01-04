@@ -130,7 +130,8 @@ export class RuleMapper {
             ? (dbRule.monthly_spend_period_type as
                 | "calendar"
                 | "statement"
-                | "statement_month")
+                | "statement_month"
+                | "promotional")
             : undefined,
         // pointsCurrency is not stored in reward_rules table (removed in migration 20251219100000).
         // The actual points currency comes from the payment method's pointsCurrency field.
@@ -138,6 +139,11 @@ export class RuleMapper {
         // input.paymentMethod.pointsCurrency for the actual currency in calculations.
         pointsCurrency: "points",
         capGroupId: dbRule.cap_group_id || undefined,
+        promoStartDate: dbRule.promo_start_date
+          ? new Date(dbRule.promo_start_date)
+          : undefined,
+        compoundBonusMultipliers:
+          dbRule.compound_bonus_multipliers || undefined,
       },
       validFrom: dbRule.valid_from ? new Date(dbRule.valid_from) : undefined,
       validUntil: dbRule.valid_until ? new Date(dbRule.valid_until) : undefined,
@@ -200,6 +206,10 @@ export class RuleMapper {
       cap_group_id: rule.reward.capGroupId ?? null,
       valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
       valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,
+      promo_start_date: rule.reward.promoStartDate
+        ? rule.reward.promoStartDate.toISOString().split("T")[0]
+        : null,
+      compound_bonus_multipliers: rule.reward.compoundBonusMultipliers || null,
     };
   }
 }

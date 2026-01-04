@@ -10,7 +10,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { SpendingPeriodType } from "./types";
+import { SpendingPeriodType, RewardRule } from "./types";
 
 /** What type of value is being capped */
 export type CapType = "bonus_points" | "spend_amount";
@@ -43,6 +43,7 @@ export class BonusPointsTracker {
    * Queries the database for actual usage
    * If capGroupId is provided, tracks against the shared cap group instead of individual rule
    * @param capType - "bonus_points" (default) or "spend_amount"
+   * @param promoStartDate - For promotional periods, the date when cap tracking starts
    */
   public async getUsedBonusPoints(
     ruleId: string,
@@ -51,7 +52,8 @@ export class BonusPointsTracker {
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
-    capType: CapType = "bonus_points"
+    capType: CapType = "bonus_points",
+    promoStartDate?: Date
   ): Promise<number> {
     // Use capGroupId if provided, otherwise use ruleId
     // Include capType in tracking ID to separate bonus points from spend amounts
@@ -59,11 +61,16 @@ export class BonusPointsTracker {
     const trackingId =
       capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
 
+    // For promotional periods, use the promo start date for period identification
+    // This ensures all transactions in the promo period accumulate to the same record
+    const periodDate =
+      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+
     const cacheKey = this.createCacheKey(
       trackingId,
       paymentMethodId,
       periodType,
-      date,
+      periodDate,
       statementDay
     );
 
@@ -83,8 +90,10 @@ export class BonusPointsTracker {
         return 0;
       }
 
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
+      // For promotional periods, use promo start date's year/month
+      // This groups all transactions in the promotional period together
+      const year = periodDate.getFullYear();
+      const month = periodDate.getMonth() + 1;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -123,6 +132,7 @@ export class BonusPointsTracker {
    * Persists to database and updates cache
    * If capGroupId is provided, tracks against the shared cap group instead of individual rule
    * @param capType - "bonus_points" (default) or "spend_amount"
+   * @param promoStartDate - For promotional periods, the date when cap tracking starts
    */
   public async trackBonusPointsUsage(
     ruleId: string,
@@ -132,7 +142,8 @@ export class BonusPointsTracker {
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
-    capType: CapType = "bonus_points"
+    capType: CapType = "bonus_points",
+    promoStartDate?: Date
   ): Promise<void> {
     if (value <= 0) {
       return; // Nothing to track
@@ -144,6 +155,10 @@ export class BonusPointsTracker {
     const trackingId =
       capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
 
+    // For promotional periods, use the promo start date for period identification
+    const periodDate =
+      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+
     try {
       const {
         data: { session },
@@ -153,8 +168,9 @@ export class BonusPointsTracker {
         return;
       }
 
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
+      // For promotional periods, use promo start date's year/month
+      const year = periodDate.getFullYear();
+      const month = periodDate.getMonth() + 1;
 
       // Get current usage
       const currentUsage = await this.getUsedBonusPoints(
@@ -164,7 +180,8 @@ export class BonusPointsTracker {
         date,
         statementDay,
         capGroupId,
-        capType
+        capType,
+        promoStartDate
       );
 
       const newUsage = currentUsage + value;
@@ -200,7 +217,7 @@ export class BonusPointsTracker {
         trackingId,
         paymentMethodId,
         periodType,
-        date,
+        periodDate,
         statementDay
       );
       this.usageCache.set(cacheKey, newUsage);
@@ -218,6 +235,7 @@ export class BonusPointsTracker {
    * Calculate remaining value (bonus points or spend amount) available under the cap
    * If capGroupId is provided, calculates based on the shared cap group
    * @param capType - "bonus_points" (default) or "spend_amount"
+   * @param promoStartDate - For promotional periods, the date when cap tracking starts
    */
   public async getRemainingBonusPoints(
     ruleId: string,
@@ -227,7 +245,8 @@ export class BonusPointsTracker {
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
-    capType: CapType = "bonus_points"
+    capType: CapType = "bonus_points",
+    promoStartDate?: Date
   ): Promise<number> {
     const usedValue = await this.getUsedBonusPoints(
       ruleId,
@@ -236,10 +255,81 @@ export class BonusPointsTracker {
       date,
       statementDay,
       capGroupId,
-      capType
+      capType,
+      promoStartDate
     );
 
     return Math.max(0, monthlyCap - usedValue);
+  }
+
+  /**
+   * Get cap usage for multiple rules at once (for progress bar display)
+   * Groups rules by capGroupId to avoid duplicate queries for shared caps
+   * Returns a map of identifier (ruleId or capGroupId) to usage
+   */
+  public async getCapUsageForRules(
+    rules: RewardRule[],
+    paymentMethodId: string,
+    statementDay: number = 1
+  ): Promise<
+    Map<
+      string,
+      {
+        used: number;
+        cap: number;
+        capType: "bonus_points" | "spend_amount";
+        periodType: SpendingPeriodType;
+        validUntil?: Date;
+      }
+    >
+  > {
+    const result = new Map<
+      string,
+      {
+        used: number;
+        cap: number;
+        capType: "bonus_points" | "spend_amount";
+        periodType: SpendingPeriodType;
+        validUntil?: Date;
+      }
+    >();
+    const processedCapGroups = new Set<string>();
+
+    for (const rule of rules) {
+      // Skip rules without caps
+      if (!rule.reward.monthlyCap) continue;
+
+      const capGroupId = rule.reward.capGroupId;
+      const capType = rule.reward.monthlyCapType || "bonus_points";
+      const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+      const promoStartDate = rule.reward.promoStartDate;
+
+      // For shared caps, only query once per capGroupId
+      const identifier = capGroupId || rule.id;
+      if (processedCapGroups.has(identifier)) continue;
+      processedCapGroups.add(identifier);
+
+      const used = await this.getUsedBonusPoints(
+        rule.id,
+        paymentMethodId,
+        periodType,
+        new Date(),
+        statementDay,
+        capGroupId,
+        capType,
+        promoStartDate
+      );
+
+      result.set(identifier, {
+        used,
+        cap: rule.reward.monthlyCap,
+        capType,
+        periodType,
+        validUntil: rule.validUntil,
+      });
+    }
+
+    return result;
   }
 
   /**

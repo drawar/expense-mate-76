@@ -95,12 +95,17 @@ export function buildCategoryHierarchy(
   transactions.forEach((tx) => {
     const category = getEffectiveCategory(tx);
 
+    // Calculate net amount (gross - reimbursement)
+    const grossAmount = tx.amount;
+    const reimbursement = tx.reimbursementAmount || 0;
+    const netAmount = grossAmount - reimbursement;
+
     // Convert amount to display currency if specified
-    let amount = tx.amount;
+    let amount = netAmount;
     if (displayCurrency && tx.currency !== displayCurrency) {
       try {
         amount = CurrencyService.convert(
-          tx.amount,
+          netAmount,
           tx.currency as Currency,
           displayCurrency,
           tx.paymentMethod

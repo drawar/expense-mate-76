@@ -26,6 +26,7 @@ export function Dashboard() {
   const {
     transactions,
     filteredTransactions,
+    previousPeriodTransactions,
     paymentMethods,
     dashboardData,
     isLoading,
@@ -127,6 +128,7 @@ export function Dashboard() {
             currency={displayCurrency}
             scaledBudget={scaledBudget}
             timeframe={activeTab}
+            previousPeriodTransactions={previousPeriodTransactions}
           />
 
           {/* Recent Transactions */}

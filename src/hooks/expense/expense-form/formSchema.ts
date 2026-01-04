@@ -7,7 +7,7 @@ export const formSchema = z
     merchantAddress: z.string().optional(),
     isOnline: z.boolean().default(false),
     isContactless: z.boolean().default(false),
-    amount: z.coerce.number().positive("Amount must be greater than zero"),
+    amount: z.coerce.number(), // Positive check is done in superRefine to allow negative for MCC 6540
     currency: z.string().min(1, "Currency is required"),
     paymentMethodId: z.string().min(1, "Payment method is required"),
     paymentAmount: z.string().optional(),
@@ -71,6 +71,17 @@ export const formSchema = z
         },
         { message: "Please enter a valid non-negative number" }
       ),
+    reimbursementAmount: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          const num = Number(val);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: "Please enter a valid non-negative number" }
+      ),
   })
   .superRefine((data, ctx) => {
     // Validate amount field based on MCC
@@ -87,12 +98,12 @@ export const formSchema = z
           path: ["amount"],
         });
       }
-    } else if (amount < 0) {
-      // For other MCCs, negative values not allowed
+    } else if (amount <= 0) {
+      // For other MCCs, must be positive (greater than zero)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          "Amount must be positive (negative values only allowed for MCC 6540)",
+          "Amount must be greater than zero (negative values only allowed for MCC 6540)",
         path: ["amount"],
       });
     }

@@ -24,6 +24,7 @@ import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
 import { Separator } from "@/components/ui/separator";
 import { RewardRule } from "@/core/rewards/types";
 import { RewardRulesSection } from "./RewardRulesSection";
+import { CapProgressSection } from "./CapProgressSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -310,6 +311,16 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       <Separator
         style={{ backgroundColor: "var(--color-divider)", opacity: 0.4 }}
       />
+
+      {/* Cap Progress Section - only for credit cards with capped rules */}
+      {paymentMethod.type === "credit_card" &&
+        rewardRules.some((r) => r.reward.monthlyCap) && (
+          <CapProgressSection
+            paymentMethodId={paymentMethod.id}
+            rewardRules={rewardRules}
+            statementDay={paymentMethod.statementStartDay || 1}
+          />
+        )}
 
       {/* Stats Summary - Horizontal 2-column grid */}
       <div className="grid grid-cols-2 gap-3">

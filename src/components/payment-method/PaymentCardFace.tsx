@@ -36,6 +36,9 @@ const CARD_IMAGES: Record<string, string> = {
   // Brim Financial cards
   "brim financial:air france klm world elite mastercard":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/brim-financial-air-france-klm-world-elite.png",
+  // MBNA cards
+  "mbna:amazon.ca rewards world mastercard":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/mbna-amazonca-rewards-world-mc.jpeg",
 };
 
 /**

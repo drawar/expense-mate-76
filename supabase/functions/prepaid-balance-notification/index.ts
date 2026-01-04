@@ -77,89 +77,54 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .card {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 24px;
-      margin: 20px 0;
-    }
-    .card-name {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 16px;
-    }
-    .balance-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #e9ecef;
-    }
-    .balance-row:last-child {
-      border-bottom: none;
-    }
-    .label {
-      color: #6c757d;
-    }
-    .value {
-      font-weight: 500;
-    }
-    .new-balance {
-      font-size: 24px;
-      font-weight: 700;
-      color: #2d5a27;
-    }
-    .transaction {
-      color: #dc3545;
-    }
-    .merchant {
-      font-style: italic;
-      color: #6c757d;
-      font-size: 14px;
-      margin-top: 12px;
-    }
-    .footer {
-      font-size: 12px;
-      color: #6c757d;
-      margin-top: 24px;
-      text-align: center;
-    }
-  </style>
 </head>
-<body>
-  <div class="card">
-    <div class="card-name">${cardName}</div>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #333; margin: 0; padding: 20px; background-color: #ffffff;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 480px; margin: 0 auto;">
+    <tr>
+      <td style="background: #f8f9fa; border-radius: 12px; padding: 24px;">
+        <!-- Card Name -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 16px; font-weight: 600; color: #1a1a1a; padding-bottom: 16px;">
+              ${cardName}
+            </td>
+          </tr>
+        </table>
 
-    <div class="balance-row">
-      <span class="label">Previous Balance</span>
-      <span class="value">${formattedPrevBalance}</span>
-    </div>
+        <!-- Balance Rows -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size: 14px;">
+          <tr>
+            <td style="color: #6c757d; padding: 10px 0; border-bottom: 1px solid #e9ecef;">Previous Balance</td>
+            <td style="text-align: right; font-weight: 500; color: #333; padding: 10px 0; border-bottom: 1px solid #e9ecef;">${formattedPrevBalance}</td>
+          </tr>
+          <tr>
+            <td style="color: #6c757d; padding: 10px 0; border-bottom: 1px solid #e9ecef;">Transaction</td>
+            <td style="text-align: right; font-weight: 500; color: #dc3545; padding: 10px 0; border-bottom: 1px solid #e9ecef;">-${formattedTxAmount}</td>
+          </tr>
+          <tr>
+            <td style="color: #6c757d; padding: 10px 0;">New Balance</td>
+            <td style="text-align: right; font-weight: 600; color: #2d5a27; padding: 10px 0;">${formattedNewBalance}</td>
+          </tr>
+        </table>
 
-    <div class="balance-row">
-      <span class="label">Transaction</span>
-      <span class="value transaction">-${formattedTxAmount}</span>
-    </div>
+        <!-- Merchant -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 13px; font-style: italic; color: #6c757d; padding-top: 16px;">
+              at ${merchantName}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-    <div class="balance-row">
-      <span class="label">New Balance</span>
-      <span class="value new-balance">${formattedNewBalance}</span>
-    </div>
-
-    <div class="merchant">at ${merchantName}</div>
-  </div>
-
-  <div class="footer">
-    Sent by Clairo - Your expense tracking assistant
-  </div>
+    <!-- Footer -->
+    <tr>
+      <td style="font-size: 12px; color: #6c757d; text-align: center; padding-top: 24px;">
+        Sent by Clairo - Your expense tracking assistant
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `;

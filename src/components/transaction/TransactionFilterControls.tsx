@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -58,7 +59,9 @@ export const TransactionFilterControls: React.FC<
         if (value && typeof value === "object" && "from" in value) {
           return value.from !== null || value.to !== null;
         }
-        return typeof value === "string" ? value.trim() !== "" : value !== null;
+        if (typeof value === "boolean") return value === true;
+        if (typeof value === "string") return value.trim() !== "";
+        return value !== null && value !== undefined;
       });
     } catch (error) {
       console.warn("Error checking active filters:", error);
@@ -216,6 +219,23 @@ export const TransactionFilterControls: React.FC<
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          {/* Additional Filters */}
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id="hasReimbursement"
+              checked={safeFilters.hasReimbursement || false}
+              onCheckedChange={(checked) =>
+                updateFilter("hasReimbursement", checked ? true : undefined)
+              }
+            />
+            <label
+              htmlFor="hasReimbursement"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Has reimbursement
+            </label>
           </div>
         </div>
       </CardContent>

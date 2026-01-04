@@ -17,6 +17,7 @@ export interface FilterOptions {
   merchants: string[];
   categories: string[];
   currencies: string[];
+  hasReimbursement?: boolean;
   // Add these to match what TransactionFilters is expecting
   merchantName?: string;
   paymentMethodId?: string;
@@ -112,6 +113,8 @@ export function useTransactionList() {
       activeFiltersList.push("currencies");
     if (filterOptions.dateRange.from || filterOptions.dateRange.to)
       activeFiltersList.push("dateRange");
+    if (filterOptions.hasReimbursement)
+      activeFiltersList.push("hasReimbursement");
     if (searchQuery) activeFiltersList.push("search");
 
     return activeFiltersList;
@@ -183,6 +186,13 @@ export function useTransactionList() {
       });
     }
 
+    // Apply reimbursement filter
+    if (filterOptions.hasReimbursement) {
+      filtered = filtered.filter(
+        (tx) => tx.reimbursementAmount && tx.reimbursementAmount > 0
+      );
+    }
+
     // Apply sorting
     return [...filtered].sort((a, b) => {
       switch (sortOption) {
@@ -219,6 +229,7 @@ export function useTransactionList() {
       merchants: [],
       categories: [],
       currencies: [],
+      hasReimbursement: undefined,
     });
     setSearchQuery("");
     setSortOption("date-desc");
