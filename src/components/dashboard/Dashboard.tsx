@@ -129,6 +129,7 @@ export function Dashboard() {
             scaledBudget={scaledBudget}
             timeframe={activeTab}
             previousPeriodTransactions={previousPeriodTransactions}
+            allTransactions={transactions}
           />
 
           {/* Recent Transactions */}

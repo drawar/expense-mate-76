@@ -22,6 +22,8 @@ interface InsightsGridProps {
   scaledBudget?: number;
   timeframe?: TimeframeTab;
   previousPeriodTransactions?: Transaction[];
+  /** All transactions (unfiltered) - used for forecast historical analysis */
+  allTransactions?: Transaction[];
 }
 
 /**
@@ -34,6 +36,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   scaledBudget = 0,
   timeframe = "thisMonth",
   previousPeriodTransactions = [],
+  allTransactions = [],
 }) => {
   // State for category drill-down
   const [drilldownOpen, setDrilldownOpen] = useState(false);
@@ -90,6 +93,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Spending Trends Card */}
         <SpendingTrendCard
           transactions={filteredTransactions}
+          allTransactions={allTransactions}
           previousPeriodTransactions={previousPeriodTransactions}
           currency={currency}
           className={commonCardClass}

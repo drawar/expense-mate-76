@@ -4,4 +4,5 @@ export * from "./metricsUtils";
 export * from "./filterUtils";
 export * from "./constants";
 export * from "./categoryHierarchy";
+export * from "./forecastChartUtils";
 export * from "@/utils/dashboard/types";
