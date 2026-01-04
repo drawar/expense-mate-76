@@ -149,10 +149,17 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     timeframe === "thisMonth" && selectedPeriod === "week" && forecastChartData;
 
   // Prepare chart data based on mode
+  // Only show forecast for the next 7 days from today
   const displayChartData = useMemo(() => {
     if (!shouldShowForecast || !forecastChartData) {
       return chartResult?.data || [];
     }
+
+    // Calculate the cutoff date (today + 7 days)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cutoffDate = new Date(today);
+    cutoffDate.setDate(cutoffDate.getDate() + 7);
 
     // For weekly aggregation
     if (selectedPeriod === "month") {
@@ -171,19 +178,42 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       }));
     }
 
-    // Daily data
-    return forecastChartData.data.map((item) => ({
-      period: item.period,
-      amount:
-        displayMode === "cumulative" ? item.cumulativeAmount : item.amount,
-      forecastAmount:
-        displayMode === "cumulative"
-          ? item.cumulativeForecast
-          : item.forecastAmount,
-      isProjected: item.isProjected,
-      variance: item.variance,
-      originalKey: item.originalKey,
-    }));
+    // Daily data - filter to only show next 7 days of forecast
+    return forecastChartData.data
+      .filter((item) => {
+        // Always show historical/actual data
+        if (!item.isProjected) return true;
+
+        // For projected data, only show next 7 days
+        // Parse the date from originalKey (format: "YYYY-MM-DD" or day number)
+        const itemDate = new Date(item.originalKey);
+        if (isNaN(itemDate.getTime())) {
+          // If originalKey is just a day number, construct date from current month
+          const dayNum = parseInt(item.originalKey, 10);
+          if (!isNaN(dayNum)) {
+            const dateFromDay = new Date(
+              today.getFullYear(),
+              today.getMonth(),
+              dayNum
+            );
+            return dateFromDay <= cutoffDate;
+          }
+          return true;
+        }
+        return itemDate <= cutoffDate;
+      })
+      .map((item) => ({
+        period: item.period,
+        amount:
+          displayMode === "cumulative" ? item.cumulativeAmount : item.amount,
+        forecastAmount:
+          displayMode === "cumulative"
+            ? item.cumulativeForecast
+            : item.forecastAmount,
+        isProjected: item.isProjected,
+        variance: item.variance,
+        originalKey: item.originalKey,
+      }));
   }, [
     shouldShowForecast,
     forecastChartData,
@@ -195,6 +225,34 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   // Extract data from chart result (for non-forecast scenarios)
   const chartData = chartResult?.data || [];
   const average = chartResult?.average || 0;
+
+  // Calculate forecast average for the next 7 days only
+  const next7DaysForecastAvg = useMemo(() => {
+    if (!forecastChartData?.data) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cutoffDate = new Date(today);
+    cutoffDate.setDate(cutoffDate.getDate() + 7);
+
+    // Filter to only projected days within the next 7 days
+    const next7DaysData = forecastChartData.data.filter((item) => {
+      if (!item.isProjected) return false;
+
+      const itemDate = new Date(item.originalKey);
+      if (isNaN(itemDate.getTime())) return false;
+
+      return itemDate >= today && itemDate <= cutoffDate;
+    });
+
+    if (next7DaysData.length === 0) return 0;
+
+    const totalForecast = next7DaysData.reduce(
+      (sum, item) => sum + item.forecastAmount,
+      0
+    );
+    return totalForecast / next7DaysData.length;
+  }, [forecastChartData]);
 
   // Period options with labels
   const periodOptions: { value: TrendPeriod; label: string }[] = [
@@ -270,15 +328,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       <div className="text-right">
         <p className="text-sm text-muted-foreground">
           {shouldShowForecast
-            ? "Forecast avg"
+            ? "Next 7 days avg"
             : `${getPeriodLabel(selectedPeriod)} avg`}
         </p>
         <p className="font-medium mt-1">
-          {formatCurrency(
-            shouldShowForecast && forecast
-              ? forecast.patterns.dailyAverage
-              : average
-          )}
+          {formatCurrency(shouldShowForecast ? next7DaysForecastAvg : average)}
         </p>
       </div>
     </div>
