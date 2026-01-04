@@ -100,7 +100,11 @@ export function useForecast(
     const today = startOfDay(new Date());
 
     const data = forecast.dailyForecasts.map((day) => {
-      const date = new Date(day.date);
+      // Parse YYYY-MM-DD as local date, not UTC
+      // new Date("2026-01-03") interprets as UTC midnight, which becomes
+      // the previous day in Pacific time. Instead, parse the parts.
+      const [year, month, dayNum] = day.date.split("-").map(Number);
+      const date = new Date(year, month - 1, dayNum); // month is 0-indexed
       const isPast =
         isBefore(date, today) || day.date === format(today, "yyyy-MM-dd");
 
