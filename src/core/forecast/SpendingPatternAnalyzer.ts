@@ -2,6 +2,7 @@
 import { Transaction } from "@/types";
 import { SpendingPattern, HolidayConfig } from "./types";
 import { HOLIDAYS, DEFAULT_DAY_OF_WEEK_FACTORS } from "./constants";
+import { format } from "date-fns";
 
 /**
  * Analyzes historical transactions to extract spending patterns
@@ -57,7 +58,7 @@ export class SpendingPatternAnalyzer {
 
     transactions.forEach((tx) => {
       const date = new Date(tx.date);
-      const dateKey = tx.date.substring(0, 10); // YYYY-MM-DD
+      const dateKey = format(date, "yyyy-MM-dd"); // Use local date
       const dayOfWeek = date.getDay();
       const amount = this.getAmount(tx);
 
@@ -116,7 +117,7 @@ export class SpendingPatternAnalyzer {
 
     transactions.forEach((tx) => {
       const date = new Date(tx.date);
-      const dateKey = tx.date.substring(0, 10);
+      const dateKey = format(date, "yyyy-MM-dd"); // Use local date
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const amount = this.getAmount(tx);
@@ -164,7 +165,7 @@ export class SpendingPatternAnalyzer {
 
     transactions.forEach((tx) => {
       const date = new Date(tx.date);
-      const dateKey = tx.date.substring(0, 10);
+      const dateKey = format(date, "yyyy-MM-dd"); // Use local date
       const amount = this.getAmount(tx);
 
       const holiday = this.getHolidayForDate(date);
@@ -252,7 +253,7 @@ export class SpendingPatternAnalyzer {
     const dailyTotals = new Map<string, number>();
 
     transactions.forEach((tx) => {
-      const dateKey = tx.date.substring(0, 10);
+      const dateKey = format(new Date(tx.date), "yyyy-MM-dd"); // Use local date
       const amount = this.getAmount(tx);
       const existing = dailyTotals.get(dateKey) || 0;
       dailyTotals.set(dateKey, existing + amount);

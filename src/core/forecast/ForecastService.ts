@@ -443,7 +443,8 @@ export class ForecastService {
     const map = new Map<string, number>();
 
     transactions.forEach((tx) => {
-      const dateKey = tx.date.substring(0, 10);
+      // Use local date instead of UTC substring to respect user's timezone
+      const dateKey = format(new Date(tx.date), "yyyy-MM-dd");
       const amount = this.getAmount(tx);
       const existing = map.get(dateKey) || 0;
       map.set(dateKey, existing + amount);
