@@ -28,6 +28,8 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
   "membership rewards":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
+  "membership rewards points (ca)":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
   "hsbc rewards":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
   "hsbc rewards points":
