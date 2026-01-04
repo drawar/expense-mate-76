@@ -75,9 +75,10 @@ export class StorageService {
       console.log(
         "StorageService.getPaymentMethods: Querying Supabase for active payment methods..."
       );
+      // Join with card_catalog to get default_image_url as fallback
       const { data, error } = await supabase
         .from("payment_methods")
-        .select("*")
+        .select("*, card_catalog(default_image_url)")
         .eq("is_active", true)
         .order("name");
 
@@ -113,32 +114,40 @@ export class StorageService {
         return local;
       }
 
-      const mappedData = data.map((row) => ({
-        id: row.id,
-        name: row.name,
-        type: row.type as PaymentMethod["type"],
-        issuer: row.issuer || "",
-        lastFourDigits: row.last_four_digits || undefined,
-        currency: row.currency as Currency,
-        icon: row.icon || undefined,
-        color: row.color || undefined,
-        imageUrl: row.image_url || undefined,
-        pointsCurrency: row.points_currency || undefined,
-        rewardCurrencyId: row.reward_currency_id || undefined,
-        active: row.is_active ?? true,
-        rewardRules: (row.reward_rules as unknown[]) || [],
-        selectedCategories: Array.isArray(row.selected_categories)
-          ? (row.selected_categories as string[])
-          : [],
-        statementStartDay: row.statement_start_day ?? undefined,
-        isMonthlyStatement: row.is_monthly_statement ?? undefined,
-        conversionRate:
-          (row.conversion_rate as Record<string, number>) || undefined,
-        totalLoaded: row.total_loaded ?? undefined,
-        // Card catalog linkage
-        cardCatalogId: row.card_catalog_id || undefined,
-        nickname: row.nickname || undefined,
-      }));
+      const mappedData = data.map((row) => {
+        // Get catalog image as fallback (row.card_catalog is the joined data)
+        const catalogImageUrl = (
+          row.card_catalog as { default_image_url?: string } | null
+        )?.default_image_url;
+
+        return {
+          id: row.id,
+          name: row.name,
+          type: row.type as PaymentMethod["type"],
+          issuer: row.issuer || "",
+          lastFourDigits: row.last_four_digits || undefined,
+          currency: row.currency as Currency,
+          icon: row.icon || undefined,
+          color: row.color || undefined,
+          // Use payment method's image_url first, then fall back to catalog's default_image_url
+          imageUrl: row.image_url || catalogImageUrl || undefined,
+          pointsCurrency: row.points_currency || undefined,
+          rewardCurrencyId: row.reward_currency_id || undefined,
+          active: row.is_active ?? true,
+          rewardRules: (row.reward_rules as unknown[]) || [],
+          selectedCategories: Array.isArray(row.selected_categories)
+            ? (row.selected_categories as string[])
+            : [],
+          statementStartDay: row.statement_start_day ?? undefined,
+          isMonthlyStatement: row.is_monthly_statement ?? undefined,
+          conversionRate:
+            (row.conversion_rate as Record<string, number>) || undefined,
+          totalLoaded: row.total_loaded ?? undefined,
+          // Card catalog linkage
+          cardCatalogId: row.card_catalog_id || undefined,
+          nickname: row.nickname || undefined,
+        };
+      });
 
       console.log(
         "StorageService.getPaymentMethods: Returning",
@@ -723,6 +732,18 @@ export class StorageService {
             "@/core/rewards/BonusPointsTracker"
           );
 
+          // Debug: Log input for cap tracking calculation
+          console.log("🔵 Cap Tracking - calculateRewards input:", {
+            paymentMethodId: transactionData.paymentMethod.id,
+            paymentMethodName: transactionData.paymentMethod.name,
+            cardCatalogId: transactionData.paymentMethod.cardCatalogId,
+            mcc: transactionData.merchant.mcc?.code,
+            merchantName: transactionData.merchant.name,
+            isOnline: transactionData.merchant.isOnline,
+            isContactless: transactionData.isContactless,
+            date: transactionData.date,
+          });
+
           // Calculate rewards to get the applied rule
           const result = await rewardService.calculateRewards({
             amount: transactionData.amount,
@@ -738,8 +759,20 @@ export class StorageService {
             date: new Date(transactionData.date),
           });
 
+          // Debug: Log the calculateRewards result for tracking
+          console.log("🔵 Cap Tracking - calculateRewards result:", {
+            appliedRuleId: result.appliedRuleId,
+            monthlyCap: result.monthlyCap,
+            hasAppliedRule: !!result.appliedRule,
+            appliedRuleName: result.appliedRule?.name,
+            bonusPoints: result.bonusPoints,
+            totalPoints: result.totalPoints,
+            periodType: result.periodType,
+          });
+
           // Track the bonus points if a rule was applied
           if (result.appliedRuleId && result.monthlyCap && result.appliedRule) {
+            console.log("🟢 Cap Tracking - Condition met, will track usage");
             const rule = result.appliedRule;
             const capType = rule.reward.monthlyCapType || "bonus_points";
             const valueToTrack =
@@ -747,17 +780,31 @@ export class StorageService {
                 ? transactionData.paymentAmount || transactionData.amount
                 : bonusPoints;
 
+            // Get the payment method's statement day for statement_month period tracking
+            const paymentMethods = await this.getPaymentMethods();
+            const paymentMethod = paymentMethods.find(
+              (pm) => pm.id === transactionData.paymentMethod.id
+            );
+            const statementDay = paymentMethod?.statementStartDay ?? 1;
+            console.log("🔵 Cap Tracking - Using statementDay:", statementDay);
+
             await bonusPointsTracker.trackBonusPointsUsage(
               result.appliedRuleId,
               transactionData.paymentMethod.id,
               valueToTrack,
               result.periodType || "calendar",
               new Date(transactionData.date),
-              1, // Default statement day
+              statementDay,
               rule.reward.capGroupId,
               capType,
               rule.reward.promoStartDate
             );
+          } else {
+            console.log("🟡 Cap Tracking - Skipping because:", {
+              hasAppliedRuleId: !!result.appliedRuleId,
+              hasMonthlyCap: !!result.monthlyCap,
+              hasAppliedRule: !!result.appliedRule,
+            });
           }
         } catch (error) {
           console.error("Error tracking bonus points:", error);
@@ -992,6 +1039,18 @@ export class StorageService {
     }
 
     try {
+      // First, fetch the transaction to get its details for cap tracking adjustment
+      const { data: txData, error: fetchError } = await supabase
+        .from("transactions")
+        .select("*, payment_methods(*, reward_rules)")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching transaction for delete:", fetchError);
+      }
+
+      // Soft delete the transaction
       const { error } = await supabase
         .from("transactions")
         .update({
@@ -1003,6 +1062,78 @@ export class StorageService {
       if (error) {
         console.error("Supabase error deleting transaction:", error);
         return this.deleteTransactionFromLocalStorage(id);
+      }
+
+      // Decrement bonus points tracking if the transaction had tracked bonus points
+      if (txData && txData.bonus_points > 0) {
+        try {
+          const { bonusPointsTracker } = await import(
+            "@/core/rewards/BonusPointsTracker"
+          );
+
+          // Get the payment method's reward rules to find the applied rule
+          const paymentMethod = txData.payment_methods as {
+            id: string;
+            statement_start_day?: number;
+            reward_rules?: unknown[];
+          } | null;
+
+          if (paymentMethod?.reward_rules) {
+            // Find the rule that matches the transaction's characteristics
+            // We need to check each rule with a cap and decrement appropriately
+            const rules = paymentMethod.reward_rules as Array<{
+              id: string;
+              name: string;
+              reward: {
+                monthlyCap?: number;
+                monthlyCapType?: "bonus_points" | "spend_amount";
+                monthlySpendPeriodType?: string;
+                capGroupId?: string;
+                promoStartDate?: string;
+              };
+            }>;
+
+            for (const rule of rules) {
+              if (!rule.reward?.monthlyCap) continue;
+
+              const capType = rule.reward.monthlyCapType || "bonus_points";
+              const periodType = (rule.reward.monthlySpendPeriodType ||
+                "calendar") as
+                | "calendar"
+                | "statement"
+                | "statement_month"
+                | "promotional";
+              const statementDay = paymentMethod.statement_start_day ?? 1;
+              const promoStartDate = rule.reward.promoStartDate
+                ? new Date(rule.reward.promoStartDate)
+                : undefined;
+
+              // Determine value to decrement based on cap type
+              const valueToDecrement =
+                capType === "spend_amount"
+                  ? txData.payment_amount || txData.amount
+                  : txData.bonus_points;
+
+              await bonusPointsTracker.decrementBonusPointsUsage(
+                rule.id,
+                paymentMethod.id,
+                valueToDecrement,
+                periodType,
+                new Date(txData.date),
+                statementDay,
+                rule.reward.capGroupId,
+                capType,
+                promoStartDate
+              );
+            }
+          }
+        } catch (trackingError) {
+          console.error(
+            "Error decrementing bonus points tracking:",
+            trackingError
+          );
+          // Don't fail the delete if tracking update fails
+        }
       }
 
       return true;

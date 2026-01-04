@@ -77,8 +77,10 @@ export class BonusPointsTracker {
     // Check cache first
     const cached = this.usageCache.get(cacheKey);
     if (cached !== undefined) {
+      console.log("🔶 BonusPointsTracker cache HIT:", { cacheKey, cached });
       return cached;
     }
+    console.log("🔶 BonusPointsTracker cache MISS:", { cacheKey });
 
     // Query database
     try {
@@ -87,13 +89,25 @@ export class BonusPointsTracker {
       } = await supabase.auth.getSession();
       if (!session?.user) {
         // No user logged in, return 0
+        console.log("🔴 BonusPointsTracker: No session, returning 0");
         return 0;
       }
 
-      // For promotional periods, use promo start date's year/month
-      // This groups all transactions in the promotional period together
+      // Use the date's year/month for period identification
+      // Each unique (year, month, statement_day) combination is a separate period
+      // When a new period starts, there's no record yet, so usage returns 0 (auto-reset)
       const year = periodDate.getFullYear();
       const month = periodDate.getMonth() + 1;
+
+      console.log("🔵 BonusPointsTracker query:", {
+        userId: session.user.id,
+        trackingId,
+        paymentMethodId,
+        periodType,
+        year,
+        month,
+        statementDay,
+      });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -109,12 +123,14 @@ export class BonusPointsTracker {
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching bonus points usage:", error);
+        console.error("🔴 BonusPointsTracker error:", error);
         return 0;
       }
 
       const usedPoints =
         (data as { used_bonus_points?: number } | null)?.used_bonus_points || 0;
+
+      console.log("🟢 BonusPointsTracker result:", { data, usedPoints });
 
       // Cache the result
       this.usageCache.set(cacheKey, usedPoints);
@@ -168,7 +184,7 @@ export class BonusPointsTracker {
         return;
       }
 
-      // For promotional periods, use promo start date's year/month
+      // Use the date's year/month for period identification
       const year = periodDate.getFullYear();
       const month = periodDate.getMonth() + 1;
 
@@ -228,6 +244,108 @@ export class BonusPointsTracker {
       );
     } catch (error) {
       console.error("Error in trackBonusPointsUsage:", error);
+    }
+  }
+
+  /**
+   * Decrement usage (bonus points or spend amount) when a transaction is deleted
+   * This is the reverse of trackBonusPointsUsage
+   * @param capType - "bonus_points" (default) or "spend_amount"
+   * @param promoStartDate - For promotional periods, the date when cap tracking starts
+   */
+  public async decrementBonusPointsUsage(
+    ruleId: string,
+    paymentMethodId: string,
+    value: number,
+    periodType: SpendingPeriodType = "calendar",
+    date: Date = new Date(),
+    statementDay: number = 1,
+    capGroupId?: string,
+    capType: CapType = "bonus_points",
+    promoStartDate?: Date
+  ): Promise<void> {
+    if (value <= 0) {
+      return; // Nothing to decrement
+    }
+
+    // Use capGroupId if provided, otherwise use ruleId
+    const baseTrackingId = capGroupId || ruleId;
+    const trackingId =
+      capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
+
+    // For promotional periods, use the promo start date for period identification
+    const periodDate =
+      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.warn("Cannot decrement bonus points: user not authenticated");
+        return;
+      }
+
+      // Use the date's year/month for period identification
+      const year = periodDate.getFullYear();
+      const month = periodDate.getMonth() + 1;
+
+      // Get current usage
+      const currentUsage = await this.getUsedBonusPoints(
+        ruleId,
+        paymentMethodId,
+        periodType,
+        date,
+        statementDay,
+        capGroupId,
+        capType,
+        promoStartDate
+      );
+
+      const newUsage = Math.max(0, currentUsage - value);
+
+      // Update database
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("bonus_points_tracking")
+        .upsert(
+          {
+            user_id: session.user.id,
+            rule_id: trackingId,
+            payment_method_id: paymentMethodId,
+            period_type: periodType,
+            period_year: year,
+            period_month: month,
+            statement_day: statementDay,
+            used_bonus_points: newUsage,
+          },
+          {
+            onConflict:
+              "user_id,rule_id,payment_method_id,period_type,period_year,period_month,statement_day",
+          }
+        );
+
+      if (error) {
+        console.error("Error decrementing bonus points usage:", error);
+        return;
+      }
+
+      // Update cache
+      const cacheKey = this.createCacheKey(
+        trackingId,
+        paymentMethodId,
+        periodType,
+        periodDate,
+        statementDay
+      );
+      this.usageCache.set(cacheKey, newUsage);
+
+      const valueType = capType === "spend_amount" ? "spend" : "bonus points";
+      console.log(
+        `✅ Decremented ${value} ${valueType} for ${capGroupId ? `cap group ${capGroupId}` : `rule ${ruleId}`}. New total: ${newUsage}`
+      );
+    } catch (error) {
+      console.error("Error in decrementBonusPointsUsage:", error);
     }
   }
 
@@ -295,6 +413,8 @@ export class BonusPointsTracker {
     >();
     const processedCapGroups = new Set<string>();
 
+    console.log("🔵 getCapUsageForRules called with", rules.length, "rules");
+
     for (const rule of rules) {
       // Skip rules without caps
       if (!rule.reward.monthlyCap) continue;
@@ -304,17 +424,33 @@ export class BonusPointsTracker {
       const periodType = rule.reward.monthlySpendPeriodType || "calendar";
       const promoStartDate = rule.reward.promoStartDate;
 
+      console.log("🔵 Processing rule:", {
+        id: rule.id,
+        name: rule.name,
+        capGroupId,
+        capType,
+        periodType,
+        promoStartDate: promoStartDate?.toISOString(),
+        monthlyCap: rule.reward.monthlyCap,
+      });
+
       // For shared caps, only query once per capGroupId
       const identifier = capGroupId || rule.id;
       if (processedCapGroups.has(identifier)) continue;
       processedCapGroups.add(identifier);
+
+      // For promotional periods, always use statementDay=1 since promotional caps
+      // don't follow statement cycles - they track from promo start to promo end.
+      // This matches the hardcoded value used in StorageService.addTransaction.
+      const effectiveStatementDay =
+        periodType === "promotional" ? 1 : statementDay;
 
       const used = await this.getUsedBonusPoints(
         rule.id,
         paymentMethodId,
         periodType,
         new Date(),
-        statementDay,
+        effectiveStatementDay,
         capGroupId,
         capType,
         promoStartDate

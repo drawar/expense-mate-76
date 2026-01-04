@@ -7,6 +7,8 @@ interface CapProgressSectionProps {
   paymentMethodId: string;
   rewardRules: RewardRule[];
   statementDay?: number;
+  /** Optional transaction count that triggers a refresh when changed */
+  transactionCount?: number;
 }
 
 interface CapUsageInfo {
@@ -28,6 +30,7 @@ export function CapProgressSection({
   paymentMethodId,
   rewardRules,
   statementDay = 1,
+  transactionCount,
 }: CapProgressSectionProps) {
   const [capUsages, setCapUsages] = useState<CapUsageInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +39,10 @@ export function CapProgressSection({
     const fetchCapUsage = async () => {
       setLoading(true);
       try {
+        // Clear cache for this payment method to ensure fresh data from database
+        // This is important because cap usage may have been updated by a recent transaction
+        bonusPointsTracker.clearCacheForPaymentMethod(paymentMethodId);
+
         const usageMap = await bonusPointsTracker.getCapUsageForRules(
           rewardRules,
           paymentMethodId,
@@ -45,6 +52,8 @@ export function CapProgressSection({
         // Build the cap usages array, grouping rules by capGroupId
         const processedCapGroups = new Set<string>();
         const usages: CapUsageInfo[] = [];
+
+        const now = new Date();
 
         for (const rule of rewardRules) {
           if (!rule.reward.monthlyCap) continue;
@@ -58,6 +67,15 @@ export function CapProgressSection({
 
           const usage = usageMap.get(identifier);
           if (!usage) continue;
+
+          // Skip expired promotional trackers
+          if (
+            usage.periodType === "promotional" &&
+            usage.validUntil &&
+            usage.validUntil < now
+          ) {
+            continue;
+          }
 
           const percentage = Math.min(100, (usage.used / usage.cap) * 100);
 
@@ -102,7 +120,7 @@ export function CapProgressSection({
       setCapUsages([]);
       setLoading(false);
     }
-  }, [paymentMethodId, rewardRules, statementDay]);
+  }, [paymentMethodId, rewardRules, statementDay, transactionCount]);
 
   // Don't render if no capped rules
   if (capUsages.length === 0 && !loading) {
