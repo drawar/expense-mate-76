@@ -25,7 +25,6 @@ import {
 import {
   FORECAST_CHART_COLORS,
   getVarianceIndicator,
-  calculateBudgetProgress,
 } from "@/utils/dashboard/forecastChartUtils";
 import {
   LineChart,
@@ -112,11 +111,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const {
     forecast,
     chartData: forecastChartData,
-    hasEnoughHistory,
-    projectedTotal,
     daysRemaining,
-    monthName,
-    profileDescription,
   } = useForecast(
     allTransactions.length > 0 ? allTransactions : transactions,
     currency,
@@ -448,16 +443,6 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     return null;
   };
 
-  // Calculate budget progress for display
-  const budgetProgress = useMemo(() => {
-    if (!forecast?.budget) return null;
-    const currentSpending =
-      forecastChartData?.data
-        .filter((d) => !d.isProjected)
-        .reduce((sum, d) => sum + d.amount, 0) || 0;
-    return calculateBudgetProgress(currentSpending, forecast.budget);
-  }, [forecast, forecastChartData]);
-
   return (
     <Card
       title="Spending Trends"
@@ -610,62 +595,57 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         </div>
       )}
 
-      {/* Smart spending pace indicator */}
-      {shouldShowForecast && forecast && (
+      {/* Cumulative actual vs forecast comparison */}
+      {shouldShowForecast && forecast && forecastChartData && (
         <div className="mt-3 pt-3 border-t border-border/50">
-          <div className="flex items-center justify-between text-xs">
-            <div>
-              <span className="text-muted-foreground">Projected: </span>
-              <span className="font-medium text-foreground">
-                {formatCurrency(projectedTotal)}
-              </span>
-              <span className="text-muted-foreground">
-                {" "}
-                by end of {monthName}
-              </span>
-            </div>
-            <span className="text-muted-foreground">
-              {daysRemaining} days left
-            </span>
-          </div>
+          {(() => {
+            // Find the latest actual (non-projected) data point
+            const latestActual = [...forecastChartData.data]
+              .filter((d) => !d.isProjected && d.cumulativeAmount > 0)
+              .pop();
 
-          {/* Budget comparison */}
-          {forecast.budget && budgetProgress && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-muted-foreground">vs Budget</span>
-                <span
-                  className={
-                    budgetProgress.status === "over-budget"
-                      ? "text-destructive"
-                      : budgetProgress.status === "warning"
-                        ? "text-warning"
-                        : "text-success"
-                  }
-                >
-                  {forecast.variance && forecast.variance > 0
-                    ? `+${formatCurrency(forecast.variance)} over`
-                    : forecast.variance && forecast.variance < 0
-                      ? `${formatCurrency(Math.abs(forecast.variance))} under`
-                      : "On track"}
+            if (!latestActual) return null;
+
+            const cumulativeActual = latestActual.cumulativeAmount;
+            const cumulativeForecast = latestActual.cumulativeForecast;
+            const difference = cumulativeActual - cumulativeForecast;
+            const isOver = difference > 0;
+            const isOnTrack = Math.abs(difference) < 1; // Within $1 is considered on track
+
+            return (
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                  {isOnTrack ? (
+                    <>
+                      <span className="text-success">●</span>
+                      <span className="text-muted-foreground">
+                        On track with forecast
+                      </span>
+                    </>
+                  ) : isOver ? (
+                    <>
+                      <TrendingUpIcon className="h-3.5 w-3.5 text-destructive" />
+                      <span className="text-destructive font-medium">
+                        {formatCurrency(Math.abs(difference))} over
+                      </span>
+                      <span className="text-muted-foreground">forecast</span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingDownIcon className="h-3.5 w-3.5 text-success" />
+                      <span className="text-success font-medium">
+                        {formatCurrency(Math.abs(difference))} under
+                      </span>
+                      <span className="text-muted-foreground">forecast</span>
+                    </>
+                  )}
+                </div>
+                <span className="text-muted-foreground">
+                  {daysRemaining} days left
                 </span>
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    budgetProgress.status === "over-budget"
-                      ? "bg-destructive"
-                      : budgetProgress.status === "warning"
-                        ? "bg-warning"
-                        : "bg-success"
-                  }`}
-                  style={{
-                    width: `${Math.min(100, budgetProgress.percentage)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* First month disclaimer */}
           {forecast.isFirstMonth && (
