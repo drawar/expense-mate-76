@@ -9,7 +9,6 @@ import {
   CheckCircleIcon,
   InfoIcon,
   ChevronRightIcon,
-  SparklesIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -187,26 +186,9 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   const displayedInsights = showAll ? insights : insights.slice(0, maxInsights);
   const hasMore = insights.length > maxInsights;
 
-  // Empty state
+  // Hide the card entirely when there are no insights
   if (!isLoading && insights.length === 0) {
-    return (
-      <Card className={className}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <LightbulbIcon className="h-5 w-5 text-primary" />
-            Smart Insights
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <SparklesIcon className="h-10 w-10 text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              No insights yet. Keep tracking your expenses!
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (
