@@ -1,5 +1,6 @@
 // components/dashboard/filters/DisplayCurrencySelect.tsx
 import React from "react";
+import "flag-icons/css/flag-icons.min.css";
 import {
   Select,
   SelectContent,
@@ -10,22 +11,22 @@ import {
 import { CurrencyService } from "@/core/currency";
 import { Currency } from "@/types";
 
-// Currency to flag emoji mapping
-const currencyFlags: Record<string, string> = {
-  CAD: "🇨🇦",
-  USD: "🇺🇸",
-  SGD: "🇸🇬",
-  EUR: "🇪🇺",
-  GBP: "🇬🇧",
-  JPY: "🇯🇵",
-  AUD: "🇦🇺",
-  CNY: "🇨🇳",
-  INR: "🇮🇳",
-  TWD: "🇹🇼",
-  VND: "🇻🇳",
-  IDR: "🇮🇩",
-  THB: "🇹🇭",
-  MYR: "🇲🇾",
+// Currency to ISO 3166-1-alpha-2 country code mapping (lowercase)
+const currencyToCountry: Record<string, string> = {
+  CAD: "ca",
+  USD: "us",
+  SGD: "sg",
+  EUR: "eu",
+  GBP: "gb",
+  JPY: "jp",
+  AUD: "au",
+  CNY: "cn",
+  INR: "in",
+  TWD: "tw",
+  VND: "vn",
+  IDR: "id",
+  THB: "th",
+  MYR: "my",
 };
 
 export interface DisplayCurrencySelectProps {
@@ -53,7 +54,11 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
         <SelectTrigger className="w-full h-9 text-sm bg-transparent border-none">
           <SelectValue>
             <span className="flex items-center gap-1.5">
-              <span>{currencyFlags[value] || "💰"}</span>
+              {currencyToCountry[value] ? (
+                <span className={`fi fi-${currencyToCountry[value]}`} />
+              ) : (
+                <span>💰</span>
+              )}
               <span>{value}</span>
             </span>
           </SelectValue>
@@ -62,7 +67,13 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
           {currencyOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               <span className="flex items-center gap-2">
-                <span>{currencyFlags[option.value] || "💰"}</span>
+                {currencyToCountry[option.value] ? (
+                  <span
+                    className={`fi fi-${currencyToCountry[option.value]}`}
+                  />
+                ) : (
+                  <span>💰</span>
+                )}
                 <span>{option.value}</span>
               </span>
             </SelectItem>
