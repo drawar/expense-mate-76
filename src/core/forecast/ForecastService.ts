@@ -19,6 +19,7 @@ import {
   DATA_CONFIDENCE_LEVELS,
   CONFIDENCE_WEIGHTS,
 } from "./constants";
+import { CurrencyService } from "@/core/currency";
 import {
   startOfMonth,
   endOfMonth,
@@ -193,8 +194,11 @@ export class ForecastService {
     const monthEnd = endOfMonth(targetDate);
     const today = startOfDay(new Date());
 
-    // Build daily actual spending map
-    const actualByDay = this.buildActualSpendingMap(currentMonthTransactions);
+    // Build daily actual spending map (convert to target currency)
+    const actualByDay = this.buildActualSpendingMap(
+      currentMonthTransactions,
+      options.currency
+    );
 
     let cumulativeForecast = 0;
     let cumulativeActual = 0;
@@ -290,8 +294,11 @@ export class ForecastService {
       fixedByDay.set(day, existing);
     });
 
-    // Build actual spending map
-    const actualByDay = this.buildActualSpendingMap(currentMonthTransactions);
+    // Build actual spending map (convert to target currency)
+    const actualByDay = this.buildActualSpendingMap(
+      currentMonthTransactions,
+      options.currency
+    );
 
     // Calculate daily variable budget
     const dailyVariableAverage = monthlyVariableAverage / daysInMonth;
@@ -435,17 +442,18 @@ export class ForecastService {
   }
 
   /**
-   * Build a map of actual spending by date
+   * Build a map of actual spending by date, converted to target currency
    */
   private buildActualSpendingMap(
-    transactions: Transaction[]
+    transactions: Transaction[],
+    targetCurrency: Currency
   ): Map<string, number> {
     const map = new Map<string, number>();
 
     transactions.forEach((tx) => {
       // Use local date instead of UTC substring to respect user's timezone
       const dateKey = format(new Date(tx.date), "yyyy-MM-dd");
-      const amount = this.getAmount(tx);
+      const amount = this.getAmount(tx, targetCurrency);
       const existing = map.get(dateKey) || 0;
       map.set(dateKey, existing + amount);
     });
@@ -515,12 +523,22 @@ export class ForecastService {
   }
 
   /**
-   * Get the effective amount for a transaction
+   * Get the effective amount for a transaction, converted to target currency
    */
-  private getAmount(tx: Transaction): number {
+  private getAmount(tx: Transaction, targetCurrency: Currency): number {
     const base = tx.paymentAmount || tx.amount;
     const reimbursement = tx.reimbursementAmount || 0;
-    return base - reimbursement;
+    const netAmount = base - reimbursement;
+
+    // Get the currency the amount is in (payment currency or transaction currency)
+    const sourceCurrency = (tx.paymentCurrency || tx.currency) as Currency;
+
+    // Convert to target currency if different
+    if (sourceCurrency && sourceCurrency !== targetCurrency) {
+      return CurrencyService.convert(netAmount, sourceCurrency, targetCurrency);
+    }
+
+    return netAmount;
   }
 
   /**
