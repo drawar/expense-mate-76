@@ -26,6 +26,11 @@ import {
   FORECAST_CHART_COLORS,
   getVarianceIndicator,
 } from "@/utils/dashboard/forecastChartUtils";
+import { useBudgetStreak } from "@/hooks/useBudgetStreak";
+import { StreakDisplay } from "@/components/streak";
+import { BADGE_DEFINITIONS } from "@/core/streak";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import {
   LineChart,
   Line,
@@ -106,6 +111,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   }, [timeframe, availablePeriods]);
 
   const { formatCurrency } = useCurrencyFormatter(currency);
+  const { toast } = useToast();
 
   // Use the new forecast hook - pass allTransactions for historical analysis
   const {
@@ -117,6 +123,35 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     currency,
     timeframe
   );
+
+  // Use the budget streak hook for gamification
+  const {
+    currentStreak,
+    earnedBadges,
+    nextBadge,
+    newlyEarnedBadges,
+    clearNewlyEarned,
+  } = useBudgetStreak(currency, forecast);
+
+  // Current month for streak display
+  const currentMonth = useMemo(() => format(new Date(), "yyyy-MM"), []);
+
+  // Show celebration toast when new badges are earned
+  useEffect(() => {
+    if (newlyEarnedBadges.length > 0) {
+      // Get the highest milestone badge earned
+      const highestMilestone = Math.max(...newlyEarnedBadges);
+      const badge = BADGE_DEFINITIONS[highestMilestone as 3 | 7 | 14 | 30];
+
+      toast({
+        title: `${badge.emoji} ${badge.name} Earned!`,
+        description: `Congratulations! You've stayed under forecast for ${highestMilestone} days.`,
+      });
+
+      // Clear the newly earned badges after showing toast
+      clearNewlyEarned();
+    }
+  }, [newlyEarnedBadges, toast, clearNewlyEarned]);
 
   // Map period values to display labels
   const getPeriodLabel = (period: string) => {
@@ -307,22 +342,15 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
 
   // Display trend and average section with forecast info
   const TrendAndAverage = () => (
-    <div className="flex items-center justify-between mb-4">
-      {/* Spender profile info when forecast is available */}
+    <div className="flex items-start justify-between mb-4">
+      {/* Budget streak display when forecast is available */}
       {shouldShowForecast && forecast && (
-        <div className="flex items-center gap-2">
-          <span className="text-lg">
-            {spenderProfiler.getProfileEmoji(forecast.spenderProfile)}
-          </span>
-          <div>
-            <p className="text-xs text-muted-foreground capitalize">
-              {forecast.spenderProfile.replace("-", " ")} spender
-            </p>
-            <p className="text-xs text-muted-foreground/70">
-              {Math.round(forecast.confidence * 100)}% confidence
-            </p>
-          </div>
-        </div>
+        <StreakDisplay
+          streak={currentStreak}
+          badges={earnedBadges}
+          nextBadge={nextBadge}
+          currentMonth={currentMonth}
+        />
       )}
 
       <div className="text-right">
@@ -374,7 +402,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       const data = actualPayload?.payload || forecastPayload?.payload;
       const actualValue = actualPayload?.value || 0;
       const forecastValue = forecastPayload?.value || data?.forecastAmount || 0;
-      const variance = data?.variance;
+      // Calculate variance from displayed values (works for both daily and cumulative modes)
+      const variance =
+        actualValue > 0 && forecastValue > 0
+          ? actualValue - forecastValue
+          : data?.variance;
       const isProjected = data?.isProjected;
       const topCategories =
         (
@@ -592,68 +624,6 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
             />
             <span>Forecast</span>
           </div>
-        </div>
-      )}
-
-      {/* Cumulative actual vs forecast comparison */}
-      {shouldShowForecast && forecast && forecastChartData && (
-        <div className="mt-3 pt-3 border-t border-border/50">
-          {(() => {
-            // Find the latest actual (non-projected) data point
-            const latestActual = [...forecastChartData.data]
-              .filter((d) => !d.isProjected && d.cumulativeAmount > 0)
-              .pop();
-
-            if (!latestActual) return null;
-
-            const cumulativeActual = latestActual.cumulativeAmount;
-            const cumulativeForecast = latestActual.cumulativeForecast;
-            const difference = cumulativeActual - cumulativeForecast;
-            const isOver = difference > 0;
-            const isOnTrack = Math.abs(difference) < 1; // Within $1 is considered on track
-
-            return (
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  {isOnTrack ? (
-                    <>
-                      <span className="text-success">●</span>
-                      <span className="text-muted-foreground">
-                        On track with forecast
-                      </span>
-                    </>
-                  ) : isOver ? (
-                    <>
-                      <TrendingUpIcon className="h-3.5 w-3.5 text-destructive" />
-                      <span className="text-destructive font-medium">
-                        {formatCurrency(Math.abs(difference))} over
-                      </span>
-                      <span className="text-muted-foreground">forecast</span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDownIcon className="h-3.5 w-3.5 text-success" />
-                      <span className="text-success font-medium">
-                        {formatCurrency(Math.abs(difference))} under
-                      </span>
-                      <span className="text-muted-foreground">forecast</span>
-                    </>
-                  )}
-                </div>
-                <span className="text-muted-foreground">
-                  {daysRemaining} days left
-                </span>
-              </div>
-            );
-          })()}
-
-          {/* First month disclaimer */}
-          {forecast.isFirstMonth && (
-            <p className="text-xs text-muted-foreground/70 mt-2 italic">
-              Uniform forecast shown. More accurate predictions after 1 month of
-              data.
-            </p>
-          )}
         </div>
       )}
 
