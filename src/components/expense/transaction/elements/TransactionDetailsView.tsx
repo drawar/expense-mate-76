@@ -32,14 +32,6 @@ const TransactionDetailsView = ({
   // Use effective category, fall back to MCC category if empty
   const currentCategory = effectiveCategory || mccCategory || "Uncategorized";
 
-  // Debug: log category values
-  console.log("Category debug:", {
-    effectiveCategory,
-    mccCategory,
-    currentCategory,
-    userCategory: transaction.userCategory,
-    category: transaction.category,
-  });
   const isRecategorized =
     transaction.isRecategorized || currentCategory !== mccCategory;
 
