@@ -3,7 +3,7 @@ import { CardCalculationResult } from "@/core/currency/SimulatorService";
 import { MilesCurrencySelector } from "./MilesCurrencySelector";
 import { CardBarRow } from "./CardBarRow";
 import { getSimulatorTheme } from "@/core/currency/SimulatorTheme";
-import { useTheme } from "@/components/theme/theme-provider";
+import { useTheme } from "next-themes";
 import { Loader2, Leaf } from "lucide-react";
 import { MossCard } from "@/components/ui/moss-card";
 

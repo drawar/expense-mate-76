@@ -762,29 +762,41 @@ export class InsightService {
     if (weekend_vs_weekday_ratio !== undefined) {
       let weekendTotal = 0;
       let weekdayTotal = 0;
-      let weekendCount = 0;
-      let weekdayCount = 0;
+
+      // Count actual weekend and weekday days in the period
+      const monthStart = startOfMonth(context.currentDate);
+      let weekendDays = 0;
+      let weekdayDays = 0;
+
+      const d = new Date(monthStart);
+      while (d <= context.currentDate) {
+        if (isWeekend(d)) {
+          weekendDays++;
+        } else {
+          weekdayDays++;
+        }
+        d.setDate(d.getDate() + 1);
+      }
 
       transactions.forEach((tx) => {
         const date = parseISO(tx.date);
         if (isWeekend(date)) {
           weekendTotal += tx.amount;
-          weekendCount += 1;
         } else {
           weekdayTotal += tx.amount;
-          weekdayCount += 1;
         }
       });
 
-      // Normalize by number of weekend vs weekday days
-      const avgWeekend = weekendCount > 0 ? weekendTotal / 8 : 0; // ~8 weekend days/month
-      const avgWeekday = weekdayCount > 0 ? weekdayTotal / 22 : 0; // ~22 weekday days/month
-      const ratio = avgWeekday > 0 ? avgWeekend / avgWeekday : 0;
+      // Calculate daily averages based on actual days in period
+      const avgWeekendDaily = weekendDays > 0 ? weekendTotal / weekendDays : 0;
+      const avgWeekdayDaily = weekdayDays > 0 ? weekdayTotal / weekdayDays : 0;
+      const ratio = avgWeekdayDaily > 0 ? avgWeekendDaily / avgWeekdayDaily : 0;
 
       triggered = ratio >= (weekend_vs_weekday_ratio as number);
       data.percentage = Math.round((ratio - 1) * 100);
-      data.weekend_amount = weekendTotal;
-      data.weekday_amount = weekdayTotal;
+      // Show daily averages for fair comparison
+      data.weekend_amount = Math.round(avgWeekendDaily * 100) / 100;
+      data.weekday_amount = Math.round(avgWeekdayDaily * 100) / 100;
     }
 
     // Large transaction pattern
