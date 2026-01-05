@@ -69,7 +69,7 @@ const Navbar = () => {
             {/* Logo and Desktop Nav */}
             <div className="flex items-center space-x-8">
               <Link to="/">
-                <ClairoLogo size={28} showText />
+                <ClairoLogo size={128} />
               </Link>
 
               {/* Desktop Navigation */}
