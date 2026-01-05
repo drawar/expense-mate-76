@@ -16,7 +16,15 @@ import { Transaction, Currency, PaymentMethod, RenderedInsight } from "@/types";
 import { useInsights } from "@/hooks/useInsights";
 import { cn } from "@/lib/utils";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
-import { startOfMonth, format } from "date-fns";
+import {
+  startOfMonth,
+  format,
+  previousSaturday,
+  nextSunday,
+  isSaturday,
+  isSunday,
+  startOfDay,
+} from "date-fns";
 
 interface InsightsCardProps {
   transactions: Transaction[];
@@ -166,6 +174,32 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
         navigate(
           `/transactions?from=${fromDate}&to=${toDate}&category=Dining Out`
         );
+        return;
+      }
+
+      // Handle "Review weekend spending" - navigate to transactions for this/last weekend
+      if (insight.actionText === "Review weekend spending") {
+        const now = new Date();
+        let weekendStart: Date;
+        let weekendEnd: Date;
+
+        if (isSaturday(now)) {
+          // Today is Saturday - show this weekend (Sat-Sun)
+          weekendStart = startOfDay(now);
+          weekendEnd = nextSunday(now);
+        } else if (isSunday(now)) {
+          // Today is Sunday - show this weekend (yesterday Sat to today)
+          weekendStart = previousSaturday(now);
+          weekendEnd = startOfDay(now);
+        } else {
+          // Weekday - show last weekend
+          weekendStart = previousSaturday(now);
+          weekendEnd = nextSunday(weekendStart);
+        }
+
+        const fromDate = format(weekendStart, "yyyy-MM-dd");
+        const toDate = format(weekendEnd, "yyyy-MM-dd");
+        navigate(`/transactions?from=${fromDate}&to=${toDate}`);
         return;
       }
 
