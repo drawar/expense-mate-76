@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { ocrService, OcrError, ExpenseFormPrefill } from "@/core/ocr";
-import { Currency } from "@/types";
+import { Currency, PaymentMethod } from "@/types";
 
 export type ScanState =
   | "idle"
@@ -18,6 +18,8 @@ export interface ScanResult {
 
 export interface UseReceiptScanOptions {
   defaultCurrency?: Currency;
+  /** User's payment methods for matching Apple Wallet card names */
+  paymentMethods?: PaymentMethod[];
   onSuccess?: (result: ScanResult) => void;
   onError?: (error: string) => void;
 }
@@ -51,7 +53,12 @@ export interface UseReceiptScanReturn {
 export function useReceiptScan(
   options: UseReceiptScanOptions = {}
 ): UseReceiptScanReturn {
-  const { defaultCurrency = "SGD", onSuccess, onError } = options;
+  const {
+    defaultCurrency = "SGD",
+    paymentMethods,
+    onSuccess,
+    onError,
+  } = options;
 
   const [state, setState] = useState<ScanState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +132,8 @@ export function useReceiptScan(
         const prefill = ocrService.toExpenseFormPrefill(
           extractedData,
           localReceiptId,
-          defaultCurrency
+          defaultCurrency,
+          paymentMethods
         );
 
         // Create a local blob URL for preview
@@ -155,7 +163,7 @@ export function useReceiptScan(
         onError?.(errorMessage);
       }
     },
-    [defaultCurrency, onSuccess, onError]
+    [defaultCurrency, paymentMethods, onSuccess, onError]
   );
 
   /**

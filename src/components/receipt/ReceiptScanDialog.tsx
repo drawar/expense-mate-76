@@ -28,13 +28,15 @@ import { ReceiptCapture } from "./ReceiptCapture";
 import { ReceiptPreview } from "./ReceiptPreview";
 import { useReceiptScan, ScanResult } from "@/hooks/useReceiptScan";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Currency } from "@/types";
+import { Currency, PaymentMethod } from "@/types";
 
 interface ReceiptScanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onScanComplete: (result: ScanResult) => void;
   defaultCurrency?: Currency;
+  /** User's payment methods for matching Apple Wallet card names */
+  paymentMethods?: PaymentMethod[];
 }
 
 /**
@@ -53,6 +55,7 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
   onOpenChange,
   onScanComplete,
   defaultCurrency = "SGD",
+  paymentMethods,
 }) => {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
   const { state, error, result, progress, scanReceipt, reset, isRecommended } =
     useReceiptScan({
       defaultCurrency,
+      paymentMethods,
     });
 
   // Create preview URL when file is selected

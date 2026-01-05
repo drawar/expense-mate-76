@@ -1,4 +1,4 @@
-import { Currency } from "@/types";
+import { Currency, PaymentMethod } from "@/types";
 import { OcrExtractedData, ExpenseFormPrefill } from "./types";
 import { CurrencyService } from "@/core/currency";
 
@@ -37,10 +37,14 @@ export class ReceiptParser {
 
   /**
    * Convert OCR extracted data to expense form prefill
+   * @param ocrData - Extracted OCR data
+   * @param receiptImageId - ID of the uploaded receipt image
+   * @param paymentMethods - Optional list of user's payment methods for matching (Apple Wallet)
    */
   toExpenseFormPrefill(
     ocrData: OcrExtractedData,
-    receiptImageId: string
+    receiptImageId: string,
+    paymentMethods?: PaymentMethod[]
   ): ExpenseFormPrefill {
     // Normalize and validate merchant name
     const merchantName = this.normalizeMerchantName(ocrData.merchantName);
@@ -60,6 +64,22 @@ export class ReceiptParser {
     // Determine if manual review is needed
     const needsReview = ocrData.confidence < REVIEW_THRESHOLD || !amount;
 
+    // Check if this is an Apple Wallet screenshot
+    const isAppleWallet =
+      (ocrData.rawResponse as { isAppleWallet?: boolean })?.isAppleWallet ??
+      false;
+
+    // Try to match payment method from hint (for Apple Wallet screenshots)
+    let paymentMethodId: string | undefined;
+    const paymentMethodHint = ocrData.paymentMethodHint;
+
+    if (paymentMethodHint && paymentMethods && paymentMethods.length > 0) {
+      paymentMethodId = this.matchPaymentMethod(
+        paymentMethodHint,
+        paymentMethods
+      );
+    }
+
     return {
       merchantName,
       amount,
@@ -69,7 +89,78 @@ export class ReceiptParser {
       receiptImageId,
       confidence: ocrData.confidence,
       needsReview,
+      paymentMethodId,
+      paymentMethodHint,
+      isAppleWallet,
     };
+  }
+
+  /**
+   * Match a card name hint from Apple Wallet to user's payment methods
+   * Uses fuzzy matching to handle variations in card names
+   */
+  private matchPaymentMethod(
+    cardNameHint: string,
+    paymentMethods: PaymentMethod[]
+  ): string | undefined {
+    if (!cardNameHint || paymentMethods.length === 0) return undefined;
+
+    // Normalize the hint for matching
+    const normalizedHint = this.normalizeCardName(cardNameHint);
+    const hintTokens = normalizedHint.split(" ").filter((t) => t.length > 1);
+
+    let bestMatch: { id: string; score: number } | null = null;
+
+    for (const pm of paymentMethods) {
+      if (!pm.active) continue; // Skip inactive payment methods
+
+      // Normalize the payment method name
+      const normalizedName = this.normalizeCardName(pm.name);
+      const nameTokens = normalizedName.split(" ").filter((t) => t.length > 1);
+
+      // Calculate match score based on token overlap
+      let matchedTokens = 0;
+      for (const hintToken of hintTokens) {
+        for (const nameToken of nameTokens) {
+          // Exact match or substring match for important keywords
+          if (
+            nameToken === hintToken ||
+            (hintToken.length > 3 && nameToken.includes(hintToken)) ||
+            (nameToken.length > 3 && hintToken.includes(nameToken))
+          ) {
+            matchedTokens++;
+            break;
+          }
+        }
+      }
+
+      // Score is based on how many hint tokens matched, weighted by total tokens
+      const score =
+        hintTokens.length > 0 ? matchedTokens / hintTokens.length : 0;
+
+      // Require at least 50% token match and at least 2 tokens matched
+      if (score >= 0.5 && matchedTokens >= 2) {
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = { id: pm.id, score };
+        }
+      }
+    }
+
+    return bestMatch?.id;
+  }
+
+  /**
+   * Normalize card name for matching
+   * Removes common noise words and symbols
+   */
+  private normalizeCardName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[®™*©]/g, "") // Remove trademark symbols
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .replace(/\bcard\b/gi, "") // Remove "card" as it's common
+      .replace(/\bthe\b/gi, "") // Remove articles
+      .trim();
   }
 
   /**

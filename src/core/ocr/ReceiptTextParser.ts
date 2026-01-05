@@ -22,8 +22,32 @@ const ALL_MERCHANT_PATTERNS = [
  * - Total amount (look for "Total", "Grand Total", etc.)
  * - Date and time
  * - Currency
+ *
+ * Also handles Apple Wallet transaction screenshots which have a different format:
+ * - Card name displayed (can be matched to user's payment methods)
+ * - Amount, merchant, date/time, status clearly laid out
  */
 export class ReceiptTextParser {
+  // Patterns to detect Apple Wallet screenshots
+  private appleWalletIndicators = [
+    /view\s+in\s+.+\s*app/i, // "View in American Express App"
+    /contact\s+(american\s+express|visa|mastercard|discover)/i,
+    /report\s+incorrect\s+merchant\s+info/i,
+    /wallet\s+uses\s+maps/i,
+    /status:\s*(approved|declined|pending)/i,
+  ];
+
+  // Common card issuer patterns for extracting card names
+  private cardNamePatterns = [
+    // American Express cards
+    /american\s*express[®™]*\s*(.+?card)/i,
+    // Visa cards
+    /visa[®™]*\s*(.+?card)/i,
+    // Mastercard
+    /mastercard[®™]*\s*(.+?card)/i,
+    // Generic card pattern with trademark symbols
+    /([a-z\s]+[®™]+[a-z\s*®™]*card)/i,
+  ];
   // Patterns for total amount extraction (ordered by priority - final charged amount first)
   private totalPatterns = [
     // Credit card / payment amount (final amount with tip)
@@ -124,6 +148,14 @@ export class ReceiptTextParser {
     // Extract all text for pattern matching
     const allText = sortedLines.map((l) => l.text).join("\n");
 
+    // Check if this is an Apple Wallet screenshot
+    const isAppleWallet = this.isAppleWalletScreenshot(allText);
+
+    if (isAppleWallet) {
+      return this.parseAppleWalletScreenshot(sortedLines, allText);
+    }
+
+    // Standard receipt parsing
     // Extract fields
     const merchantName = this.extractMerchantName(sortedLines);
     const totalAmount = this.extractTotalAmount(sortedLines, allText);
@@ -149,6 +181,200 @@ export class ReceiptTextParser {
       confidence,
       rawResponse: { lines: sortedLines },
     };
+  }
+
+  /**
+   * Check if the OCR text is from an Apple Wallet transaction screenshot
+   */
+  private isAppleWalletScreenshot(allText: string): boolean {
+    // Need at least 2 indicators to confirm it's Apple Wallet
+    let matchCount = 0;
+    for (const pattern of this.appleWalletIndicators) {
+      if (pattern.test(allText)) {
+        matchCount++;
+        if (matchCount >= 2) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Parse Apple Wallet transaction screenshot
+   * Format is typically:
+   * - Amount (large, at top)
+   * - Merchant name
+   * - Date and time (e.g., "2026-01-05, 11:22 AM")
+   * - Status: Approved/Declined
+   * - Card name with trademark symbols
+   * - Total amount
+   * - "View in [Issuer] App"
+   */
+  private parseAppleWalletScreenshot(
+    sortedLines: PaddleOcrTextLine[],
+    allText: string
+  ): OcrExtractedData {
+    // Extract amount - typically appears as "$123.02" format
+    const totalAmount = this.extractAppleWalletAmount(sortedLines);
+
+    // Extract merchant name - appears after amount, before date
+    const merchantName = this.extractAppleWalletMerchant(sortedLines);
+
+    // Extract date and time - format like "2026-01-05, 11:22 AM"
+    const { date: transactionDate, time: transactionTime } =
+      this.extractAppleWalletDateTime(allText);
+
+    // Extract card/payment method name
+    const paymentMethodHint = this.extractAppleWalletCardName(allText);
+
+    // Higher confidence for Apple Wallet screenshots since format is consistent
+    const confidence = this.calculateConfidence({
+      merchantName,
+      totalAmount,
+      transactionDate,
+      isAppleWallet: true,
+    });
+
+    return {
+      merchantName,
+      totalAmount,
+      transactionDate,
+      transactionTime,
+      paymentMethodHint,
+      currencyCode: undefined,
+      confidence,
+      rawResponse: { lines: sortedLines, isAppleWallet: true },
+    };
+  }
+
+  /**
+   * Extract amount from Apple Wallet screenshot
+   */
+  private extractAppleWalletAmount(
+    lines: PaddleOcrTextLine[]
+  ): number | undefined {
+    // Amount typically appears early, as "$123.02" format
+    for (const line of lines.slice(0, 5)) {
+      const match = line.text.match(/^\$?([\d,]+\.\d{2})$/);
+      if (match) {
+        return this.parseAmount(match[1]);
+      }
+    }
+    // Fallback to regular extraction
+    return undefined;
+  }
+
+  /**
+   * Extract merchant name from Apple Wallet screenshot
+   * Merchant appears after the amount, before the date line
+   */
+  private extractAppleWalletMerchant(
+    lines: PaddleOcrTextLine[]
+  ): string | undefined {
+    // Find the amount line index
+    let amountLineIndex = -1;
+    for (let i = 0; i < lines.length && i < 5; i++) {
+      if (/^\$?[\d,]+\.\d{2}$/.test(lines[i].text)) {
+        amountLineIndex = i;
+        break;
+      }
+    }
+
+    // Merchant should be the line right after the amount
+    if (amountLineIndex >= 0 && amountLineIndex + 1 < lines.length) {
+      const merchantLine = lines[amountLineIndex + 1].text.trim();
+      // Skip if it looks like a date or status
+      if (
+        !/^\d{4}-\d{2}-\d{2}/.test(merchantLine) &&
+        !/^status:/i.test(merchantLine)
+      ) {
+        return this.normalizeMerchantName(merchantLine);
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Extract date and time from Apple Wallet format
+   * Format: "2026-01-05, 11:22 AM"
+   */
+  private extractAppleWalletDateTime(allText: string): {
+    date?: string;
+    time?: string;
+  } {
+    // Look for Apple Wallet specific format: "YYYY-MM-DD, HH:MM AM/PM"
+    const walletDateTimePattern =
+      /(\d{4}-\d{2}-\d{2}),?\s*(\d{1,2}:\d{2})\s*(am|pm)?/i;
+    const match = allText.match(walletDateTimePattern);
+
+    if (match) {
+      const date = match[1]; // Already in YYYY-MM-DD format
+      let hours = parseInt(match[2].split(":")[0]);
+      const minutes = match[2].split(":")[1];
+      const ampm = match[3]?.toLowerCase();
+
+      // Convert to 24-hour format
+      if (ampm === "pm" && hours < 12) hours += 12;
+      if (ampm === "am" && hours === 12) hours = 0;
+
+      const time = `${hours.toString().padStart(2, "0")}:${minutes}`;
+
+      return { date, time };
+    }
+
+    // Fallback to regular date/time extraction
+    return this.extractDateTime(allText);
+  }
+
+  /**
+   * Extract card name from Apple Wallet screenshot
+   * Look for card names with trademark symbols or known card patterns
+   */
+  private extractAppleWalletCardName(allText: string): string | undefined {
+    // Clean up common OCR artifacts
+    const cleanedText = allText
+      .replace(/[Ⓡ]/g, "®")
+      .replace(/[*]/g, " ")
+      .replace(/\s+/g, " ");
+
+    // Try each card name pattern
+    for (const pattern of this.cardNamePatterns) {
+      const match = cleanedText.match(pattern);
+      if (match) {
+        // Clean up the extracted card name
+        const cardName = match[0]
+          .replace(/[®™*]/g, "") // Remove trademark symbols
+          .replace(/\s+/g, " ") // Normalize whitespace
+          .trim();
+
+        return cardName;
+      }
+    }
+
+    // Fallback: Look for lines containing "Card" with issuer keywords
+    const lines = allText.split("\n");
+    for (const line of lines) {
+      const lowercaseLine = line.toLowerCase();
+      if (
+        lowercaseLine.includes("card") &&
+        (lowercaseLine.includes("american express") ||
+          lowercaseLine.includes("amex") ||
+          lowercaseLine.includes("visa") ||
+          lowercaseLine.includes("mastercard") ||
+          lowercaseLine.includes("discover") ||
+          lowercaseLine.includes("aeroplan") ||
+          lowercaseLine.includes("platinum") ||
+          lowercaseLine.includes("gold") ||
+          lowercaseLine.includes("reserve"))
+      ) {
+        return line
+          .replace(/[®™Ⓡ*]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -594,6 +820,7 @@ export class ReceiptTextParser {
     merchantName?: string;
     totalAmount?: number;
     transactionDate?: string;
+    isAppleWallet?: boolean;
   }): number {
     let score = 0;
     let weights = 0;
@@ -616,7 +843,14 @@ export class ReceiptTextParser {
     }
     weights += 0.2;
 
-    return Math.round((score / weights) * 100) / 100;
+    let confidence = Math.round((score / weights) * 100) / 100;
+
+    // Boost confidence for Apple Wallet screenshots since the format is more consistent
+    if (data.isAppleWallet && confidence > 0) {
+      confidence = Math.min(1, confidence + 0.1);
+    }
+
+    return confidence;
   }
 }
 

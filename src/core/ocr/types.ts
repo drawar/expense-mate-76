@@ -193,6 +193,12 @@ export interface ExpenseFormPrefill {
   receiptImageId: string;
   confidence: number;
   needsReview: boolean;
+  /** Payment method ID matched from Apple Wallet card name */
+  paymentMethodId?: string;
+  /** Raw card name hint from OCR (for debugging/fallback) */
+  paymentMethodHint?: string;
+  /** True if this is from an Apple Wallet screenshot */
+  isAppleWallet?: boolean;
 }
 
 // =============================================================================

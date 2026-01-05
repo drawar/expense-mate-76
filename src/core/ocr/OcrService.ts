@@ -18,7 +18,7 @@ import { PaddleOcrProvider } from "./PaddleOcrProvider";
 import { CloudOcrProvider } from "./CloudOcrProvider";
 import { ReceiptTextParser } from "./ReceiptTextParser";
 import { ReceiptParser } from "./ReceiptParser";
-import { Currency } from "@/types";
+import { Currency, PaymentMethod } from "@/types";
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -335,18 +335,24 @@ export class OcrService {
 
   /**
    * Convert OCR result to expense form prefill data
+   * @param extractedData - The extracted OCR data
+   * @param receiptImageId - The ID of the receipt image
+   * @param defaultCurrency - Default currency for the form
+   * @param paymentMethods - User's payment methods for matching (Apple Wallet screenshots)
    */
   toExpenseFormPrefill(
     extractedData: OcrExtractedData,
     receiptImageId: string,
-    defaultCurrency?: Currency
+    defaultCurrency?: Currency,
+    paymentMethods?: PaymentMethod[]
   ): ExpenseFormPrefill {
     if (defaultCurrency) {
       this.receiptParser = new ReceiptParser(defaultCurrency);
     }
     return this.receiptParser.toExpenseFormPrefill(
       extractedData,
-      receiptImageId
+      receiptImageId,
+      paymentMethods
     );
   }
 

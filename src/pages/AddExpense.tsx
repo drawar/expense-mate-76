@@ -77,6 +77,10 @@ const AddExpense = () => {
       if (prefill.time) {
         values.time = prefill.time;
       }
+      // For Apple Wallet screenshots, pre-fill the payment method if matched
+      if (prefill.paymentMethodId) {
+        values.paymentMethodId = prefill.paymentMethodId;
+      }
 
       return Object.keys(values).length > 0 ? values : undefined;
     }
@@ -162,7 +166,9 @@ const AddExpense = () => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium flex items-center gap-2">
                 <Camera className="h-4 w-4" />
-                Receipt scanned
+                {scannedData.prefill.isAppleWallet
+                  ? "Apple Wallet transaction imported"
+                  : "Receipt scanned"}
               </span>
               <Button
                 type="button"
@@ -176,7 +182,10 @@ const AddExpense = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Form pre-filled with extracted data. Review and adjust as needed.
+              {scannedData.prefill.isAppleWallet &&
+              scannedData.prefill.paymentMethodId
+                ? "Payment method matched automatically. Review and adjust as needed."
+                : "Form pre-filled with extracted data. Review and adjust as needed."}
             </p>
           </div>
         )}
@@ -187,6 +196,7 @@ const AddExpense = () => {
           onOpenChange={setIsScanDialogOpen}
           onScanComplete={handleScanComplete}
           defaultCurrency={CurrencyService.getDefaultCurrency()}
+          paymentMethods={paymentMethods}
         />
 
         {/* Spacing between header and content: 24px (xl) */}
