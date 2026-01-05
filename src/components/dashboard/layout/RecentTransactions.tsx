@@ -1,5 +1,5 @@
 // components/dashboard/layout/RecentTransactions.tsx
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   startOfWeek,
@@ -10,7 +10,7 @@ import {
   isYesterday,
   startOfDay,
 } from "date-fns";
-import { Transaction, Currency } from "@/types";
+import { Transaction, Currency, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircleIcon,
@@ -20,12 +20,14 @@ import {
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { CurrencyService } from "@/core/currency";
+import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
   allTransactions?: Transaction[];
   displayCurrency?: Currency;
   maxItems?: number;
+  paymentMethods?: PaymentMethod[];
 }
 
 interface GroupedTransaction {
@@ -141,9 +143,14 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   allTransactions,
   displayCurrency = "CAD",
   maxItems = 5,
+  paymentMethods = [],
 }) => {
   // Use the media query hook for responsive design
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // State for transaction dialog
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
 
   // Limit to max items
   const displayTransactions = transactions.slice(0, maxItems);
@@ -296,10 +303,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               {/* Transactions for this date */}
               <div className="divide-y divide-border/30">
                 {group.transactions.map((transaction) => (
-                  <Link
+                  <button
                     key={transaction.id}
-                    to={`/transactions?id=${transaction.id}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 active:bg-muted/70 transition-colors group"
+                    onClick={() => setSelectedTransaction(transaction)}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 active:bg-muted/70 transition-colors group w-full text-left"
                   >
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-foreground truncate block">
@@ -326,7 +333,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       )}
                     </div>
                     <ChevronRightIcon className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
@@ -350,6 +357,14 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
           )}
         </div>
       )}
+
+      {/* Transaction Dialog */}
+      <TransactionDialog
+        transaction={selectedTransaction}
+        paymentMethods={paymentMethods}
+        isOpen={selectedTransaction !== null}
+        onClose={() => setSelectedTransaction(null)}
+      />
     </div>
   );
 };

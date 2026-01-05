@@ -137,6 +137,7 @@ export function Dashboard() {
             transactions={recentTransactions}
             allTransactions={transactions}
             displayCurrency={displayCurrency}
+            paymentMethods={paymentMethods}
           />
         </ErrorBoundary>
 

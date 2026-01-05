@@ -27,10 +27,28 @@ const TransactionDetailsView = ({
   transaction,
   onCategoryChange,
 }: TransactionDetailsViewProps) => {
-  const currentCategory = getEffectiveCategory(transaction);
   const mccCategory = getMccCategory(transaction);
+  const effectiveCategory = getEffectiveCategory(transaction);
+  // Use effective category, fall back to MCC category if empty
+  const currentCategory = effectiveCategory || mccCategory || "Uncategorized";
+
+  // Debug: log category values
+  console.log("Category debug:", {
+    effectiveCategory,
+    mccCategory,
+    currentCategory,
+    userCategory: transaction.userCategory,
+    category: transaction.category,
+  });
   const isRecategorized =
     transaction.isRecategorized || currentCategory !== mccCategory;
+
+  // Ensure current category is in the list for display
+  const allCategories = [...BUDGET_CATEGORIES];
+  const categoryOptions =
+    currentCategory && !allCategories.includes(currentCategory)
+      ? [currentCategory, ...allCategories]
+      : allCategories;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
@@ -65,7 +83,7 @@ const TransactionDetailsView = ({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {BUDGET_CATEGORIES.map((category) => (
+                  {categoryOptions.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
