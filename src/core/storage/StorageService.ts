@@ -1060,8 +1060,14 @@ export class StorageService {
         .eq("id", id);
 
       if (error) {
-        console.error("Supabase error deleting transaction:", error);
-        return this.deleteTransactionFromLocalStorage(id);
+        console.error("Supabase error deleting transaction:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          full: error,
+        });
+        return false;
       }
 
       // Decrement bonus points tracking if the transaction had tracked bonus points
@@ -1139,7 +1145,7 @@ export class StorageService {
       return true;
     } catch (error) {
       console.error("Error deleting transaction:", error);
-      return this.deleteTransactionFromLocalStorage(id);
+      return false;
     }
   }
 

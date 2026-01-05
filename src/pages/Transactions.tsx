@@ -261,6 +261,7 @@ const Transactions = () => {
           isOpen={isTransactionDialogOpen}
           onClose={() => setIsTransactionDialogOpen(false)}
           onTransactionUpdated={handleSaveEdit}
+          onDelete={handleDeleteTransaction}
         />
       )}
 

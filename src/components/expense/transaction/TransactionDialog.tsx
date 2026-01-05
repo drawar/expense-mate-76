@@ -16,6 +16,7 @@ interface TransactionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onTransactionUpdated?: (transaction: Transaction) => void;
+  onDelete?: (transactionId: string) => void;
 }
 
 export const TransactionDialog: React.FC<TransactionDialogProps> = ({
@@ -24,9 +25,10 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
   isOpen,
   onClose,
   onTransactionUpdated,
+  onDelete,
 }) => {
   const [dialogMode, setDialogMode] = useState<"view" | "edit">("view");
-  const { handleSave, handleDelete, isLoading } = useTransactionActions();
+  const { handleSave, isLoading } = useTransactionActions();
 
   if (!transaction) return null;
 
@@ -55,12 +57,13 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
     }
   };
 
-  const handleDeleteTransaction = async () => {
-    const success = await handleDelete(transaction);
-    if (success) {
-      onClose();
-    }
-  };
+  const handleDeleteTransaction = onDelete
+    ? () => {
+        // Use parent's delete handler (shows confirmation dialog)
+        onDelete(transaction.id);
+        onClose();
+      }
+    : undefined;
 
   return (
     <Dialog

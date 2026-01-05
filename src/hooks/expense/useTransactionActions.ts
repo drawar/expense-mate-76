@@ -51,6 +51,12 @@ export function useTransactionActions(options?: {
           title: "Success",
           description: "Transaction deleted successfully",
         });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete transaction",
+          variant: "destructive",
+        });
       }
       return success;
     } catch (error) {

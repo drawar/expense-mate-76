@@ -1,17 +1,21 @@
-
-import { useState } from 'react';
-import { Transaction } from '@/types';
-import { useTransactionActions } from '@/hooks/expense/useTransactionActions';
+import { useState } from "react";
+import { Transaction } from "@/types";
+import { useTransactionActions } from "@/hooks/expense/useTransactionActions";
 
 export function useTransactionManagement(
-  transactions: Transaction[], 
+  transactions: Transaction[],
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>
 ) {
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'view' | 'edit' | 'delete'>('view');
+  const [dialogMode, setDialogMode] = useState<"view" | "edit" | "delete">(
+    "view"
+  );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
+    null
+  );
 
   const {
     isLoading,
@@ -20,23 +24,23 @@ export function useTransactionManagement(
     handleAdd,
     handleExportCSV,
     isCreating,
-    isUpdating,  
+    isUpdating,
     isDeleting,
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    updateMerchantTracking
+    updateMerchantTracking,
   } = useTransactionActions();
 
   const handleViewTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
-    setDialogMode('view');
+    setDialogMode("view");
     setIsTransactionDialogOpen(true);
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
-    setDialogMode('edit');
+    setDialogMode("edit");
     setIsTransactionDialogOpen(true);
   };
 
@@ -48,15 +52,20 @@ export function useTransactionManagement(
   const confirmDeleteTransaction = async () => {
     if (transactionToDelete) {
       // Find the transaction object first
-      const transactionToDeleteObj = transactions.find(t => t.id === transactionToDelete);
+      const transactionToDeleteObj = transactions.find(
+        (t) => t.id === transactionToDelete
+      );
       if (transactionToDeleteObj) {
-        await handleDelete(transactionToDeleteObj);
-        
-        setTransactions(prev => 
-          prev.filter(t => t.id !== transactionToDelete)
-        );
+        const success = await handleDelete(transactionToDeleteObj);
+
+        // Only update local state if delete succeeded
+        if (success) {
+          setTransactions((prev) =>
+            prev.filter((t) => t.id !== transactionToDelete)
+          );
+        }
       }
-      
+
       setDeleteConfirmOpen(false);
       setTransactionToDelete(null);
     }
@@ -65,14 +74,17 @@ export function useTransactionManagement(
   const handleSaveEdit = async (updatedTransaction: Transaction) => {
     const { id, ...transactionData } = updatedTransaction;
     await handleSave(id, transactionData);
-    
-    setTransactions(prev => 
-      prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
+
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
     );
-    
+
     setIsTransactionDialogOpen(false);
-    
-    if (updatedTransaction.merchant?.name && selectedTransaction?.merchant?.name !== updatedTransaction.merchant.name) {
+
+    if (
+      updatedTransaction.merchant?.name &&
+      selectedTransaction?.merchant?.name !== updatedTransaction.merchant.name
+    ) {
       await updateMerchantTracking(updatedTransaction.merchant.name);
     }
   };
@@ -90,13 +102,13 @@ export function useTransactionManagement(
     handleDeleteTransaction,
     confirmDeleteTransaction,
     handleSaveEdit,
-    
+
     isCreating,
     isUpdating,
     isDeleting,
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    updateMerchantTracking
+    updateMerchantTracking,
   };
 }
