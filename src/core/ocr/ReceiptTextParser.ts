@@ -3,6 +3,7 @@ import {
   AIRLINE_MERCHANT_MCC_MAP,
   HOTEL_MERCHANT_MCC_MAP,
   TRAVEL_AGENCY_MERCHANT_MAP,
+  GROCERY_MERCHANT_MCC_MAP,
 } from "@/utils/constants/merchantMccMapping";
 
 // Build a combined list of all known merchant patterns (sorted by length, longest first)
@@ -10,6 +11,7 @@ const ALL_MERCHANT_PATTERNS = [
   ...Object.keys(AIRLINE_MERCHANT_MCC_MAP),
   ...Object.keys(HOTEL_MERCHANT_MCC_MAP),
   ...Object.keys(TRAVEL_AGENCY_MERCHANT_MAP),
+  ...Object.keys(GROCERY_MERCHANT_MCC_MAP),
 ].sort((a, b) => b.length - a.length);
 
 /**

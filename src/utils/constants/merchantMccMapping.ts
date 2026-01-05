@@ -472,3 +472,80 @@ export function isHotelMerchant(merchantName: string): boolean {
 export function isTravelMerchant(merchantName: string): boolean {
   return getMCCFromMerchantName(merchantName) !== null;
 }
+
+/**
+ * Grocery and supermarket merchant name patterns -> MCC mappings
+ * Keys are lowercase for case-insensitive matching
+ */
+export const GROCERY_MERCHANT_MCC_MAP: Record<
+  string,
+  { code: string; description: string }
+> = {
+  // Canadian supermarkets
+  "t&t supermarket": { code: "5411", description: "Grocery Stores" },
+  "t&t": { code: "5411", description: "Grocery Stores" },
+  loblaws: { code: "5411", description: "Grocery Stores" },
+  "no frills": { code: "5411", description: "Grocery Stores" },
+  "real canadian superstore": { code: "5411", description: "Grocery Stores" },
+  superstore: { code: "5411", description: "Grocery Stores" },
+  sobeys: { code: "5411", description: "Grocery Stores" },
+  safeway: { code: "5411", description: "Grocery Stores" },
+  "save-on-foods": { code: "5411", description: "Grocery Stores" },
+  "save on foods": { code: "5411", description: "Grocery Stores" },
+  "whole foods": { code: "5411", description: "Grocery Stores" },
+  "metro grocery": { code: "5411", description: "Grocery Stores" },
+  "food basics": { code: "5411", description: "Grocery Stores" },
+  freshco: { code: "5411", description: "Grocery Stores" },
+  "farm boy": { code: "5411", description: "Grocery Stores" },
+  longos: { code: "5411", description: "Grocery Stores" },
+  fortinos: { code: "5411", description: "Grocery Stores" },
+  zehrs: { code: "5411", description: "Grocery Stores" },
+  "atlantic superstore": { code: "5411", description: "Grocery Stores" },
+  "maxi & cie": { code: "5411", description: "Grocery Stores" },
+  maxi: { code: "5411", description: "Grocery Stores" },
+  provigo: { code: "5411", description: "Grocery Stores" },
+  iga: { code: "5411", description: "Grocery Stores" },
+  "price chopper": { code: "5411", description: "Grocery Stores" },
+  // US supermarkets
+  walmart: { code: "5411", description: "Grocery Stores" },
+  kroger: { code: "5411", description: "Grocery Stores" },
+  albertsons: { code: "5411", description: "Grocery Stores" },
+  publix: { code: "5411", description: "Grocery Stores" },
+  "trader joe": { code: "5411", description: "Grocery Stores" },
+  "trader joes": { code: "5411", description: "Grocery Stores" },
+  aldi: { code: "5411", description: "Grocery Stores" },
+  "h-e-b": { code: "5411", description: "Grocery Stores" },
+  heb: { code: "5411", description: "Grocery Stores" },
+  meijer: { code: "5411", description: "Grocery Stores" },
+  "food lion": { code: "5411", description: "Grocery Stores" },
+  "stop & shop": { code: "5411", description: "Grocery Stores" },
+  "giant eagle": { code: "5411", description: "Grocery Stores" },
+  wegmans: { code: "5411", description: "Grocery Stores" },
+  "harris teeter": { code: "5411", description: "Grocery Stores" },
+  sprouts: { code: "5411", description: "Grocery Stores" },
+  "piggly wiggly": { code: "5411", description: "Grocery Stores" },
+  "winco foods": { code: "5411", description: "Grocery Stores" },
+  // Asian supermarkets
+  "99 ranch": { code: "5411", description: "Grocery Stores" },
+  "ranch 99": { code: "5411", description: "Grocery Stores" },
+  "h mart": { code: "5411", description: "Grocery Stores" },
+  hmart: { code: "5411", description: "Grocery Stores" },
+  "mitsuwa marketplace": { code: "5411", description: "Grocery Stores" },
+  mitsuwa: { code: "5411", description: "Grocery Stores" },
+  uwajimaya: { code: "5411", description: "Grocery Stores" },
+  "patel brothers": { code: "5411", description: "Grocery Stores" },
+  // UK supermarkets
+  tesco: { code: "5411", description: "Grocery Stores" },
+  sainsbury: { code: "5411", description: "Grocery Stores" },
+  asda: { code: "5411", description: "Grocery Stores" },
+  morrisons: { code: "5411", description: "Grocery Stores" },
+  waitrose: { code: "5411", description: "Grocery Stores" },
+  lidl: { code: "5411", description: "Grocery Stores" },
+  // Australian supermarkets
+  woolworths: { code: "5411", description: "Grocery Stores" },
+  coles: { code: "5411", description: "Grocery Stores" },
+  // Warehouse clubs
+  costco: { code: "5411", description: "Grocery Stores" },
+  "sam's club": { code: "5411", description: "Grocery Stores" },
+  "bj's wholesale": { code: "5411", description: "Grocery Stores" },
+};
