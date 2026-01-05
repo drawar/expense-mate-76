@@ -55,6 +55,11 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 }) => {
   const { data: allTransactions = [] } = useTransactionsQuery();
 
+  // Count transactions for this payment method (used to trigger cap progress refresh)
+  const paymentMethodTransactionCount = allTransactions.filter(
+    (t) => t.paymentMethod?.id === paymentMethod.id
+  ).length;
+
   // Deactivation confirmation state
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
@@ -319,6 +324,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             paymentMethodId={paymentMethod.id}
             rewardRules={rewardRules}
             statementDay={paymentMethod.statementStartDay || 1}
+            transactionCount={paymentMethodTransactionCount}
           />
         )}
 

@@ -9,69 +9,17 @@ interface PaymentCardFaceProps {
   paymentMethod: PaymentMethod;
 }
 
-// Card image URLs for known cards
-// To add custom cartoon-style images, use /generate-card-art command and save to /public/cards/
-// Local images take precedence: '/cards/amex-cobalt.png' > external URL
-const CARD_IMAGES: Record<string, string> = {
-  // American Express cards (use local paths for custom art, external URLs as fallback)
-  "american express:aeroplan reserve":
-    "https://icm.aexp-static.com/Internet/internationalcardshop/en_ca/images/cards/aeroplan-reserve-card.png",
-  "american express:platinum":
-    "https://icm.aexp-static.com/Internet/internationalcardshop/en_ca/images/cards/The_Platinum_Card.png",
-  "american express:cobalt":
-    "https://www.americanexpress.com/content/dam/amex/en-ca/support/cobalt-card/explorer_2019_ca_di_dod_480x304.png",
-  // Citibank cards
-  "citibank:rewards visa signature":
-    "https://www.asiamiles.com/content/dam/am-content/brand-v2/finance-pillar/product-small-image/Citibank/MY/MY-Rewards-Visa-20Signature2-480x305.png",
-  "citibank:rewards world mastercard":
-    "https://mhgprod.blob.core.windows.net/singsaver/strapi-uploads/bltea3680481263edcb_492d0be83f.png",
-  // Neo Financial Cathay World Elite
-  "mastercard:cathay world elite":
-    "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
-  "neo financial:cathay world elite mastercard":
-    "https://www.finlywealth.com/_next/image?url=%2Fapi%2Fmedia%2Ffile%2Fcathay_world_elite_creditcard.png&w=3840&q=100",
-  // HSBC cards
-  "hsbc:revolution visa platinum":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/hsbc-revolution-visa-platinum.png",
-  // Brim Financial cards
-  "brim financial:air france klm world elite mastercard":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/brim-financial-air-france-klm-world-elite.png",
-  // MBNA cards
-  "mbna:amazon.ca rewards world mastercard":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/card-images/mbna-amazonca-rewards-world-mc.jpeg",
-};
-
 /**
- * Get card image URL based on issuer and card name
+ * Get card image URL from payment method
+ * Image URL now comes from the database:
+ * 1. payment_methods.image_url (user uploaded custom image)
+ * 2. card_catalog.default_image_url (fallback from linked catalog entry)
+ *
+ * To update a card image, update the card_catalog.default_image_url in the database.
+ * This is the single source of truth for card images.
  */
 function getCardImageUrl(paymentMethod: PaymentMethod): string | null {
-  if (paymentMethod.imageUrl) {
-    return paymentMethod.imageUrl;
-  }
-
-  const issuer = paymentMethod.issuer?.toLowerCase() || "";
-  const name = paymentMethod.name?.toLowerCase() || "";
-
-  // Normalize issuer names
-  const normalizedIssuer = issuer.includes("amex")
-    ? "american express"
-    : issuer;
-
-  // Try exact match first
-  const key = `${normalizedIssuer}:${name}`;
-  if (CARD_IMAGES[key]) {
-    return CARD_IMAGES[key];
-  }
-
-  // Try partial matches
-  for (const [cardKey, url] of Object.entries(CARD_IMAGES)) {
-    const [cardIssuer, cardName] = cardKey.split(":");
-    if (normalizedIssuer.includes(cardIssuer) && name.includes(cardName)) {
-      return url;
-    }
-  }
-
-  return null;
+  return paymentMethod.imageUrl || null;
 }
 
 export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
