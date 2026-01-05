@@ -184,7 +184,7 @@ const Transactions = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="container max-w-7xl mx-auto pb-16">
+      <div className="container max-w-7xl mx-auto pb-16 px-4 md:px-6">
         <TransactionHeader />
 
         {/* Review Queue Banner */}

@@ -320,7 +320,7 @@ const PaymentMethods = () => {
       className="min-h-screen"
       style={{ backgroundColor: "var(--color-bg)" }}
     >
-      <div className="container max-w-7xl mx-auto pb-16 px-4">
+      <div className="container max-w-7xl mx-auto pb-16 px-4 md:px-6">
         {/* Japandi Header - Medium weight, restrained */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 mt-6">
           <div>

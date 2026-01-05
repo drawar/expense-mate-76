@@ -55,7 +55,7 @@ const RewardPoints = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="container max-w-7xl mx-auto pb-16">
+      <div className="container max-w-7xl mx-auto pb-16 px-4 md:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
           <div>
             <h1 className="text-2xl font-medium tracking-tight text-gradient">
