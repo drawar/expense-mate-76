@@ -7,7 +7,6 @@ export type BadgeTier = "bronze" | "silver" | "gold" | "diamond";
 export interface Badge {
   milestone: BadgeMilestone;
   name: string;
-  emoji: string;
   tier: BadgeTier;
   description: string;
 }

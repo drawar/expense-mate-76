@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { CurrencyService } from "@/core/currency";
 import { Currency } from "@/types";
+import { UI_ICONS } from "@/utils/constants/icons";
 
 // Currency to ISO 3166-1-alpha-2 country code mapping (lowercase)
 const currencyToCountry: Record<string, string> = {
@@ -55,9 +56,9 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
           <SelectValue>
             <span className="flex items-center gap-1.5">
               {currencyToCountry[value] ? (
-                <span className={`fi fi-${currencyToCountry[value]}`} />
+                <span className={`fi fi-${currencyToCountry[value]} text-lg`} />
               ) : (
-                <span>💰</span>
+                <UI_ICONS.money size={18} />
               )}
               <span>{value}</span>
             </span>
@@ -69,10 +70,10 @@ const DisplayCurrencySelect: React.FC<DisplayCurrencySelectProps> = ({
               <span className="flex items-center gap-2">
                 {currencyToCountry[option.value] ? (
                   <span
-                    className={`fi fi-${currencyToCountry[option.value]}`}
+                    className={`fi fi-${currencyToCountry[option.value]} text-lg`}
                   />
                 ) : (
-                  <span>💰</span>
+                  <UI_ICONS.money size={18} />
                 )}
                 <span>{option.value}</span>
               </span>

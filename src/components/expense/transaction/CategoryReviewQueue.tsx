@@ -14,10 +14,11 @@ import { Transaction } from "@/types";
 import { categorizationService } from "@/core/categorization";
 import { storageService } from "@/core/storage/StorageService";
 import {
-  getCategoryEmoji,
+  getCategoryIcon,
   getCategoryColor,
   SUBCATEGORIES,
 } from "@/utils/constants/categories";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { formatDate } from "@/utils/dates/formatters";
@@ -295,7 +296,7 @@ export function CategoryReviewQueue({
             <div className="grid grid-cols-2 gap-2">
               {suggestions.map((suggestion, index) => {
                 const isSelected = suggestion.category === currentCategory;
-                const emoji = getCategoryEmoji(suggestion.category);
+                const iconName = getCategoryIcon(suggestion.category);
                 const color = getCategoryColor(suggestion.category);
 
                 return (
@@ -314,7 +315,12 @@ export function CategoryReviewQueue({
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-lg flex-shrink-0">{emoji}</span>
+                    <span className="text-lg flex-shrink-0">
+                      <CategoryIcon
+                        iconName={iconName as CategoryIconName}
+                        size={18}
+                      />
+                    </span>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">
                         {suggestion.category}
@@ -364,7 +370,10 @@ export function CategoryReviewQueue({
                         : "border-muted hover:border-primary/30 hover:bg-muted/50"
                     )}
                   >
-                    <span>{subcategory.emoji}</span>
+                    <CategoryIcon
+                      iconName={subcategory.icon as CategoryIconName}
+                      size={14}
+                    />
                     <span>{subcategory.name}</span>
                   </button>
                 );

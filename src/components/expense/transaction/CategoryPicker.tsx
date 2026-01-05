@@ -17,10 +17,11 @@ import {
   getCategoryGroups,
   SUBCATEGORIES,
   getCategoryColor,
-  getCategoryEmoji,
+  getCategoryIcon,
   CategoryGroup,
   SubcategoryConfig,
 } from "@/utils/constants/categories";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 import { categorizationService } from "@/core/categorization";
 import { cn } from "@/lib/utils";
@@ -151,7 +152,7 @@ export function CategoryPicker({
                 <div className="space-y-2">
                   {suggestions.map((suggestion, index) => {
                     const isSelected = suggestion.category === currentCategory;
-                    const emoji = getCategoryEmoji(suggestion.category);
+                    const iconName = getCategoryIcon(suggestion.category);
                     const color = getCategoryColor(suggestion.category);
                     const subcategory = SUBCATEGORIES.find(
                       (s) => s.name === suggestion.category
@@ -173,7 +174,12 @@ export function CategoryPicker({
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: color }}
                         />
-                        <span className="text-xl flex-shrink-0">{emoji}</span>
+                        <span className="text-xl flex-shrink-0">
+                          <CategoryIcon
+                            iconName={iconName as CategoryIconName}
+                            size={20}
+                          />
+                        </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm">
@@ -228,8 +234,12 @@ export function CategoryPicker({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: group.parent.color }}
                   />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {group.parent.emoji} {group.parent.name}
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <CategoryIcon
+                      iconName={group.parent.icon as CategoryIconName}
+                      size={16}
+                    />
+                    {group.parent.name}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -252,7 +262,12 @@ export function CategoryPicker({
                             : "border-muted hover:bg-muted/50"
                         )}
                       >
-                        <span className="text-lg">{subcategory.emoji}</span>
+                        <span className="text-lg">
+                          <CategoryIcon
+                            iconName={subcategory.icon as CategoryIconName}
+                            size={18}
+                          />
+                        </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-sm truncate">
@@ -282,8 +297,13 @@ export function CategoryPicker({
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               {isRecategorized && mccCategory !== "Uncategorized" && (
-                <span>
-                  Original: {getCategoryEmoji(mccCategory)} {mccCategory}
+                <span className="flex items-center gap-1">
+                  Original:{" "}
+                  <CategoryIcon
+                    iconName={getCategoryIcon(mccCategory) as CategoryIconName}
+                    size={14}
+                  />{" "}
+                  {mccCategory}
                 </span>
               )}
             </div>

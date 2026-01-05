@@ -18,10 +18,11 @@ import { Transaction, Currency } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import {
-  getCategoryEmoji,
+  getCategoryIcon,
   getCategoryColor,
   getParentCategory,
 } from "@/utils/constants/categories";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { format, parseISO } from "date-fns";
 import {
   TrendingUp,
@@ -114,7 +115,7 @@ const CategoryDrilldownSheet: React.FC<CategoryDrilldownSheetProps> = ({
   const changePercent = previousTotal > 0 ? (change / previousTotal) * 100 : 0;
 
   // Get category metadata
-  const emoji = getCategoryEmoji(categoryName);
+  const iconName = getCategoryIcon(categoryName);
   const color = getCategoryColor(categoryName);
   const parentCategory = getParentCategory(categoryName);
 
@@ -145,7 +146,10 @@ const CategoryDrilldownSheet: React.FC<CategoryDrilldownSheetProps> = ({
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{emoji}</span>
+                <CategoryIcon
+                  iconName={iconName as CategoryIconName}
+                  size={28}
+                />
                 <SheetTitle className="text-xl">{categoryName}</SheetTitle>
               </div>
               {parentCategory && (

@@ -21,7 +21,7 @@ export type SavingsPotential = "high" | "medium" | "low";
 export interface CategoryConfig {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   color: string;
   budgetPriority: BudgetPriority;
   savingsPotential: SavingsPotential;
@@ -33,7 +33,7 @@ export interface SubcategoryConfig {
   id: string;
   name: string;
   parentCategory: string;
-  emoji: string;
+  icon: string;
   description: string;
 }
 
@@ -45,7 +45,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "essentials",
     name: "Essentials",
-    emoji: "🏠",
+    icon: "essentials",
     color: "var(--color-category-essentials)",
     budgetPriority: "high",
     savingsPotential: "low",
@@ -55,7 +55,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "lifestyle",
     name: "Lifestyle",
-    emoji: "✨",
+    icon: "lifestyle",
     color: "var(--color-category-lifestyle)",
     budgetPriority: "medium",
     savingsPotential: "high",
@@ -65,7 +65,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "home_living",
     name: "Home & Living",
-    emoji: "🏡",
+    icon: "home_living",
     color: "var(--color-category-home)",
     budgetPriority: "medium",
     savingsPotential: "medium",
@@ -75,7 +75,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "personal_care",
     name: "Personal Care",
-    emoji: "👤",
+    icon: "personal_care",
     color: "var(--color-category-personal)",
     budgetPriority: "medium",
     savingsPotential: "medium",
@@ -85,7 +85,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "work_education",
     name: "Work & Education",
-    emoji: "💼",
+    icon: "work_education",
     color: "var(--color-category-work)",
     budgetPriority: "high",
     savingsPotential: "low",
@@ -95,7 +95,7 @@ export const PARENT_CATEGORIES: CategoryConfig[] = [
   {
     id: "financial_other",
     name: "Financial & Other",
-    emoji: "💰",
+    icon: "financial_other",
     color: "var(--color-category-financial)",
     budgetPriority: "medium",
     savingsPotential: "medium",
@@ -114,35 +114,35 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "groceries",
     name: "Groceries",
     parentCategory: "essentials",
-    emoji: "🛒",
+    icon: "groceries",
     description: "Food, beverages, produce, meat, dairy",
   },
   {
     id: "housing",
     name: "Housing",
     parentCategory: "essentials",
-    emoji: "🏡",
+    icon: "housing",
     description: "Rent, mortgage, property taxes, home insurance",
   },
   {
     id: "utilities",
     name: "Utilities",
     parentCategory: "essentials",
-    emoji: "💡",
+    icon: "utilities",
     description: "Electricity, gas, water, internet, phone",
   },
   {
     id: "transportation",
     name: "Transportation",
     parentCategory: "essentials",
-    emoji: "🚗",
+    icon: "transportation",
     description: "Gas, public transit, parking, car insurance",
   },
   {
     id: "healthcare",
     name: "Healthcare",
     parentCategory: "essentials",
-    emoji: "💊",
+    icon: "healthcare",
     description: "Prescriptions, medical visits, dental, vision",
   },
 
@@ -151,42 +151,42 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "dining_out",
     name: "Dining Out",
     parentCategory: "lifestyle",
-    emoji: "🍽️",
+    icon: "dining_out",
     description: "Sit-down restaurants, cafes, bars",
   },
   {
     id: "fast_food",
     name: "Fast Food & Takeout",
     parentCategory: "lifestyle",
-    emoji: "🍕",
+    icon: "fast_food",
     description: "Quick service, fast food chains, picked-up orders",
   },
   {
     id: "food_delivery",
     name: "Food Delivery",
     parentCategory: "lifestyle",
-    emoji: "🚗",
+    icon: "food_delivery",
     description: "Uber Eats, DoorDash, SkipTheDishes",
   },
   {
     id: "entertainment",
     name: "Entertainment",
     parentCategory: "lifestyle",
-    emoji: "🎬",
+    icon: "entertainment",
     description: "Movies, concerts, sports events, museums",
   },
   {
     id: "hobbies",
     name: "Hobbies & Recreation",
     parentCategory: "lifestyle",
-    emoji: "🎨",
+    icon: "hobbies",
     description: "Craft supplies, sports equipment, gaming, books",
   },
   {
     id: "travel",
     name: "Travel & Vacation",
     parentCategory: "lifestyle",
-    emoji: "✈️",
+    icon: "travel",
     description: "Flights, hotels, vacation expenses",
   },
 
@@ -195,28 +195,28 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "home_essentials",
     name: "Home Essentials",
     parentCategory: "home_living",
-    emoji: "🧹",
+    icon: "home_essentials",
     description: "Cleaning supplies, paper products, kitchen tools",
   },
   {
     id: "furniture",
     name: "Furniture & Decor",
     parentCategory: "home_living",
-    emoji: "🛋️",
+    icon: "furniture",
     description: "Furniture, bedding, curtains, decorative items",
   },
   {
     id: "home_improvement",
     name: "Home Improvement",
     parentCategory: "home_living",
-    emoji: "🔨",
+    icon: "home_improvement",
     description: "Tools, hardware, paint, garden care, appliances",
   },
   {
     id: "pet_care",
     name: "Pet Care",
     parentCategory: "home_living",
-    emoji: "🐾",
+    icon: "pet_care",
     description: "Pet food, veterinary care, pet supplies",
   },
 
@@ -225,21 +225,21 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "clothing",
     name: "Clothing & Shoes",
     parentCategory: "personal_care",
-    emoji: "👕",
+    icon: "clothing",
     description: "Everyday clothing, work attire, shoes, accessories",
   },
   {
     id: "beauty",
     name: "Beauty & Personal Care",
     parentCategory: "personal_care",
-    emoji: "💄",
+    icon: "beauty",
     description: "Hair salon, cosmetics, skincare, spa services",
   },
   {
     id: "fitness",
     name: "Gym & Fitness",
     parentCategory: "personal_care",
-    emoji: "💪",
+    icon: "fitness",
     description: "Gym memberships, fitness classes, athletic wear",
   },
 
@@ -248,21 +248,21 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "professional_dev",
     name: "Professional Development",
     parentCategory: "work_education",
-    emoji: "📚",
+    icon: "professional_dev",
     description: "Courses, certifications, conference fees",
   },
   {
     id: "work_expenses",
     name: "Work Expenses",
     parentCategory: "work_education",
-    emoji: "💼",
+    icon: "work_expenses",
     description: "Work supplies, professional attire, business meals",
   },
   {
     id: "education",
     name: "Education",
     parentCategory: "work_education",
-    emoji: "🎓",
+    icon: "education",
     description: "Tuition, textbooks, school supplies",
   },
 
@@ -271,49 +271,49 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
     id: "subscriptions",
     name: "Subscriptions & Memberships",
     parentCategory: "financial_other",
-    emoji: "📱",
+    icon: "subscriptions",
     description: "Streaming, software, cloud storage, memberships",
   },
   {
     id: "financial_services",
     name: "Financial Services",
     parentCategory: "financial_other",
-    emoji: "🏦",
+    icon: "financial_services",
     description: "Bank fees, ATM fees, investment fees, tax prep",
   },
   {
     id: "insurance",
     name: "Insurance",
     parentCategory: "financial_other",
-    emoji: "🛡️",
+    icon: "insurance",
     description: "Life, disability, other non-health/auto/home",
   },
   {
     id: "gifts",
     name: "Gifts & Donations",
     parentCategory: "financial_other",
-    emoji: "🎁",
+    icon: "gifts",
     description: "Birthday/holiday gifts, charitable donations",
   },
   {
     id: "cash_atm",
     name: "Cash & ATM",
     parentCategory: "financial_other",
-    emoji: "💵",
+    icon: "cash_atm",
     description: "Cash withdrawals, money transfers",
   },
   {
     id: "fees",
     name: "Fees & Charges",
     parentCategory: "financial_other",
-    emoji: "⚠️",
+    icon: "fees",
     description: "Late fees, overdraft fees, penalties",
   },
   {
     id: "uncategorized",
     name: "Uncategorized",
     parentCategory: "financial_other",
-    emoji: "❓",
+    icon: "uncategorized",
     description: "Transactions that need categorization",
   },
 ];
@@ -392,11 +392,11 @@ export function getCategoryColor(categoryName: string): string {
 }
 
 /**
- * Get the emoji for a category
+ * Get the icon name for a category
  */
-export function getCategoryEmoji(categoryName: string): string {
+export function getCategoryIcon(categoryName: string): string {
   const subcategory = SUBCATEGORY_MAP[categoryName];
-  return subcategory?.emoji || "📦";
+  return subcategory?.icon || "default";
 }
 
 // =============================================================================

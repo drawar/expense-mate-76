@@ -1,13 +1,14 @@
 // src/components/streak/StreakDisplay.tsx
 
 import { EarnedBadge, NextBadgeProgress } from "@/core/streak/types";
-import { BADGE_DEFINITIONS, STREAK_FIRE_EMOJI } from "@/core/streak/constants";
+import { BADGE_DEFINITIONS } from "@/core/streak/constants";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { format, startOfMonth } from "date-fns";
+import { BadgeIcon, UI_ICONS } from "@/utils/constants/icons";
 
 interface StreakDisplayProps {
   streak: number;
@@ -61,15 +62,17 @@ export function StreakDisplay({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center gap-1.5 cursor-help">
-            <span className="text-base">{STREAK_FIRE_EMOJI}</span>
+            <UI_ICONS.fire size={18} className="text-orange-500" />
             <span className="text-xs font-medium text-foreground">
               {streak} day{streak !== 1 ? "s" : ""} under forecast
             </span>
             {/* Earned badges */}
             {badgesThisMonth.map((badge) => (
-              <span key={badge.milestone} className="text-sm">
-                {BADGE_DEFINITIONS[badge.milestone].emoji}
-              </span>
+              <BadgeIcon
+                key={badge.milestone}
+                tier={BADGE_DEFINITIONS[badge.milestone].tier}
+                size={16}
+              />
             ))}
           </div>
         </TooltipTrigger>
@@ -89,9 +92,13 @@ export function StreakDisplay({
 
       {/* Progress to next badge */}
       {nextBadge && (
-        <p className="text-[11px] text-muted-foreground ml-6">
+        <p className="text-[11px] text-muted-foreground ml-6 flex items-center gap-1">
           {nextBadge.remaining} more day{nextBadge.remaining !== 1 ? "s" : ""}{" "}
-          to {BADGE_DEFINITIONS[nextBadge.milestone].emoji}{" "}
+          to{" "}
+          <BadgeIcon
+            tier={BADGE_DEFINITIONS[nextBadge.milestone].tier}
+            size={12}
+          />{" "}
           {BADGE_DEFINITIONS[nextBadge.milestone].name}
         </p>
       )}

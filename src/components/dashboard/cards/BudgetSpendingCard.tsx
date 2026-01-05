@@ -34,6 +34,7 @@ import {
   ParentCategorySpending,
 } from "@/utils/dashboard/categoryHierarchy";
 import { getTimeframeDateRange } from "@/utils/dashboard";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 
 interface BudgetSpendingCardProps {
   className?: string;
@@ -347,7 +348,10 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                   }}
                   className="w-full flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-muted/50 active:bg-muted/70 transition-colors text-left"
                 >
-                  <span className="text-base">{category.emoji}</span>
+                  <CategoryIcon
+                    iconName={category.icon as CategoryIconName}
+                    size={18}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm truncate">{category.name}</span>

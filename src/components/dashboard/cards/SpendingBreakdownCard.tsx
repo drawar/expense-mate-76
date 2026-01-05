@@ -21,6 +21,7 @@ import {
   SubcategorySpending,
 } from "@/utils/dashboard/categoryHierarchy";
 import { cn } from "@/lib/utils";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 
 interface SpendingBreakdownCardProps {
   transactions: Transaction[];
@@ -72,7 +73,7 @@ const SubcategoryRow: React.FC<{
     onClick={onClick}
   >
     <div className="flex items-center gap-2 min-w-0 flex-1">
-      <span className="text-sm">{subcategory.emoji}</span>
+      <CategoryIcon iconName={subcategory.icon as CategoryIconName} size={14} />
       <span className="text-sm text-muted-foreground truncate">
         {subcategory.name}
       </span>
@@ -127,7 +128,10 @@ const ParentCategoryRow: React.FC<{
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <span className="text-base">{category.emoji}</span>
+              <CategoryIcon
+                iconName={category.icon as CategoryIconName}
+                size={18}
+              />
               <span className="text-sm">{category.name}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -208,7 +212,7 @@ const SpendingBreakdownCard: React.FC<SpendingBreakdownCardProps> = ({
         categories.push({
           id: "other",
           name: "Other",
-          emoji: "📦",
+          icon: "default",
           color: "var(--color-category-other)",
           amount: otherTotal,
           percentage: otherPercentage,

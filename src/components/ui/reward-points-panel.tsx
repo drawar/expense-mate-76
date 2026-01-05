@@ -1,5 +1,6 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
+import { UI_ICONS } from "@/utils/constants/icons";
 
 interface RewardPointsPanelProps {
   totalPoints: number;
@@ -16,7 +17,7 @@ export const RewardPointsPanel: React.FC<RewardPointsPanelProps> = ({
 }) => {
   return (
     <div
-      className={cn('reward-points-panel', className)}
+      className={cn("reward-points-panel", className)}
       role="status"
       aria-live="polite"
       aria-label="Reward points calculation"
@@ -24,35 +25,32 @@ export const RewardPointsPanel: React.FC<RewardPointsPanelProps> = ({
       {/* Icon */}
       <span
         style={{
-          fontSize: '20px',
-          color: 'var(--color-icon-primary)',
+          color: "var(--color-icon-primary)",
         }}
         aria-hidden="true"
       >
-        💳
+        <UI_ICONS.creditCard size={20} />
       </span>
-      
+
       {/* Label */}
       <span
         style={{
-          color: 'var(--color-text-secondary)',
-          fontSize: 'var(--font-size-body)',
+          color: "var(--color-text-secondary)",
+          fontSize: "var(--font-size-body)",
           fontWeight: 500,
         }}
       >
         Reward Points
       </span>
-      
+
       {/* Total Points Badge */}
       <div className="points-badge">
         {totalPoints.toFixed(0)} {currency}
       </div>
-      
+
       {/* Bonus Points Badge (if applicable) */}
       {bonusPoints > 0 && (
-        <div className="bonus-badge">
-          +{bonusPoints.toFixed(0)} bonus
-        </div>
+        <div className="bonus-badge">+{bonusPoints.toFixed(0)} bonus</div>
       )}
     </div>
   );

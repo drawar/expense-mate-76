@@ -23,7 +23,7 @@ import { CurrencyService } from "@/core/currency";
 export interface SubcategorySpending {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   amount: number;
   percentage: number; // Percentage of parent total
   transactionCount: number;
@@ -32,7 +32,7 @@ export interface SubcategorySpending {
 export interface ParentCategorySpending {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   color: string;
   amount: number;
   percentage: number; // Percentage of total spending
@@ -171,7 +171,7 @@ export function buildCategoryHierarchy(
             id: categoryName.toLowerCase().replace(/\s+/g, "_"),
             name: categoryName,
             parentCategory: "financial_other",
-            emoji: "📦",
+            icon: "default",
             description: "Uncategorized spending",
           },
           amount: data.amount,
@@ -195,7 +195,7 @@ export function buildCategoryHierarchy(
       .map(([name, data]) => ({
         id: data.config.id,
         name: data.config.name,
-        emoji: data.config.emoji,
+        icon: data.config.icon,
         amount: data.amount,
         percentage:
           parent.totalAmount > 0 ? (data.amount / parent.totalAmount) * 100 : 0,
@@ -205,7 +205,7 @@ export function buildCategoryHierarchy(
     categories.push({
       id: parent.config.id,
       name: parent.config.name,
-      emoji: parent.config.emoji,
+      icon: parent.config.icon,
       color: parent.config.color,
       amount: parent.totalAmount,
       percentage:

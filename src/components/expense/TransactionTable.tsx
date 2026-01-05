@@ -32,9 +32,10 @@ import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import {
-  getCategoryEmoji,
+  getCategoryIcon,
   getCategoryColor,
 } from "@/utils/constants/categories";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PaymentMethodIcon } from "@/components/ui/payment-method-select-item";
@@ -260,7 +261,14 @@ const TransactionTable = ({
                                   }}
                                   disabled={!onCategoryEdit}
                                 >
-                                  <span>{getCategoryEmoji(category)}</span>
+                                  <CategoryIcon
+                                    iconName={
+                                      getCategoryIcon(
+                                        category
+                                      ) as CategoryIconName
+                                    }
+                                    size={14}
+                                  />
                                   <span className="truncate max-w-[100px]">
                                     {category}
                                   </span>

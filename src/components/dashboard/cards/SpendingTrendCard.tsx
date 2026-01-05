@@ -144,7 +144,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       const badge = BADGE_DEFINITIONS[highestMilestone as 3 | 7 | 14 | 30];
 
       toast({
-        title: `${badge.emoji} ${badge.name} Earned!`,
+        title: `${badge.name} Earned!`,
         description: `Congratulations! You've stayed under forecast for ${highestMilestone} days.`,
       });
 
