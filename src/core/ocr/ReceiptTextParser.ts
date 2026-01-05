@@ -571,6 +571,12 @@ export class ReceiptTextParser {
           return word;
         }
 
+        // Preserve short all-caps words or words with special chars (e.g., "T&T", "H&M", "AT&T")
+        // These are likely acronyms or brand names
+        if (word.length <= 5 && /^[A-Z&]+$/.test(word)) {
+          return word;
+        }
+
         // Convert to title case
         const lowerWord = word.toLowerCase();
         if (index === 0 || !lowercaseWords.has(lowerWord)) {
