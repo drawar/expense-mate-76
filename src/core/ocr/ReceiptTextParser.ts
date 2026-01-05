@@ -1,4 +1,16 @@
 import { PaddleOcrTextLine, OcrExtractedData } from "./types";
+import {
+  AIRLINE_MERCHANT_MCC_MAP,
+  HOTEL_MERCHANT_MCC_MAP,
+  TRAVEL_AGENCY_MERCHANT_MAP,
+} from "@/utils/constants/merchantMccMapping";
+
+// Build a combined list of all known merchant patterns (sorted by length, longest first)
+const ALL_MERCHANT_PATTERNS = [
+  ...Object.keys(AIRLINE_MERCHANT_MCC_MAP),
+  ...Object.keys(HOTEL_MERCHANT_MCC_MAP),
+  ...Object.keys(TRAVEL_AGENCY_MERCHANT_MAP),
+].sort((a, b) => b.length - a.length);
 
 /**
  * ReceiptTextParser - Extracts structured receipt data from raw OCR text
@@ -139,10 +151,19 @@ export class ReceiptTextParser {
 
   /**
    * Extract merchant name (usually first few lines at top of receipt)
+   * First tries to match against known merchant database, then falls back to heuristics
    */
   private extractMerchantName(
     sortedLines: PaddleOcrTextLine[]
   ): string | undefined {
+    // First pass: Try to match against known merchant database
+    // This handles cases where header text appears before merchant name
+    const knownMerchantMatch = this.findKnownMerchant(sortedLines);
+    if (knownMerchantMatch) {
+      return this.normalizeMerchantName(knownMerchantMatch);
+    }
+
+    // Fallback to original heuristic-based extraction
     // Look at the first 8 lines for merchant name
     const topLines = sortedLines.slice(0, 8);
 
@@ -199,6 +220,30 @@ export class ReceiptTextParser {
     // Fallback: use first clean line
     if (cleanLines.length > 0) {
       return this.normalizeMerchantName(cleanLines[0].text);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Search through all OCR lines to find a known merchant name from the database.
+   * This helps when receipts have header text (store number, date, address) before the merchant name.
+   * Returns the matched text from the line containing the known merchant.
+   */
+  private findKnownMerchant(lines: PaddleOcrTextLine[]): string | undefined {
+    // Search through all lines (not just top 8) for known merchant patterns
+    for (const line of lines) {
+      const text = line.text.trim().toLowerCase();
+      if (text.length < 3) continue;
+
+      // Check against all known merchant patterns (airlines, hotels, travel agencies)
+      for (const pattern of ALL_MERCHANT_PATTERNS) {
+        if (text.includes(pattern)) {
+          // Found a known merchant - return the original line text (preserving case)
+          // This effectively "truncates" everything before this line
+          return line.text.trim();
+        }
+      }
     }
 
     return undefined;
