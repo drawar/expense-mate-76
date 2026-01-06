@@ -285,37 +285,31 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="relative">
-              <Progress
-                value={Math.min(progress, 100)}
-                className="h-2"
-                indicatorClassName={getProgressColor()}
-              />
-              <div
-                className="absolute top-0 h-2 w-0.5 bg-gray-400 dark:bg-gray-500"
-                style={{ left: `${Math.min(expectedProgress, 100)}%` }}
-                title={`Expected: ${expectedProgress.toFixed(0)}%`}
-              />
-            </div>
-
-            {/* Remaining amount */}
-            <div className="text-xs text-muted-foreground">
-              {isOverBudget ? (
-                <span className="text-[var(--color-error)]">
-                  {formatCurrency(Math.abs(remaining))} over budget
-                </span>
-              ) : (
-                <span>
-                  {formatCurrency(remaining)} remaining
-                  {daysRemaining > 0 && (
-                    <span className="ml-1">
-                      ({formatCurrency(remaining / daysRemaining)}/day)
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
+            {/* Progress bar with tooltip */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative cursor-default">
+                    <Progress
+                      value={Math.min(progress, 100)}
+                      className="h-2"
+                      indicatorClassName={getProgressColor()}
+                    />
+                    <div
+                      className="absolute top-0 h-2 w-0.5 bg-gray-400 dark:bg-gray-500"
+                      style={{ left: `${Math.min(expectedProgress, 100)}%` }}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {isOverBudget
+                      ? `${formatCurrency(Math.abs(remaining))} over budget`
+                      : `${formatCurrency(remaining)} remaining${daysRemaining > 0 ? ` (${formatCurrency(remaining / daysRemaining)}/day)` : ""}`}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
 
