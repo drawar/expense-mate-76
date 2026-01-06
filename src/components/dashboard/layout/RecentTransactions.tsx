@@ -21,6 +21,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { CurrencyService } from "@/core/currency";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
+import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
+import { useTransactionActions } from "@/hooks/expense/useTransactionActions";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -151,6 +153,32 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   // State for transaction dialog
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
+    null
+  );
+
+  const { handleDelete } = useTransactionActions();
+
+  // Handle delete transaction
+  const handleDeleteTransaction = useCallback((transactionId: string) => {
+    setTransactionToDelete(transactionId);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDeleteTransaction = useCallback(async () => {
+    if (transactionToDelete) {
+      const transactionObj = transactions.find(
+        (t) => t.id === transactionToDelete
+      );
+      if (transactionObj) {
+        await handleDelete(transactionObj);
+      }
+      setDeleteConfirmOpen(false);
+      setTransactionToDelete(null);
+      setSelectedTransaction(null);
+    }
+  }, [transactionToDelete, transactions, handleDelete]);
 
   // Limit to max items
   const displayTransactions = transactions.slice(0, maxItems);
@@ -365,6 +393,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         isOpen={selectedTransaction !== null}
         onClose={() => setSelectedTransaction(null)}
         onTransactionUpdated={(updated) => setSelectedTransaction(updated)}
+        onDelete={handleDeleteTransaction}
+      />
+
+      <TransactionDeleteDialog
+        isOpen={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirmDelete={confirmDeleteTransaction}
       />
     </div>
   );

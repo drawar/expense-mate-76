@@ -16,6 +16,8 @@ import { Transaction, Currency, PaymentMethod, RenderedInsight } from "@/types";
 import { useInsights } from "@/hooks/useInsights";
 import { cn } from "@/lib/utils";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
+import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
+import { useTransactionActions } from "@/hooks/expense/useTransactionActions";
 import {
   startOfMonth,
   format,
@@ -141,6 +143,12 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   const [showAll, setShowAll] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
+    null
+  );
+
+  const { handleDelete } = useTransactionActions();
 
   const { insights, isLoading, dismissInsight, urgentCount } = useInsights(
     transactions,
@@ -216,6 +224,26 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
     [transactions, navigate]
   );
 
+  // Handle delete transaction
+  const handleDeleteTransaction = useCallback((transactionId: string) => {
+    setTransactionToDelete(transactionId);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDeleteTransaction = useCallback(async () => {
+    if (transactionToDelete) {
+      const transactionObj = transactions.find(
+        (t) => t.id === transactionToDelete
+      );
+      if (transactionObj) {
+        await handleDelete(transactionObj);
+      }
+      setDeleteConfirmOpen(false);
+      setTransactionToDelete(null);
+      setSelectedTransaction(null);
+    }
+  }, [transactionToDelete, transactions, handleDelete]);
+
   // Determine how many to display
   const displayedInsights = showAll ? insights : insights.slice(0, maxInsights);
   const hasMore = insights.length > maxInsights;
@@ -287,6 +315,13 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
           isOpen={selectedTransaction !== null}
           onClose={() => setSelectedTransaction(null)}
           onTransactionUpdated={(updated) => setSelectedTransaction(updated)}
+          onDelete={handleDeleteTransaction}
+        />
+
+        <TransactionDeleteDialog
+          isOpen={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirmDelete={confirmDeleteTransaction}
         />
       </CardContent>
     </Card>
