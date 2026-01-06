@@ -69,7 +69,7 @@ import {
 } from "lucide-react";
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
 
-// Loyalty program logo URLs
+// Loyalty program logo URLs (synced with PointsEarnedCard)
 const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
   krisflyer:
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
@@ -83,6 +83,8 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
   "hsbc rewards":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
+  "hsbc rewards points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
   "td rewards":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
   "citi thankyou":
@@ -91,19 +93,42 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
   thankyou:
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  "thankyou points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
   "asia miles":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
+  asiamiles:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
+  "amazon rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amazon-rewards.png",
+  "flying blue":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
+  flyingblue:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
+  "flying blue miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
+  "flying blue points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
   aeroplan:
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
   "aeroplan points":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  "flying blue":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
 };
 
 function getLoyaltyProgramLogo(currency: string | undefined): string | null {
   if (!currency) return null;
   return LOYALTY_PROGRAM_LOGOS[currency.toLowerCase()] || null;
+}
+
+// Background colors for logos with non-transparent backgrounds
+const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
+  "membership rewards": "#006FCF", // Amex blue
+  "membership rewards points (ca)": "#006FCF",
+};
+
+function getLoyaltyProgramBgColor(currency: string | undefined): string {
+  if (!currency) return "white";
+  return LOYALTY_PROGRAM_BG_COLORS[currency.toLowerCase()] || "white";
 }
 
 interface TransactionDetailsViewProps {
@@ -243,13 +268,21 @@ const TransactionDetailsView = ({
           </p>
           <div className="flex items-center gap-3">
             {loyaltyLogo ? (
-              <img
-                src={loyaltyLogo}
-                alt={pointsCurrency}
-                className="h-10 w-10 rounded-full object-contain bg-white p-1"
-              />
+              <div
+                className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden"
+                style={{
+                  backgroundColor: getLoyaltyProgramBgColor(pointsCurrency),
+                }}
+              >
+                <img
+                  src={loyaltyLogo}
+                  alt={pointsCurrency}
+                  className="h-16 w-16 object-contain"
+                  style={{ transform: "scale(0.85)" }}
+                />
+              </div>
             ) : (
-              <CoinsIcon className="h-10 w-10 text-amber-500" />
+              <CoinsIcon className="h-16 w-16 text-amber-500" />
             )}
             <p className="font-medium">
               + {transaction.rewardPoints.toLocaleString()} {pointsCurrency}

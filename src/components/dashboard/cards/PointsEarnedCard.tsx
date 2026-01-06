@@ -72,6 +72,17 @@ function getLoyaltyProgramLogo(currency: string | undefined): string | null {
   return LOYALTY_PROGRAM_LOGOS[currency.toLowerCase()] || null;
 }
 
+// Background colors for logos with non-transparent backgrounds
+const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
+  "membership rewards": "#006FCF", // Amex blue
+  "membership rewards points (ca)": "#006FCF",
+};
+
+function getLoyaltyProgramBgColor(currency: string | undefined): string {
+  if (!currency) return "white";
+  return LOYALTY_PROGRAM_BG_COLORS[currency.toLowerCase()] || "white";
+}
+
 /**
  * Abbreviate points currency for compact display
  * Maps full program names to short abbreviations
@@ -215,14 +226,24 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                 <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
                   {/* Loyalty Program Logo */}
                   {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt={item.currency}
-                      className="h-8 w-8 object-contain flex-shrink-0"
-                    />
+                    <div
+                      className="h-[37px] w-[37px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{
+                        backgroundColor: getLoyaltyProgramBgColor(
+                          item.currency
+                        ),
+                      }}
+                    >
+                      <img
+                        src={logoUrl}
+                        alt={item.currency}
+                        className="h-[37px] w-[37px] object-contain"
+                        style={{ transform: "scale(0.85)" }}
+                      />
+                    </div>
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <CoinsIcon className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-[37px] w-[37px] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <CoinsIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
 
