@@ -25,6 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { useBudget, BudgetPeriodType } from "@/hooks/useBudget";
@@ -158,11 +164,6 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
     return "On track";
   };
 
-  // Get period label for display
-  const getPeriodLabel = () => {
-    return periodType === "weekly" ? "weekly" : "monthly";
-  };
-
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
@@ -172,15 +173,24 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             Budget & Spending
           </CardTitle>
           {!isEditing && scaledBudget > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-11 w-11 p-0 -mr-2"
-              onClick={handleStartEdit}
-              aria-label="Edit budget"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 w-11 p-0 -mr-2"
+                    onClick={handleStartEdit}
+                    aria-label="Edit budget"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit budget</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </CardHeader>
@@ -263,9 +273,6 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                 </p>
                 <p className="text-sm text-muted-foreground">
                   of {formatCurrency(scaledBudget)}
-                  <span className="text-xs ml-1">
-                    ({formatCurrency(rawBudget)}/{getPeriodLabel()})
-                  </span>
                 </p>
               </div>
               <div className="text-right">
