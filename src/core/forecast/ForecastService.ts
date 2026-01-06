@@ -524,16 +524,17 @@ export class ForecastService {
 
   /**
    * Get the effective amount for a transaction, converted to target currency
+   * Matches the logic in metricsUtils (Budget & Spending card)
    */
   private getAmount(tx: Transaction, targetCurrency: Currency): number {
-    const base = tx.paymentAmount || tx.amount;
+    // Both amount and reimbursementAmount are in tx.currency
+    const amount = tx.amount;
     const reimbursement = tx.reimbursementAmount || 0;
-    const netAmount = base - reimbursement;
+    const netAmount = amount - reimbursement;
 
-    // Get the currency the amount is in (payment currency or transaction currency)
-    const sourceCurrency = (tx.paymentCurrency || tx.currency) as Currency;
+    // Convert from transaction currency to target currency
+    const sourceCurrency = tx.currency as Currency;
 
-    // Convert to target currency if different
     if (sourceCurrency && sourceCurrency !== targetCurrency) {
       return CurrencyService.convert(netAmount, sourceCurrency, targetCurrency);
     }
