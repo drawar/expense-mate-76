@@ -141,13 +141,15 @@ const AddExpense = () => {
       {/* Responsive container: full-width on mobile with padding, centered with max-width on tablet/desktop */}
       <div className="w-full px-4 md:px-0 md:max-w-[600px] lg:max-w-[640px] mx-auto pb-16">
         {/* Page header */}
-        <div className="flex flex-col mt-6 mb-6">
-          <h1 className="text-2xl font-medium tracking-tight text-gradient">
-            Add Expense
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm">
-            Record a new expense transaction
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
+          <div>
+            <h1 className="text-2xl font-medium tracking-tight text-gradient">
+              Add Expense
+            </h1>
+            <p className="text-muted-foreground mt-1.5 text-sm">
+              Record a new expense transaction
+            </p>
+          </div>
         </div>
 
         {/* Scan Receipt Button */}

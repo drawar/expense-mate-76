@@ -101,7 +101,7 @@ const UnusualSpendingCard: React.FC<UnusualSpendingCardProps> = ({
 
                 {/* Amount */}
                 <div className="text-right font-medium">
-                  {CurrencyService.format(anomaly.amount, currency)}
+                  {CurrencyService.format(anomaly.amount, anomaly.currency)}
                 </div>
               </div>
             ))}

@@ -286,6 +286,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
           paymentMethods={paymentMethods}
           isOpen={selectedTransaction !== null}
           onClose={() => setSelectedTransaction(null)}
+          onTransactionUpdated={(updated) => setSelectedTransaction(updated)}
         />
       </CardContent>
     </Card>

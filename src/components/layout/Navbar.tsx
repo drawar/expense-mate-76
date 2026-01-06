@@ -23,7 +23,7 @@ const navItems = [
   { path: "/transactions", label: "Transactions", icon: FileTextIcon },
   { path: "/add-expense", label: "Add Expense", icon: PlusCircleIcon },
   { path: "/payment-methods", label: "Payment Methods", icon: CreditCardIcon },
-  { path: "/reward-points", label: "Reward Points", icon: CoinsIcon },
+  { path: "/points-manager", label: "Points", icon: CoinsIcon },
   { path: "/card-optimizer", label: "Card Optimizer", icon: ActivityIcon },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];

@@ -107,11 +107,8 @@
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Enhanced text - Japandi accent */
-.text-gradient {
-  color: var(--color-accent);
-  letter-spacing: -0.025em;
-}
+/* Page title styling - uses Tailwind's text-gradient from index.css */
+/* Removed duplicate .text-gradient definition to avoid conflicts */
 
 /* Sparkline styles */
 .sparkline {

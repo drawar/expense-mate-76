@@ -364,6 +364,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         paymentMethods={paymentMethods}
         isOpen={selectedTransaction !== null}
         onClose={() => setSelectedTransaction(null)}
+        onTransactionUpdated={(updated) => setSelectedTransaction(updated)}
       />
     </div>
   );

@@ -8,7 +8,8 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import Card from "./Card";
 import { chartUtils, TimeframeTab, metricsUtils } from "@/utils/dashboard";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
@@ -37,6 +38,7 @@ import {
   XAxis,
   YAxis,
   ReferenceLine,
+  ReferenceArea,
   Tooltip,
   ResponsiveContainer,
   Area,
@@ -289,6 +291,18 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     };
   }, [forecastChartData]);
 
+  // Add 7-day avg to chart data for projected days (for tooltip)
+  const chartDataWithAvg = useMemo(() => {
+    if (!shouldShowForecast || displayMode !== "daily") return displayChartData;
+
+    return displayChartData.map((item) => ({
+      ...item,
+      sevenDayAvg: (item as { isProjected?: boolean }).isProjected
+        ? next7DaysForecastAvg
+        : null,
+    }));
+  }, [displayChartData, shouldShowForecast, displayMode, next7DaysForecastAvg]);
+
   // Period options with labels
   const periodOptions: { value: TrendPeriod; label: string }[] = [
     { value: "week", label: "Daily" },
@@ -299,25 +313,23 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
 
   // Create period selector with filtered options
   const periodSelector = (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3">
       {shouldShowForecast && (
-        <div className="flex border rounded-md overflow-hidden">
-          <Button
-            variant={displayMode === "daily" ? "default" : "ghost"}
-            size="sm"
-            className="h-8 px-2 rounded-none text-xs"
-            onClick={() => setDisplayMode("daily")}
-          >
-            Daily
-          </Button>
-          <Button
-            variant={displayMode === "cumulative" ? "default" : "ghost"}
-            size="sm"
-            className="h-8 px-2 rounded-none text-xs"
-            onClick={() => setDisplayMode("cumulative")}
+        <div className="flex items-center gap-1.5">
+          <Switch
+            id="cumulative-mode"
+            checked={displayMode === "cumulative"}
+            onCheckedChange={(checked) =>
+              setDisplayMode(checked ? "cumulative" : "daily")
+            }
+            className="scale-75"
+          />
+          <Label
+            htmlFor="cumulative-mode"
+            className="text-xs text-muted-foreground cursor-pointer"
           >
             Cumulative
-          </Button>
+          </Label>
         </div>
       )}
       <Select
@@ -340,6 +352,22 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     </div>
   );
 
+  // Find today's label in the chart data for vertical reference line
+  const todayLabel = useMemo(() => {
+    if (!displayChartData || displayChartData.length === 0) return null;
+    // Find the last non-projected data point (today or most recent actual)
+    for (let i = displayChartData.length - 1; i >= 0; i--) {
+      const item = displayChartData[i] as {
+        isProjected?: boolean;
+        period?: string;
+      };
+      if (!item.isProjected && item.period) {
+        return item.period;
+      }
+    }
+    return null;
+  }, [displayChartData]);
+
   // Display trend and average section with forecast info
   const TrendAndAverage = () => (
     <div className="flex items-start justify-between mb-4">
@@ -353,24 +381,23 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         />
       )}
 
-      <div className="text-right">
-        <p className="text-sm text-muted-foreground">
-          {shouldShowForecast
-            ? displayMode === "cumulative"
+      {/* Only show stats for cumulative mode or non-forecast views */}
+      {(!shouldShowForecast || displayMode === "cumulative") && (
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">
+            {shouldShowForecast && displayMode === "cumulative"
               ? "Next 7 days total"
-              : "Next 7 days avg"
-            : `${getPeriodLabel(selectedPeriod)} avg`}
-        </p>
-        <p className="font-medium mt-1">
-          {formatCurrency(
-            shouldShowForecast
-              ? displayMode === "cumulative"
+              : `${getPeriodLabel(selectedPeriod)} avg`}
+          </p>
+          <p className="font-medium mt-1">
+            {formatCurrency(
+              shouldShowForecast && displayMode === "cumulative"
                 ? next7DaysForecastTotal
-                : next7DaysForecastAvg
-              : average
-          )}
-        </p>
-      </div>
+                : average
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 
@@ -388,6 +415,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         forecastAmount?: number;
         variance?: number;
         isProjected?: boolean;
+        sevenDayAvg?: number | null;
         topCategories?: Array<{ category: string; amount: number }>;
         originalKey?: string;
       };
@@ -399,9 +427,13 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       const forecastPayload = payload.find(
         (p) => p.dataKey === "forecastAmount"
       );
+      const sevenDayAvgPayload = payload.find(
+        (p) => p.dataKey === "sevenDayAvg"
+      );
       const data = actualPayload?.payload || forecastPayload?.payload;
       const actualValue = actualPayload?.value || 0;
       const forecastValue = forecastPayload?.value || data?.forecastAmount || 0;
+      const sevenDayAvgValue = sevenDayAvgPayload?.value || data?.sevenDayAvg;
       // Calculate variance from displayed values (works for both daily and cumulative modes)
       const variance =
         actualValue > 0 && forecastValue > 0
@@ -450,6 +482,18 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
             </div>
           )}
 
+          {/* 7-day average forecast */}
+          {sevenDayAvgValue && sevenDayAvgValue > 0 && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">
+                Next 7 days avg forecast
+              </p>
+              <p className="text-sm font-medium">
+                {formatCurrency(sevenDayAvgValue)}
+              </p>
+            </div>
+          )}
+
           {/* Variance indicator */}
           {varianceInfo && !isProjected && (
             <div
@@ -494,7 +538,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         <div className="h-44 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={displayChartData}
+              data={chartDataWithAvg}
               margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
             >
               <defs>
@@ -547,17 +591,55 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                   />
                 )}
 
-              {/* Average reference line (non-cumulative) */}
-              {displayMode === "daily" && (
+              {/* Vertical line marking today */}
+              {shouldShowForecast && displayMode === "daily" && todayLabel && (
                 <ReferenceLine
-                  y={
-                    shouldShowForecast && forecast
-                      ? forecast.patterns.dailyAverage
-                      : average
-                  }
+                  x={todayLabel}
+                  stroke="#d1d5db"
+                  strokeWidth={1}
+                  label={{
+                    value: "Today",
+                    position: "insideTopRight",
+                    fill: "#9ca3af",
+                    fontSize: 9,
+                    offset: 5,
+                  }}
+                />
+              )}
+
+              {/* Average reference line (non-cumulative) - shows 7-day avg forecast */}
+              {displayMode === "daily" && !shouldShowForecast && (
+                <ReferenceLine
+                  y={average}
                   stroke="#9ca3af"
                   strokeDasharray="4 4"
                   strokeWidth={1}
+                />
+              )}
+
+              {/* 7-day forecast avg line - rendered as Line for tooltip support */}
+              {displayMode === "daily" && shouldShowForecast && (
+                <Line
+                  type="monotone"
+                  dataKey="sevenDayAvg"
+                  stroke="#9ca3af"
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#9ca3af" }}
+                  connectNulls={false}
+                  name="7-day Avg"
+                />
+              )}
+
+              {/* Shaded area below 7-day avg line for forecast period */}
+              {shouldShowForecast && displayMode === "daily" && todayLabel && (
+                <ReferenceArea
+                  x1={todayLabel}
+                  y1={0}
+                  y2={next7DaysForecastAvg}
+                  fill="#9ca3af"
+                  fillOpacity={0.1}
                 />
               )}
 

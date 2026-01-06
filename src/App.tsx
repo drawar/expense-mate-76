@@ -18,6 +18,7 @@ import DiagnoseRewards from "./pages/DiagnoseRewards";
 import CardOptimizerSimulator from "./pages/CardOptimizerSimulator";
 import DeleteMembershipRewards from "./pages/DeleteMembershipRewards";
 import Settings from "./pages/Settings";
+import PointsManager from "./pages/PointsManager";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
@@ -166,6 +167,16 @@ function App() {
                       <ProtectedRoute>
                         <MainLayout>
                           <Settings />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/points-manager"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <PointsManager />
                         </MainLayout>
                       </ProtectedRoute>
                     }

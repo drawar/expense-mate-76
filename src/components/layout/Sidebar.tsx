@@ -68,11 +68,6 @@ const Sidebar = ({
       icon: <FileTextIcon size={20} />,
     },
     {
-      path: "/reward-points",
-      label: "Reward Points",
-      icon: <CoinsIcon size={20} />,
-    },
-    {
       path: "/payment-methods",
       label: "Payment Methods",
       icon: <CreditCardIcon size={20} />,
@@ -81,6 +76,11 @@ const Sidebar = ({
       path: "/add-expense",
       label: "Add Expense",
       icon: <PlusCircleIcon size={20} />,
+    },
+    {
+      path: "/points-manager",
+      label: "Points Manager",
+      icon: <CoinsIcon size={20} />,
     },
     {
       path: "/card-optimizer",

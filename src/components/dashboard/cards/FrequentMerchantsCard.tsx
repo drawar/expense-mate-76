@@ -24,6 +24,7 @@ interface MerchantStats {
   count: number;
   totalSpent: number;
   mccCode?: string;
+  currency: Currency; // Track the currency for this merchant's transactions
 }
 
 /**
@@ -46,15 +47,15 @@ const FrequentMerchantsCard: React.FC<FrequentMerchantsCardProps> = ({
       const key = merchantName.toLowerCase();
       const existing = statsMap.get(key);
 
-      // Get amount in display currency
-      const amount =
-        tx.currency === currency
-          ? tx.amount
-          : (tx.convertedAmount ?? tx.amount);
-
       if (existing) {
+        // If same currency, add to total; otherwise convert if possible
+        if (existing.currency === tx.currency) {
+          existing.totalSpent += tx.amount;
+        } else {
+          // Mixed currencies - use converted amount if available, fallback to original
+          existing.totalSpent += tx.convertedAmount ?? tx.amount;
+        }
         existing.count += 1;
-        existing.totalSpent += amount;
         // Keep the most recent MCC code
         if (tx.merchant?.mcc?.code) {
           existing.mccCode = tx.merchant.mcc.code;
@@ -63,8 +64,9 @@ const FrequentMerchantsCard: React.FC<FrequentMerchantsCardProps> = ({
         statsMap.set(key, {
           name: merchantName,
           count: 1,
-          totalSpent: amount,
+          totalSpent: tx.amount,
           mccCode: tx.merchant?.mcc?.code,
+          currency: tx.currency, // Use the transaction's original currency
         });
       }
     });
@@ -73,7 +75,7 @@ const FrequentMerchantsCard: React.FC<FrequentMerchantsCardProps> = ({
     return Array.from(statsMap.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, maxDisplayed);
-  }, [transactions, currency, maxDisplayed]);
+  }, [transactions, maxDisplayed]);
 
   // Build URL for quick add
   const buildAddExpenseUrl = (merchant: MerchantStats): string => {
@@ -121,7 +123,10 @@ const FrequentMerchantsCard: React.FC<FrequentMerchantsCardProps> = ({
               <div className="text-right mr-3">
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="font-medium">
-                  {CurrencyService.format(merchant.totalSpent, currency)}
+                  {CurrencyService.format(
+                    merchant.totalSpent,
+                    merchant.currency
+                  )}
                 </p>
               </div>
 

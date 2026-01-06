@@ -36,7 +36,7 @@ export default function DeleteMembershipRewards() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-medium mb-4">
+        <h1 className="text-2xl font-medium tracking-tight text-gradient mb-4">
           Delete Old Membership Rewards
         </h1>
         <p className="text-sm text-muted-foreground mb-4">

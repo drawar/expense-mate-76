@@ -290,13 +290,15 @@ export default function CardOptimizerSimulator() {
       {/* Responsive container: full-width on mobile, centered with max-width on tablet/desktop */}
       <div className="mx-auto w-full md:max-w-[600px] lg:max-w-[640px] pb-16">
         {/* Page Header */}
-        <div className="mb-6 md:mb-8 mt-4 md:mt-6">
-          <h1 className="text-2xl font-medium tracking-tight text-gradient">
-            Card Optimizer Simulator
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm">
-            Compare rewards across all your cards
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
+          <div>
+            <h1 className="text-2xl font-medium tracking-tight text-gradient">
+              Card Optimizer Simulator
+            </h1>
+            <p className="text-muted-foreground mt-1.5 text-sm">
+              Compare rewards across all your cards
+            </p>
+          </div>
         </div>
 
         {/* Simulator Form - Updated spacing (Requirements 13.3, 4.1-4.3) */}

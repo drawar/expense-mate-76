@@ -1,0 +1,242 @@
+/**
+ * BalanceCard - Displays a single currency balance with logo and breakdown
+ */
+
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  CoinsIcon,
+  Edit2,
+  TrendingUp,
+  TrendingDown,
+  ArrowRightLeft,
+} from "lucide-react";
+import { PointsBalance, BalanceBreakdown, getCppRating } from "@/core/points";
+import { cn } from "@/lib/utils";
+
+// Loyalty program logo URLs (reused from PointsEarnedCard)
+const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
+  krisflyer:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
+  "krisflyer miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
+  avios:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
+  "membership rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
+  "membership rewards points (ca)":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
+  "hsbc rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
+  "td rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
+  "citi thankyou":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  "citi thankyou points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  thankyou:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  "asia miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
+  aeroplan:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
+  "flying blue":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
+};
+
+function getLoyaltyProgramLogo(currency: string | undefined): string | null {
+  if (!currency) return null;
+  return LOYALTY_PROGRAM_LOGOS[currency.toLowerCase()] || null;
+}
+
+interface BalanceCardProps {
+  balance: PointsBalance;
+  breakdown?: BalanceBreakdown;
+  averageCpp?: number;
+  onEditStartingBalance?: () => void;
+  className?: string;
+}
+
+export function BalanceCard({
+  balance,
+  breakdown,
+  averageCpp,
+  onEditStartingBalance,
+  className,
+}: BalanceCardProps) {
+  const currencyName = balance.rewardCurrency?.displayName ?? "Points";
+  const logoUrl = getLoyaltyProgramLogo(currencyName);
+
+  const formatNumber = (num: number) => {
+    return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  };
+
+  return (
+    <Card className={cn("relative overflow-hidden", className)}>
+      <CardContent className="pt-6">
+        {/* Header with logo and currency name */}
+        <div className="flex items-center gap-3 mb-4">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={currencyName}
+              className="w-10 h-10 rounded-full object-contain bg-white p-1"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <CoinsIcon className="w-5 h-5 text-primary" />
+            </div>
+          )}
+          <div className="flex-1">
+            <h3 className="font-medium text-foreground">{currencyName}</h3>
+            {balance.rewardCurrency?.issuer && (
+              <p className="text-xs text-muted-foreground">
+                {balance.rewardCurrency.issuer}
+              </p>
+            )}
+          </div>
+          {onEditStartingBalance && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onEditStartingBalance}
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* Current Balance */}
+        <div className="mb-4">
+          <p className="text-3xl font-semibold text-foreground">
+            {formatNumber(balance.currentBalance)}
+          </p>
+          <p className="text-sm text-muted-foreground">Current Balance</p>
+        </div>
+
+        {/* Balance Breakdown */}
+        {breakdown && (
+          <div className="space-y-2 pt-4 border-t">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Starting Balance</span>
+              <span>{formatNumber(breakdown.startingBalance)}</span>
+            </div>
+            {breakdown.earnedFromTransactions > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-green-500" />
+                  Earned
+                </span>
+                <span className="text-green-600">
+                  +{formatNumber(breakdown.earnedFromTransactions)}
+                </span>
+              </div>
+            )}
+            {breakdown.adjustments !== 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  {breakdown.adjustments > 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  Adjustments
+                </span>
+                <span
+                  className={
+                    breakdown.adjustments > 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  {breakdown.adjustments > 0 ? "+" : ""}
+                  {formatNumber(breakdown.adjustments)}
+                </span>
+              </div>
+            )}
+            {breakdown.redemptions > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  Redeemed
+                </span>
+                <span className="text-red-600">
+                  -{formatNumber(breakdown.redemptions)}
+                </span>
+              </div>
+            )}
+            {(breakdown.transfersOut > 0 || breakdown.transfersIn > 0) && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <ArrowRightLeft className="h-3 w-3" />
+                  Transfers
+                </span>
+                <span
+                  className={
+                    breakdown.transfersIn - breakdown.transfersOut > 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  {breakdown.transfersIn - breakdown.transfersOut > 0
+                    ? "+"
+                    : ""}
+                  {formatNumber(breakdown.transfersIn - breakdown.transfersOut)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Average CPP */}
+        {averageCpp !== undefined && averageCpp > 0 && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Avg. Redemption Value
+              </span>
+              <CPPBadge cpp={averageCpp} />
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * CPPBadge - Color-coded CPP display
+ */
+interface CPPBadgeProps {
+  cpp: number;
+  className?: string;
+}
+
+export function CPPBadge({ cpp, className }: CPPBadgeProps) {
+  const rating = getCppRating(cpp);
+
+  const colorClasses = {
+    excellent:
+      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    great:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+    good: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    poor: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+        colorClasses[rating],
+        className
+      )}
+    >
+      {cpp.toFixed(2)}cpp
+    </span>
+  );
+}
+
+export default BalanceCard;

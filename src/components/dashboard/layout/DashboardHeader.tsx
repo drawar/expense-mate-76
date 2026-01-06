@@ -86,10 +86,12 @@ const DashboardHeader: React.FC = () => {
   const periodLabel = getPeriodLabel(activeTab);
 
   return (
-    <div className="mb-6 mt-4">
-      <h1 className="text-2xl font-medium tracking-tight text-primary">
-        {periodLabel}
-      </h1>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
+      <div>
+        <h1 className="text-2xl font-medium tracking-tight text-gradient">
+          {periodLabel}
+        </h1>
+      </div>
     </div>
   );
 };

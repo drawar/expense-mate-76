@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,33 +19,35 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Inter', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
-        mono: ['Roboto Mono', 'monospace'],
+        display: ["Inter", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
+        mono: ["Roboto Mono", "monospace"],
         // Moss Dark UI font family
-        moss: ['var(--font-family-base)'],
+        moss: ["var(--font-family-base)"],
       },
       scale: {
-        '102': '1.02',
+        "102": "1.02",
       },
       spacing: {
         // Moss Dark UI spacing tokens
-        'moss-xs': 'var(--space-xs)',
-        'moss-sm': 'var(--space-sm)',
-        'moss-md': 'var(--space-md)',
-        'moss-lg': 'var(--space-lg)',
-        'moss-xl': 'var(--space-xl)',
-        'moss-2xl': 'var(--space-2xl)',
+        "moss-xs": "var(--space-xs)",
+        "moss-sm": "var(--space-sm)",
+        "moss-md": "var(--space-md)",
+        "moss-lg": "var(--space-lg)",
+        "moss-xl": "var(--space-xl)",
+        "moss-2xl": "var(--space-2xl)",
       },
       boxShadow: {
-        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'elevation': '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        card: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        "card-hover":
+          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+        elevation:
+          "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
         // Moss Dark UI shadows
-        'moss-card-mobile': 'var(--shadow-card-mobile)',
-        'moss-card-desktop': 'var(--shadow-card-desktop)',
-        'moss-card-hover': 'var(--shadow-card-hover)',
-        'moss-glow-accent': 'var(--shadow-glow-accent)',
+        "moss-card-mobile": "var(--shadow-card-mobile)",
+        "moss-card-desktop": "var(--shadow-card-desktop)",
+        "moss-card-hover": "var(--shadow-card-hover)",
+        "moss-glow-accent": "var(--shadow-glow-accent)",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -107,10 +108,10 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
         // Moss Dark UI border radius
-        'moss-card': "var(--radius-card)",
-        'moss-input': "var(--radius-input)",
-        'moss-pill': "var(--radius-pill)",
-        'moss-sm': "var(--radius-sm)",
+        "moss-card": "var(--radius-card)",
+        "moss-input": "var(--radius-input)",
+        "moss-pill": "var(--radius-pill)",
+        "moss-sm": "var(--radius-sm)",
       },
       keyframes: {
         "accordion-down": {
@@ -144,5 +145,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

@@ -316,47 +316,22 @@ const PaymentMethods = () => {
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: "var(--color-bg)" }}
-    >
+    <div className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-16 px-4 md:px-6">
-        {/* Japandi Header - Medium weight, restrained */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 mt-6">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
           <div>
-            <h1
-              className="text-2xl font-medium tracking-tight"
-              style={{
-                color: "var(--color-text-primary)",
-                letterSpacing: "-0.2px",
-                lineHeight: 1.3,
-              }}
-            >
+            <h1 className="text-2xl font-medium tracking-tight text-gradient">
               Payment Methods
             </h1>
-            <p
-              className="mt-1.5 text-sm"
-              style={{
-                color: "var(--color-text-secondary)",
-                letterSpacing: "0.1px",
-              }}
-            >
+            <p className="text-muted-foreground mt-1.5 text-sm">
               Manage your payment cards and cash payment methods
             </p>
           </div>
 
-          {/* Japandi CTA Button - Sage green, rounded */}
           <Button
             onClick={handleAddMethod}
-            className="gap-2 mt-4 sm:mt-0 font-medium transition-all duration-300 ease-out hover:brightness-95 active:scale-[0.98]"
-            style={{
-              backgroundColor: "#7C9885",
-              color: "#1A1D1F",
-              borderRadius: "10px",
-              padding: "16px 24px",
-              letterSpacing: "0.3px",
-              fontWeight: 500,
-            }}
+            className="w-full sm:w-auto mt-4 sm:mt-0 gap-2"
             aria-label="Add new payment method"
           >
             <Plus className="h-4 w-4" />

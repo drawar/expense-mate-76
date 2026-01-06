@@ -79,7 +79,10 @@ export function useTransactionManagement(
       prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
     );
 
-    setIsTransactionDialogOpen(false);
+    // Update selected transaction so dialog shows updated data
+    setSelectedTransaction(updatedTransaction);
+
+    // Don't close dialog - TransactionDialog handles switching back to view mode
 
     if (
       updatedTransaction.merchant?.name &&
