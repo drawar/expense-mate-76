@@ -130,8 +130,8 @@ const SpendByCardCard: React.FC<SpendByCardCardProps> = ({
 
               {/* Spending Amount */}
               <div className="text-right">
-                <p className="font-medium text-primary">
-                  {CurrencyService.format(item.spending, item.currency)}
+                <p className="font-medium text-[var(--color-error)]">
+                  -{CurrencyService.format(item.spending, item.currency)}
                 </p>
               </div>
             </div>
