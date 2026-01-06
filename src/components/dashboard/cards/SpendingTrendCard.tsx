@@ -31,7 +31,7 @@ import { useBudgetStreak } from "@/hooks/useBudgetStreak";
 import { StreakDisplay } from "@/components/streak";
 import { BADGE_DEFINITIONS } from "@/core/streak";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
 import {
   LineChart,
   Line,
@@ -180,6 +180,14 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
   const shouldShowForecast =
     timeframe === "thisMonth" && selectedPeriod === "week" && forecastChartData;
 
+  // Helper to parse YYYY-MM-DD string as local date (not UTC)
+  const parseLocalDate = (dateStr: string): Date => {
+    // parseISO parses as local time for date-only strings in date-fns v2+
+    // But to be safe, manually construct local date
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Prepare chart data based on mode
   // Only show forecast for the next 7 days from today
   const displayChartData = useMemo(() => {
@@ -187,9 +195,8 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
       return chartResult?.data || [];
     }
 
-    // Calculate the cutoff date (today + 7 days)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Calculate the cutoff date (today + 7 days) in local time
+    const today = startOfDay(new Date());
     const cutoffDate = new Date(today);
     cutoffDate.setDate(cutoffDate.getDate() + 7);
 
@@ -217,8 +224,8 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         if (!item.isProjected) return true;
 
         // For projected data, only show next 7 days
-        // Parse the date from originalKey (format: "YYYY-MM-DD" or day number)
-        const itemDate = new Date(item.originalKey);
+        // Parse the date from originalKey (format: "YYYY-MM-DD")
+        const itemDate = parseLocalDate(item.originalKey);
         if (isNaN(itemDate.getTime())) {
           // If originalKey is just a day number, construct date from current month
           const dayNum = parseInt(item.originalKey, 10);
@@ -263,8 +270,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     if (!forecastChartData?.data)
       return { next7DaysForecastTotal: 0, next7DaysForecastAvg: 0 };
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const cutoffDate = new Date(today);
     cutoffDate.setDate(cutoffDate.getDate() + 7);
 
@@ -272,7 +278,8 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     const next7DaysData = forecastChartData.data.filter((item) => {
       if (!item.isProjected) return false;
 
-      const itemDate = new Date(item.originalKey);
+      // Parse as local date to avoid timezone issues
+      const itemDate = parseLocalDate(item.originalKey);
       if (isNaN(itemDate.getTime())) return false;
 
       return itemDate >= today && itemDate <= cutoffDate;
@@ -291,16 +298,24 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
     };
   }, [forecastChartData]);
 
-  // Add 7-day avg to chart data for projected days (for tooltip)
+  // Add 7-day avg to chart data for projected days AND today (for tooltip)
   const chartDataWithAvg = useMemo(() => {
     if (!shouldShowForecast || displayMode !== "daily") return displayChartData;
 
-    return displayChartData.map((item) => ({
-      ...item,
-      sevenDayAvg: (item as { isProjected?: boolean }).isProjected
-        ? next7DaysForecastAvg
-        : null,
-    }));
+    // Find today's date key to include it in the avg line
+    const todayStr = format(startOfDay(new Date()), "yyyy-MM-dd");
+
+    return displayChartData.map((item) => {
+      const itemData = item as { isProjected?: boolean; originalKey?: string };
+      // Show sevenDayAvg for projected days AND today
+      const isToday = itemData.originalKey === todayStr;
+      const shouldShowAvg = itemData.isProjected || isToday;
+
+      return {
+        ...item,
+        sevenDayAvg: shouldShowAvg ? next7DaysForecastAvg : null,
+      };
+    });
   }, [displayChartData, shouldShowForecast, displayMode, next7DaysForecastAvg]);
 
   // Period options with labels
@@ -599,10 +614,10 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                   strokeWidth={1}
                   label={{
                     value: "Today",
-                    position: "insideTopRight",
+                    position: "insideTop",
                     fill: "#9ca3af",
                     fontSize: 9,
-                    offset: 5,
+                    dx: 18,
                   }}
                 />
               )}
