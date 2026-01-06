@@ -533,10 +533,16 @@ export class ForecastService {
     const netAmount = amount - reimbursement;
 
     // Convert from transaction currency to target currency
+    // Pass paymentMethod for custom exchange rates (same as metricsUtils)
     const sourceCurrency = tx.currency as Currency;
 
     if (sourceCurrency && sourceCurrency !== targetCurrency) {
-      return CurrencyService.convert(netAmount, sourceCurrency, targetCurrency);
+      return CurrencyService.convert(
+        netAmount,
+        sourceCurrency,
+        targetCurrency,
+        tx.paymentMethod
+      );
     }
 
     return netAmount;
