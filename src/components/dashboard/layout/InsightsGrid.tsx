@@ -9,6 +9,7 @@ import {
   InsightsCard,
   SpendingHealthCard,
   PointsEarnedCard,
+  SpendByCardCard,
 } from "@/components/dashboard/cards";
 import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
 import { EmptyState } from ".";
@@ -128,6 +129,13 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
 
         {/* Points Earned Card */}
         <PointsEarnedCard
+          transactions={filteredTransactions}
+          displayCurrency={currency}
+          className={commonCardClass}
+        />
+
+        {/* Spend by Card */}
+        <SpendByCardCard
           transactions={filteredTransactions}
           displayCurrency={currency}
           className={commonCardClass}
