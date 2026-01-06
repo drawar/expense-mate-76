@@ -7,7 +7,6 @@ import { getMccCategory } from "@/utils/categoryMapping";
 // Import sub-components
 import TransactionDialogHeader from "./elements/TransactionDialogHeader";
 import TransactionDetailsView from "./elements/TransactionDetailsView";
-import TransactionDialogActions from "./elements/TransactionDialogActions";
 import TransactionEditForm from "./elements/TransactionEditForm";
 
 interface TransactionDialogProps {
@@ -75,16 +74,13 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
         }
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
         {dialogMode === "view" ? (
           <>
             <TransactionDialogHeader transaction={transaction} />
             <TransactionDetailsView
               transaction={transaction}
               onCategoryChange={handleCategoryChange}
-            />
-            <TransactionDialogActions
-              transaction={transaction}
               onDelete={handleDeleteTransaction}
               onEdit={() => setDialogMode("edit")}
               isLoading={isLoading}

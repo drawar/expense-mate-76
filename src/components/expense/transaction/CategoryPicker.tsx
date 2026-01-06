@@ -9,7 +9,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Transaction } from "@/types";
@@ -25,7 +24,14 @@ import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 import { categorizationService } from "@/core/categorization";
 import { cn } from "@/lib/utils";
-import { Check, Search, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
+import {
+  Check,
+  Search,
+  RotateCcw,
+  Sparkles,
+  TrendingUp,
+  X,
+} from "lucide-react";
 
 interface CategoryPickerProps {
   open: boolean;
@@ -120,15 +126,27 @@ export function CategoryPicker({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="text-left">
-          <DrawerTitle>Choose Category</DrawerTitle>
-          <DrawerDescription>
+      <DrawerContent className="max-h-[85vh] flex flex-col overflow-hidden sm:max-w-md sm:mx-auto sm:rounded-t-xl">
+        <DrawerHeader className="text-left flex-shrink-0 relative">
+          <DrawerTitle className="text-lg font-semibold leading-none tracking-tight min-h-[44px] flex items-center pr-12">
+            Choose Category
+          </DrawerTitle>
+          <DrawerDescription
+            className="text-sm"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
             {transaction.merchant.name} - What did you buy?
           </DrawerDescription>
+          <DrawerClose className="absolute right-4 top-4 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <X
+              className="h-6 w-6"
+              style={{ color: "var(--color-text-tertiary)" }}
+            />
+            <span className="sr-only">Close</span>
+          </DrawerClose>
         </DrawerHeader>
 
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -140,7 +158,7 @@ export function CategoryPicker({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-4 max-h-[50vh]">
+        <div className="flex-1 overflow-y-auto px-4 min-h-0">
           <div className="space-y-4 pb-4">
             {/* Smart Suggestions Section */}
             {!searchQuery && suggestions.length > 0 && (
@@ -242,7 +260,7 @@ export function CategoryPicker({
                     {group.parent.name}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {group.subcategories.map((subcategory) => {
                     const isSelected = subcategory.name === currentCategory;
                     // Check if this category is in suggestions (to show indicator)
@@ -291,12 +309,13 @@ export function CategoryPicker({
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
-        <DrawerFooter className="border-t">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {isRecategorized && mccCategory !== "Uncategorized" && (
+        {/* Footer - only show if recategorized */}
+        {isRecategorized && mccCategory !== "Uncategorized" && (
+          <DrawerFooter className="border-t flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   Original:{" "}
                   <CategoryIcon
@@ -305,23 +324,16 @@ export function CategoryPicker({
                   />{" "}
                   {mccCategory}
                 </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {isRecategorized && mccCategory !== currentCategory && (
+              </div>
+              {mccCategory !== currentCategory && (
                 <Button variant="outline" size="sm" onClick={handleReset}>
                   <RotateCcw className="h-4 w-4 mr-1" />
                   Reset
                 </Button>
               )}
-              <DrawerClose asChild>
-                <Button variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </DrawerClose>
             </div>
-          </div>
-        </DrawerFooter>
+          </DrawerFooter>
+        )}
       </DrawerContent>
     </Drawer>
   );
