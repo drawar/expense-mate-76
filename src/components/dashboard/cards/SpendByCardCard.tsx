@@ -3,6 +3,11 @@ import React from "react";
 import { CreditCardIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CurrencyService } from "@/core/currency";
 
 interface SpendByCardCardProps {
@@ -121,7 +126,16 @@ const SpendByCardCard: React.FC<SpendByCardCardProps> = ({
 
                 {/* Card Name and Issuer */}
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{item.cardName}</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="font-medium truncate cursor-default">
+                        {item.cardName}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{item.cardName}</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <p className="text-sm text-muted-foreground truncate">
                     {item.issuer}
                   </p>
