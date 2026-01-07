@@ -54,12 +54,13 @@ export class ReceiptTextParser {
     /(?:credit\s+card|debit\s+card)\s*(?:sale|payment|charge)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /\bcard\s+(?:sale|payment|charge)\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /(?:charged?|paid|payment)\s+(?:amount)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    // Balance due (final amount after tax) - before general "total"
+    /balance\s*(?:due)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /amount\s*(?:due|paid|owing)\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     // Grand total (usually final)
     /grand\s*total\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    // Regular total
-    /\btotal\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /amount\s*(?:due|paid|owing)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /balance\s*(?:due)?\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    // Regular total (but NOT subtotal)
+    /(?<!sub\s*)(?<!sub)\btotal\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /(?:net|gross)\s*amount\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     /to\s*pay\s*[:\s]*\$?\s*([\d,]+\.?\d*)/i,
     // Currency-prefixed amounts
@@ -159,7 +160,7 @@ export class ReceiptTextParser {
     // Extract fields
     const merchantName = this.extractMerchantName(sortedLines);
     const totalAmount = this.extractTotalAmount(sortedLines, allText);
-    const taxAmount = this.extractTaxAmount(allText);
+    const taxAmount = this.extractTaxAmount(allText, sortedLines);
     const { date: transactionDate, time: transactionTime } =
       this.extractDateTime(allText);
 
@@ -531,20 +532,38 @@ export class ReceiptTextParser {
       }
     }
 
-    // Look for lines containing "total" and extract nearby amounts
-    for (const line of lines) {
-      const text = line.text.toLowerCase();
-      if (
-        text.includes("total") ||
-        text.includes("amount") ||
-        text.includes("pay")
-      ) {
-        // Try to extract amount from this line
-        const amountMatch = line.text.match(/([\d,]+\.?\d*)/);
-        if (amountMatch) {
-          const amount = this.parseAmount(amountMatch[1]);
-          if (amount && amount > 0 && amount < 100000) {
-            return amount;
+    // Look for lines containing final total keywords and check next line for amount
+    // Priority: balance due > total (but not subtotal)
+    const totalKeywords = [
+      { pattern: /balance\s*due/i, priority: 1 },
+      { pattern: /amount\s*due/i, priority: 1 },
+      { pattern: /(?<!sub\s*)(?<!sub)total$/i, priority: 2 },
+    ];
+
+    for (const { pattern } of totalKeywords.sort(
+      (a, b) => a.priority - b.priority
+    )) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (pattern.test(line.text)) {
+          // Try to extract amount from this line first
+          const amountMatch = line.text.match(/\$?\s*([\d,]+\.\d{2})/);
+          if (amountMatch) {
+            const amount = this.parseAmount(amountMatch[1]);
+            if (amount && amount > 0 && amount < 100000) {
+              return amount;
+            }
+          }
+          // Check next line for amount
+          if (i + 1 < lines.length) {
+            const nextLine = lines[i + 1].text;
+            const nextAmountMatch = nextLine.match(/^\$?\s*([\d,]+\.\d{2})$/);
+            if (nextAmountMatch) {
+              const amount = this.parseAmount(nextAmountMatch[1]);
+              if (amount && amount > 0 && amount < 100000) {
+                return amount;
+              }
+            }
           }
         }
       }
@@ -569,8 +588,50 @@ export class ReceiptTextParser {
 
   /**
    * Extract tax amount
+   * Handles receipts where tax label and amount are on the same line,
+   * or where amounts appear on subsequent lines (table format)
    */
-  private extractTaxAmount(allText: string): number | undefined {
+  private extractTaxAmount(
+    allText: string,
+    lines?: PaddleOcrTextLine[]
+  ): number | undefined {
+    // First, if lines provided, look for table format: GST/PST followed by amounts on next lines
+    // This handles cases where taxable value and tax amount are in separate columns
+    if (lines) {
+      let totalTax = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].text.trim().toUpperCase();
+        if (
+          line === "GST" ||
+          line === "PST" ||
+          line === "HST" ||
+          line === "VAT"
+        ) {
+          // Look at next 2 lines for amounts
+          const amounts: number[] = [];
+          for (let j = 1; j <= 2 && i + j < lines.length; j++) {
+            const nextLine = lines[i + j].text.trim();
+            const amountMatch = nextLine.match(/^[\d,]+\.?\d*$/);
+            if (amountMatch) {
+              const amount = this.parseAmount(amountMatch[0]);
+              if (amount !== undefined) amounts.push(amount);
+            }
+          }
+          // If we have 2 amounts, the smaller one is likely the actual tax
+          // (larger is typically the taxable value)
+          if (amounts.length === 2) {
+            totalTax += Math.min(...amounts);
+          } else if (amounts.length === 1 && amounts[0] < 100) {
+            totalTax += amounts[0];
+          }
+        }
+      }
+      if (totalTax > 0) {
+        return Math.round(totalTax * 100) / 100;
+      }
+    }
+
+    // Fall back to simple patterns on full text (for inline tax amounts)
     for (const pattern of this.taxPatterns) {
       const match = allText.match(pattern);
       if (match) {
@@ -580,6 +641,7 @@ export class ReceiptTextParser {
         }
       }
     }
+
     return undefined;
   }
 

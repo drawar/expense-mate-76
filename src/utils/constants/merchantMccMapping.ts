@@ -484,6 +484,8 @@ export const GROCERY_MERCHANT_MCC_MAP: Record<
   // Canadian supermarkets
   "t&t supermarket": { code: "5411", description: "Grocery Stores" },
   "t&t": { code: "5411", description: "Grocery Stores" },
+  pricesmart: { code: "5411", description: "Grocery Stores" },
+  "pricesmart foods": { code: "5411", description: "Grocery Stores" },
   loblaws: { code: "5411", description: "Grocery Stores" },
   "no frills": { code: "5411", description: "Grocery Stores" },
   "real canadian superstore": { code: "5411", description: "Grocery Stores" },
