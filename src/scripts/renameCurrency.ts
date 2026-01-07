@@ -28,17 +28,21 @@ const supabase = createClient(
 );
 
 async function main() {
-  const { error } = await supabase.from("reward_currencies").insert({
-    code: "marriott_bonvoy_dest",
-    display_name: "Marriott Bonvoy Points",
-    issuer: "Marriott",
-    is_transferrable: false,
-  });
+  // Update payment_methods with "Flying Blue Points" to "Flying Blue Miles"
+  const { data, error } = await supabase
+    .from("payment_methods")
+    .update({ points_currency: "Flying Blue Miles" })
+    .eq("points_currency", "Flying Blue Points")
+    .select("id, name, points_currency");
 
   if (error) {
     console.error("Error:", error.message);
   } else {
-    console.log("✓ Added Marriott Bonvoy Points (destination)");
+    console.log("Updated payment methods:");
+    data?.forEach((m) => console.log(`  ✓ ${m.name} → ${m.points_currency}`));
+    if (data?.length === 0) {
+      console.log("  No payment methods found with 'Flying Blue Points'");
+    }
   }
 }
 

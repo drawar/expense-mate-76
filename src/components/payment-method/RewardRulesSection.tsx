@@ -703,11 +703,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         .single();
 
       if (aeroplanCurrency) {
+        // Only set reward_currency_id - display name comes from join
         const { error: updateError } = await supabase
           .from("payment_methods")
           .update({
             reward_currency_id: aeroplanCurrency.id,
-            points_currency: aeroplanCurrency.display_name,
           })
           .eq("id", paymentMethod.id);
 
@@ -886,11 +886,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         .single();
 
       if (asiaMilesCurrency) {
+        // Only set reward_currency_id - display name comes from join
         const { error: updateError } = await supabase
           .from("payment_methods")
           .update({
             reward_currency_id: asiaMilesCurrency.id,
-            points_currency: asiaMilesCurrency.display_name,
           })
           .eq("id", paymentMethod.id);
 
@@ -2172,8 +2172,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       }
       addSetupLog(`✅ Total: ${merchantRulesCreated} merchant rules created`);
 
-      // Update payment method's reward currency to Flying Blue Points
-      addSetupLog("Setting reward currency to Flying Blue Points...");
+      // Update payment method's reward currency to Flying Blue Miles
+      addSetupLog("Setting reward currency to Flying Blue Miles...");
       const { data: flyingBlueCurrency } = await supabase
         .from("reward_currencies")
         .select("id, display_name")
@@ -2181,11 +2181,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         .single();
 
       if (flyingBlueCurrency) {
+        // Only set reward_currency_id - display name comes from join
         const { error: updateError } = await supabase
           .from("payment_methods")
           .update({
             reward_currency_id: flyingBlueCurrency.id,
-            points_currency: flyingBlueCurrency.display_name,
           })
           .eq("id", paymentMethod.id);
 
@@ -2397,11 +2397,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         .maybeSingle();
 
       if (amazonCurrency) {
+        // Only set reward_currency_id - display name comes from join
         const { error: updateError } = await supabase
           .from("payment_methods")
           .update({
             reward_currency_id: amazonCurrency.id,
-            points_currency: amazonCurrency.display_name,
           })
           .eq("id", paymentMethod.id);
 

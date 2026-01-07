@@ -234,7 +234,11 @@ export class StorageService {
         icon: pm.icon,
         color: pm.color,
         image_url: pm.imageUrl,
-        points_currency: pm.pointsCurrency ?? null,
+        // points_currency is deprecated - display name comes from reward_currencies join
+        // Only keep for backwards compatibility with old data
+        points_currency: pm.rewardCurrencyId
+          ? null
+          : (pm.pointsCurrency ?? null),
         reward_currency_id: pm.rewardCurrencyId ?? null,
         is_active: pm.active,
         reward_rules: pm.rewardRules as unknown,

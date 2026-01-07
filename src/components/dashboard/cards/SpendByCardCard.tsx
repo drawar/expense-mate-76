@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CurrencyService } from "@/core/currency";
@@ -126,16 +127,18 @@ const SpendByCardCard: React.FC<SpendByCardCardProps> = ({
 
                 {/* Card Name and Issuer */}
                 <div className="min-w-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="font-medium truncate cursor-default">
-                        {item.cardName}
-                      </p>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{item.cardName}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="font-medium truncate cursor-default">
+                          {item.cardName}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{item.cardName}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <p className="text-sm text-muted-foreground truncate">
                     {item.issuer}
                   </p>

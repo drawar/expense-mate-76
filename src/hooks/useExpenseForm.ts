@@ -189,8 +189,7 @@ export const useExpenseForm = ({
             totalPoints,
             basePoints,
             bonusPoints,
-            pointsCurrency:
-              selectedPaymentMethod.pointsCurrency || "Flying Blue Points",
+            pointsCurrency: selectedPaymentMethod.pointsCurrency || "Points",
           });
 
           // Update form field with calculated value (with guard to prevent loops)
