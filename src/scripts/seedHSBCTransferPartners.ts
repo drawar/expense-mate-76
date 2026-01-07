@@ -43,7 +43,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Missing destination currencies that need to be created
+// Destination currencies that may need to be created (if not already present)
+// Note: Use canonical names to avoid duplicates
 const MISSING_DESTINATION_CURRENCIES = [
   {
     code: "jal_mileage_bank",
@@ -57,22 +58,22 @@ const MISSING_DESTINATION_CURRENCIES = [
   },
   {
     code: "miles_and_smiles",
-    display_name: "Miles&Smiles",
+    display_name: "Miles&Smiles", // NOT "Turkish Miles&Smiles"
     issuer: "Turkish Airlines",
   },
   {
     code: "royal_orchid_plus",
-    display_name: "Royal Orchid Plus",
+    display_name: "Royal Orchid Plus", // NOT "Thai Royal Orchid Plus"
     issuer: "Thai Airways",
   },
   {
     code: "infinity_mileagelands",
-    display_name: "Infinity MileageLands",
+    display_name: "Infinity MileageLands", // NOT "EVA Infinity MileageLands"
     issuer: "EVA Air",
   },
   {
     code: "lotusmiles",
-    display_name: "LotuSmiles",
+    display_name: "LotuSmiles", // NOT "Vietnam Airlines Lotusmiles"
     issuer: "Vietnam Airlines",
   },
 ];
@@ -113,7 +114,7 @@ const HSBC_TRANSFER_PARTNERS: {
     rate: 10000 / 35000,
   },
   {
-    name: "Turkish Miles&Smiles",
+    name: "Miles&Smiles",
     dbName: "Miles&Smiles",
     hsbcPointsRequired: 35000,
     rate: 10000 / 35000,
@@ -127,7 +128,7 @@ const HSBC_TRANSFER_PARTNERS: {
 
   // 30,000 : 10,000 ratio (0.3333)
   {
-    name: "Thai Royal Orchid Plus",
+    name: "Royal Orchid Plus",
     dbName: "Royal Orchid Plus",
     hsbcPointsRequired: 30000,
     rate: 10000 / 30000, // ~0.3333
@@ -165,7 +166,7 @@ const HSBC_TRANSFER_PARTNERS: {
     rate: 0.4,
   },
   {
-    name: "EVA Infinity MileageLands",
+    name: "Infinity MileageLands",
     dbName: "Infinity MileageLands",
     hsbcPointsRequired: 25000,
     rate: 0.4,
