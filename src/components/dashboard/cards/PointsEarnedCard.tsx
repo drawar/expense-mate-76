@@ -3,12 +3,7 @@ import React from "react";
 import { CoinsIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TruncatedText } from "@/components/ui/truncated-text";
 import { CurrencyService } from "@/core/currency";
 
 interface PointsEarnedCardProps {
@@ -267,18 +262,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
 
                   {/* Currency Name and Earn Rate */}
                   <div className="min-w-0">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <p className="font-medium truncate cursor-default">
-                            {item.currency}
-                          </p>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{item.currency}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <TruncatedText text={item.currency} />
                     <p className="text-sm text-muted-foreground">
                       {item.earnRate.toFixed(1)}{" "}
                       {abbreviatePointsCurrency(item.currency)}/{currencySymbol}
