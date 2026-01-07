@@ -16,6 +16,7 @@ interface PointsByCurrency {
   points: number;
   spending: number;
   earnRate: number;
+  logoUrl?: string;
 }
 
 // Loyalty program logo URLs from Supabase storage
@@ -39,6 +40,8 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
   "citi thankyou":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
   "citi thankyou points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  "citi thankyou points (sg)":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
   thankyou:
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
@@ -151,7 +154,10 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
 }) => {
   // Aggregate points and spending by currency
   const pointsByCurrency = React.useMemo(() => {
-    const currencyMap = new Map<string, { points: number; spending: number }>();
+    const currencyMap = new Map<
+      string,
+      { points: number; spending: number; logoUrl?: string }
+    >();
 
     transactions.forEach((tx) => {
       if (tx.rewardPoints <= 0) return;
@@ -160,6 +166,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
       const existing = currencyMap.get(pointsCurrency) || {
         points: 0,
         spending: 0,
+        logoUrl: undefined,
       };
 
       // Convert spending to display currency
@@ -173,6 +180,8 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
       currencyMap.set(pointsCurrency, {
         points: existing.points + tx.rewardPoints,
         spending: existing.spending + spending,
+        // Capture logo_url from reward_currencies (use first one found)
+        logoUrl: existing.logoUrl || tx.paymentMethod?.rewardCurrencyLogoUrl,
       });
     });
 
@@ -184,6 +193,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
           points: data.points,
           spending: data.spending,
           earnRate: data.spending > 0 ? data.points / data.spending : 0,
+          logoUrl: data.logoUrl,
         })
       )
       .sort((a, b) => b.points - a.points);
@@ -216,7 +226,9 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
       <CardContent>
         <div className="space-y-3">
           {pointsByCurrency.map((item) => {
-            const logoUrl = getLoyaltyProgramLogo(item.currency);
+            // Use logo_url from database first, fall back to hardcoded mapping
+            const logoUrl =
+              item.logoUrl || getLoyaltyProgramLogo(item.currency);
             return (
               <div
                 key={item.currency}

@@ -99,6 +99,17 @@ function getQuickSetupConfig(
 
   if (
     (issuer.includes("american express") || issuer.includes("amex")) &&
+    name.includes("green")
+  ) {
+    return {
+      type: "amex-green",
+      name: "Amex Green (US)",
+      description: "3x restaurants, 3x flights, 3x transit, 1x other",
+    };
+  }
+
+  if (
+    (issuer.includes("american express") || issuer.includes("amex")) &&
     name.includes("aeroplan") &&
     name.includes("reserve")
   ) {
@@ -2425,6 +2436,201 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
     }
   };
 
+  const runAmexGreenSetup = async () => {
+    setIsRunningSetup(true);
+    setSetupLog([]);
+    setShowSetupLog(true);
+
+    try {
+      addSetupLog("Initializing...");
+      initializeRuleRepository(supabase);
+      const repository = getRuleRepository();
+
+      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
+        "American Express",
+        "Green"
+      );
+      addSetupLog(`Card Type ID: ${setupCardTypeId}`);
+
+      // Delete existing rules
+      addSetupLog("Removing existing rules...");
+      const { data: existingRules } = await supabase
+        .from("reward_rules")
+        .select("id")
+        .eq("card_type_id", setupCardTypeId);
+
+      if (existingRules && existingRules.length > 0) {
+        for (const rule of existingRules) {
+          await repository.deleteRule(rule.id);
+        }
+        addSetupLog(`✅ Removed ${existingRules.length} existing rule(s)`);
+      }
+
+      // MCCs for restaurants (excludes bars 5813 and convenience stores 5499)
+      const restaurantMCCs = ["5811", "5812", "5814"];
+
+      // MCCs for airlines (direct bookings) - 3000-3299 range + 4511
+      const airlineMCCs = [
+        ...Array.from({ length: 300 }, (_, i) => String(3000 + i)),
+        "4511",
+      ];
+
+      // Amex Travel merchants
+      const amexTravelMerchants = [
+        "AMEX TRAVEL",
+        "AMEXTRAVEL",
+        "AMERICAN EXPRESS TRAVEL",
+        "AMEX VACATIONS",
+      ];
+
+      // MCCs for transit (trains, taxicabs, rideshare, ferries, tolls, parking, buses, subways)
+      const transitMCCs = [
+        "4011",
+        "4111",
+        "4112",
+        "4121",
+        "4131",
+        "4468",
+        "4784",
+        "4789",
+        "7523",
+      ];
+
+      // Rule 1: 3x on Restaurants Worldwide
+      addSetupLog("Creating 3x Restaurants rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Restaurants",
+        description:
+          "Earn 3 points per $1 at restaurants worldwide (excludes bars, nightclubs, convenience stores)",
+        enabled: true,
+        priority: 5,
+        conditions: [
+          { type: "mcc", operation: "include", values: restaurantMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x Restaurants rule created (worldwide, no cap)");
+
+      // Rule 2: 3x on Flights (airlines MCC)
+      addSetupLog("Creating 3x Flights rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Flights",
+        description:
+          "Earn 3 points per $1 on flights booked directly with airlines",
+        enabled: true,
+        priority: 4,
+        conditions: [
+          { type: "mcc", operation: "include", values: airlineMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x Flights rule created (no cap)");
+
+      // Rule 2b: 3x on Amex Travel (merchant match)
+      addSetupLog("Creating 3x Amex Travel rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Amex Travel",
+        description:
+          "Earn 3 points per $1 on purchases through amextravel.com or Amex Travel App",
+        enabled: true,
+        priority: 4,
+        conditions: [
+          {
+            type: "merchant",
+            operation: "include",
+            values: amexTravelMerchants,
+          },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x Amex Travel rule created (no cap)");
+
+      // Rule 3: 3x on Transit
+      addSetupLog("Creating 3x Transit rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "3x Points on Transit",
+        description:
+          "Earn 3 points per $1 on transit including trains, buses, taxis, rideshares, ferries, tolls, and parking",
+        enabled: true,
+        priority: 3,
+        conditions: [
+          { type: "mcc", operation: "include", values: transitMCCs },
+        ],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 2,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 3x Transit rule created (no cap)");
+
+      // Rule 4: 1x on Everything Else
+      addSetupLog("Creating 1x Base rule...");
+      await repository.createRule({
+        cardTypeId: setupCardTypeId,
+        name: "1x Points on All Other Purchases",
+        description: "Earn 1 point per $1 on all other purchases",
+        enabled: true,
+        priority: 1,
+        conditions: [],
+        reward: {
+          calculationMethod: "standard",
+          baseMultiplier: 1,
+          bonusMultiplier: 0,
+          pointsRoundingStrategy: "nearest",
+          amountRoundingStrategy: "none",
+          blockSize: 1,
+          monthlyCap: null,
+          bonusTiers: [],
+        },
+      });
+      addSetupLog("✅ 1x rule created");
+
+      addSetupLog("");
+      addSetupLog("✅ Setup complete!");
+      toast.success("Amex Green (US) rules configured successfully!");
+      onRulesChanged?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      addSetupLog(`❌ Error: ${message}`);
+      toast.error("Setup failed", { description: message });
+    } finally {
+      setIsRunningSetup(false);
+    }
+  };
+
   const handleQuickSetup = () => {
     if (!quickSetupConfig) return;
 
@@ -2434,6 +2640,9 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         break;
       case "amex-platinum":
         runAmexPlatinumSetup();
+        break;
+      case "amex-green":
+        runAmexGreenSetup();
         break;
       case "amex-aeroplan-reserve":
         runAmexAeroplanReserveSetup();

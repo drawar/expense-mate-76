@@ -75,10 +75,12 @@ export class StorageService {
       console.log(
         "StorageService.getPaymentMethods: Querying Supabase for active payment methods..."
       );
-      // Join with card_catalog to get default_image_url as fallback
+      // Join with card_catalog for default_image_url and reward_currencies for display_name and logo_url
       const { data, error } = await supabase
         .from("payment_methods")
-        .select("*, card_catalog(default_image_url)")
+        .select(
+          "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url)"
+        )
         .eq("is_active", true)
         .order("name");
 
@@ -120,6 +122,13 @@ export class StorageService {
           row.card_catalog as { default_image_url?: string } | null
         )?.default_image_url;
 
+        // Get display_name and logo_url from reward_currencies as single source of truth
+        // Fall back to points_currency for backwards compatibility
+        const rewardCurrency = row.reward_currencies as {
+          display_name?: string;
+          logo_url?: string;
+        } | null;
+
         return {
           id: row.id,
           name: row.name,
@@ -131,8 +140,11 @@ export class StorageService {
           color: row.color || undefined,
           // Use payment method's image_url first, then fall back to catalog's default_image_url
           imageUrl: row.image_url || catalogImageUrl || undefined,
-          pointsCurrency: row.points_currency || undefined,
+          // Use reward_currencies.display_name as source of truth, fall back to stored points_currency
+          pointsCurrency:
+            rewardCurrency?.display_name || row.points_currency || undefined,
           rewardCurrencyId: row.reward_currency_id || undefined,
+          rewardCurrencyLogoUrl: rewardCurrency?.logo_url || undefined,
           active: row.is_active ?? true,
           rewardRules: (row.reward_rules as unknown[]) || [],
           selectedCategories: Array.isArray(row.selected_categories)
@@ -439,7 +451,8 @@ export class StorageService {
             id, name, type, issuer, last_four_digits, currency,
             icon, color, image_url, points_currency, is_active,
             reward_rules, selected_categories, statement_start_day,
-            is_monthly_statement, conversion_rate
+            is_monthly_statement, conversion_rate, reward_currency_id,
+            reward_currencies(display_name, logo_url)
           ),
           merchants:merchant_id(
             id, name, address, mcc, mcc_code, is_online, coordinates, is_deleted
@@ -485,26 +498,39 @@ export class StorageService {
         } as Merchant,
         amount: parseFloat(row.amount?.toString() || "0"),
         currency: row.currency as Currency,
-        paymentMethod: {
-          id: row.payment_methods?.id || "",
-          name: row.payment_methods?.name || "Unknown Payment Method",
-          type: row.payment_methods?.type || "credit",
-          issuer: row.payment_methods?.issuer || "",
-          lastFourDigits: row.payment_methods?.last_four_digits || undefined,
-          currency: (row.payment_methods?.currency || "USD") as Currency,
-          icon: row.payment_methods?.icon || undefined,
-          color: row.payment_methods?.color || undefined,
-          imageUrl: row.payment_methods?.image_url || undefined,
-          pointsCurrency: row.payment_methods?.points_currency || undefined,
-          active: row.payment_methods?.is_active || true,
-          rewardRules: row.payment_methods?.reward_rules || [],
-          selectedCategories: row.payment_methods?.selected_categories || [],
-          statementStartDay:
-            row.payment_methods?.statement_start_day ?? undefined,
-          isMonthlyStatement:
-            row.payment_methods?.is_monthly_statement ?? undefined,
-          conversionRate: row.payment_methods?.conversion_rate || undefined,
-        } as PaymentMethod,
+        paymentMethod: (() => {
+          const rewardCurrency = row.payment_methods?.reward_currencies as {
+            display_name?: string;
+            logo_url?: string;
+          } | null;
+          return {
+            id: row.payment_methods?.id || "",
+            name: row.payment_methods?.name || "Unknown Payment Method",
+            type: row.payment_methods?.type || "credit",
+            issuer: row.payment_methods?.issuer || "",
+            lastFourDigits: row.payment_methods?.last_four_digits || undefined,
+            currency: (row.payment_methods?.currency || "USD") as Currency,
+            icon: row.payment_methods?.icon || undefined,
+            color: row.payment_methods?.color || undefined,
+            imageUrl: row.payment_methods?.image_url || undefined,
+            // Use reward_currencies as source of truth, fall back to stored values
+            pointsCurrency:
+              rewardCurrency?.display_name ||
+              row.payment_methods?.points_currency ||
+              undefined,
+            rewardCurrencyId:
+              row.payment_methods?.reward_currency_id || undefined,
+            rewardCurrencyLogoUrl: rewardCurrency?.logo_url || undefined,
+            active: row.payment_methods?.is_active || true,
+            rewardRules: row.payment_methods?.reward_rules || [],
+            selectedCategories: row.payment_methods?.selected_categories || [],
+            statementStartDay:
+              row.payment_methods?.statement_start_day ?? undefined,
+            isMonthlyStatement:
+              row.payment_methods?.is_monthly_statement ?? undefined,
+            conversionRate: row.payment_methods?.conversion_rate || undefined,
+          };
+        })() as PaymentMethod,
         paymentAmount: parseFloat(
           row.payment_amount?.toString() || row.amount?.toString() || "0"
         ),
