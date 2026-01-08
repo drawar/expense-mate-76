@@ -30,14 +30,27 @@ export async function syncPaymentMethodsToSupabase(
       return;
     }
 
-    const localPaymentMethods: PaymentMethod[] = JSON.parse(localStorageData);
+    const rawPaymentMethods: PaymentMethod[] = JSON.parse(localStorageData);
+
+    // Filter out invalid payment methods (missing required fields)
+    const localPaymentMethods = rawPaymentMethods.filter((pm) => {
+      if (!pm.id || !pm.name) {
+        console.warn(
+          "⚠️ Skipping invalid payment method (missing id or name):",
+          pm
+        );
+        return false;
+      }
+      return true;
+    });
+
     if (localPaymentMethods.length === 0) {
-      console.log("✅ No payment methods in localStorage to sync");
+      console.log("✅ No valid payment methods in localStorage to sync");
       return;
     }
 
     console.log(
-      `📦 Found ${localPaymentMethods.length} payment methods in localStorage`
+      `📦 Found ${localPaymentMethods.length} valid payment methods in localStorage`
     );
 
     // Fetch existing payment methods from database to preserve fields set by quick setup
