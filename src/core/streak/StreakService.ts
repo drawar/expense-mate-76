@@ -13,13 +13,14 @@ import { format } from "date-fns";
 export class StreakService {
   /**
    * Calculate current streak from daily forecast data.
-   * Streak counts consecutive days from month start where
+   * Streak counts consecutive days ending at today where
    * cumulativeActual <= cumulativeForecast.
+   *
+   * This is more forgiving than counting from month start - if you
+   * go over budget but recover, your streak restarts from when you
+   * got back under budget.
    */
   calculateStreak(dailyForecasts: DailyForecast[]): StreakCalculation {
-    let streak = 0;
-    let lastOnTrackDate: string | null = null;
-
     // Sort by date to ensure correct order
     const sortedForecasts = [...dailyForecasts].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -45,15 +46,20 @@ export class StreakService {
       return { currentStreak: 0, isBroken: true, lastOnTrackDate: null };
     }
 
-    // Count consecutive days from start where cumulative stayed under forecast
-    for (const day of daysWithActuals) {
+    // Count consecutive days backwards from today where cumulative stayed under forecast
+    let streak = 0;
+    let lastOnTrackDate: string | null = null;
+
+    // Iterate from most recent day backwards
+    for (let i = daysWithActuals.length - 1; i >= 0; i--) {
+      const day = daysWithActuals[i];
       const isOnTrack = day.cumulativeActual! <= day.cumulativeForecast;
 
       if (isOnTrack) {
         streak++;
         lastOnTrackDate = day.date;
       } else {
-        // This shouldn't happen if isCurrentlyOnTrack is true, but safety check
+        // Found a day that was over budget - stop counting
         break;
       }
     }

@@ -30,18 +30,34 @@ SpendingTrendCard near the spender profile.
 
 ## Streak Logic
 
-**Cumulative-based:** Streak continues as long as cumulative actual spending <=
-cumulative forecasted spending for the month.
+**Cumulative-based:** Streak counts consecutive days ending at today where
+cumulative actual spending <= cumulative forecasted spending.
+
+**Forgiving recovery:** Unlike strict "from start of month" counting, if you go
+over budget but later recover (cumulative drops back under forecast), your
+streak restarts from when you got back under budget.
 
 ```typescript
 function calculateStreak(dailyForecasts: DailyForecast[]): number {
+  const daysWithActuals = dailyForecasts.filter(
+    (d) => d.actualAmount !== undefined
+  );
+  if (daysWithActuals.length === 0) return 0;
+
+  // Check if currently on track
+  const lastDay = daysWithActuals[daysWithActuals.length - 1];
+  if (lastDay.cumulativeActual > lastDay.cumulativeForecast) return 0;
+
+  // Count backwards from today
   let streak = 0;
-  for (const day of dailyForecasts) {
-    if (!day.actualAmount) break; // Stop at future days
-    if (day.cumulativeActual <= day.cumulativeForecast) {
+  for (let i = daysWithActuals.length - 1; i >= 0; i--) {
+    if (
+      daysWithActuals[i].cumulativeActual <=
+      daysWithActuals[i].cumulativeForecast
+    ) {
       streak++;
     } else {
-      break; // Streak broken
+      break; // Found a day that was over budget
     }
   }
   return streak;
@@ -50,7 +66,8 @@ function calculateStreak(dailyForecasts: DailyForecast[]): number {
 
 **Reset behavior:**
 
-- Streak resets to 0 when cumulative actual exceeds cumulative forecast
+- Streak is 0 when cumulative actual exceeds cumulative forecast
+- Streak recovers when you get back under budget (forgiving)
 - Streak resets at the start of each month
 - Longest streak (all-time) is preserved
 
@@ -281,8 +298,11 @@ const { currentStreak, earnedBadges, nextBadge } = useBudgetStreak(
 
 ## Edge Cases
 
-1. **First day of month:** Streak = 0, no badges yet
+1. **First day of month:** Streak = 1 if under budget, 0 if over
 2. **No forecast data:** Don't show streak (requires forecast)
 3. **Multiple currencies:** Separate streak per currency
 4. **Month rollover:** Reset current streak, preserve longest streak
-5. **Going over mid-month:** Streak breaks, stays at 0 until month resets
+5. **Going over mid-month:** Streak breaks (0), but recovers when you get back
+   under budget
+6. **Recovery after overspending:** Streak restarts from the day you got back
+   under budget
