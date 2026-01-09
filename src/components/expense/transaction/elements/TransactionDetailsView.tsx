@@ -211,6 +211,30 @@ const TransactionDetailsView = ({
             )}
           </p>
         )}
+        {/* Reimbursement and Net Spend */}
+        {transaction.reimbursementAmount != null &&
+          transaction.reimbursementAmount > 0 && (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-sm text-green-600">
+                Reimbursement:{" "}
+                <span className="font-semibold">
+                  {CurrencyService.format(
+                    -transaction.reimbursementAmount,
+                    transaction.currency
+                  )}
+                </span>
+              </p>
+              <p className="text-sm">
+                Net spend:{" "}
+                <span className="font-semibold">
+                  {CurrencyService.format(
+                    transaction.amount - transaction.reimbursementAmount,
+                    transaction.currency
+                  )}
+                </span>
+              </p>
+            </div>
+          )}
       </div>
 
       {/* Section 4: Context (no label) */}
