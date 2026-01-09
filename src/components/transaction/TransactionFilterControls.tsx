@@ -396,6 +396,21 @@ export const TransactionFilterControls: React.FC<
                   numberOfMonths={2}
                   initialFocus
                 />
+                {(safeFilters.dateRange?.from || safeFilters.dateRange?.to) && (
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-muted-foreground"
+                      onClick={() => {
+                        updateFilter("dateRange", { from: null, to: null });
+                      }}
+                    >
+                      <XIcon className="mr-2 h-4 w-4" />
+                      Clear date range
+                    </Button>
+                  </div>
+                )}
               </PopoverContent>
             </Popover>
           </div>
@@ -413,7 +428,7 @@ export const TransactionFilterControls: React.FC<
               htmlFor="hasReimbursement"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Has reimbursement
+              Has reimbursement only?
             </label>
           </div>
         </div>

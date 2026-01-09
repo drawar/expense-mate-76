@@ -38,6 +38,12 @@ import {
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PaymentMethodIcon } from "@/components/ui/payment-method-select-item";
 import { formatCardShortName } from "@/utils/cardNetworkUtils";
 
@@ -250,34 +256,44 @@ const TransactionTable = ({
                             </div>
                             {/* Category with badges */}
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <button
-                                className={cn(
-                                  "flex items-center gap-1 hover:underline",
-                                  onCategoryEdit
-                                    ? "cursor-pointer"
-                                    : "cursor-default"
-                                )}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onCategoryEdit?.(transaction);
-                                }}
-                                disabled={!onCategoryEdit}
-                              >
-                                <CategoryIcon
-                                  iconName={
-                                    getCategoryIcon(
-                                      category
-                                    ) as CategoryIconName
-                                  }
-                                  size={14}
-                                />
-                                <span className="truncate max-w-[100px]">
-                                  {category}
-                                </span>
-                                {onCategoryEdit && (
-                                  <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100" />
-                                )}
-                              </button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      className={cn(
+                                        "flex items-center gap-1 hover:underline",
+                                        onCategoryEdit
+                                          ? "cursor-pointer"
+                                          : "cursor-default"
+                                      )}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onCategoryEdit?.(transaction);
+                                      }}
+                                      disabled={!onCategoryEdit}
+                                    >
+                                      <CategoryIcon
+                                        iconName={
+                                          getCategoryIcon(
+                                            category
+                                          ) as CategoryIconName
+                                        }
+                                        size={14}
+                                        className="flex-shrink-0"
+                                      />
+                                      <span className="truncate max-w-[150px]">
+                                        {category}
+                                      </span>
+                                      {onCategoryEdit && (
+                                        <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{category}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                               {transaction.needsReview && (
                                 <Badge
                                   variant="outline"
