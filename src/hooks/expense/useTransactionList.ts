@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Transaction, PaymentMethod } from "@/types";
 import { storageService } from "@/core/storage";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 export type SortOption =
   | "date-desc"
@@ -84,7 +85,9 @@ export function useTransactionList() {
 
     const categoryOptions = Array.from(
       new Set(
-        transactions.map((tx) => tx.category || "Uncategorized").filter(Boolean)
+        transactions
+          .map((tx) => getEffectiveCategory(tx) || "Uncategorized")
+          .filter(Boolean)
       )
     );
 
@@ -151,7 +154,9 @@ export function useTransactionList() {
     // Apply category filter
     if (filterOptions.categories.length > 0) {
       filtered = filtered.filter((tx) =>
-        filterOptions.categories.includes(tx.category || "Uncategorized")
+        filterOptions.categories.includes(
+          getEffectiveCategory(tx) || "Uncategorized"
+        )
       );
     }
 
