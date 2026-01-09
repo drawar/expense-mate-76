@@ -388,12 +388,12 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
         cardTypeId: setupCardTypeId,
         name: "2x Points on Gas & Transit",
         description:
-          "Earn 2 points per $1 CAD at gas stations and local transit (no cap)",
+          "Earn 2 points per $1 at gas stations and local transit (no cap, any currency)",
         enabled: true,
         priority: 2,
         conditions: [
           { type: "mcc", operation: "include", values: twoXMCCs },
-          { type: "currency", operation: "equals", values: ["CAD"] },
+          // No currency condition - 2x applies to all currencies including USD
         ],
         reward: {
           calculationMethod: "standard",
