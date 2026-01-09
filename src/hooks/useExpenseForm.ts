@@ -121,6 +121,7 @@ export const useExpenseForm = ({
   const rewardPointsField = form.watch("rewardPoints");
 
   // Initialize selectedMCC from form default values if available
+  // Use a ref to track if we've initialized from defaultValues to avoid overwriting user selections
   const [selectedMCC, setSelectedMCC] = useState<MerchantCategoryCode | null>(
     defaultValues?.mcc || null
   );

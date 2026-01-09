@@ -76,169 +76,165 @@ export const TransactionDetailsSection: React.FC<
 
       {/* Essential fields - always visible */}
       <div className="space-y-4">
-        {/* Row 1: Amount and Currency */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Transaction Amount
-                  {allowNegativeAmount && (
-                    <span className="text-xs text-muted-foreground ml-2 font-normal">
-                      (positive or negative)
-                    </span>
-                  )}
-                </FormLabel>
+        {/* Amount and Currency */}
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Transaction Amount
+                {allowNegativeAmount && (
+                  <span className="text-xs text-muted-foreground ml-2 font-normal">
+                    (positive or negative)
+                  </span>
+                )}
+              </FormLabel>
+              <FormControl>
+                <MossInput
+                  type="number"
+                  min={allowNegativeAmount ? undefined : "0.01"}
+                  step="0.01"
+                  placeholder={allowNegativeAmount ? "0.00 (+ or -)" : "0.00"}
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // Update payment amount automatically when transaction amount changes
+                    const currentPaymentMethod =
+                      form.getValues("paymentMethodId");
+                    if (currentPaymentMethod) {
+                      form.setValue("paymentAmount", e.target.value);
+                    }
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="currency"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Currency</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                }}
+              >
                 <FormControl>
-                  <MossInput
-                    type="number"
-                    min={allowNegativeAmount ? undefined : "0.01"}
-                    step="0.01"
-                    placeholder={allowNegativeAmount ? "0.00 (+ or -)" : "0.00"}
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      // Update payment amount automatically when transaction amount changes
-                      const currentPaymentMethod =
-                        form.getValues("paymentMethodId");
-                      if (currentPaymentMethod) {
-                        form.setValue("paymentAmount", e.target.value);
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {currencyOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Date and Time */}
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full h-10 px-3 text-left text-base md:text-sm font-normal justify-between",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="truncate">
+                        {field.value
+                          ? format(field.value, "PPP")
+                          : "Pick a date"}
+                      </span>
+                      <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={(date) => {
+                      // Only update if a date is selected (prevent clearing on deselect)
+                      if (date) {
+                        field.onChange(date);
                       }
                     }}
+                    disabled={(date) => {
+                      // Compare dates without time to avoid timezone edge cases
+                      // This ensures "today" is always selectable regardless of current time
+                      const today = startOfDay(new Date());
+                      const compareDate = startOfDay(date);
+                      return compareDate > today;
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
                   />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="time"
+          render={({ field }) => {
+            // Get current time for display when field is empty
+            const getCurrentTimeString = () => format(new Date(), "HH:mm");
+
+            return (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <div
+                    className={cn(
+                      "relative flex items-center w-full h-10 px-3 rounded-md border border-input bg-background",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      "focus-within:border-[var(--color-accent)] focus-within:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
+                      "transition-[border-color,box-shadow] duration-150"
+                    )}
+                  >
+                    <input
+                      type="time"
+                      className={cn(
+                        "flex-1 bg-transparent text-base md:text-sm font-normal outline-none",
+                        "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
+                        !field.value && "text-muted-foreground"
+                      )}
+                      value={field.value || getCurrentTimeString()}
+                      onChange={(e) => {
+                        field.onChange(e.target.value || undefined);
+                      }}
+                    />
+                    <ClockIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                  }}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {currencyOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Row 2: Date and Time */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full h-10 px-3 text-left text-base md:text-sm font-normal justify-between",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        <span className="truncate">
-                          {field.value
-                            ? format(field.value, "PPP")
-                            : "Pick a date"}
-                        </span>
-                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={(date) => {
-                        // Only update if a date is selected (prevent clearing on deselect)
-                        if (date) {
-                          field.onChange(date);
-                        }
-                      }}
-                      disabled={(date) => {
-                        // Compare dates without time to avoid timezone edge cases
-                        // This ensures "today" is always selectable regardless of current time
-                        const today = startOfDay(new Date());
-                        const compareDate = startOfDay(date);
-                        return compareDate > today;
-                      }}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => {
-              // Get current time for display when field is empty
-              const getCurrentTimeString = () => format(new Date(), "HH:mm");
-
-              return (
-                <FormItem>
-                  <FormLabel>Time</FormLabel>
-                  <FormControl>
-                    <div
-                      className={cn(
-                        "relative flex items-center w-full h-10 px-3 rounded-md border border-input bg-background",
-                        "hover:bg-accent hover:text-accent-foreground",
-                        "focus-within:border-[var(--color-accent)] focus-within:shadow-[0_0_0_2px_var(--color-accent-subtle)]",
-                        "transition-[border-color,box-shadow] duration-150"
-                      )}
-                    >
-                      <input
-                        type="time"
-                        className={cn(
-                          "flex-1 bg-transparent text-base md:text-sm font-normal outline-none",
-                          "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
-                          !field.value && "text-muted-foreground"
-                        )}
-                        value={field.value || getCurrentTimeString()}
-                        onChange={(e) => {
-                          field.onChange(e.target.value || undefined);
-                        }}
-                      />
-                      <ClockIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
-        </div>
+            );
+          }}
+        />
       </div>
 
       {/* Optional fields - collapsible */}

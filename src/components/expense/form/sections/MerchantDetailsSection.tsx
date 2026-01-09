@@ -45,25 +45,16 @@ export const MerchantDetailsSection: React.FC<MerchantDetailsSectionProps> = ({
       </h2>
 
       <div className="space-y-4">
-        {/* Row 1: Merchant Name and Online toggle */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-          <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
-          <OnlineMerchantToggle />
-        </div>
-
-        {/* Row 2: Merchant Category and Address side by side */}
-        <div
-          className={hideAddress ? "" : "grid grid-cols-1 md:grid-cols-2 gap-4"}
-        >
-          <MerchantCategorySelect
-            selectedMCC={selectedMCC}
-            onSelectMCC={(mcc) => {
-              onSelectMCC(mcc);
-              form.setValue("mcc", mcc);
-            }}
-          />
-          {showAddress && <MerchantAddressAutocomplete />}
-        </div>
+        <MerchantNameAutocomplete onSelectMCC={onSelectMCC} />
+        <OnlineMerchantToggle />
+        <MerchantCategorySelect
+          selectedMCC={selectedMCC}
+          onSelectMCC={(mcc) => {
+            onSelectMCC(mcc);
+            form.setValue("mcc", mcc);
+          }}
+        />
+        {showAddress && <MerchantAddressAutocomplete />}
       </div>
     </MossCard>
   );
