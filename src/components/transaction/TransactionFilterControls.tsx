@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Command,
   CommandEmpty,
@@ -255,6 +256,14 @@ export const TransactionFilterControls: React.FC<
                                   method={method}
                                   size="sm"
                                 />
+                                {method.active === false && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-auto text-[10px] px-1.5 py-0 h-4 text-muted-foreground border-muted-foreground/50"
+                                  >
+                                    Inactive
+                                  </Badge>
+                                )}
                               </div>
                             </CommandItem>
                           );
