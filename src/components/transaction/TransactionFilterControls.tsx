@@ -1,23 +1,31 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, FilterIcon, XIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  FilterIcon,
+  XIcon,
+  SearchIcon,
+  Check,
+} from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
+import { DateRange } from "react-day-picker";
 import { PaymentMethod } from "@/types";
 import { FilterOptions } from "@/hooks/expense/useTransactionList";
 import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
@@ -46,6 +54,37 @@ export const TransactionFilterControls: React.FC<
   searchQuery = "",
   onSearchChange,
 }) => {
+  // Category search state
+  const [categorySearchOpen, setCategorySearchOpen] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+
+  // Payment method search state
+  const [paymentMethodSearchOpen, setPaymentMethodSearchOpen] = useState(false);
+  const [paymentMethodSearchQuery, setPaymentMethodSearchQuery] = useState("");
+
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    const sorted = [...categories].sort((a, b) => a.localeCompare(b));
+    if (!categorySearchQuery.trim()) return sorted;
+    const query = categorySearchQuery.toLowerCase();
+    return sorted.filter((cat) => cat.toLowerCase().includes(query));
+  }, [categories, categorySearchQuery]);
+
+  // Filter payment methods based on search query
+  const filteredPaymentMethods = useMemo(() => {
+    const sorted = [...paymentMethods].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    if (!paymentMethodSearchQuery.trim()) return sorted;
+    const query = paymentMethodSearchQuery.toLowerCase();
+    return sorted.filter(
+      (pm) =>
+        pm.name.toLowerCase().includes(query) ||
+        pm.issuer?.toLowerCase().includes(query) ||
+        pm.lastFourDigits?.includes(query)
+    );
+  }, [paymentMethods, paymentMethodSearchQuery]);
+
   // Ensure filters is never null/undefined
   const safeFilters = filters || {
     paymentMethods: [],
@@ -83,6 +122,24 @@ export const TransactionFilterControls: React.FC<
     onFiltersChange(key, value);
   };
 
+  // Toggle payment method selection
+  const togglePaymentMethod = (methodId: string) => {
+    const current = safeFilters.paymentMethods || [];
+    const newSelection = current.includes(methodId)
+      ? current.filter((id) => id !== methodId)
+      : [...current, methodId];
+    updateFilter("paymentMethods", newSelection);
+  };
+
+  // Toggle category selection
+  const toggleCategory = (category: string) => {
+    const current = safeFilters.categories || [];
+    const newSelection = current.includes(category)
+      ? current.filter((c) => c !== category)
+      : [...current, category];
+    updateFilter("categories", newSelection);
+  };
+
   return (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -116,132 +173,231 @@ export const TransactionFilterControls: React.FC<
             </div>
           )}
 
-          {/* Payment Method and Category - side by side */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Payment Method and Category - stacked */}
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">
                 Payment Method
               </label>
-              <Select
-                value={safeFilters.paymentMethods?.[0] || "all"}
-                onValueChange={(value) =>
-                  updateFilter("paymentMethods", value === "all" ? [] : [value])
-                }
+              <Popover
+                open={paymentMethodSearchOpen}
+                onOpenChange={setPaymentMethodSearchOpen}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All methods" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All methods</SelectItem>
-                  {paymentMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
-                      <PaymentMethodItemContent method={method} size="sm" />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={paymentMethodSearchOpen}
+                    className="w-full justify-between h-10 px-3 text-base md:text-sm font-normal"
+                  >
+                    <span
+                      className={`truncate ${
+                        !safeFilters.paymentMethods?.length
+                          ? "text-muted-foreground"
+                          : ""
+                      }`}
+                    >
+                      {safeFilters.paymentMethods?.length === 1
+                        ? paymentMethods.find(
+                            (pm) => pm.id === safeFilters.paymentMethods[0]
+                          )?.name || "All methods"
+                        : safeFilters.paymentMethods?.length > 1
+                          ? `${safeFilters.paymentMethods.length} methods`
+                          : "All methods"}
+                    </span>
+                    <SearchIcon
+                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                      style={{ strokeWidth: 2.5 }}
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search payment methods..."
+                      value={paymentMethodSearchQuery}
+                      onValueChange={setPaymentMethodSearchQuery}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No payment methods found.</CommandEmpty>
+                      <CommandGroup>
+                        {safeFilters.paymentMethods?.length > 0 && (
+                          <CommandItem
+                            value="__clear_methods__"
+                            onSelect={() => {
+                              updateFilter("paymentMethods", []);
+                            }}
+                            className="cursor-pointer text-muted-foreground"
+                          >
+                            <XIcon className="mr-2 h-4 w-4" />
+                            Clear selection
+                          </CommandItem>
+                        )}
+                        {filteredPaymentMethods.map((method) => {
+                          const isSelected =
+                            safeFilters.paymentMethods?.includes(method.id);
+                          return (
+                            <CommandItem
+                              key={method.id}
+                              value={method.id}
+                              onSelect={() => togglePaymentMethod(method.id)}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 w-full">
+                                <div
+                                  className={`flex h-4 w-4 shrink-0 items-center justify-center border ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/50"}`}
+                                >
+                                  {isSelected && (
+                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                  )}
+                                </div>
+                                <PaymentMethodItemContent
+                                  method={method}
+                                  size="sm"
+                                />
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1 block">Category</label>
-              <Select
-                value={
-                  safeFilters.categories?.length === 1
-                    ? safeFilters.categories[0]
-                    : "all"
-                }
-                onValueChange={(value) =>
-                  updateFilter("categories", value === "all" ? [] : [value])
-                }
+              <Popover
+                open={categorySearchOpen}
+                onOpenChange={setCategorySearchOpen}
               >
-                <SelectTrigger>
-                  {safeFilters.categories?.length > 1 ? (
-                    <span className="truncate">
-                      {safeFilters.categories.length} categories
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categorySearchOpen}
+                    className="w-full justify-between h-10 px-3 text-base md:text-sm font-normal"
+                  >
+                    <span
+                      className={`truncate ${
+                        !safeFilters.categories?.length
+                          ? "text-muted-foreground"
+                          : ""
+                      }`}
+                    >
+                      {safeFilters.categories?.length === 1
+                        ? safeFilters.categories[0]
+                        : safeFilters.categories?.length > 1
+                          ? `${safeFilters.categories.length} categories`
+                          : "All categories"}
                     </span>
-                  ) : (
-                    <SelectValue placeholder="All categories" />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <SearchIcon
+                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                      style={{ strokeWidth: 2.5 }}
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search categories..."
+                      value={categorySearchQuery}
+                      onValueChange={setCategorySearchQuery}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No categories found.</CommandEmpty>
+                      <CommandGroup>
+                        {safeFilters.categories?.length > 0 && (
+                          <CommandItem
+                            value="__clear_categories__"
+                            onSelect={() => {
+                              updateFilter("categories", []);
+                            }}
+                            className="cursor-pointer text-muted-foreground"
+                          >
+                            <XIcon className="mr-2 h-4 w-4" />
+                            Clear selection
+                          </CommandItem>
+                        )}
+                        {filteredCategories.map((category) => {
+                          const isSelected =
+                            safeFilters.categories?.includes(category);
+                          return (
+                            <CommandItem
+                              key={category}
+                              value={category}
+                              onSelect={() => toggleCategory(category)}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 w-full">
+                                <div
+                                  className={`flex h-4 w-4 shrink-0 items-center justify-center border ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/50"}`}
+                                >
+                                  {isSelected && (
+                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                  )}
+                                </div>
+                                <span>{category}</span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          {/* Date Range - side by side */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                Start Date
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-base md:text-sm font-normal overflow-hidden"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {safeFilters.dateRange?.from
-                        ? format(safeFilters.dateRange.from, "MMM d, yyyy")
-                        : "Pick a date"}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={safeFilters.dateRange?.from || undefined}
-                    onSelect={(date) =>
-                      updateFilter("dateRange", {
-                        ...safeFilters.dateRange,
-                        from: date,
-                      })
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 block">End Date</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-base md:text-sm font-normal overflow-hidden"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {safeFilters.dateRange?.to
-                        ? format(safeFilters.dateRange.to, "MMM d, yyyy")
-                        : "Pick a date"}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={safeFilters.dateRange?.to || undefined}
-                    onSelect={(date) =>
-                      updateFilter("dateRange", {
-                        ...safeFilters.dateRange,
-                        to: date,
-                      })
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Date Range */}
+          <div>
+            <label className="text-sm font-medium mb-1 block">Date Range</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left text-base md:text-sm font-normal overflow-hidden"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {safeFilters.dateRange?.from ? (
+                      safeFilters.dateRange?.to ? (
+                        <>
+                          {format(safeFilters.dateRange.from, "MMM d, yyyy")} -{" "}
+                          {format(safeFilters.dateRange.to, "MMM d, yyyy")}
+                        </>
+                      ) : (
+                        format(safeFilters.dateRange.from, "MMM d, yyyy")
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Pick a date range
+                      </span>
+                    )}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  defaultMonth={safeFilters.dateRange?.from || undefined}
+                  selected={{
+                    from: safeFilters.dateRange?.from || undefined,
+                    to: safeFilters.dateRange?.to || undefined,
+                  }}
+                  onSelect={(range: DateRange | undefined) => {
+                    updateFilter("dateRange", {
+                      from: range?.from ? startOfDay(range.from) : null,
+                      to: range?.to ? endOfDay(range.to) : null,
+                    });
+                  }}
+                  numberOfMonths={2}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Additional Filters */}
