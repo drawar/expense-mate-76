@@ -7,7 +7,7 @@ export const formSchema = z
     merchantAddress: z.string().optional(),
     isOnline: z.boolean().default(false),
     isContactless: z.boolean().default(false),
-    amount: z.coerce.number(), // Positive check is done in superRefine to allow negative for MCC 6540
+    amount: z.coerce.number(), // Allows negative for refunds
     currency: z.string().min(1, "Currency is required"),
     paymentMethodId: z.string().min(1, "Payment method is required"),
     paymentAmount: z.string().optional(),
@@ -23,9 +23,9 @@ export const formSchema = z
         (val) => {
           if (!val || val.trim() === "") return true; // Empty is valid (will be treated as 0)
           const num = Number(val);
-          return !isNaN(num) && num >= 0;
+          return !isNaN(num); // Allow negative for refunds
         },
-        { message: "Please enter a valid non-negative number" }
+        { message: "Please enter a valid number" }
       )
       .refine(
         (val) => {
@@ -33,7 +33,7 @@ export const formSchema = z
           const num = Number(val);
           if (isNaN(num)) return true; // Let the first refine handle this
           // Check for up to 2 decimal places
-          const decimalPart = val.split(".")[1];
+          const decimalPart = val.replace("-", "").split(".")[1];
           return !decimalPart || decimalPart.length <= 2;
         },
         { message: "Please enter a number with up to 2 decimal places" }
@@ -56,9 +56,9 @@ export const formSchema = z
         (val) => {
           if (!val || val.trim() === "") return true;
           const num = Number(val);
-          return !isNaN(num) && num >= 0;
+          return !isNaN(num); // Allow negative for refunds
         },
-        { message: "Please enter a valid non-negative number" }
+        { message: "Please enter a valid number" }
       ),
     bonusPoints: z
       .string()
@@ -67,9 +67,9 @@ export const formSchema = z
         (val) => {
           if (!val || val.trim() === "") return true;
           const num = Number(val);
-          return !isNaN(num) && num >= 0;
+          return !isNaN(num); // Allow negative for refunds
         },
-        { message: "Please enter a valid non-negative number" }
+        { message: "Please enter a valid number" }
       ),
     reimbursementAmount: z
       .string()
@@ -84,26 +84,13 @@ export const formSchema = z
       ),
   })
   .superRefine((data, ctx) => {
-    // Validate amount field based on MCC
+    // Validate amount field - allow negative for refunds, but not zero
     const amount = data.amount;
-    const mccCode = data.mcc?.code;
 
-    // Allow negative values only for MCC 6540 (POI Funding Transactions)
-    if (mccCode === "6540") {
-      // For MCC 6540, allow any non-zero value (positive or negative)
-      if (amount === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Amount cannot be zero",
-          path: ["amount"],
-        });
-      }
-    } else if (amount <= 0) {
-      // For other MCCs, must be positive (greater than zero)
+    if (amount === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Amount must be greater than zero (negative values only allowed for MCC 6540)",
+        message: "Amount cannot be zero",
         path: ["amount"],
       });
     }

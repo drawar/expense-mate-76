@@ -53,8 +53,8 @@ export const TransactionDetailsSection: React.FC<
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
 
-  // Allow negative values only for MCC 6540 (POI Funding Transactions)
-  const allowNegativeAmount = mcc?.code === "6540";
+  // Allow negative values for refunds (any MCC)
+  const allowNegativeAmount = true;
 
   return (
     <MossCard>
