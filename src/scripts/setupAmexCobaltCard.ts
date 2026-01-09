@@ -163,6 +163,8 @@ async function setupAmexCobaltCard() {
         blockSize: 1,
         monthlyCap: 10000, // $2,500 × 4 bonus multiplier = 10,000 bonus points
         monthlySpendPeriodType: "calendar",
+        // Stable capGroupId survives rule resets - tracking persists
+        capGroupId: "amex-cobalt-5x-food-groceries",
         bonusTiers: [],
       },
     });

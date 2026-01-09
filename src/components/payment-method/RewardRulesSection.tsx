@@ -350,6 +350,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
           monthlyCap: 2500,
           monthlyCapType: "spend_amount",
           monthlySpendPeriodType: "calendar",
+          // Stable capGroupId survives rule resets - tracking persists
+          capGroupId: "amex-cobalt-5x-food-groceries",
           bonusTiers: [],
         },
       });
