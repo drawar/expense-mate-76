@@ -129,12 +129,8 @@ export function useTransactionList() {
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (tx) =>
-          tx.merchant.name.toLowerCase().includes(query) ||
-          (tx.notes && tx.notes.toLowerCase().includes(query)) ||
-          (tx.merchant.address &&
-            tx.merchant.address.toLowerCase().includes(query))
+      filtered = filtered.filter((tx) =>
+        tx.merchant.name.toLowerCase().includes(query)
       );
     }
 

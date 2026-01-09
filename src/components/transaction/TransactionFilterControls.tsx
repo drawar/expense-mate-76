@@ -31,6 +31,8 @@ interface TransactionFilterControlsProps {
   paymentMethods: PaymentMethod[];
   categories: string[];
   onClearFilters: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 export const TransactionFilterControls: React.FC<
@@ -41,6 +43,8 @@ export const TransactionFilterControls: React.FC<
   paymentMethods,
   categories,
   onClearFilters,
+  searchQuery = "",
+  onSearchChange,
 }) => {
   // Ensure filters is never null/undefined
   const safeFilters = filters || {
@@ -54,6 +58,9 @@ export const TransactionFilterControls: React.FC<
   // Safe check for active filters
   const hasActiveFilters = (() => {
     try {
+      // Check searchQuery first
+      if (searchQuery.trim() !== "") return true;
+
       return Object.values(safeFilters).some((value) => {
         if (Array.isArray(value)) return value.length > 0;
         if (value && typeof value === "object" && "from" in value) {
@@ -93,6 +100,22 @@ export const TransactionFilterControls: React.FC<
         </div>
 
         <div className="space-y-4">
+          {/* Merchant Search */}
+          {onSearchChange && (
+            <div>
+              <label className="text-sm font-medium mb-1 block">
+                Search Merchant
+              </label>
+              <Input
+                type="text"
+                placeholder="Search by merchant name..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          )}
+
           {/* Payment Method and Category - side by side */}
           <div className="grid grid-cols-2 gap-4">
             <div>

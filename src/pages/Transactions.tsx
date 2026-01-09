@@ -240,6 +240,8 @@ const Transactions = () => {
           paymentMethods={paymentMethods}
           categories={categories}
           onClearFilters={resetFilters}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         <TransactionContent

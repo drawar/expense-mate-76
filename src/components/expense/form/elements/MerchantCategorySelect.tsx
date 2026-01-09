@@ -115,7 +115,7 @@ const MerchantCategorySelect: React.FC<MerchantCategorySelectProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search categories..."
               value={mccSearchQuery}
