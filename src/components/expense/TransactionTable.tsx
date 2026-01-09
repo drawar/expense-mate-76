@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -196,221 +196,222 @@ const TransactionTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              groupedTransactions.map((group) => (
-                <React.Fragment key={`group-${group.date}`}>
-                  {/* Date Header Row */}
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableCell
-                      colSpan={4}
-                      className="py-1.5 font-medium text-xs text-muted-foreground"
+              groupedTransactions.flatMap((group) => [
+                // Date Header Row
+                <TableRow
+                  key={`date-${group.date}`}
+                  className="bg-muted/50 hover:bg-muted/50"
+                >
+                  <TableCell
+                    colSpan={4}
+                    className="py-1.5 font-medium text-xs text-muted-foreground"
+                  >
+                    {formatDateGroupHeader(group.dateObj)}
+                  </TableCell>
+                </TableRow>,
+                // Transaction Rows for this date
+                ...group.transactions.map((transaction) => {
+                  const category = transactionCategories[transaction.id];
+                  const categoryColor = getCategoryColor(category);
+
+                  return (
+                    <TableRow
+                      key={transaction.id}
+                      className="group cursor-pointer"
+                      onClick={() => onView(transaction)}
                     >
-                      {formatDateGroupHeader(group.dateObj)}
-                    </TableCell>
-                  </TableRow>
-                  {/* Transaction Rows for this date */}
-                  {group.transactions.map((transaction) => {
-                    const category = transactionCategories[transaction.id];
-                    const categoryColor = getCategoryColor(category);
-
-                    return (
-                      <TableRow
-                        key={transaction.id}
-                        className="group cursor-pointer"
-                        onClick={() => onView(transaction)}
-                      >
-                        {/* Merchant + Category Column */}
-                        <TableCell>
-                          <div className="flex items-start gap-2">
-                            {/* Category color indicator */}
-                            <div
-                              className="w-1 h-8 rounded-full flex-shrink-0 mt-0.5"
-                              style={{ backgroundColor: categoryColor }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-medium truncate">
-                                  {transaction.merchant.name}
-                                </span>
-                                {/* Online/Contactless indicators */}
-                                {transaction.merchant.isOnline ? (
-                                  <Globe
+                      {/* Merchant + Category Column */}
+                      <TableCell>
+                        <div className="flex items-start gap-2">
+                          {/* Category color indicator */}
+                          <div
+                            className="w-1 h-8 rounded-full flex-shrink-0 mt-0.5"
+                            style={{ backgroundColor: categoryColor }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium truncate">
+                                {transaction.merchant.name}
+                              </span>
+                              {/* Online/Contactless indicators */}
+                              {transaction.merchant.isOnline ? (
+                                <Globe
+                                  className="h-3 w-3 text-muted-foreground flex-shrink-0"
+                                  title="Online"
+                                />
+                              ) : (
+                                transaction.isContactless && (
+                                  <Wifi
                                     className="h-3 w-3 text-muted-foreground flex-shrink-0"
-                                    title="Online"
+                                    title="Contactless"
                                   />
-                                ) : (
-                                  transaction.isContactless && (
-                                    <Wifi
-                                      className="h-3 w-3 text-muted-foreground flex-shrink-0"
-                                      title="Contactless"
-                                    />
-                                  )
+                                )
+                              )}
+                            </div>
+                            {/* Category with badges */}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <button
+                                className={cn(
+                                  "flex items-center gap-1 hover:underline",
+                                  onCategoryEdit
+                                    ? "cursor-pointer"
+                                    : "cursor-default"
                                 )}
-                              </div>
-                              {/* Category with badges */}
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <button
-                                  className={cn(
-                                    "flex items-center gap-1 hover:underline",
-                                    onCategoryEdit
-                                      ? "cursor-pointer"
-                                      : "cursor-default"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onCategoryEdit?.(transaction);
-                                  }}
-                                  disabled={!onCategoryEdit}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onCategoryEdit?.(transaction);
+                                }}
+                                disabled={!onCategoryEdit}
+                              >
+                                <CategoryIcon
+                                  iconName={
+                                    getCategoryIcon(
+                                      category
+                                    ) as CategoryIconName
+                                  }
+                                  size={14}
+                                />
+                                <span className="truncate max-w-[100px]">
+                                  {category}
+                                </span>
+                                {onCategoryEdit && (
+                                  <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100" />
+                                )}
+                              </button>
+                              {transaction.needsReview && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] px-1 py-0 h-4"
                                 >
-                                  <CategoryIcon
-                                    iconName={
-                                      getCategoryIcon(
-                                        category
-                                      ) as CategoryIconName
-                                    }
-                                    size={14}
-                                  />
-                                  <span className="truncate max-w-[100px]">
-                                    {category}
-                                  </span>
-                                  {onCategoryEdit && (
-                                    <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100" />
-                                  )}
-                                </button>
-                                {transaction.needsReview && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] px-1 py-0 h-4"
-                                  >
-                                    <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
-                                    Review
-                                  </Badge>
-                                )}
-                                {transaction.isRecategorized && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-blue-600 border-blue-300 bg-blue-50 text-[10px] px-1 py-0 h-4"
-                                  >
-                                    Edited
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        {/* Amount + Points Column */}
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {CurrencyService.format(
-                                transaction.amount,
-                                transaction.currency
+                                  <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                                  Review
+                                </Badge>
+                              )}
+                              {transaction.isRecategorized && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-blue-600 border-blue-300 bg-blue-50 text-[10px] px-1 py-0 h-4"
+                                >
+                                  Edited
+                                </Badge>
                               )}
                             </div>
-                            {transaction.currency !==
-                              transaction.paymentCurrency && (
-                              <div className="text-xs text-muted-foreground">
-                                {CurrencyService.format(
-                                  transaction.paymentAmount,
-                                  transaction.paymentCurrency
-                                )}
-                              </div>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Amount + Points Column */}
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {CurrencyService.format(
+                              transaction.amount,
+                              transaction.currency
                             )}
-                            {/* Points */}
-                            {transaction.rewardPoints !== 0 ? (
-                              <div
-                                className={`text-xs font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
-                                style={
-                                  transaction.rewardPoints > 0
-                                    ? { color: "var(--color-accent)" }
-                                    : undefined
-                                }
-                              >
-                                {transaction.rewardPoints > 0 ? "+" : ""}
-                                {transaction.rewardPoints.toLocaleString()} pts
-                              </div>
-                            ) : transaction.paymentMethod.type ===
-                              "credit_card" ? (
-                              <div className="text-xs text-amber-600">
-                                ~
-                                {Math.round(
-                                  transaction.amount * 0.4
-                                ).toLocaleString()}
-                                *
-                              </div>
-                            ) : null}
                           </div>
-                        </TableCell>
-
-                        {/* Payment Method Column */}
-                        <TableCell>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <PaymentMethodIcon
-                              method={transaction.paymentMethod}
-                              size="sm"
-                              className="flex-shrink-0"
-                            />
-                            <span className="text-sm line-clamp-2">
-                              {formatCardShortName(
-                                transaction.paymentMethod.issuer || "",
-                                transaction.paymentMethod.name
+                          {transaction.currency !==
+                            transaction.paymentCurrency && (
+                            <div className="text-xs text-muted-foreground">
+                              {CurrencyService.format(
+                                transaction.paymentAmount,
+                                transaction.paymentCurrency
                               )}
-                            </span>
-                          </div>
-                        </TableCell>
+                            </div>
+                          )}
+                          {/* Points */}
+                          {transaction.rewardPoints !== 0 ? (
+                            <div
+                              className={`text-xs font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
+                              style={
+                                transaction.rewardPoints > 0
+                                  ? { color: "var(--color-accent)" }
+                                  : undefined
+                              }
+                            >
+                              {transaction.rewardPoints > 0 ? "+" : ""}
+                              {transaction.rewardPoints.toLocaleString()} pts
+                            </div>
+                          ) : transaction.paymentMethod.type ===
+                            "credit_card" ? (
+                            <div className="text-xs text-amber-600">
+                              ~
+                              {Math.round(
+                                transaction.amount * 0.4
+                              ).toLocaleString()}
+                              *
+                            </div>
+                          ) : null}
+                        </div>
+                      </TableCell>
 
-                        {/* Actions Column - Dropdown Menu */}
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onView(transaction);
-                                }}
-                              >
-                                <EyeIcon className="mr-2 h-4 w-4" />
-                                View details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEdit(transaction);
-                                }}
-                              >
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDelete(transaction);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </React.Fragment>
-              ))
+                      {/* Payment Method Column */}
+                      <TableCell>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <PaymentMethodIcon
+                            method={transaction.paymentMethod}
+                            size="sm"
+                            className="flex-shrink-0"
+                          />
+                          <span className="text-sm line-clamp-2">
+                            {formatCardShortName(
+                              transaction.paymentMethod.issuer || "",
+                              transaction.paymentMethod.name
+                            )}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions Column - Dropdown Menu */}
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onView(transaction);
+                              }}
+                            >
+                              <EyeIcon className="mr-2 h-4 w-4" />
+                              View details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(transaction);
+                              }}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(transaction);
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }),
+              ])
             )}
           </TableBody>
         </Table>
