@@ -141,7 +141,7 @@ export function CapProgressSection({
     capType: "bonus_points" | "spend_amount"
   ): string => {
     if (capType === "spend_amount") {
-      return `$${used.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} / $${cap.toLocaleString()} spent`;
+      return `$${used.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / $${cap.toLocaleString()} spent`;
     }
     return `${used.toLocaleString()} / ${cap.toLocaleString()} pts`;
   };

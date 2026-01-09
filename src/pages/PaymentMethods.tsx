@@ -139,9 +139,10 @@ const PaymentMethods = () => {
         }
 
         const statementDay = formData.get("statementStartDay") as string;
-        if (statementDay) {
-          method.statementStartDay = parseInt(statementDay, 10);
-        }
+        // Always set statementStartDay - use undefined if empty to allow clearing
+        method.statementStartDay = statementDay
+          ? parseInt(statementDay, 10)
+          : undefined;
 
         method.isMonthlyStatement = formData.get("isMonthlyStatement") === "on";
 

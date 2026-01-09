@@ -221,10 +221,22 @@ export class StorageService {
     }
 
     try {
+      // Filter out invalid payment methods (missing required fields)
+      const validPaymentMethods = paymentMethods.filter((pm) => {
+        if (!pm.id || !pm.name) {
+          console.warn(
+            "Skipping invalid payment method (missing id or name):",
+            pm.id
+          );
+          return false;
+        }
+        return true;
+      });
+
       // Transform PaymentMethod objects to database format
       // Use nullish coalescing (??) to preserve falsy values like false or 0
       // Only convert to null when the value is undefined or null
-      const dbPaymentMethods = paymentMethods.map((pm) => ({
+      const dbPaymentMethods = validPaymentMethods.map((pm) => ({
         id: pm.id,
         name: pm.name,
         type: pm.type,
@@ -811,18 +823,32 @@ export class StorageService {
                 : bonusPoints;
 
             // Get the payment method's statement day for statement_month period tracking
-            const paymentMethods = await this.getPaymentMethods();
-            const paymentMethod = paymentMethods.find(
-              (pm) => pm.id === transactionData.paymentMethod.id
+            // For calendar and promotional periods, use statementDay=1 since they don't
+            // follow statement cycles (calendar resets on 1st, promotional has fixed dates)
+            const periodType = result.periodType || "calendar";
+            let statementDay = 1;
+            if (
+              periodType === "statement" ||
+              periodType === "statement_month"
+            ) {
+              const paymentMethods = await this.getPaymentMethods();
+              const paymentMethod = paymentMethods.find(
+                (pm) => pm.id === transactionData.paymentMethod.id
+              );
+              statementDay = paymentMethod?.statementStartDay ?? 1;
+            }
+            console.log(
+              "🔵 Cap Tracking - Using statementDay:",
+              statementDay,
+              "for periodType:",
+              periodType
             );
-            const statementDay = paymentMethod?.statementStartDay ?? 1;
-            console.log("🔵 Cap Tracking - Using statementDay:", statementDay);
 
             await bonusPointsTracker.trackBonusPointsUsage(
               result.appliedRuleId,
               transactionData.paymentMethod.id,
               valueToTrack,
-              result.periodType || "calendar",
+              periodType,
               new Date(transactionData.date),
               statementDay,
               rule.reward.capGroupId,

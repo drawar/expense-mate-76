@@ -302,10 +302,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       }}
     >
       {/* Hidden inputs */}
+      <input type="hidden" name="name" value={name} />
       <input type="hidden" name="type" value={selectedType} />
       <input type="hidden" name="currency" value={currency} />
       <input type="hidden" name="pointsCurrency" value={pointsCurrency} />
       <input type="hidden" name="rewardCurrencyId" value={rewardCurrencyId} />
+      <input type="hidden" name="statementStartDay" value={statementStartDay} />
       <input
         type="hidden"
         name="isMonthlyStatement"
@@ -315,9 +317,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       <input type="hidden" name="totalLoaded" value={totalLoaded} />
       <input type="hidden" name="cardCatalogId" value={cardCatalogId} />
       <input type="hidden" name="nickname" value={nickname} />
-      {selectedCatalogEntry && (
-        <input type="hidden" name="issuer" value={issuer} />
-      )}
+      <input type="hidden" name="issuer" value={issuer} />
 
       {/* Scrollable form content */}
       <div
@@ -544,8 +544,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 </div>
               )}
 
-              {/* Issuer (credit card only, custom cards) */}
-              {isCreditCard && !(isEditing && currentMethod?.cardCatalogId) && (
+              {/* Issuer (credit card only) */}
+              {isCreditCard && (
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="issuer"
@@ -566,7 +566,6 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  <input type="hidden" name="issuer" value={issuer} />
                 </div>
               )}
 

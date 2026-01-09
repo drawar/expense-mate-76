@@ -439,11 +439,14 @@ export class BonusPointsTracker {
       if (processedCapGroups.has(identifier)) continue;
       processedCapGroups.add(identifier);
 
-      // For promotional periods, always use statementDay=1 since promotional caps
-      // don't follow statement cycles - they track from promo start to promo end.
-      // This matches the hardcoded value used in StorageService.addTransaction.
+      // For calendar and promotional periods, always use statementDay=1 since:
+      // - Calendar caps reset on the 1st of each month regardless of statement cycle
+      // - Promotional caps track from promo start to promo end
+      // Only statement_month period type should use the actual statementDay.
       const effectiveStatementDay =
-        periodType === "promotional" ? 1 : statementDay;
+        periodType === "calendar" || periodType === "promotional"
+          ? 1
+          : statementDay;
 
       const used = await this.getUsedBonusPoints(
         rule.id,

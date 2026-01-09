@@ -84,12 +84,13 @@ export const BillingCycleFields: React.FC<BillingCycleFieldsProps> = ({
             >
               {isMonthlyStatement ? "Statement" : "Calendar"}
             </span>
-            <Switch
-              id="isMonthlyStatement"
-              name="isMonthlyStatement"
-              checked={isMonthlyStatement}
-              onCheckedChange={onMonthlyStatementChange}
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <Switch
+                id="isMonthlyStatement"
+                checked={isMonthlyStatement}
+                onCheckedChange={onMonthlyStatementChange}
+              />
+            </div>
           </div>
         </div>
       </div>
