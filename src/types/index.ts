@@ -58,7 +58,8 @@ export type Currency =
   | "VND"
   | "IDR"
   | "THB"
-  | "MYR";
+  | "MYR"
+  | "QAR";
 
 export interface PaymentMethod {
   id: string;
