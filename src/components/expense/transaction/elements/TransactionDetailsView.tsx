@@ -261,7 +261,7 @@ const TransactionDetailsView = ({
       </div>
 
       {/* Section 6: Rewards (linked to payment) */}
-      {transaction.rewardPoints > 0 && (
+      {transaction.rewardPoints !== 0 && (
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
             Rewards
@@ -284,8 +284,11 @@ const TransactionDetailsView = ({
             ) : (
               <CoinsIcon className="h-16 w-16 text-amber-500" />
             )}
-            <p className="font-medium">
-              + {transaction.rewardPoints.toLocaleString()} {pointsCurrency}
+            <p
+              className={`font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
+            >
+              {transaction.rewardPoints > 0 ? "+ " : ""}
+              {transaction.rewardPoints.toLocaleString()} {pointsCurrency}
             </p>
           </div>
         </div>

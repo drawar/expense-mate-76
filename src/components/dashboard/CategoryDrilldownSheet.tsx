@@ -70,9 +70,12 @@ const TransactionRow: React.FC<{
         <div className="font-medium text-sm">
           {CurrencyService.format(transaction.amount, currency)}
         </div>
-        {transaction.rewardPoints > 0 && (
-          <div className="text-xs text-[var(--color-success)]">
-            +{transaction.rewardPoints.toLocaleString()}{" "}
+        {transaction.rewardPoints !== 0 && (
+          <div
+            className={`text-xs ${transaction.rewardPoints < 0 ? "text-destructive" : "text-[var(--color-success)]"}`}
+          >
+            {transaction.rewardPoints > 0 ? "+" : ""}
+            {transaction.rewardPoints.toLocaleString()}{" "}
             {transaction.paymentMethod?.pointsCurrency || "pts"}
           </div>
         )}

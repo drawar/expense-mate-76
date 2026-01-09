@@ -351,9 +351,12 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                           transaction.currency
                         )}
                       </div>
-                      {transaction.rewardPoints > 0 && (
-                        <div className="text-xs text-primary">
-                          +{transaction.rewardPoints.toLocaleString()}{" "}
+                      {transaction.rewardPoints !== 0 && (
+                        <div
+                          className={`text-xs ${transaction.rewardPoints < 0 ? "text-destructive" : "text-primary"}`}
+                        >
+                          {transaction.rewardPoints > 0 ? "+" : ""}
+                          {transaction.rewardPoints.toLocaleString()}{" "}
                           {abbreviatePointsCurrency(
                             transaction.paymentMethod?.pointsCurrency
                           )}

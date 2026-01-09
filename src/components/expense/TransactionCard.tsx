@@ -52,9 +52,12 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
               <span>•</span>
               <span className="truncate max-w-[100px]">{displayCategory}</span>
             </div>
-            {transaction.rewardPoints > 0 && (
-              <span className="text-primary font-medium">
-                +{transaction.rewardPoints.toLocaleString()} pts
+            {transaction.rewardPoints !== 0 && (
+              <span
+                className={`font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : "text-primary"}`}
+              >
+                {transaction.rewardPoints > 0 ? "+" : ""}
+                {transaction.rewardPoints.toLocaleString()} pts
               </span>
             )}
           </div>

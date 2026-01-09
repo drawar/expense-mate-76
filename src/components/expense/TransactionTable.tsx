@@ -317,12 +317,17 @@ const TransactionTable = ({
                               </div>
                             )}
                             {/* Points */}
-                            {transaction.rewardPoints > 0 ? (
+                            {transaction.rewardPoints !== 0 ? (
                               <div
-                                className="text-xs font-medium"
-                                style={{ color: "var(--color-accent)" }}
+                                className={`text-xs font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
+                                style={
+                                  transaction.rewardPoints > 0
+                                    ? { color: "var(--color-accent)" }
+                                    : undefined
+                                }
                               >
-                                +{transaction.rewardPoints.toLocaleString()} pts
+                                {transaction.rewardPoints > 0 ? "+" : ""}
+                                {transaction.rewardPoints.toLocaleString()} pts
                               </div>
                             ) : transaction.paymentMethod.type ===
                               "credit_card" ? (
