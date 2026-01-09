@@ -57,7 +57,10 @@ export function useTransactionList() {
       const loadedTransactions = await storageService.getTransactions();
       setTransactions(loadedTransactions);
 
-      const loadedPaymentMethods = await storageService.getPaymentMethods();
+      // Include inactive payment methods so users can filter by cards they've used in the past
+      const loadedPaymentMethods = await storageService.getPaymentMethods({
+        includeInactive: true,
+      });
       setPaymentMethods(loadedPaymentMethods);
     } catch (error) {
       console.error("Error loading transactions:", error);

@@ -36,8 +36,13 @@ export class StorageService {
     this.initializeRewards();
   }
 
-  async getPaymentMethods(): Promise<PaymentMethod[]> {
-    console.log("StorageService.getPaymentMethods: Starting...");
+  async getPaymentMethods(options?: {
+    includeInactive?: boolean;
+  }): Promise<PaymentMethod[]> {
+    const includeInactive = options?.includeInactive ?? false;
+    console.log("StorageService.getPaymentMethods: Starting...", {
+      includeInactive,
+    });
     console.log(
       "StorageService.getPaymentMethods: useLocalStorage =",
       this.useLocalStorage
@@ -50,7 +55,10 @@ export class StorageService {
         local.length,
         "methods"
       );
-      return local;
+      // Filter inactive if not requested
+      return includeInactive
+        ? local
+        : local.filter((pm) => pm.active !== false);
     }
 
     // If not authenticated, fall back to local storage
@@ -68,21 +76,29 @@ export class StorageService {
         local.length,
         "methods"
       );
-      return local;
+      return includeInactive
+        ? local
+        : local.filter((pm) => pm.active !== false);
     }
 
     try {
       console.log(
-        "StorageService.getPaymentMethods: Querying Supabase for active payment methods..."
+        "StorageService.getPaymentMethods: Querying Supabase for payment methods...",
+        { includeInactive }
       );
       // Join with card_catalog for default_image_url and reward_currencies for display_name and logo_url
-      const { data, error } = await supabase
+      let query = supabase
         .from("payment_methods")
         .select(
           "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url)"
-        )
-        .eq("is_active", true)
-        .order("name");
+        );
+
+      // Only filter by active status if not including inactive
+      if (!includeInactive) {
+        query = query.eq("is_active", true);
+      }
+
+      const { data, error } = await query.order("name");
 
       console.log("StorageService.getPaymentMethods: Supabase query result:", {
         dataCount: data?.length || 0,
@@ -455,8 +471,20 @@ export class StorageService {
       return this.getTransactionsFromLocalStorage();
     }
 
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.log("Not authenticated, returning empty transactions");
+      return this.getTransactionsFromLocalStorage();
+    }
+
     try {
-      console.log("Fetching transactions from Supabase...");
+      console.log(
+        "Fetching transactions from Supabase for user:",
+        session.user.id
+      );
 
       const { data, error } = await supabase
         .from("transactions")
@@ -475,6 +503,7 @@ export class StorageService {
           )
         `
         )
+        .eq("user_id", session.user.id)
         .or(`is_deleted.is.false,is_deleted.is.null`)
         .order("date", { ascending: false });
 
