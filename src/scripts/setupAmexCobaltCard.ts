@@ -2,13 +2,13 @@
  * Script to set up accurate reward rules for American Express Cobalt Card (Canada)
  *
  * Rules:
- * 1. 5x on restaurants, groceries, and food delivery (up to $2,500 CAD monthly spend cap)
- * 2. 3x on streaming subscriptions
- * 3. 2x on gas stations and local transportation
+ * 1. 5x on restaurants, groceries, and food delivery (CAD only, up to $2,500 monthly spend cap)
+ * 2. 3x on streaming subscriptions (CAD only)
+ * 3. 2x on gas stations and local transportation (ANY currency including USD)
  * 4. 1x on everything else
  *
- * Important: Bonus points only apply to CAD transactions.
- * Foreign currency transactions earn only 1x base points.
+ * Important: 5x and 3x bonuses only apply to CAD transactions.
+ * 2x transit/gas applies to ALL currencies.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -203,13 +203,15 @@ async function setupAmexCobaltCard() {
     });
     console.log("✅ Rule 2 created\n");
 
-    // Rule 3: 2x on Gas Stations and Local Transportation (CAD only)
-    console.log("Creating Rule 3: 2x on Gas & Transportation (CAD only)...");
+    // Rule 3: 2x on Gas Stations and Local Transportation (ANY currency)
+    console.log(
+      "Creating Rule 3: 2x on Gas & Transportation (any currency)..."
+    );
     await repository.createRule({
       cardTypeId: cardTypeId,
       name: "2x Points on Gas & Transit",
       description:
-        "Earn 2 points per $1 CAD at gas stations and local commuter transportation",
+        "Earn 2 points per $1 at gas stations and local commuter transportation (any currency)",
       enabled: true,
       priority: 2,
       conditions: [
@@ -218,11 +220,7 @@ async function setupAmexCobaltCard() {
           operation: "include",
           values: twoXMCCs,
         },
-        {
-          type: "currency",
-          operation: "equals",
-          values: ["CAD"],
-        },
+        // No currency condition - 2x applies to all currencies including USD
       ],
       reward: {
         calculationMethod: "total_first", // Amex Canada: total = round(amount * 2), bonus = total - base
@@ -272,7 +270,7 @@ async function setupAmexCobaltCard() {
     );
     console.log("- Priority 3: 3x on streaming subscriptions (CAD only)");
     console.log(
-      "- Priority 2: 2x on gas stations & local transportation (CAD only)"
+      "- Priority 2: 2x on gas stations & local transportation (any currency)"
     );
     console.log("- Priority 1: 1x on everything else (all currencies)");
     console.log("\nImportant Notes:");
