@@ -26,6 +26,9 @@ export interface DashboardMetrics {
   hasEnoughData?: boolean;
   totalReimbursed?: number;
   netExpenses?: number;
+  // Income metrics
+  totalIncome?: number; // Scaled income for timeframe
+  netFlow?: number; // totalIncome - netExpenses
 }
 
 /**

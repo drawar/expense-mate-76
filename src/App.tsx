@@ -19,6 +19,7 @@ import CardOptimizerSimulator from "./pages/CardOptimizerSimulator";
 import DeleteMembershipRewards from "./pages/DeleteMembershipRewards";
 import Settings from "./pages/Settings";
 import PointsManager from "./pages/PointsManager";
+import Income from "./pages/Income";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
@@ -177,6 +178,16 @@ function App() {
                       <ProtectedRoute>
                         <MainLayout>
                           <PointsManager />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/income"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <Income />
                         </MainLayout>
                       </ProtectedRoute>
                     }

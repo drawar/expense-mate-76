@@ -496,6 +496,8 @@ export class StorageService {
             icon, color, image_url, points_currency, is_active,
             reward_rules, selected_categories, statement_start_day,
             is_monthly_statement, conversion_rate, reward_currency_id,
+            card_catalog_id,
+            card_catalog(default_image_url),
             reward_currencies(display_name, logo_url)
           ),
           merchants:merchant_id(
@@ -548,6 +550,11 @@ export class StorageService {
             display_name?: string;
             logo_url?: string;
           } | null;
+          const catalogImageUrl = (
+            row.payment_methods?.card_catalog as {
+              default_image_url?: string;
+            } | null
+          )?.default_image_url;
           return {
             id: row.payment_methods?.id || "",
             name: row.payment_methods?.name || "Unknown Payment Method",
@@ -557,7 +564,8 @@ export class StorageService {
             currency: (row.payment_methods?.currency || "USD") as Currency,
             icon: row.payment_methods?.icon || undefined,
             color: row.payment_methods?.color || undefined,
-            imageUrl: row.payment_methods?.image_url || undefined,
+            imageUrl:
+              row.payment_methods?.image_url || catalogImageUrl || undefined,
             // Use reward_currencies as source of truth, fall back to stored values
             pointsCurrency:
               rewardCurrency?.display_name ||

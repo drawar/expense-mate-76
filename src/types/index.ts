@@ -112,6 +112,13 @@ export interface MerchantCategoryCode {
 // Re-export CalculationResult from core rewards module
 export type { CalculationResult } from "@/core/rewards/types";
 
+// Re-export income types
+export type {
+  IncomeFrequency,
+  RecurringIncome,
+  DbRecurringIncome,
+} from "@/types/income";
+
 // Database types for Supabase
 export interface DbPaymentMethod {
   id: string;
