@@ -182,12 +182,15 @@ export const chartUtils = {
     }
 
     // Map period to grouping granularity
-    const periodMapping: Record<string, "day" | "week" | "month" | "year"> = {
+    const periodMapping: Record<
+      string,
+      "day" | "week" | "month" | "quarter" | "year"
+    > = {
       day: "day",
       week: "day",
       month: "week",
       quarter: "month",
-      year: "month",
+      year: "quarter",
     };
 
     const groupBy = periodMapping[period] || "month";
@@ -272,6 +275,13 @@ export const chartUtils = {
               displayPeriod = format(date, "MMM yyyy");
             }
           }
+        } else if (groupBy === "quarter") {
+          // For quarters, show Q1 2023, Q2 2023, etc.
+          // Key format: "2023-Q1"
+          const match = keyString.match(/^(\d{4})-Q(\d)$/);
+          if (match) {
+            displayPeriod = `Q${match[2]} ${match[1]}`;
+          }
         }
       } catch (e) {
         console.error("Error formatting date for chart:", e);
@@ -335,7 +345,7 @@ export const chartUtils = {
    */
   groupTransactionsByPeriod(
     transactions: Transaction[],
-    groupBy: "day" | "week" | "month" | "year"
+    groupBy: "day" | "week" | "month" | "quarter" | "year"
   ): Map<string, Transaction[]> {
     const grouped = new Map<string, Transaction[]>();
 
@@ -358,6 +368,12 @@ export const chartUtils = {
         case "month":
           key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
           break;
+        case "quarter": {
+          // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
+          const quarter = Math.floor(date.getMonth() / 3) + 1;
+          key = `${date.getFullYear()}-Q${quarter}`;
+          break;
+        }
         case "year":
           key = `${date.getFullYear()}`;
           break;

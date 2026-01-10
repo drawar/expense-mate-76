@@ -1,66 +1,46 @@
 /**
- * Hook for managing recurring income sources with Supabase persistence
+ * Hook for managing payslips (income payments) with Supabase persistence
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { Currency, RecurringIncome, IncomeFrequency } from "@/types";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Currency, RecurringIncome } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { TimeframeTab } from "@/utils/dashboard";
+import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
 
 interface RecurringIncomeSettings {
-  /** All income sources */
+  /** All payslips */
   incomeSources: RecurringIncome[];
-  /** Total monthly income (scaled from all sources) */
+  /** Total income from payslips in selected timeframe */
   totalMonthlyIncome: number;
-  /** Total income scaled to current timeframe */
+  /** Total income scaled to current timeframe (same as totalMonthlyIncome for payslips) */
   scaledTotalIncome: number;
   /** Whether income is loading */
   isLoading: boolean;
-  /** Add or update an income source */
+  /** Add or update a payslip */
   saveIncome: (
     income: Omit<RecurringIncome, "createdAt" | "updatedAt">
   ) => Promise<void>;
-  /** Delete an income source */
+  /** Delete a payslip */
   deleteIncome: (id: string) => Promise<void>;
   /** Refresh income data */
   refresh: () => Promise<void>;
 }
 
 /**
- * Scale income based on frequency to monthly equivalent
- * Biweekly: 26 pay periods per year / 12 months = ~2.17 per month
+ * Check if a date string (YYYY-MM-DD) falls within a date range
  */
-function getMonthlyEquivalent(
-  amount: number,
-  frequency: IncomeFrequency
-): number {
-  if (frequency === "biweekly") {
-    return amount * (26 / 12); // ~2.17
-  }
-  return amount; // monthly
+function isDateInRange(
+  dateStr: string | undefined,
+  from: string,
+  to: string
+): boolean {
+  if (!dateStr) return false;
+  return dateStr >= from && dateStr <= to;
 }
 
 /**
- * Scale income for timeframe (similar to budget scaling)
- */
-function scaleIncomeForTimeframe(
-  monthlyAmount: number,
-  timeframe: TimeframeTab
-): number {
-  const timeframeMultipliers: Record<TimeframeTab, number> = {
-    thisMonth: 1,
-    lastMonth: 1,
-    lastTwoMonths: 2,
-    lastThreeMonths: 3,
-    lastSixMonths: 6,
-    thisYear: 12,
-  };
-  return monthlyAmount * (timeframeMultipliers[timeframe] || 1);
-}
-
-/**
- * Hook to manage recurring income sources for a specific currency with timeframe scaling
+ * Hook to manage payslips for a specific currency with timeframe filtering
  */
 export function useRecurringIncome(
   displayCurrency: Currency,
@@ -83,10 +63,10 @@ export function useRecurringIncome(
         .from("recurring_income")
         .select("*")
         .eq("user_id", user.id)
-        .order("name");
+        .order("start_date", { ascending: false });
 
       if (error) {
-        console.error("Error loading recurring income:", error);
+        console.error("Error loading payslips:", error);
         setIncomeSources([]);
         return;
       }
@@ -96,7 +76,7 @@ export function useRecurringIncome(
         name: row.name,
         amount: Number(row.amount),
         currency: row.currency as Currency,
-        frequency: row.frequency as IncomeFrequency,
+        frequency: row.frequency,
         dayOfMonth: row.day_of_month ?? undefined,
         startDate: row.start_date ?? undefined,
         isActive: row.is_active,
@@ -107,7 +87,7 @@ export function useRecurringIncome(
 
       setIncomeSources(mapped);
     } catch (error) {
-      console.error("Error loading recurring income:", error);
+      console.error("Error loading payslips:", error);
       setIncomeSources([]);
     } finally {
       setIsLoading(false);
@@ -118,19 +98,33 @@ export function useRecurringIncome(
     loadIncome();
   }, [loadIncome]);
 
-  // Calculate totals for display currency only
-  // TODO: Add currency conversion for multi-currency support
-  const totalMonthlyIncome = incomeSources
-    .filter((inc) => inc.isActive && inc.currency === displayCurrency)
-    .reduce(
-      (sum, inc) => sum + getMonthlyEquivalent(inc.amount, inc.frequency),
+  // Calculate total income by summing payslips within the timeframe
+  const { totalMonthlyIncome, scaledTotalIncome } = useMemo(() => {
+    const dateRange = getTimeframeDateRange(timeframe);
+
+    // Filter payslips by currency and date range
+    const filteredPayslips = incomeSources.filter((payslip) => {
+      // Must match display currency
+      if (payslip.currency !== displayCurrency) return false;
+
+      // If no date range (allTime), include all
+      if (!dateRange) return true;
+
+      // Check if payslip date falls within range
+      return isDateInRange(payslip.startDate, dateRange.from, dateRange.to);
+    });
+
+    // Sum the amounts
+    const total = filteredPayslips.reduce(
+      (sum, payslip) => sum + payslip.amount,
       0
     );
 
-  const scaledTotalIncome = scaleIncomeForTimeframe(
-    totalMonthlyIncome,
-    timeframe
-  );
+    return {
+      totalMonthlyIncome: total,
+      scaledTotalIncome: total,
+    };
+  }, [incomeSources, displayCurrency, timeframe]);
 
   // Save income
   const saveIncome = useCallback(
@@ -156,7 +150,7 @@ export function useRecurringIncome(
       );
 
       if (error) {
-        console.error("Error saving recurring income:", error);
+        console.error("Error saving payslip:", error);
         throw error;
       }
 
@@ -174,7 +168,7 @@ export function useRecurringIncome(
         .eq("id", id);
 
       if (error) {
-        console.error("Error deleting recurring income:", error);
+        console.error("Error deleting payslip:", error);
         throw error;
       }
 

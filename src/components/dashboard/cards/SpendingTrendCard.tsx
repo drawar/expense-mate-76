@@ -351,7 +351,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         value={selectedPeriod}
         onValueChange={(value) => setSelectedPeriod(value as TrendPeriod)}
       >
-        <SelectTrigger className="w-24 h-8">
+        <SelectTrigger className="w-28 h-8">
           <span className="text-sm">{getPeriodLabel(selectedPeriod)}</span>
         </SelectTrigger>
         <SelectContent>

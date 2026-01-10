@@ -613,6 +613,61 @@ export class InsightService {
       };
     }
 
+    // Handle per-category spending trends
+    if (by_category) {
+      // Calculate previous month category totals
+      const prevCategoryTotals: Record<string, number> = {};
+      context.previousMonthTransactions.forEach((tx) => {
+        const category = getEffectiveCategory(tx);
+        prevCategoryTotals[category] =
+          (prevCategoryTotals[category] || 0) + tx.amount;
+      });
+
+      // Find categories with the biggest change in the specified direction
+      let bestMatch: {
+        category: string;
+        change: number;
+        currentAmount: number;
+        prevAmount: number;
+      } | null = null;
+
+      for (const [category, currentAmount] of Object.entries(
+        context.categoryTotals || {}
+      )) {
+        const prevAmount = prevCategoryTotals[category] || 0;
+        if (prevAmount === 0) continue; // Can't calculate % change from 0
+
+        const change = (currentAmount - prevAmount) / prevAmount;
+
+        const meetsThreshold =
+          direction === "down"
+            ? change <= -(threshold || 0)
+            : change >= (threshold || 0);
+
+        if (meetsThreshold) {
+          const absChange = Math.abs(change);
+          // Pick the category with the largest change
+          if (!bestMatch || absChange > Math.abs(bestMatch.change)) {
+            bestMatch = { category, change, currentAmount, prevAmount };
+          }
+        }
+      }
+
+      if (bestMatch) {
+        return {
+          triggered: true,
+          data: {
+            category: bestMatch.category,
+            percentage: Math.round(Math.abs(bestMatch.change) * 100),
+            amount: Math.abs(bestMatch.currentAmount - bestMatch.prevAmount),
+          },
+        };
+      }
+
+      return { triggered: false, data: {} };
+    }
+
+    // Overall spending trend (not by category)
     const prevTotal = context.previousMonthTotal || 0;
     if (prevTotal === 0) {
       return { triggered: false, data: {} };
