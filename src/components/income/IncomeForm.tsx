@@ -156,6 +156,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
               <PopoverTrigger asChild>
                 <Input
                   id="name"
+                  className="text-left"
                   placeholder="e.g., Salary"
                   value={name}
                   onChange={(e) => {
