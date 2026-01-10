@@ -19,7 +19,7 @@ const SummarySection: React.FC = () => {
   const navigate = useNavigate();
   const { dashboardData, displayCurrency, activeTab } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
-  const { scaledTotalIncome, incomeSources } = useRecurringIncome(
+  const { totalIncome, incomeSources } = useRecurringIncome(
     displayCurrency,
     activeTab
   );
@@ -72,7 +72,7 @@ const SummarySection: React.FC = () => {
       {hasIncomeSources && (
         <IncomeSummaryCard
           className="mt-4 rounded-xl border border-border/50 bg-card"
-          totalIncome={scaledTotalIncome}
+          totalIncome={totalIncome}
           netExpenses={netExpenses}
           displayCurrency={displayCurrency}
         />

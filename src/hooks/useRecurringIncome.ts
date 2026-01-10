@@ -12,9 +12,7 @@ interface RecurringIncomeSettings {
   /** All payslips */
   incomeSources: RecurringIncome[];
   /** Total income from payslips in selected timeframe */
-  totalMonthlyIncome: number;
-  /** Total income scaled to current timeframe (same as totalMonthlyIncome for payslips) */
-  scaledTotalIncome: number;
+  totalIncome: number;
   /** Total income from ALL payslips (ignores timeframe filter) */
   totalAllTime: number;
   /** Whether income is loading */
@@ -101,43 +99,41 @@ export function useRecurringIncome(
   }, [loadIncome]);
 
   // Calculate total income by summing payslips within the timeframe
-  const { totalMonthlyIncome, scaledTotalIncome, totalAllTime } =
-    useMemo(() => {
-      const dateRange = getTimeframeDateRange(timeframe);
+  const { totalIncome, totalAllTime } = useMemo(() => {
+    const dateRange = getTimeframeDateRange(timeframe);
 
-      // Filter payslips by currency only (for all-time total)
-      const currencyFilteredPayslips = incomeSources.filter(
-        (payslip) => payslip.currency === displayCurrency
-      );
+    // Filter payslips by currency only (for all-time total)
+    const currencyFilteredPayslips = incomeSources.filter(
+      (payslip) => payslip.currency === displayCurrency
+    );
 
-      // Calculate all-time total (no date filter)
-      const allTimeTotal = currencyFilteredPayslips.reduce(
-        (sum, payslip) => sum + payslip.amount,
-        0
-      );
+    // Calculate all-time total (no date filter)
+    const allTimeTotal = currencyFilteredPayslips.reduce(
+      (sum, payslip) => sum + payslip.amount,
+      0
+    );
 
-      // Filter by date range for timeframe-specific total
-      const timeframeFilteredPayslips = currencyFilteredPayslips.filter(
-        (payslip) => {
-          // If no date range, include all
-          if (!dateRange) return true;
-          // Check if payslip date falls within range
-          return isDateInRange(payslip.startDate, dateRange.from, dateRange.to);
-        }
-      );
+    // Filter by date range for timeframe-specific total
+    const timeframeFilteredPayslips = currencyFilteredPayslips.filter(
+      (payslip) => {
+        // If no date range, include all
+        if (!dateRange) return true;
+        // Check if payslip date falls within range
+        return isDateInRange(payslip.startDate, dateRange.from, dateRange.to);
+      }
+    );
 
-      // Sum the amounts for timeframe
-      const timeframeTotal = timeframeFilteredPayslips.reduce(
-        (sum, payslip) => sum + payslip.amount,
-        0
-      );
+    // Sum the amounts for timeframe
+    const timeframeTotal = timeframeFilteredPayslips.reduce(
+      (sum, payslip) => sum + payslip.amount,
+      0
+    );
 
-      return {
-        totalMonthlyIncome: timeframeTotal,
-        scaledTotalIncome: timeframeTotal,
-        totalAllTime: allTimeTotal,
-      };
-    }, [incomeSources, displayCurrency, timeframe]);
+    return {
+      totalIncome: timeframeTotal,
+      totalAllTime: allTimeTotal,
+    };
+  }, [incomeSources, displayCurrency, timeframe]);
 
   // Save income
   const saveIncome = useCallback(
@@ -192,8 +188,7 @@ export function useRecurringIncome(
 
   return {
     incomeSources,
-    totalMonthlyIncome,
-    scaledTotalIncome,
+    totalIncome,
     totalAllTime,
     isLoading,
     saveIncome,
