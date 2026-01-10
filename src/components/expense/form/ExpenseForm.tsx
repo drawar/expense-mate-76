@@ -161,7 +161,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         isContactless:
           !(values.isOnline as boolean) && (values.isContactless as boolean),
         reimbursementAmount: reimbursementAmount,
-        category: selectedMCC?.description || selectedMCC?.code || undefined,
+        // Don't set category here - let StorageService auto-categorize based on
+        // MCC + historical patterns for highest confidence category selection
       };
 
       console.log("Transaction data being submitted:", transactionData);
