@@ -19,7 +19,6 @@ import { TransactionDialog } from "@/components/expense/transaction/TransactionD
 import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
 import { useTransactionActions } from "@/hooks/expense/useTransactionActions";
 import {
-  startOfMonth,
   format,
   previousSaturday,
   nextSunday,
@@ -27,6 +26,7 @@ import {
   isSunday,
   startOfDay,
 } from "date-fns";
+import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
 
 interface InsightsCardProps {
   transactions: Transaction[];
@@ -35,6 +35,7 @@ interface InsightsCardProps {
   paymentMethods?: PaymentMethod[];
   className?: string;
   maxInsights?: number;
+  timeframe?: TimeframeTab;
 }
 
 /**
@@ -138,6 +139,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   paymentMethods = [],
   className = "",
   maxInsights = 4,
+  timeframe = "thisMonth",
 }) => {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
@@ -163,10 +165,10 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   // Handle insight action clicks (e.g., "Review transaction", "Review spending")
   const handleInsightAction = useCallback(
     (insight: RenderedInsight) => {
-      const now = new Date();
-      const monthStart = startOfMonth(now);
-      const fromDate = format(monthStart, "yyyy-MM-dd");
-      const toDate = format(now, "yyyy-MM-dd");
+      // Use the dashboard's timeframe for date range
+      const dateRange = getTimeframeDateRange(timeframe);
+      const fromDate = dateRange?.from || format(new Date(), "yyyy-MM-dd");
+      const toDate = dateRange?.to || format(new Date(), "yyyy-MM-dd");
 
       // Extract category from insight message if present (for category-specific insights)
       // Messages like "Utilities spending is up 297%..." or "Your Food & Drinks spending dropped..."
@@ -228,6 +230,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
           return;
 
         case "Review weekend spending": {
+          const now = new Date();
           let weekendStart: Date;
           let weekendEnd: Date;
 
@@ -260,7 +263,7 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
           }
       }
     },
-    [transactions, navigate]
+    [transactions, navigate, timeframe]
   );
 
   // Handle delete transaction

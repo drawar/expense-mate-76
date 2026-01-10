@@ -125,6 +125,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
           paymentMethods={paymentMethods}
           className={commonCardClass}
           maxInsights={4}
+          timeframe={timeframe}
         />
 
         {/* Points Earned Card */}
