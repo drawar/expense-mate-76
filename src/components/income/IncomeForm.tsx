@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { RecurringIncome, Currency } from "@/types";
 import { format } from "date-fns";
 import { CalendarIcon, CheckIcon } from "lucide-react";
@@ -66,7 +66,6 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [namePopoverOpen, setNamePopoverOpen] = useState(false);
-  const justSelectedRef = useRef(false);
 
   // Get unique names for suggestions, filtered by current input
   const nameSuggestions = useMemo(() => {
@@ -155,34 +154,30 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Popover open={namePopoverOpen} onOpenChange={setNamePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Input
-                  id="name"
-                  className="text-left"
-                  placeholder="e.g., Salary"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (!namePopoverOpen && e.target.value.length > 0) {
-                      setNamePopoverOpen(true);
-                    }
-                  }}
-                  onFocus={() => {
-                    // Reset the ref on focus, but don't auto-open suggestions
-                    // Suggestions only appear when user types (onChange)
-                    justSelectedRef.current = false;
-                  }}
-                  required
-                  autoComplete="off"
-                />
-              </PopoverTrigger>
-              {nameSuggestions.length > 0 && (
-                <PopoverContent
-                  className="w-[--radix-popover-trigger-width] p-0"
-                  align="start"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
+            <div className="relative">
+              <Input
+                id="name"
+                className="text-left"
+                placeholder="e.g., Salary"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  // Show suggestions when typing and there are matches
+                  if (e.target.value.length > 0 && nameSuggestions.length > 0) {
+                    setNamePopoverOpen(true);
+                  } else {
+                    setNamePopoverOpen(false);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay closing to allow click on suggestion
+                  setTimeout(() => setNamePopoverOpen(false), 150);
+                }}
+                required
+                autoComplete="off"
+              />
+              {namePopoverOpen && nameSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-md">
                   <Command>
                     <CommandList>
                       <CommandGroup>
@@ -192,7 +187,6 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                             value={suggestion}
                             onSelect={() => {
                               setName(suggestion);
-                              justSelectedRef.current = true;
                               setNamePopoverOpen(false);
                             }}
                           >
@@ -205,9 +199,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                       </CommandGroup>
                     </CommandList>
                   </Command>
-                </PopoverContent>
+                </div>
               )}
-            </Popover>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
