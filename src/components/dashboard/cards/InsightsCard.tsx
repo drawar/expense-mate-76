@@ -163,62 +163,101 @@ const InsightsCard: React.FC<InsightsCardProps> = ({
   // Handle insight action clicks (e.g., "Review transaction", "Review spending")
   const handleInsightAction = useCallback(
     (insight: RenderedInsight) => {
-      // Handle "Review spending" - navigate to transactions with current month filter
-      if (insight.actionText === "Review spending") {
-        const now = new Date();
-        const monthStart = startOfMonth(now);
-        const fromDate = format(monthStart, "yyyy-MM-dd");
-        const toDate = format(now, "yyyy-MM-dd");
-        navigate(`/transactions?from=${fromDate}&to=${toDate}`);
-        return;
-      }
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      const fromDate = format(monthStart, "yyyy-MM-dd");
+      const toDate = format(now, "yyyy-MM-dd");
 
-      // Handle "View food spending" - navigate to transactions filtered by Dining Out category
-      if (insight.actionText === "View food spending") {
-        const now = new Date();
-        const monthStart = startOfMonth(now);
-        const fromDate = format(monthStart, "yyyy-MM-dd");
-        const toDate = format(now, "yyyy-MM-dd");
-        navigate(
-          `/transactions?from=${fromDate}&to=${toDate}&category=Dining Out`
-        );
-        return;
-      }
+      // Extract category from insight message if present (for category-specific insights)
+      // Messages like "Utilities spending is up 297%..." or "Your Food & Drinks spending dropped..."
+      const categoryMatch = insight.message.match(
+        /^(?:Your\s+)?(\w+(?:\s+&\s+\w+)?(?:\s+\w+)?)\s+spending/i
+      );
+      const insightCategory = categoryMatch ? categoryMatch[1] : null;
 
-      // Handle "Review weekend spending" - navigate to transactions for this/last weekend
-      if (insight.actionText === "Review weekend spending") {
-        const now = new Date();
-        let weekendStart: Date;
-        let weekendEnd: Date;
+      switch (insight.actionText) {
+        case "Review spending":
+        case "View recent spending":
+          navigate(`/transactions?from=${fromDate}&to=${toDate}`);
+          return;
 
-        if (isSaturday(now)) {
-          // Today is Saturday - show this weekend (Sat-Sun)
-          weekendStart = startOfDay(now);
-          weekendEnd = nextSunday(now);
-        } else if (isSunday(now)) {
-          // Today is Sunday - show this weekend (yesterday Sat to today)
-          weekendStart = previousSaturday(now);
-          weekendEnd = startOfDay(now);
-        } else {
-          // Weekday - show last weekend
-          weekendStart = previousSaturday(now);
-          weekendEnd = nextSunday(weekendStart);
+        case "View food spending":
+          navigate(
+            `/transactions?from=${fromDate}&to=${toDate}&category=Dining Out`
+          );
+          return;
+
+        case "Review category":
+          // Navigate to transactions filtered by the category mentioned in the insight
+          if (insightCategory) {
+            navigate(
+              `/transactions?from=${fromDate}&to=${toDate}&category=${encodeURIComponent(insightCategory)}`
+            );
+          } else {
+            navigate(`/transactions?from=${fromDate}&to=${toDate}`);
+          }
+          return;
+
+        case "Review purchases":
+          navigate(
+            `/transactions?from=${fromDate}&to=${toDate}&category=Shopping`
+          );
+          return;
+
+        case "View monthly report":
+          navigate(`/transactions?from=${fromDate}&to=${toDate}`);
+          return;
+
+        case "View remaining budget":
+        case "View budget":
+        case "Adjust budget":
+        case "Set a dining budget":
+        case "Set weekend budget":
+          navigate("/settings");
+          return;
+
+        case "View card benefits":
+        case "Optimize card usage":
+        case "Maximize bonus":
+          navigate("/card-optimizer");
+          return;
+
+        case "View rewards":
+        case "Redeem points":
+          navigate("/points-manager");
+          return;
+
+        case "Review weekend spending": {
+          let weekendStart: Date;
+          let weekendEnd: Date;
+
+          if (isSaturday(now)) {
+            weekendStart = startOfDay(now);
+            weekendEnd = nextSunday(now);
+          } else if (isSunday(now)) {
+            weekendStart = previousSaturday(now);
+            weekendEnd = startOfDay(now);
+          } else {
+            weekendStart = previousSaturday(now);
+            weekendEnd = nextSunday(weekendStart);
+          }
+
+          navigate(
+            `/transactions?from=${format(weekendStart, "yyyy-MM-dd")}&to=${format(weekendEnd, "yyyy-MM-dd")}`
+          );
+          return;
         }
 
-        const fromDate = format(weekendStart, "yyyy-MM-dd");
-        const toDate = format(weekendEnd, "yyyy-MM-dd");
-        navigate(`/transactions?from=${fromDate}&to=${toDate}`);
-        return;
-      }
-
-      // If actionTarget contains a transaction ID, find and show that transaction
-      if (insight.actionTarget) {
-        const transaction = transactions.find(
-          (tx) => tx.id === insight.actionTarget
-        );
-        if (transaction) {
-          setSelectedTransaction(transaction);
-        }
+        default:
+          // If actionTarget contains a transaction ID, find and show that transaction
+          if (insight.actionTarget) {
+            const transaction = transactions.find(
+              (tx) => tx.id === insight.actionTarget
+            );
+            if (transaction) {
+              setSelectedTransaction(transaction);
+            }
+          }
       }
     },
     [transactions, navigate]
