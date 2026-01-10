@@ -20,13 +20,8 @@ import {
 const DEFAULT_CURRENCY: Currency = "CAD";
 
 const Income = () => {
-  const {
-    incomeSources,
-    totalMonthlyIncome,
-    isLoading,
-    saveIncome,
-    deleteIncome,
-  } = useRecurringIncome(DEFAULT_CURRENCY);
+  const { incomeSources, totalAllTime, isLoading, saveIncome, deleteIncome } =
+    useRecurringIncome(DEFAULT_CURRENCY);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<RecurringIncome | null>(
@@ -152,7 +147,7 @@ const Income = () => {
                 </span>
               </div>
               <div className="text-3xl font-medium text-[var(--color-success)]">
-                {formatCurrency(totalMonthlyIncome)}
+                {formatCurrency(totalAllTime)}
               </div>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1">
                 {incomeSources.length} payslip
