@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { RecurringIncome, Currency } from "@/types";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CheckIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 
@@ -37,6 +45,8 @@ interface IncomeFormProps {
   ) => Promise<void>;
   editingIncome: RecurringIncome | null;
   defaultCurrency: Currency;
+  /** List of existing payslip names for autocomplete suggestions */
+  existingNames?: string[];
 }
 
 const CURRENCIES: Currency[] = ["USD", "CAD", "SGD", "EUR", "GBP", "AUD"];
@@ -47,6 +57,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   onSubmit,
   editingIncome,
   defaultCurrency,
+  existingNames = [],
 }) => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -54,6 +65,15 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [namePopoverOpen, setNamePopoverOpen] = useState(false);
+
+  // Get unique names for suggestions, filtered by current input
+  const nameSuggestions = useMemo(() => {
+    const uniqueNames = [...new Set(existingNames)].sort();
+    if (!name.trim()) return uniqueNames;
+    const query = name.toLowerCase();
+    return uniqueNames.filter((n) => n.toLowerCase().includes(query));
+  }, [existingNames, name]);
 
   // Reset form when dialog opens/closes or editing income changes
   useEffect(() => {
@@ -132,13 +152,57 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Salary"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <Popover open={namePopoverOpen} onOpenChange={setNamePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Input
+                  id="name"
+                  placeholder="e.g., Salary"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (!namePopoverOpen && e.target.value.length > 0) {
+                      setNamePopoverOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (nameSuggestions.length > 0) {
+                      setNamePopoverOpen(true);
+                    }
+                  }}
+                  required
+                  autoComplete="off"
+                />
+              </PopoverTrigger>
+              {nameSuggestions.length > 0 && (
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {nameSuggestions.map((suggestion) => (
+                          <CommandItem
+                            key={suggestion}
+                            value={suggestion}
+                            onSelect={() => {
+                              setName(suggestion);
+                              setNamePopoverOpen(false);
+                            }}
+                          >
+                            {suggestion}
+                            {name === suggestion && (
+                              <CheckIcon className="ml-auto h-4 w-4" />
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              )}
+            </Popover>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

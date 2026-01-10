@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { RecurringIncome, Currency } from "@/types";
 import { useRecurringIncome } from "@/hooks/useRecurringIncome";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,12 @@ const Income = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter(DEFAULT_CURRENCY);
+
+  // Extract unique existing names for autocomplete suggestions
+  const existingNames = useMemo(
+    () => [...new Set(incomeSources.map((inc) => inc.name))],
+    [incomeSources]
+  );
 
   const handleAddIncome = () => {
     setEditingIncome(null);
@@ -173,6 +179,7 @@ const Income = () => {
           onSubmit={handleFormSubmit}
           editingIncome={editingIncome}
           defaultCurrency={DEFAULT_CURRENCY}
+          existingNames={existingNames}
         />
 
         {/* Delete Confirmation Dialog */}
