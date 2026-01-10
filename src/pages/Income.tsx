@@ -56,14 +56,14 @@ const Income = () => {
     try {
       await deleteIncome(deleteConfirmId);
       toast({
-        title: "Income deleted",
-        description: "Income source has been removed.",
+        title: "Payslip deleted",
+        description: "Payslip has been removed.",
       });
     } catch (error) {
-      console.error("Error deleting income:", error);
+      console.error("Error deleting payslip:", error);
       toast({
         title: "Error",
-        description: "Failed to delete income source.",
+        description: "Failed to delete payslip.",
         variant: "destructive",
       });
     } finally {
@@ -77,14 +77,14 @@ const Income = () => {
     try {
       await saveIncome(income);
       toast({
-        title: editingIncome ? "Income updated" : "Income added",
+        title: editingIncome ? "Payslip updated" : "Payslip added",
         description: `${income.name} has been ${editingIncome ? "updated" : "added"}.`,
       });
     } catch (error) {
-      console.error("Error saving income:", error);
+      console.error("Error saving payslip:", error);
       toast({
         title: "Error",
-        description: "Failed to save income source.",
+        description: "Failed to save payslip.",
         variant: "destructive",
       });
       throw error;
@@ -100,20 +100,20 @@ const Income = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
           <div>
             <h1 className="text-2xl font-medium tracking-tight text-gradient">
-              Income
+              Payslips
             </h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
-              Manage your recurring income sources
+              Track your income payments
             </p>
           </div>
 
           <Button
             onClick={handleAddIncome}
             className="w-full sm:w-auto mt-4 sm:mt-0 gap-2"
-            aria-label="Add new income source"
+            aria-label="Add new payslip"
           >
             <Plus className="h-4 w-4" />
-            Add Income
+            Add Payslip
           </Button>
         </div>
 
@@ -138,21 +138,19 @@ const Income = () => {
             {/* Summary Card */}
             <div className="p-6 rounded-lg border bg-[var(--color-card-bg)] border-[var(--color-border)]">
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-emerald-500/10">
-                  <TrendingUpIcon className="h-5 w-5 text-emerald-500" />
+                <div className="p-2 rounded-lg bg-[var(--color-accent-subtle)]">
+                  <TrendingUpIcon className="h-5 w-5 text-[var(--color-success)]" />
                 </div>
                 <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                  Total Monthly Income
+                  Total Income
                 </span>
               </div>
-              <div className="text-3xl font-bold text-emerald-500">
+              <div className="text-3xl font-medium text-[var(--color-success)]">
                 {formatCurrency(totalMonthlyIncome)}
               </div>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                {incomeSources.filter((i) => i.isActive).length} active source
-                {incomeSources.filter((i) => i.isActive).length !== 1
-                  ? "s"
-                  : ""}
+                {incomeSources.length} payslip
+                {incomeSources.length !== 1 ? "s" : ""}
               </p>
             </div>
 
@@ -184,7 +182,7 @@ const Income = () => {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Income Source</AlertDialogTitle>
+              <AlertDialogTitle>Delete Payslip</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete "{incomeToDelete?.name}"? This
                 action cannot be undone.

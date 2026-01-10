@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RecurringIncome, Currency } from "@/types";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -19,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 
 interface IncomeFormProps {
@@ -43,9 +51,8 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<Currency>(defaultCurrency);
-  const [payDate, setPayDate] = useState("");
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
-  const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset form when dialog opens/closes or editing income changes
@@ -55,24 +62,38 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         setName(editingIncome.name);
         setAmount(editingIncome.amount.toString());
         setCurrency(editingIncome.currency);
-        setPayDate(editingIncome.startDate || "");
+        // Parse date string to Date object (local timezone)
+        if (editingIncome.startDate) {
+          const [year, month, day] = editingIncome.startDate
+            .split("-")
+            .map(Number);
+          setDate(new Date(year, month - 1, day));
+        } else {
+          setDate(undefined);
+        }
         setNotes(editingIncome.notes || "");
-        setIsActive(editingIncome.isActive);
       } else {
         setName("");
         setAmount("");
         setCurrency(defaultCurrency);
-        setPayDate("");
+        setDate(undefined);
         setNotes("");
-        setIsActive(true);
       }
     }
   }, [isOpen, editingIncome, defaultCurrency]);
 
+  // Convert Date to YYYY-MM-DD string in local timezone
+  const formatDateToString = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !amount || parseFloat(amount) <= 0) {
+    if (!name.trim() || !amount || parseFloat(amount) <= 0 || !date) {
       return;
     }
 
@@ -85,8 +106,8 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         amount: parseFloat(amount),
         currency,
         frequency: "monthly", // Default to monthly
-        startDate: payDate || undefined,
-        isActive,
+        startDate: formatDateToString(date),
+        isActive: true, // Always active for payslips
         notes: notes.trim() || undefined,
       };
 
@@ -104,7 +125,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {editingIncome ? "Edit Income" : "Add Income"}
+            {editingIncome ? "Edit Payslip" : "Add Payslip"}
           </DialogTitle>
         </DialogHeader>
 
@@ -113,7 +134,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
-              placeholder="e.g., Primary Salary"
+              placeholder="e.g., Salary"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -156,13 +177,29 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="payDate">Pay Date (optional)</Label>
-            <Input
-              id="payDate"
-              type="date"
-              value={payDate}
-              onChange={(e) => setPayDate(e.target.value)}
-            />
+            <Label>Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
@@ -176,17 +213,6 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="isActive" className="cursor-pointer">
-              Active
-            </Label>
-            <Switch
-              id="isActive"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
-
           <DialogFooter className="pt-4">
             <Button
               type="button"
@@ -196,12 +222,12 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !date}>
               {isSubmitting
                 ? "Saving..."
                 : editingIncome
                   ? "Save Changes"
-                  : "Add Income"}
+                  : "Add Payslip"}
             </Button>
           </DialogFooter>
         </form>
