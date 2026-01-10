@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { RecurringIncome, Currency } from "@/types";
 import { format } from "date-fns";
 import { CalendarIcon, CheckIcon } from "lucide-react";
@@ -66,6 +66,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [namePopoverOpen, setNamePopoverOpen] = useState(false);
+  const justSelectedRef = useRef(false);
 
   // Get unique names for suggestions, filtered by current input
   const nameSuggestions = useMemo(() => {
@@ -166,7 +167,13 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                     }
                   }}
                   onFocus={() => {
-                    if (nameSuggestions.length > 0) {
+                    // Don't reopen if user just selected a suggestion
+                    if (justSelectedRef.current) {
+                      justSelectedRef.current = false;
+                      return;
+                    }
+                    // Only show suggestions when there's text typed
+                    if (name.length > 0 && nameSuggestions.length > 0) {
                       setNamePopoverOpen(true);
                     }
                   }}
@@ -189,6 +196,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                             value={suggestion}
                             onSelect={() => {
                               setName(suggestion);
+                              justSelectedRef.current = true;
                               setNamePopoverOpen(false);
                             }}
                           >
