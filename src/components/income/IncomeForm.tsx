@@ -79,6 +79,8 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   // Reset form when dialog opens/closes or editing income changes
   useEffect(() => {
     if (isOpen) {
+      // Always close autocomplete when dialog opens
+      setNamePopoverOpen(false);
       if (editingIncome) {
         setName(editingIncome.name);
         setAmount(editingIncome.amount.toString());
@@ -167,15 +169,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                     }
                   }}
                   onFocus={() => {
-                    // Don't reopen if user just selected a suggestion
-                    if (justSelectedRef.current) {
-                      justSelectedRef.current = false;
-                      return;
-                    }
-                    // Only show suggestions when there's text typed
-                    if (name.length > 0 && nameSuggestions.length > 0) {
-                      setNamePopoverOpen(true);
-                    }
+                    // Reset the ref on focus, but don't auto-open suggestions
+                    // Suggestions only appear when user types (onChange)
+                    justSelectedRef.current = false;
                   }}
                   required
                   autoComplete="off"
