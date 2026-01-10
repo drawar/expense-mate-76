@@ -30,7 +30,7 @@ export const IncomeSummaryCard: React.FC<IncomeSummaryCardProps> = ({
     <Card className={className}>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center gap-2">
-          <TrendingUpIcon className="h-5 w-5 text-emerald-500" />
+          <TrendingUpIcon className="h-5 w-5 text-[var(--color-success)]" />
           Income & Savings
         </CardTitle>
       </CardHeader>
@@ -38,7 +38,7 @@ export const IncomeSummaryCard: React.FC<IncomeSummaryCardProps> = ({
         {/* Total Income */}
         <div>
           <p className="text-sm text-muted-foreground mb-1">Total Income</p>
-          <p className="text-2xl font-medium tracking-tight text-emerald-500">
+          <p className="text-3xl font-medium tracking-tight text-[var(--color-success)]">
             {formatCurrency(totalIncome)}
           </p>
         </div>
@@ -48,20 +48,20 @@ export const IncomeSummaryCard: React.FC<IncomeSummaryCardProps> = ({
           <p className="text-sm text-muted-foreground mb-1">Net Cash Flow</p>
           <div className="flex items-center gap-2">
             {isPositive ? (
-              <TrendingUpIcon className="h-5 w-5 text-emerald-500" />
+              <TrendingUpIcon className="h-5 w-5 text-[var(--color-success)]" />
             ) : (
               <TrendingDownIcon className="h-5 w-5 text-destructive" />
             )}
             <p
-              className={`text-2xl font-medium tracking-tight ${
-                isPositive ? "text-emerald-500" : "text-destructive"
+              className={`text-3xl font-medium tracking-tight ${
+                isPositive ? "text-[var(--color-success)]" : "text-destructive"
               }`}
             >
               {isPositive ? "+" : ""}
               {formatCurrency(netFlow)}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Income minus expenses
           </p>
         </div>
