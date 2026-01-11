@@ -36,20 +36,23 @@ import {
   LastFourDigitsField,
 } from "./form";
 
-// Common credit card issuers
+// Common card issuers
 const CARD_ISSUERS = [
   "American Express",
+  "Best Buy",
   "BMO",
   "Brim Financial",
   "CIBC",
   "Citibank",
   "DBS",
   "HSBC",
+  "Joker",
   "Neo Financial",
   "OCBC",
   "RBC",
   "Scotiabank",
   "TD",
+  "Uber",
   "UOB",
 ] as const;
 
