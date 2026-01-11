@@ -30,11 +30,8 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
 
   // Calculate current balance based on payment method type
   const currentBalance = React.useMemo(() => {
-    // For gift cards and cash with totalLoaded: remaining balance = totalLoaded - all spent
-    if (
-      paymentMethod.type === "gift_card" ||
-      (paymentMethod.type === "cash" && paymentMethod.totalLoaded !== undefined)
-    ) {
+    // For gift cards and cash: show all-time balance
+    if (paymentMethod.type === "gift_card" || paymentMethod.type === "cash") {
       const allCardTransactions = allTransactions.filter(
         (tx) =>
           tx.paymentMethod.id === paymentMethod.id && tx.is_deleted !== true
@@ -43,7 +40,11 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
         (total, tx) => total + (tx.paymentAmount || tx.amount),
         0
       );
-      return (paymentMethod.totalLoaded || 0) - totalSpent;
+      // If totalLoaded is set, show remaining balance; otherwise show total spent
+      if (paymentMethod.totalLoaded !== undefined) {
+        return paymentMethod.totalLoaded - totalSpent;
+      }
+      return totalSpent;
     }
 
     // For credit cards and other types: sum of current month spending
@@ -193,8 +194,15 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
         </div>
       )}
 
-      {/* Current Balance Label */}
-      <div className="text-xs text-white/80">Current Balance</div>
+      {/* Balance Label */}
+      <div className="text-xs text-white/80">
+        {paymentMethod.type === "cash" &&
+        paymentMethod.totalLoaded === undefined
+          ? "Total Spent"
+          : paymentMethod.type === "gift_card" || paymentMethod.type === "cash"
+            ? "Remaining Balance"
+            : "Current Balance"}
+      </div>
 
       {/* Balance Amount - Japandi: font-weight 500 max */}
       <div className="text-xl font-medium mt-0.5">
