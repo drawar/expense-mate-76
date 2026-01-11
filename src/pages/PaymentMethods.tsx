@@ -16,12 +16,82 @@ import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRule } from "@/core/rewards/types";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 
+// Helper to get card network from issuer/name
+const getCardNetwork = (issuer: string, name: string): string => {
+  const combined = `${issuer} ${name}`.toLowerCase();
+  if (combined.includes("visa")) return "1_visa";
+  if (combined.includes("mastercard") || combined.includes("world elite"))
+    return "2_mastercard";
+  if (combined.includes("amex") || combined.includes("american express"))
+    return "3_amex";
+  return "4_other";
+};
+
+// Helper to get type sort order
+const getTypeSortOrder = (type: string, name: string): number => {
+  if (type === "credit_card") return 1;
+  if (type === "gift_card") return 2;
+  if (type === "cash") {
+    // Cash adjustment comes after regular cash
+    if (name.toLowerCase().includes("adjustment")) return 4;
+    return 3;
+  }
+  return 5;
+};
+
 const PaymentMethods = () => {
   const {
-    data: paymentMethods = [],
+    data: rawPaymentMethods = [],
     isLoading,
     refetch,
-  } = usePaymentMethodsQuery();
+  } = usePaymentMethodsQuery({ includeInactive: true });
+
+  // Sort payment methods according to priority
+  const paymentMethods = useMemo(() => {
+    return [...rawPaymentMethods].sort((a, b) => {
+      // 1. Active status (active first)
+      if (a.active !== b.active) {
+        return a.active ? -1 : 1;
+      }
+
+      // 2. Type order: credit_card > gift_card > cash > cash adjustment
+      const typeOrderA = getTypeSortOrder(a.type, a.name);
+      const typeOrderB = getTypeSortOrder(b.type, b.name);
+      if (typeOrderA !== typeOrderB) {
+        return typeOrderA - typeOrderB;
+      }
+
+      // 3. Within credit cards: network > issuer > name
+      if (a.type === "credit_card" && b.type === "credit_card") {
+        const networkA = getCardNetwork(a.issuer || "", a.name);
+        const networkB = getCardNetwork(b.issuer || "", b.name);
+        if (networkA !== networkB) {
+          return networkA.localeCompare(networkB);
+        }
+        if ((a.issuer || "") !== (b.issuer || "")) {
+          return (a.issuer || "").localeCompare(b.issuer || "");
+        }
+        return a.name.localeCompare(b.name);
+      }
+
+      // 4. Within gift cards: issuer > totalLoaded > name
+      if (a.type === "gift_card" && b.type === "gift_card") {
+        if ((a.issuer || "") !== (b.issuer || "")) {
+          return (a.issuer || "").localeCompare(b.issuer || "");
+        }
+        // Higher totalLoaded first
+        const loadedA = a.totalLoaded || 0;
+        const loadedB = b.totalLoaded || 0;
+        if (loadedA !== loadedB) {
+          return loadedB - loadedA;
+        }
+        return a.name.localeCompare(b.name);
+      }
+
+      // Default: sort by name
+      return a.name.localeCompare(b.name);
+    });
+  }, [rawPaymentMethods]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(
     null
