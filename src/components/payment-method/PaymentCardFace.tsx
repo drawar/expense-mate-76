@@ -28,20 +28,34 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
   // Get transactions for this payment method to calculate balance
   const { data: allTransactions = [] } = useTransactionsQuery();
 
-  // Filter transactions for this payment method in the current month
-  const currentMonthTransactions = allTransactions.filter(
-    (tx) =>
-      tx.paymentMethod.id === paymentMethod.id &&
-      tx.is_deleted !== true &&
-      new Date(tx.date).getMonth() === new Date().getMonth() &&
-      new Date(tx.date).getFullYear() === new Date().getFullYear()
-  );
+  // Calculate current balance based on payment method type
+  const currentBalance = React.useMemo(() => {
+    if (paymentMethod.type === "gift_card") {
+      // For gift cards: remaining balance = totalLoaded - all spent
+      const allCardTransactions = allTransactions.filter(
+        (tx) =>
+          tx.paymentMethod.id === paymentMethod.id && tx.is_deleted !== true
+      );
+      const totalSpent = allCardTransactions.reduce(
+        (total, tx) => total + (tx.paymentAmount || tx.amount),
+        0
+      );
+      return (paymentMethod.totalLoaded || 0) - totalSpent;
+    }
 
-  // Calculate current balance
-  const currentBalance = currentMonthTransactions.reduce(
-    (total, tx) => total + tx.paymentAmount,
-    0
-  );
+    // For other cards: sum of current month spending
+    const currentMonthTransactions = allTransactions.filter(
+      (tx) =>
+        tx.paymentMethod.id === paymentMethod.id &&
+        tx.is_deleted !== true &&
+        new Date(tx.date).getMonth() === new Date().getMonth() &&
+        new Date(tx.date).getFullYear() === new Date().getFullYear()
+    );
+    return currentMonthTransactions.reduce(
+      (total, tx) => total + tx.paymentAmount,
+      0
+    );
+  }, [allTransactions, paymentMethod]);
 
   // Generate a background gradient based on the payment method
   const getCardBackground = (): string => {
