@@ -542,8 +542,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                 </div>
               )}
 
-              {/* Issuer (credit card only) */}
-              {isCreditCard && (
+              {/* Issuer (credit card and gift card) */}
+              {(isCreditCard || isGiftCard) && (
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="issuer"
