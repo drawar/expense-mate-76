@@ -1503,23 +1503,34 @@ export class StorageService {
       }
 
       console.log(
-        `[PrepaidBalance] Processing ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}`
+        `[GiftCardBalance] Processing ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}`
       );
 
-      // Get all transactions for this payment method (including the new one)
+      // Get all transactions for this payment method
       const transactions = await this.getTransactions();
       const cardTransactions = transactions.filter(
         (t) => t.paymentMethod.id === paymentMethodId && !t.is_deleted
       );
 
-      // Calculate total spent (sum of paymentAmount for transactions in card's currency)
-      const totalSpent = cardTransactions.reduce((sum, t) => {
+      // Calculate total spent from transactions in database
+      const totalSpentFromDb = cardTransactions.reduce((sum, t) => {
         return sum + (t.paymentAmount || t.amount);
       }, 0);
 
-      // Calculate balances
-      const newBalance = paymentMethod.totalLoaded - totalSpent;
+      // Balance as shown in DB (may or may not include current transaction)
+      const balanceFromDb = paymentMethod.totalLoaded - totalSpentFromDb;
+
+      // For deactivation: use the lower of the two possible balances
+      // This handles the race condition where DB might not have the transaction yet
+      const newBalance = Math.min(
+        balanceFromDb,
+        balanceFromDb - transaction.amount
+      );
       const previousBalance = newBalance + transaction.amount;
+
+      console.log(
+        `[GiftCardBalance] balanceFromDb=${balanceFromDb}, txAmount=${transaction.amount}, newBalance=${newBalance}`
+      );
 
       // Send notification
       await this.sendPrepaidBalanceNotification(
@@ -1530,9 +1541,12 @@ export class StorageService {
       );
 
       // Check if balance is depleted and deactivate
-      if (newBalance <= 0) {
+      // Deactivate if either balance scenario results in 0 or less
+      const shouldDeactivate =
+        balanceFromDb <= 0 || balanceFromDb - transaction.amount <= 0;
+      if (shouldDeactivate) {
         console.log(
-          `Deactivating prepaid card ${paymentMethod.name} - balance depleted`
+          `[GiftCardBalance] Deactivating ${paymentMethod.name} - balance depleted (balanceFromDb=${balanceFromDb})`
         );
 
         const updatedMethods = paymentMethods.map((pm) =>
