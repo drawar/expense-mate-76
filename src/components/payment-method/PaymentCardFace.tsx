@@ -30,8 +30,11 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
 
   // Calculate current balance based on payment method type
   const currentBalance = React.useMemo(() => {
-    if (paymentMethod.type === "gift_card") {
-      // For gift cards: remaining balance = totalLoaded - all spent
+    // For gift cards and cash with totalLoaded: remaining balance = totalLoaded - all spent
+    if (
+      paymentMethod.type === "gift_card" ||
+      (paymentMethod.type === "cash" && paymentMethod.totalLoaded !== undefined)
+    ) {
       const allCardTransactions = allTransactions.filter(
         (tx) =>
           tx.paymentMethod.id === paymentMethod.id && tx.is_deleted !== true
@@ -43,7 +46,7 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
       return (paymentMethod.totalLoaded || 0) - totalSpent;
     }
 
-    // For other cards: sum of current month spending
+    // For credit cards and other types: sum of current month spending
     const currentMonthTransactions = allTransactions.filter(
       (tx) =>
         tx.paymentMethod.id === paymentMethod.id &&
