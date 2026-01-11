@@ -632,8 +632,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     />
                   )}
 
-                  {/* Total Loaded (prepaid only) */}
-                  {isPrepaidCard && (
+                  {/* Total Loaded (gift card only) */}
+                  {isGiftCard && (
                     <div className="space-y-1.5">
                       <Label
                         htmlFor="totalLoaded"
