@@ -40,7 +40,7 @@ When adding a new credit card, you must:
 A payment method has the following properties:
 
 - **name**: Card name (e.g., "Cobalt", "Gold", "Sapphire Preferred")
-- **type**: One of: credit_card, debit_card, prepaid_card, cash, bank_account,
+- **type**: One of: credit_card, debit_card, gift_card, cash, bank_account,
   other
 - **issuer**: Card issuer (e.g., "American Express", "Chase", "TD", "RBC")
 - **currency**: Primary currency (CAD, USD, EUR, GBP, JPY, AUD, CNY, INR, SGD,
@@ -285,6 +285,26 @@ RewardRulesSection component:
   - 2x on travel worldwide (airlines, hotels, rail, car rental, tours - excludes
     local transit) - no cap, all currencies
   - 1x on everything else
+
+### American Express Green (US)
+
+- **Issuer**: American Express
+- **Name**: Green
+- **Currency**: USD
+- **Points**: Membership Rewards Points (US)
+- **Statement Day**: 10
+- **Card Image**:
+  https://icm.aexp-static.com/acquisition/card-art/NUS000000274_480x304_straight_withname.png
+- **Rules**:
+  - 3x on restaurants worldwide (excludes bars, nightclubs, cafeterias,
+    convenience stores, and in-hotel/casino restaurants) - no cap
+  - 3x on flights booked directly with airlines or amextravel.com - no cap
+  - 3x on transit (trains, buses, taxis, rideshares, ferries, tolls, parking) -
+    no cap
+  - 1x on everything else
+- **Rounding**: Points rounded to nearest integer after calculation (same as
+  Cobalt)
+- **Note**: 3x = 1 base + 2 bonus points
 
 ### Neo Financial Cathay World Elite Mastercard
 

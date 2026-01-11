@@ -92,7 +92,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   const icon =
     method.type === "credit_card" ? (
       <CreditCardIcon className="h-5 w-5" style={{ color: method.color }} />
-    ) : method.type === "prepaid_card" ? (
+    ) : method.type === "gift_card" ? (
       <WalletIcon className="h-5 w-5" style={{ color: method.color }} />
     ) : (
       <BanknoteIcon className="h-5 w-5" style={{ color: method.color }} />
@@ -183,7 +183,7 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
               <CardDescription>
                 {method.type === "credit_card"
                   ? `${method.issuer} ${method.lastFourDigits ? `•••• ${method.lastFourDigits}` : ""}`
-                  : method.type === "prepaid_card"
+                  : method.type === "gift_card"
                     ? `${method.currency} ${method.lastFourDigits ? `•••• ${method.lastFourDigits}` : ""}`
                     : `${method.currency}`}
               </CardDescription>
@@ -289,8 +289,8 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
           </>
         )}
 
-        {/* Prepaid card specific content */}
-        {method.type === "prepaid_card" && (
+        {/* Gift card specific content */}
+        {method.type === "gift_card" && (
           <>
             <div className="flex items-center text-sm">
               <WalletIcon className="h-4 w-4 mr-2 text-emerald-500" />

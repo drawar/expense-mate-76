@@ -32,7 +32,7 @@ export const PaymentMethodIcon: React.FC<{
     if (
       method.type === "credit_card" ||
       method.type === "debit_card" ||
-      method.type === "prepaid_card"
+      method.type === "gift_card"
     ) {
       const network = getCardNetwork(method.issuer || "", method.name);
 

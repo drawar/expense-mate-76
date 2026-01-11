@@ -39,7 +39,7 @@ export type Transaction = {
 export type PaymentMethodType =
   | "credit_card"
   | "debit_card"
-  | "prepaid_card"
+  | "gift_card"
   | "cash"
   | "bank_account"
   | "other";

@@ -286,8 +286,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   }, [currentMethod, isOpen]);
 
   const isCreditCard = selectedType === "credit_card";
-  const isPrepaidCard = selectedType === "prepaid_card";
-  const isCardType = isCreditCard || isPrepaidCard;
+  const isGiftCard = selectedType === "gift_card";
+  const isCardType = isCreditCard || isGiftCard;
 
   // Form content
   const formContent = (
@@ -513,9 +513,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="credit_card">Credit Card</SelectItem>
-                        <SelectItem value="prepaid_card">
-                          Prepaid Card
-                        </SelectItem>
+                        <SelectItem value="gift_card">Gift Card</SelectItem>
                         <SelectItem value="cash">Cash</SelectItem>
                       </SelectContent>
                     </Select>

@@ -221,7 +221,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
                 strokeWidth: 2,
               }}
             />
-          ) : paymentMethod.type === "prepaid_card" ? (
+          ) : paymentMethod.type === "gift_card" ? (
             <WalletIcon
               className="h-5 w-5"
               style={{
@@ -378,7 +378,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
           </div>
         )}
 
-        {paymentMethod.type === "prepaid_card" && (
+        {paymentMethod.type === "gift_card" && (
           <div
             className="p-3"
             style={{

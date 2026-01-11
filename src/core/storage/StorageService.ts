@@ -1485,9 +1485,9 @@ export class StorageService {
         return;
       }
 
-      if (paymentMethod.type !== "prepaid_card") {
+      if (paymentMethod.type !== "gift_card") {
         console.log(
-          `[PrepaidBalance] Not a prepaid card (type: ${paymentMethod.type})`
+          `[GiftCardBalance] Not a gift card (type: ${paymentMethod.type})`
         );
         return;
       }
@@ -1562,7 +1562,7 @@ export class StorageService {
       // Only check prepaid cards that are active and have a total loaded value
       if (
         !paymentMethod ||
-        paymentMethod.type !== "prepaid_card" ||
+        paymentMethod.type !== "gift_card" ||
         !paymentMethod.active ||
         paymentMethod.totalLoaded === undefined
       ) {

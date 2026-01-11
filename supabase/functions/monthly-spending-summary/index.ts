@@ -495,10 +495,10 @@ function generateEmailHtml(
       </td>
     </tr>
 
-    <!-- Prepaid Card Balances -->
+    <!-- Gift Card Balances -->
     <tr>
       <td style="padding: 0 24px 24px;">
-        <h2 style="margin: 0 0 16px; font-size: 18px; color: #1a1a1a; border-bottom: 2px solid #667eea; padding-bottom: 8px;">Prepaid Card Balances</h2>
+        <h2 style="margin: 0 0 16px; font-size: 18px; color: #1a1a1a; border-bottom: 2px solid #667eea; padding-bottom: 8px;">Gift Card Balances</h2>
         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size: 14px;">
           <thead>
             <tr style="background: #f8f9fa;">
@@ -661,7 +661,7 @@ serve(async (req) => {
           .from("payment_methods")
           .select("id, name, total_loaded, currency")
           .eq("user_id", user.id)
-          .eq("type", "prepaid_card")
+          .eq("type", "gift_card")
           .eq("is_active", true);
 
         if (prepaidError) throw prepaidError;
