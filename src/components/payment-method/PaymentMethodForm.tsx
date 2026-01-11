@@ -36,25 +36,31 @@ import {
   LastFourDigitsField,
 } from "./form";
 
-// Common card issuers
-const CARD_ISSUERS = [
+// Credit/debit card issuers
+const CREDIT_CARD_ISSUERS = [
   "American Express",
-  "Best Buy",
   "BMO",
   "Brim Financial",
   "CIBC",
   "Citibank",
   "DBS",
   "HSBC",
-  "Joker",
   "Neo Financial",
   "OCBC",
   "RBC",
   "Scotiabank",
   "TD",
-  "Uber",
   "UOB",
 ] as const;
+
+// Gift card issuers
+const GIFT_CARD_ISSUERS = ["Best Buy", "Joker", "Uber"] as const;
+
+// Combined list of all issuers (sorted alphabetically)
+const CARD_ISSUERS = [
+  ...CREDIT_CARD_ISSUERS,
+  ...GIFT_CARD_ISSUERS,
+].sort() as unknown as readonly string[];
 
 // Validation error type
 interface ValidationErrors {
