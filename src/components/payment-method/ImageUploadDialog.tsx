@@ -124,8 +124,9 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
           border: "1px solid var(--color-border)",
           borderRadius: "16px",
         }}
+        hideCloseButton
       >
-        <DialogHeader>
+        <DialogHeader showCloseButton>
           <DialogTitle>
             {hasExistingImage ? "Change Card Image" : "Upload Card Image"}
           </DialogTitle>

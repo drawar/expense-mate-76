@@ -82,8 +82,8 @@ export function ConfirmationDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent hideCloseButton>
+        <DialogHeader showCloseButton>
           <DialogTitle className="flex items-center gap-2">
             {icon}
             {title}

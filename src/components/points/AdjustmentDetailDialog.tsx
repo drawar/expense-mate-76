@@ -108,8 +108,11 @@ export function AdjustmentDetailDialog({
         open={isOpen && !showEditDialog}
         onOpenChange={(open) => !open && onClose()}
       >
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+          hideCloseButton
+        >
+          <DialogHeader showCloseButton>
             <DialogTitle className="flex items-center gap-2">
               {isPositive ? (
                 <TrendingUp className="h-5 w-5 text-green-500" />

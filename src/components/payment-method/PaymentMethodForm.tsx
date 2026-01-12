@@ -5,7 +5,6 @@ import { RewardCurrency } from "@/core/currency/types";
 import { CardCatalogEntry } from "@/core/catalog";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -21,13 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import {
-  AlertCircle,
-  CreditCard,
-  X,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { AlertCircle, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 import CardCatalogPicker from "./CardCatalogPicker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -771,15 +764,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
           className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
         >
-          <DialogHeader className="px-5 py-3 border-b flex-shrink-0 flex flex-row items-center justify-between">
+          <DialogHeader className="border-b flex-shrink-0" showCloseButton>
             <DialogTitle>{title}</DialogTitle>
-            <DialogClose className="h-11 w-11 ml-3 rounded-lg flex items-center justify-center ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-              <X
-                className="h-6 w-6"
-                style={{ color: "var(--color-text-tertiary)" }}
-              />
-              <span className="sr-only">Close</span>
-            </DialogClose>
           </DialogHeader>
           {formContent}
         </DialogContent>

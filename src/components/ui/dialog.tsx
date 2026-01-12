@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -80,14 +80,56 @@ const DialogContent = React.forwardRef<
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
+interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  showBackButton?: boolean;
+  onBack?: () => void;
+  showCloseButton?: boolean;
+  onClose?: () => void;
+}
+
 const DialogHeader = ({
   className,
+  showBackButton = false,
+  onBack,
+  showCloseButton = false,
+  onClose,
+  children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+}: DialogHeaderProps) => (
   <div
-    className={cn("flex flex-col text-center sm:text-left", className)}
+    className={cn(
+      "relative flex flex-col text-center min-h-[68px] justify-center",
+      className
+    )}
     {...props}
-  />
+  >
+    {showBackButton && (
+      <button
+        type="button"
+        onClick={onBack}
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        <ArrowLeft
+          className="h-6 w-6"
+          style={{ color: "var(--color-text-tertiary)" }}
+        />
+        <span className="sr-only">Go back</span>
+      </button>
+    )}
+    {children}
+    {showCloseButton && (
+      <DialogPrimitive.Close
+        onClick={onClose}
+        className="absolute right-3 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        <X
+          className="h-6 w-6"
+          style={{ color: "var(--color-text-tertiary)" }}
+        />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    )}
+  </div>
 );
 DialogHeader.displayName = "DialogHeader";
 
@@ -112,7 +154,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight min-h-[44px] flex items-center pr-12",
+      "text-lg font-semibold leading-none tracking-tight px-12",
       className
     )}
     {...props}
@@ -145,3 +187,5 @@ export {
   DialogTitle,
   DialogDescription,
 };
+
+export type { DialogHeaderProps };

@@ -253,8 +253,11 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
   // Use Dialog for both mobile and desktop for consistent styling
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent
+        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        hideCloseButton
+      >
+        <DialogHeader showCloseButton>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
             Scan Receipt

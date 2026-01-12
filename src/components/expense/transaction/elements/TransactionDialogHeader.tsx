@@ -10,7 +10,7 @@ const TransactionDialogHeader = ({
   transaction,
 }: TransactionDialogHeaderProps) => {
   return (
-    <DialogHeader>
+    <DialogHeader showCloseButton>
       <DialogTitle className="text-xl flex items-center gap-2">
         <span className="truncate">{transaction.merchant.name}</span>
         {transaction.merchant.isOnline && (

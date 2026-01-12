@@ -155,8 +155,11 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent
+        className="sm:max-w-lg max-h-[85vh] flex flex-col"
+        hideCloseButton
+      >
+        <DialogHeader showCloseButton>
           <DialogTitle>Select Your Card</DialogTitle>
           <DialogDescription>
             Choose from our catalog or create a custom card

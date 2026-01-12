@@ -136,8 +136,11 @@ export function AdjustmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent
+        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        hideCloseButton
+      >
+        <DialogHeader showCloseButton>
           <DialogTitle>
             {isEditing ? "Edit Adjustment" : "Add Points Adjustment"}
           </DialogTitle>

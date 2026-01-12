@@ -3054,8 +3054,11 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
 
       {/* Rule Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+          hideCloseButton
+        >
+          <DialogHeader showCloseButton>
             <DialogTitle>
               {editingRule ? "Edit Reward Rule" : "Create Reward Rule"}
             </DialogTitle>

@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { Transaction, PaymentMethod } from "@/types";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -41,12 +46,17 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent
+        className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+        hideCloseButton
+      >
+        <DialogHeader showCloseButton>
+          <DialogTitle>Transaction Details</DialogTitle>
+        </DialogHeader>
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium">Transaction Details</h3>
                 <p className="text-sm text-muted-foreground">
                   {new Date(transaction.date).toLocaleDateString()}
                 </p>

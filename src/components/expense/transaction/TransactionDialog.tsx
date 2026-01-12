@@ -74,7 +74,10 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
         }
       }}
     >
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent
+        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        hideCloseButton
+      >
         {dialogMode === "view" ? (
           <>
             <TransactionDialogHeader transaction={transaction} />

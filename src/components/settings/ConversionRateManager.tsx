@@ -487,8 +487,8 @@ export function ConversionRateManager() {
                               )}
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
+                          <DialogContent hideCloseButton>
+                            <DialogHeader showCloseButton>
                               <DialogTitle>Delete Conversion Rates</DialogTitle>
                               <DialogDescription>
                                 Are you sure you want to delete all conversion

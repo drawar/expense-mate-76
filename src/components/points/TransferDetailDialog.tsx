@@ -123,8 +123,11 @@ export function TransferDetailDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+          hideCloseButton
+        >
+          <DialogHeader showCloseButton>
             <DialogTitle className="flex items-center gap-2">
               <ArrowRight className="h-5 w-5" />
               Points Transfer

@@ -330,8 +330,11 @@ const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
 
           {/* Rules Dialog */}
           <Dialog open={isRulesDialogOpen} onOpenChange={setIsRulesDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
-              <DialogHeader>
+            <DialogContent
+              className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden"
+              hideCloseButton
+            >
+              <DialogHeader showCloseButton>
                 <DialogTitle>
                   Manage Reward Rules for {method.issuer} {method.name}
                 </DialogTitle>
