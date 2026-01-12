@@ -407,7 +407,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
       className="w-full py-3 flex items-center justify-between text-base md:text-sm"
     >
       <span
-        className="font-medium"
+        className="font-medium whitespace-nowrap shrink-0"
         style={{ color: "var(--color-text-secondary)" }}
       >
         {label}{" "}
