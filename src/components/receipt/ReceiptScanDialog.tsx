@@ -14,20 +14,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReceiptCapture } from "./ReceiptCapture";
 import { ReceiptPreview } from "./ReceiptPreview";
 import { useReceiptScan, ScanResult } from "@/hooks/useReceiptScan";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Currency, PaymentMethod } from "@/types";
 
 interface ReceiptScanDialogProps {
@@ -57,7 +49,6 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
   defaultCurrency = "SGD",
   paymentMethods,
 }) => {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { state, error, result, progress, scanReceipt, reset, isRecommended } =
@@ -259,30 +250,7 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
     </div>
   );
 
-  // Mobile uses Drawer, Desktop uses Dialog
-  if (!isDesktop) {
-    return (
-      <Drawer open={open} onOpenChange={handleClose}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Scan Receipt
-            </DrawerTitle>
-            <DrawerDescription>
-              {state === "idle"
-                ? "Take a photo or select from gallery"
-                : state === "success"
-                  ? "Review extracted information"
-                  : "Processing your receipt"}
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4 pb-4 overflow-auto">{content}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
+  // Use Dialog for both mobile and desktop for consistent styling
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
@@ -299,7 +267,7 @@ export const ReceiptScanDialog: React.FC<ReceiptScanDialogProps> = ({
                 : "Processing your receipt..."}
           </DialogDescription>
         </DialogHeader>
-        {content}
+        <div className="flex-1 overflow-y-auto">{content}</div>
       </DialogContent>
     </Dialog>
   );
