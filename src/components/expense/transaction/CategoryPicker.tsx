@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,21 +14,12 @@ import {
   SUBCATEGORIES,
   getCategoryColor,
   getCategoryIcon,
-  CategoryGroup,
-  SubcategoryConfig,
 } from "@/utils/constants/categories";
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { getEffectiveCategory, getMccCategory } from "@/utils/categoryMapping";
 import { categorizationService } from "@/core/categorization";
 import { cn } from "@/lib/utils";
-import {
-  Check,
-  Search,
-  RotateCcw,
-  Sparkles,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import { Check, Search, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
 
 interface CategoryPickerProps {
   open: boolean;
@@ -124,29 +112,35 @@ export function CategoryPicker({
     return "Low";
   };
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh] flex flex-col overflow-hidden sm:max-w-md sm:mx-auto sm:rounded-t-xl">
-        <DrawerHeader className="text-left flex-shrink-0 relative">
-          <DrawerTitle className="text-lg font-semibold leading-none tracking-tight min-h-[44px] flex items-center pr-12">
-            Choose Category
-          </DrawerTitle>
-          <DrawerDescription
-            className="text-sm"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            {transaction.merchant.name} - What did you buy?
-          </DrawerDescription>
-          <DrawerClose className="absolute right-4 top-4 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X
-              className="h-6 w-6"
-              style={{ color: "var(--color-text-tertiary)" }}
-            />
-            <span className="sr-only">Close</span>
-          </DrawerClose>
-        </DrawerHeader>
+  const handleClose = () => {
+    onOpenChange(false);
+    setSearchQuery("");
+  };
 
-        <div className="px-4 pb-2 flex-shrink-0">
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
+        hideCloseButton
+      >
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={handleClose}
+        >
+          <DialogTitle>Choose Category</DialogTitle>
+        </DialogHeader>
+
+        {/* Subtitle */}
+        <div
+          className="px-4 pt-3 pb-2 text-sm flex-shrink-0"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          {transaction.merchant.name} - What did you buy?
+        </div>
+
+        {/* Search */}
+        <div className="px-4 pb-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -313,7 +307,7 @@ export function CategoryPicker({
 
         {/* Footer - only show if recategorized */}
         {isRecategorized && mccCategory !== "Uncategorized" && (
-          <DrawerFooter className="border-t flex-shrink-0">
+          <div className="px-4 py-3 border-t flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -332,9 +326,9 @@ export function CategoryPicker({
                 </Button>
               )}
             </div>
-          </DrawerFooter>
+          </div>
         )}
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }

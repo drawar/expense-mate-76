@@ -140,6 +140,14 @@
   .page-transition-exit-active {
     @apply opacity-0 transition-opacity duration-300;
   }
+
+  /* Touch scrolling support for dialogs and modals */
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
 }
 
 /* Custom scrollbar */
