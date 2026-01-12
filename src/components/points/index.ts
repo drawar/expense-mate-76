@@ -10,6 +10,7 @@ export { StartingBalanceDialog } from "./StartingBalanceDialog";
 
 // Dialog components
 export { AdjustmentDialog } from "./AdjustmentDialog";
+export { AdjustmentDetailDialog } from "./AdjustmentDetailDialog";
 export { RedemptionDialog } from "./RedemptionDialog";
 export { TransferDialog } from "./TransferDialog";
 export { GoalDialog } from "./GoalDialog";

@@ -30,6 +30,7 @@ import type { RewardCurrency } from "@/core/currency/types";
 import type {
   PointsBalance,
   PointsGoal,
+  PointsAdjustment,
   PointsAdjustmentInput,
   PointsRedemptionInput,
   PointsTransferInput,
@@ -60,6 +61,7 @@ import {
   BalanceCard,
   StartingBalanceDialog,
   AdjustmentDialog,
+  AdjustmentDetailDialog,
   RedemptionDialog,
   TransferDialog,
   GoalDialog,
@@ -70,6 +72,7 @@ import {
 type DialogType =
   | "balance"
   | "adjustment"
+  | "adjustmentDetail"
   | "redemption"
   | "transfer"
   | "goal"
@@ -130,7 +133,8 @@ export default function PointsManager() {
 
   // Mutations
   const { setStartingBalance } = usePointsBalanceMutations();
-  const { addAdjustment } = usePointsAdjustmentMutations();
+  const { addAdjustment, updateAdjustment, deleteAdjustment } =
+    usePointsAdjustmentMutations();
   const { addRedemption } = usePointsRedemptionMutations();
   const { addTransfer } = usePointsTransferMutations();
   const { addGoal, completeGoal, cancelGoal } = usePointsGoalMutations();
@@ -144,6 +148,9 @@ export default function PointsManager() {
     PointsBalance | undefined
   >();
   const [editingGoal, setEditingGoal] = useState<PointsGoal | undefined>();
+  const [selectedAdjustment, setSelectedAdjustment] = useState<
+    PointsAdjustment | undefined
+  >();
 
   // Balance map for goal progress
   const balanceMap = useMemo(() => {
@@ -187,6 +194,25 @@ export default function PointsManager() {
     setSelectedCurrencyId(undefined);
     setEditingBalance(undefined);
     setEditingGoal(undefined);
+    setSelectedAdjustment(undefined);
+  };
+
+  const handleOpenAdjustmentDetail = (adjustment: PointsAdjustment) => {
+    setSelectedAdjustment(adjustment);
+    setOpenDialog("adjustmentDetail");
+  };
+
+  const handleUpdateAdjustment = async (
+    id: string,
+    input: Partial<PointsAdjustmentInput>
+  ) => {
+    await updateAdjustment.mutateAsync({ id, input });
+    handleCloseDialog();
+  };
+
+  const handleDeleteAdjustment = async (id: string) => {
+    await deleteAdjustment.mutateAsync(id);
+    handleCloseDialog();
   };
 
   const handleSubmitBalance = async (input: PointsBalanceInput) => {
@@ -351,15 +377,24 @@ export default function PointsManager() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="divide-y">
                     {pendingAdjustments.map((adj) => (
                       <div
                         key={adj.id}
-                        className="flex items-center justify-between py-2 border-b last:border-0"
+                        onClick={() => handleOpenAdjustmentDetail(adj)}
+                        className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-amber-500/10 cursor-pointer transition-colors"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {adj.description || adj.adjustmentType}
+                          <div className="text-sm font-medium">
+                            {adj.adjustmentType === "bonus"
+                              ? "Sign-up Bonus"
+                              : adj.adjustmentType === "promotional"
+                                ? "Promotional"
+                                : adj.adjustmentType === "correction"
+                                  ? "Correction"
+                                  : adj.adjustmentType === "expired"
+                                    ? "Expired Points"
+                                    : "Other"}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {adj.rewardCurrency?.displayName} •{" "}
@@ -521,6 +556,16 @@ export default function PointsManager() {
           rewardCurrencies={rewardCurrencies}
           defaultCurrencyId={selectedCurrencyId}
           isLoading={addAdjustment.isPending}
+        />
+
+        <AdjustmentDetailDialog
+          adjustment={selectedAdjustment ?? null}
+          isOpen={openDialog === "adjustmentDetail"}
+          onClose={handleCloseDialog}
+          onUpdate={handleUpdateAdjustment}
+          onDelete={handleDeleteAdjustment}
+          rewardCurrencies={rewardCurrencies}
+          isLoading={updateAdjustment.isPending || deleteAdjustment.isPending}
         />
 
         <RedemptionDialog
