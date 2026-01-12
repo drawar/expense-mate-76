@@ -31,6 +31,7 @@ import type {
   PointsGoal,
   PointsAdjustment,
   PointsRedemption,
+  PointsTransfer,
   PointsAdjustmentInput,
   PointsRedemptionInput,
   PointsTransferInput,
@@ -52,7 +53,10 @@ import {
   usePointsRedemptions,
   usePointsRedemptionMutations,
 } from "@/hooks/points/usePointsRedemptions";
-import { usePointsTransferMutations } from "@/hooks/points/usePointsTransfers";
+import {
+  usePointsTransfers,
+  usePointsTransferMutations,
+} from "@/hooks/points/usePointsTransfers";
 import {
   useActiveGoals,
   usePointsGoalMutations,
@@ -70,6 +74,8 @@ import {
   RedemptionDetailDialog,
   RedemptionsTable,
   TransferDialog,
+  TransferDetailDialog,
+  TransfersTable,
   GoalDialog,
   ActivityFeedList,
   GoalProgressList,
@@ -82,6 +88,7 @@ type DialogType =
   | "redemption"
   | "redemptionDetail"
   | "transfer"
+  | "transferDetail"
   | "goal"
   | null;
 
@@ -143,13 +150,17 @@ export default function PointsManager() {
   const { data: allRedemptions = [], isLoading: redemptionsLoading } =
     usePointsRedemptions();
 
+  // All transfers (for table view)
+  const { data: allTransfers = [], isLoading: transfersLoading } =
+    usePointsTransfers();
+
   // Mutations
   const { setStartingBalance } = usePointsBalanceMutations();
   const { addAdjustment, updateAdjustment, deleteAdjustment } =
     usePointsAdjustmentMutations();
   const { addRedemption, updateRedemption, deleteRedemption } =
     usePointsRedemptionMutations();
-  const { addTransfer } = usePointsTransferMutations();
+  const { addTransfer, deleteTransfer } = usePointsTransferMutations();
   const { addGoal, completeGoal, cancelGoal } = usePointsGoalMutations();
 
   // Dialog state
@@ -166,6 +177,9 @@ export default function PointsManager() {
   >();
   const [selectedRedemption, setSelectedRedemption] = useState<
     PointsRedemption | undefined
+  >();
+  const [selectedTransfer, setSelectedTransfer] = useState<
+    PointsTransfer | undefined
   >();
 
   // Balance map for goal progress
@@ -212,6 +226,7 @@ export default function PointsManager() {
     setEditingGoal(undefined);
     setSelectedAdjustment(undefined);
     setSelectedRedemption(undefined);
+    setSelectedTransfer(undefined);
   };
 
   const handleOpenAdjustmentDetail = (adjustment: PointsAdjustment) => {
@@ -247,6 +262,16 @@ export default function PointsManager() {
 
   const handleDeleteRedemption = async (id: string) => {
     await deleteRedemption.mutateAsync(id);
+    handleCloseDialog();
+  };
+
+  const handleOpenTransferDetail = (transfer: PointsTransfer) => {
+    setSelectedTransfer(transfer);
+    setOpenDialog("transferDetail");
+  };
+
+  const handleDeleteTransfer = async (id: string) => {
+    await deleteTransfer.mutateAsync(id);
     handleCloseDialog();
   };
 
@@ -450,6 +475,30 @@ export default function PointsManager() {
               </div>
             )}
 
+            {/* Transfers Table */}
+            {allTransfers && allTransfers.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <ArrowRightLeft className="h-5 w-5" />
+                    Transfers
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenTransferDialog()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Record Transfer
+                  </Button>
+                </div>
+                <TransfersTable
+                  transfers={allTransfers}
+                  onRowClick={handleOpenTransferDetail}
+                />
+              </div>
+            )}
+
             {/* Active Goals Preview */}
             {!goalsLoading && activeGoals && activeGoals.length > 0 && (
               <div>
@@ -624,6 +673,14 @@ export default function PointsManager() {
           rewardCurrencies={rewardCurrencies}
           defaultSourceCurrencyId={selectedCurrencyId}
           isLoading={addTransfer.isPending}
+        />
+
+        <TransferDetailDialog
+          transfer={selectedTransfer ?? null}
+          isOpen={openDialog === "transferDetail"}
+          onClose={handleCloseDialog}
+          onDelete={handleDeleteTransfer}
+          isLoading={deleteTransfer.isPending}
         />
 
         <GoalDialog

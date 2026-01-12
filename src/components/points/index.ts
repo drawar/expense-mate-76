@@ -22,6 +22,8 @@ export { ActivityFeedItem, ActivityFeedList } from "./ActivityFeedItem";
 // Table components
 export { AdjustmentsTable } from "./AdjustmentsTable";
 export { RedemptionsTable } from "./RedemptionsTable";
+export { TransfersTable } from "./TransfersTable";
+export { TransferDetailDialog } from "./TransferDetailDialog";
 
 // Goal components
 export { GoalProgressCard, GoalProgressList } from "./GoalProgressCard";
