@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Transaction, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/core/currency";
-import { formatDate } from "@/utils/dates/formatters";
 import { PropertyResolver } from "@/core/catalog/PropertyResolver";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -58,8 +58,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   CreditCardIcon,
-  CalendarIcon,
-  TagIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   PencilIcon,
@@ -229,201 +227,200 @@ const TransactionDetailsView = ({
   const loyaltyLogo = getLoyaltyProgramLogo(pointsCurrency);
 
   return (
-    <div className="space-y-6">
-      {/* Section 3: Amount (Hero) */}
-      <div className="py-2">
-        <p className="text-4xl font-semibold">
-          {CurrencyService.format(transaction.amount, transaction.currency)}
-        </p>
-        {transaction.currency !== transaction.paymentCurrency && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Paid{" "}
-            {CurrencyService.format(
-              transaction.paymentAmount,
-              transaction.paymentCurrency
-            )}
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
+        {/* Section 3: Amount (Hero) */}
+        <div className="py-2 text-center">
+          <p className="text-4xl font-semibold">
+            {CurrencyService.format(transaction.amount, transaction.currency)}
           </p>
-        )}
-        {/* Reimbursement and Net Spend */}
-        {transaction.reimbursementAmount != null &&
-          transaction.reimbursementAmount > 0 && (
-            <div className="mt-2 space-y-0.5">
-              <p className="text-sm text-green-600">
-                Reimbursement:{" "}
-                <span className="font-semibold">
-                  {CurrencyService.format(
-                    -transaction.reimbursementAmount,
-                    transaction.currency
-                  )}
-                </span>
-              </p>
-              <p className="text-sm">
-                Net spend:{" "}
-                <span className="font-semibold">
-                  {CurrencyService.format(
-                    transaction.amount - transaction.reimbursementAmount,
-                    transaction.currency
-                  )}
-                </span>
-              </p>
-            </div>
-          )}
-      </div>
-
-      {/* Section 4: Context (no label) */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm">
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{formatDate(transaction.date)}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <TagIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{transaction.category || "Uncategorized"}</span>
-          {onCategoryChange && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => setIsCategoryPickerOpen(true)}
-            >
-              <PencilIcon className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Section 5: Payment Method */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-          Payment method
-        </p>
-        <div className="flex items-center gap-3">
-          {cardImageUrl ? (
-            <img
-              src={cardImageUrl}
-              alt={transaction.paymentMethod.name}
-              className="h-10 w-16 object-contain rounded"
-            />
-          ) : (
-            <CreditCardIcon className="h-6 w-6 shrink-0" />
-          )}
-          <div className="min-w-0">
-            <p className="font-medium">{transaction.paymentMethod.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {transaction.paymentMethod.issuer}
-            </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
+            <span>{format(new Date(transaction.date), "yyyy-MM-dd")}</span>
+            {transaction.merchant.address && (
+              <>
+                <span>·</span>
+                <span>{transaction.merchant.address}</span>
+              </>
+            )}
+            <span>·</span>
+            <span>{transaction.category || "Uncategorized"}</span>
+            {onCategoryChange && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => setIsCategoryPickerOpen(true)}
+              >
+                <PencilIcon className="h-3 w-3" />
+              </Button>
+            )}
           </div>
+          {transaction.currency !== transaction.paymentCurrency && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Paid{" "}
+              {CurrencyService.format(
+                transaction.paymentAmount,
+                transaction.paymentCurrency
+              )}
+            </p>
+          )}
+          {/* Reimbursement and Net Spend */}
+          {transaction.reimbursementAmount != null &&
+            transaction.reimbursementAmount > 0 && (
+              <div className="mt-2 space-y-0.5">
+                <p className="text-sm text-green-600">
+                  Reimbursement:{" "}
+                  <span className="font-semibold">
+                    {CurrencyService.format(
+                      -transaction.reimbursementAmount,
+                      transaction.currency
+                    )}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  Net spend:{" "}
+                  <span className="font-semibold">
+                    {CurrencyService.format(
+                      transaction.amount - transaction.reimbursementAmount,
+                      transaction.currency
+                    )}
+                  </span>
+                </p>
+              </div>
+            )}
         </div>
-      </div>
 
-      {/* Section 6: Rewards (linked to payment) */}
-      {transaction.rewardPoints !== 0 && (
+        {/* Section 5: Payment Method */}
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-            Rewards
+            Payment method
           </p>
           <div className="flex items-center gap-3">
-            {loyaltyLogo ? (
-              <div
-                className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden"
-                style={{
-                  backgroundColor: getLoyaltyProgramBgColor(pointsCurrency),
-                }}
-              >
-                <img
-                  src={loyaltyLogo}
-                  alt={pointsCurrency}
-                  className="h-16 w-16 object-contain"
-                  style={{ transform: "scale(0.85)" }}
-                />
-              </div>
+            {cardImageUrl ? (
+              <img
+                src={cardImageUrl}
+                alt={transaction.paymentMethod.name}
+                className="h-10 w-16 object-contain rounded"
+              />
             ) : (
-              <CoinsIcon className="h-16 w-16 text-amber-500" />
+              <CreditCardIcon className="h-6 w-6 shrink-0" />
             )}
-            <p
-              className={`font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
-            >
-              {transaction.rewardPoints > 0 ? "+ " : ""}
-              {transaction.rewardPoints.toLocaleString()} {pointsCurrency}
-            </p>
+            <div className="min-w-0">
+              <p className="font-medium">{transaction.paymentMethod.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {transaction.paymentMethod.issuer}
+              </p>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Section 7: Additional Details (Collapsed) */}
-      <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <CollapsibleTrigger asChild>
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
-            <span className="text-xs font-medium uppercase tracking-wide">
-              Additional details
-            </span>
-            {isDetailsOpen ? (
-              <ChevronUpIcon className="h-4 w-4" />
-            ) : (
-              <ChevronDownIcon className="h-4 w-4" />
-            )}
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-3">
-          <div className="space-y-2 text-sm text-muted-foreground">
-            {transaction.id && (
-              <div className="flex justify-between">
-                <span>Transaction ID</span>
-                <span className="font-mono text-xs">{transaction.id}</span>
-              </div>
-            )}
-            {transaction.merchant.descriptor && (
-              <div className="flex justify-between">
-                <span>Merchant descriptor</span>
-                <span>{transaction.merchant.descriptor}</span>
-              </div>
-            )}
-            {transaction.merchant.mcc && (
-              <div className="flex justify-between">
-                <span>MCC</span>
-                <span>
-                  {transaction.merchant.mcc.code} -{" "}
-                  {transaction.merchant.mcc.description}
-                </span>
-              </div>
-            )}
-            {exchangeRate && (
-              <div className="flex justify-between">
-                <span>Exchange rate</span>
-                <span>
-                  1 {transaction.currency} = {exchangeRate}{" "}
-                  {transaction.paymentCurrency}
-                </span>
-              </div>
-            )}
-            {transaction.merchant.address && (
-              <div className="flex justify-between">
-                <span>Address</span>
-                <span className="text-right max-w-[200px]">
-                  {transaction.merchant.address}
-                </span>
-              </div>
-            )}
-            {transaction.notes && (
-              <div className="pt-2 border-t">
-                <span className="block mb-1">Notes</span>
-                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  >
-                    {transaction.notes}
-                  </ReactMarkdown>
+        {/* Section 6: Rewards (linked to payment) */}
+        {transaction.rewardPoints !== 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Rewards
+            </p>
+            <div className="flex items-center gap-3">
+              {loyaltyLogo ? (
+                <div
+                  className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden"
+                  style={{
+                    backgroundColor: getLoyaltyProgramBgColor(pointsCurrency),
+                  }}
+                >
+                  <img
+                    src={loyaltyLogo}
+                    alt={pointsCurrency}
+                    className="h-16 w-16 object-contain"
+                    style={{ transform: "scale(0.85)" }}
+                  />
                 </div>
-              </div>
-            )}
+              ) : (
+                <CoinsIcon className="h-16 w-16 text-amber-500" />
+              )}
+              <p
+                className={`font-medium ${transaction.rewardPoints < 0 ? "text-destructive" : ""}`}
+              >
+                {transaction.rewardPoints > 0 ? "+ " : ""}
+                {transaction.rewardPoints.toLocaleString()} {pointsCurrency}
+              </p>
+            </div>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+        )}
 
-      {/* Section 8: Actions */}
-      <div className="pt-4 border-t flex gap-2">
+        {/* Section 7: Additional Details (Collapsed) */}
+        <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+              <span className="text-xs font-medium uppercase tracking-wide">
+                Additional details
+              </span>
+              {isDetailsOpen ? (
+                <ChevronUpIcon className="h-4 w-4" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-4" />
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <div className="space-y-2 text-sm text-muted-foreground">
+              {transaction.id && (
+                <div className="flex justify-between">
+                  <span>Transaction ID</span>
+                  <span className="font-mono text-xs">{transaction.id}</span>
+                </div>
+              )}
+              {transaction.merchant.descriptor && (
+                <div className="flex justify-between">
+                  <span>Merchant descriptor</span>
+                  <span>{transaction.merchant.descriptor}</span>
+                </div>
+              )}
+              {transaction.merchant.mcc && (
+                <div className="flex justify-between">
+                  <span>MCC</span>
+                  <span>
+                    {transaction.merchant.mcc.code} -{" "}
+                    {transaction.merchant.mcc.description}
+                  </span>
+                </div>
+              )}
+              {exchangeRate && (
+                <div className="flex justify-between">
+                  <span>Exchange rate</span>
+                  <span>
+                    1 {transaction.currency} = {exchangeRate}{" "}
+                    {transaction.paymentCurrency}
+                  </span>
+                </div>
+              )}
+              {transaction.notes && (
+                <div className="pt-2 border-t">
+                  <span className="block mb-1">Notes</span>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {transaction.notes}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Section 8: Actions (Footer) */}
+      <div
+        className="px-4 py-4 border-t flex gap-2 flex-shrink-0"
+        style={{
+          borderColor: "var(--color-border)",
+          backgroundColor: "var(--color-bg)",
+        }}
+      >
         {onEdit && (
           <Button
             variant="secondary"

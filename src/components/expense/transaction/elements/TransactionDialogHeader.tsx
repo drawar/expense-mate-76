@@ -1,29 +1,22 @@
 import { Transaction } from "@/types";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 
 interface TransactionDialogHeaderProps {
   transaction: Transaction;
+  onClose: () => void;
 }
 
 const TransactionDialogHeader = ({
   transaction,
+  onClose,
 }: TransactionDialogHeaderProps) => {
   return (
-    <DialogHeader showCloseButton>
-      <DialogTitle className="text-xl flex items-center gap-2">
-        <span className="truncate">{transaction.merchant.name}</span>
-        {transaction.merchant.isOnline && (
-          <Badge variant="secondary" className="shrink-0">
-            Online
-          </Badge>
-        )}
-        {transaction.isContactless && !transaction.merchant.isOnline && (
-          <Badge variant="secondary" className="shrink-0">
-            Contactless
-          </Badge>
-        )}
-      </DialogTitle>
+    <DialogHeader
+      className="border-b flex-shrink-0"
+      showCloseButton
+      onClose={onClose}
+    >
+      <DialogTitle>{transaction.merchant.name}</DialogTitle>
     </DialogHeader>
   );
 };

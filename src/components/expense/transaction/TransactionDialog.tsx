@@ -75,12 +75,15 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
       }}
     >
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
         {dialogMode === "view" ? (
           <>
-            <TransactionDialogHeader transaction={transaction} />
+            <TransactionDialogHeader
+              transaction={transaction}
+              onClose={onClose}
+            />
             <TransactionDetailsView
               transaction={transaction}
               onCategoryChange={handleCategoryChange}
