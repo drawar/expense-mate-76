@@ -132,17 +132,21 @@ export function RedemptionDetailDialog({
         onOpenChange={(open) => !open && onClose()}
       >
         <DialogContent
-          className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+          className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
         >
-          <DialogHeader showCloseButton>
-            <DialogTitle className="flex items-center gap-2">
+          <DialogHeader
+            className="border-b flex-shrink-0"
+            showCloseButton
+            onClose={onClose}
+          >
+            <DialogTitle className="flex items-center justify-center gap-2">
               {typeConfig.icon}
               {typeConfig.label}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             {/* Points Redeemed */}
             <div className="text-center py-4 bg-muted/50 rounded-lg">
               <p className="text-3xl font-bold text-red-600">
@@ -273,28 +277,31 @@ export function RedemptionDetailDialog({
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleEdit}
-                disabled={isLoading}
-              >
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isLoading}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
+          {/* Action Buttons */}
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleEdit}
+              disabled={isLoading}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isLoading}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

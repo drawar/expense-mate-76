@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -181,278 +180,299 @@ export function RedemptionDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader showCloseButton>
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={onClose}
+        >
           <DialogTitle>
             {isEditing ? "Edit Redemption" : "Record Points Redemption"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Reward Currency */}
-          <div className="space-y-2">
-            <Label htmlFor="currency">Reward Currency</Label>
-            <Select
-              value={rewardCurrencyId}
-              onValueChange={setRewardCurrencyId}
-              disabled={isEditing}
-            >
-              <SelectTrigger id="currency">
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {(rewardCurrencies || []).map((currency) => (
-                  <SelectItem key={currency.id} value={currency.id}>
-                    {currency.displayName}
-                    {currency.issuer && (
-                      <span className="text-muted-foreground ml-1">
-                        ({currency.issuer})
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Redemption Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">Redemption Type</Label>
-            <Select
-              value={redemptionType}
-              onValueChange={(v) => setRedemptionType(v as RedemptionType)}
-            >
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REDEMPTION_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Points Redeemed */}
-          <div className="space-y-2">
-            <Label htmlFor="points">Points Redeemed</Label>
-            <Input
-              id="points"
-              type="number"
-              min="0"
-              step="1"
-              placeholder="50000"
-              value={pointsRedeemed}
-              onChange={(e) => setPointsRedeemed(e.target.value)}
-            />
-            {selectedCurrency && pointsRedeemed && (
-              <p className="text-sm text-muted-foreground">
-                {Number(pointsRedeemed).toLocaleString()}{" "}
-                {selectedCurrency.displayName}
-              </p>
-            )}
-          </div>
-
-          {/* Flight-specific fields */}
-          {isFlightRedemption && (
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Plane className="h-4 w-4" />
-                Flight Details
-              </div>
-
-              {/* Route */}
-              <div className="space-y-2">
-                <Label htmlFor="route">Route</Label>
-                <Input
-                  id="route"
-                  placeholder="e.g., SFO → NRT → SIN"
-                  value={flightRoute}
-                  onChange={(e) => setFlightRoute(e.target.value)}
-                />
-              </div>
-
-              {/* Cabin Class & Airline */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="cabin">Cabin Class</Label>
-                  <Select
-                    value={cabinClass}
-                    onValueChange={(v) => setCabinClass(v as CabinClass)}
-                  >
-                    <SelectTrigger id="cabin">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CABIN_CLASSES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="airline">Airline</Label>
-                  <Input
-                    id="airline"
-                    placeholder="e.g., Singapore Airlines"
-                    value={airline}
-                    onChange={(e) => setAirline(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Passengers & Booking Reference */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="passengers">Passengers</Label>
-                  <Input
-                    id="passengers"
-                    type="number"
-                    min="1"
-                    value={passengers}
-                    onChange={(e) => setPassengers(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="booking">Booking Ref</Label>
-                  <Input
-                    id="booking"
-                    placeholder="e.g., ABC123"
-                    value={bookingReference}
-                    onChange={(e) => setBookingReference(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Travel Date */}
-              <div className="space-y-2">
-                <Label>Travel Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !travelDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {travelDate ? (
-                        format(travelDate, "PPP")
-                      ) : (
-                        <span>Pick travel date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={travelDate}
-                      onSelect={setTravelDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          )}
-
-          {/* Cash Value for CPP */}
-          <div className="space-y-2">
-            <Label htmlFor="cashValue">Cash Value (for CPP calculation)</Label>
-            <div className="flex gap-2">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+            {/* Reward Currency */}
+            <div className="space-y-2">
+              <Label htmlFor="currency">Reward Currency</Label>
               <Select
-                value={cashValueCurrency}
-                onValueChange={setCashValueCurrency}
+                value={rewardCurrencyId}
+                onValueChange={setRewardCurrencyId}
+                disabled={isEditing}
               >
-                <SelectTrigger className="w-24">
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(rewardCurrencies || []).map((currency) => (
+                    <SelectItem key={currency.id} value={currency.id}>
+                      {currency.displayName}
+                      {currency.issuer && (
+                        <span className="text-muted-foreground ml-1">
+                          ({currency.issuer})
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Redemption Type */}
+            <div className="space-y-2">
+              <Label htmlFor="type">Redemption Type</Label>
+              <Select
+                value={redemptionType}
+                onValueChange={(v) => setRedemptionType(v as RedemptionType)}
+              >
+                <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="SGD">SGD</SelectItem>
-                  <SelectItem value="CAD">CAD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
+                  {REDEMPTION_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Points Redeemed */}
+            <div className="space-y-2">
+              <Label htmlFor="points">Points Redeemed</Label>
               <Input
-                id="cashValue"
+                id="points"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="1500.00"
-                value={cashValue}
-                onChange={(e) => setCashValue(e.target.value)}
-                className="flex-1"
+                step="1"
+                placeholder="50000"
+                value={pointsRedeemed}
+                onChange={(e) => setPointsRedeemed(e.target.value)}
               />
+              {selectedCurrency && pointsRedeemed && (
+                <p className="text-sm text-muted-foreground">
+                  {Number(pointsRedeemed).toLocaleString()}{" "}
+                  {selectedCurrency.displayName}
+                </p>
+              )}
             </div>
-            {calculatedCpp !== null && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">CPP:</span>
-                <CPPBadge cpp={calculatedCpp} />
+
+            {/* Flight-specific fields */}
+            {isFlightRedemption && (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Plane className="h-4 w-4" />
+                  Flight Details
+                </div>
+
+                {/* Route */}
+                <div className="space-y-2">
+                  <Label htmlFor="route">Route</Label>
+                  <Input
+                    id="route"
+                    placeholder="e.g., SFO → NRT → SIN"
+                    value={flightRoute}
+                    onChange={(e) => setFlightRoute(e.target.value)}
+                  />
+                </div>
+
+                {/* Cabin Class & Airline */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="cabin">Cabin Class</Label>
+                    <Select
+                      value={cabinClass}
+                      onValueChange={(v) => setCabinClass(v as CabinClass)}
+                    >
+                      <SelectTrigger id="cabin">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CABIN_CLASSES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="airline">Airline</Label>
+                    <Input
+                      id="airline"
+                      placeholder="e.g., Singapore Airlines"
+                      value={airline}
+                      onChange={(e) => setAirline(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Passengers & Booking Reference */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="passengers">Passengers</Label>
+                    <Input
+                      id="passengers"
+                      type="number"
+                      min="1"
+                      value={passengers}
+                      onChange={(e) => setPassengers(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="booking">Booking Ref</Label>
+                    <Input
+                      id="booking"
+                      placeholder="e.g., ABC123"
+                      value={bookingReference}
+                      onChange={(e) => setBookingReference(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Travel Date */}
+                <div className="space-y-2">
+                  <Label>Travel Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !travelDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {travelDate ? (
+                          format(travelDate, "PPP")
+                        ) : (
+                          <span>Pick travel date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={travelDate}
+                        onSelect={setTravelDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Enter what you would have paid in cash for this redemption
-            </p>
-          </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="e.g., Round trip award flight to Tokyo"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          {/* Redemption Date */}
-          <div className="space-y-2">
-            <Label>Redemption Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !redemptionDate && "text-muted-foreground"
-                  )}
+            {/* Cash Value for CPP */}
+            <div className="space-y-2">
+              <Label htmlFor="cashValue">
+                Cash Value (for CPP calculation)
+              </Label>
+              <div className="flex gap-2">
+                <Select
+                  value={cashValueCurrency}
+                  onValueChange={setCashValueCurrency}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {redemptionDate ? (
-                    format(redemptionDate, "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={redemptionDate}
-                  onSelect={(date) => date && setRedemptionDate(date)}
-                  initialFocus
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="SGD">SGD</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="cashValue"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="1500.00"
+                  value={cashValue}
+                  onChange={(e) => setCashValue(e.target.value)}
+                  className="flex-1"
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+              {calculatedCpp !== null && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">CPP:</span>
+                  <CPPBadge cpp={calculatedCpp} />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Enter what you would have paid in cash for this redemption
+              </p>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="e.g., Round trip award flight to Tokyo"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            {/* Redemption Date */}
+            <div className="space-y-2">
+              <Label>Redemption Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !redemptionDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {redemptionDate ? (
+                      format(redemptionDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={redemptionDate}
+                    onSelect={(date) => date && setRedemptionDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Footer */}
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
+              className="flex-1"
               disabled={
                 isLoading ||
                 !rewardCurrencyId ||
@@ -463,7 +483,7 @@ export function RedemptionDialog({
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Record Redemption"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

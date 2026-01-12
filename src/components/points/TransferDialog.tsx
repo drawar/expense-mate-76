@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,238 +172,257 @@ export function TransferDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader showCloseButton>
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={onClose}
+        >
           <DialogTitle>
             {isEditing ? "Edit Transfer" : "Record Points Transfer"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Source Currency */}
-          <div className="space-y-2">
-            <Label htmlFor="sourceCurrency">From (Source Program)</Label>
-            <Select
-              value={sourceCurrencyId}
-              onValueChange={setSourceCurrencyId}
-              disabled={isEditing}
-            >
-              <SelectTrigger id="sourceCurrency">
-                <SelectValue placeholder="Select source program" />
-              </SelectTrigger>
-              <SelectContent>
-                {transferableCurrencies.map((currency) => (
-                  <SelectItem key={currency.id} value={currency.id}>
-                    {currency.displayName}
-                    {currency.issuer && (
-                      <span className="text-muted-foreground ml-1">
-                        ({currency.issuer})
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Source Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="sourceAmount">Points to Transfer</Label>
-            <Input
-              id="sourceAmount"
-              type="number"
-              min="0"
-              step="1"
-              placeholder="50000"
-              value={sourceAmount}
-              onChange={(e) => setSourceAmount(e.target.value)}
-            />
-            {sourceCurrency && sourceAmount && (
-              <p className="text-sm text-muted-foreground">
-                {Number(sourceAmount).toLocaleString()}{" "}
-                {sourceCurrency.displayName}
-              </p>
-            )}
-          </div>
-
-          {/* Transfer Arrow Visual */}
-          <div className="flex items-center justify-center py-2">
-            <ArrowRight className="h-6 w-6 text-muted-foreground" />
-          </div>
-
-          {/* Destination Currency */}
-          <div className="space-y-2">
-            <Label htmlFor="destCurrency">To (Destination Program)</Label>
-            <Select
-              value={destinationCurrencyId}
-              onValueChange={setDestinationCurrencyId}
-              disabled={isEditing}
-            >
-              <SelectTrigger id="destCurrency">
-                <SelectValue placeholder="Select destination program" />
-              </SelectTrigger>
-              <SelectContent>
-                {destinationCurrencies.map((currency) => (
-                  <SelectItem key={currency.id} value={currency.id}>
-                    {currency.displayName}
-                    {currency.issuer && (
-                      <span className="text-muted-foreground ml-1">
-                        ({currency.issuer})
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Conversion Rate & Bonus */}
-          <div className="grid grid-cols-2 gap-3">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+            {/* Source Currency */}
             <div className="space-y-2">
-              <Label htmlFor="rate">Conversion Rate</Label>
-              <Input
-                id="rate"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="1.0"
-                value={conversionRate}
-                onChange={(e) => setConversionRate(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                1:{conversionRate || "1"} ratio
-              </p>
+              <Label htmlFor="sourceCurrency">From (Source Program)</Label>
+              <Select
+                value={sourceCurrencyId}
+                onValueChange={setSourceCurrencyId}
+                disabled={isEditing}
+              >
+                <SelectTrigger id="sourceCurrency">
+                  <SelectValue placeholder="Select source program" />
+                </SelectTrigger>
+                <SelectContent>
+                  {transferableCurrencies.map((currency) => (
+                    <SelectItem key={currency.id} value={currency.id}>
+                      {currency.displayName}
+                      {currency.issuer && (
+                        <span className="text-muted-foreground ml-1">
+                          ({currency.issuer})
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Source Amount */}
             <div className="space-y-2">
-              <Label htmlFor="bonus">Transfer Bonus %</Label>
+              <Label htmlFor="sourceAmount">Points to Transfer</Label>
               <Input
-                id="bonus"
+                id="sourceAmount"
                 type="number"
                 min="0"
                 step="1"
-                placeholder="25"
-                value={transferBonusRate}
-                onChange={(e) => setTransferBonusRate(e.target.value)}
+                placeholder="50000"
+                value={sourceAmount}
+                onChange={(e) => setSourceAmount(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Optional promo bonus
-              </p>
+              {sourceCurrency && sourceAmount && (
+                <p className="text-sm text-muted-foreground">
+                  {Number(sourceAmount).toLocaleString()}{" "}
+                  {sourceCurrency.displayName}
+                </p>
+              )}
             </div>
-          </div>
 
-          {/* Destination Amount (calculated) */}
-          <div className="space-y-2">
-            <Label htmlFor="destAmount">Points Received</Label>
-            <Input
-              id="destAmount"
-              type="number"
-              min="0"
-              step="1"
-              value={destinationAmount}
-              onChange={(e) => setDestinationAmount(e.target.value)}
-            />
-            {destCurrency && destinationAmount && (
-              <p className="text-sm text-muted-foreground">
-                {Number(destinationAmount).toLocaleString()}{" "}
-                {destCurrency.displayName}
-              </p>
-            )}
-          </div>
+            {/* Transfer Arrow Visual */}
+            <div className="flex items-center justify-center py-2">
+              <ArrowRight className="h-6 w-6 text-muted-foreground" />
+            </div>
 
-          {/* Transfer Fee (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="fee">Transfer Fee (optional)</Label>
-            <div className="flex gap-2">
+            {/* Destination Currency */}
+            <div className="space-y-2">
+              <Label htmlFor="destCurrency">To (Destination Program)</Label>
               <Select
-                value={transferFeeCurrency}
-                onValueChange={setTransferFeeCurrency}
+                value={destinationCurrencyId}
+                onValueChange={setDestinationCurrencyId}
+                disabled={isEditing}
               >
-                <SelectTrigger className="w-24">
-                  <SelectValue />
+                <SelectTrigger id="destCurrency">
+                  <SelectValue placeholder="Select destination program" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="SGD">SGD</SelectItem>
-                  <SelectItem value="CAD">CAD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
+                  {destinationCurrencies.map((currency) => (
+                    <SelectItem key={currency.id} value={currency.id}>
+                      {currency.displayName}
+                      {currency.issuer && (
+                        <span className="text-muted-foreground ml-1">
+                          ({currency.issuer})
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Conversion Rate & Bonus */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="rate">Conversion Rate</Label>
+                <Input
+                  id="rate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="1.0"
+                  value={conversionRate}
+                  onChange={(e) => setConversionRate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  1:{conversionRate || "1"} ratio
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bonus">Transfer Bonus %</Label>
+                <Input
+                  id="bonus"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="25"
+                  value={transferBonusRate}
+                  onChange={(e) => setTransferBonusRate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional promo bonus
+                </p>
+              </div>
+            </div>
+
+            {/* Destination Amount (calculated) */}
+            <div className="space-y-2">
+              <Label htmlFor="destAmount">Points Received</Label>
               <Input
-                id="fee"
+                id="destAmount"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={transferFee}
-                onChange={(e) => setTransferFee(e.target.value)}
-                className="flex-1"
+                step="1"
+                value={destinationAmount}
+                onChange={(e) => setDestinationAmount(e.target.value)}
               />
+              {destCurrency && destinationAmount && (
+                <p className="text-sm text-muted-foreground">
+                  {Number(destinationAmount).toLocaleString()}{" "}
+                  {destCurrency.displayName}
+                </p>
+              )}
+            </div>
+
+            {/* Transfer Fee (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="fee">Transfer Fee (optional)</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={transferFeeCurrency}
+                  onValueChange={setTransferFeeCurrency}
+                >
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="SGD">SGD</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="fee"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={transferFee}
+                  onChange={(e) => setTransferFee(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            {/* Reference Number (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="reference">Reference Number (optional)</Label>
+              <Input
+                id="reference"
+                placeholder="e.g., Confirmation number"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+              />
+            </div>
+
+            {/* Notes (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="e.g., 25% bonus promotion Q1 2025"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            {/* Transfer Date */}
+            <div className="space-y-2">
+              <Label>Transfer Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !transferDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {transferDate ? (
+                      format(transferDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={transferDate}
+                    onSelect={(date) => date && setTransferDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          {/* Reference Number (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="reference">Reference Number (optional)</Label>
-            <Input
-              id="reference"
-              placeholder="e.g., Confirmation number"
-              value={referenceNumber}
-              onChange={(e) => setReferenceNumber(e.target.value)}
-            />
-          </div>
-
-          {/* Notes (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="e.g., 25% bonus promotion Q1 2025"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          {/* Transfer Date */}
-          <div className="space-y-2">
-            <Label>Transfer Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !transferDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {transferDate ? (
-                    format(transferDate, "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={transferDate}
-                  onSelect={(date) => date && setTransferDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Footer */}
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
+              className="flex-1"
               disabled={
                 isLoading ||
                 !sourceCurrencyId ||
@@ -418,7 +436,7 @@ export function TransferDialog({
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Record Transfer"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

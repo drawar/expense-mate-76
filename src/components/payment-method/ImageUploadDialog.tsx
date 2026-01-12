@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -118,19 +117,18 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        className="sm:max-w-md"
-        style={{
-          backgroundColor: "var(--color-modal-bg)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "16px",
-        }}
+        className="sm:max-w-md max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader showCloseButton>
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={handleClose}
+        >
           <DialogTitle>
             {hasExistingImage ? "Change Card Image" : "Upload Card Image"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-center">
             {hasExistingImage
               ? `Replace the current image for ${paymentMethod?.name}`
               : `Upload a custom image for your ${paymentMethod?.name} card`}
@@ -140,14 +138,14 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
         {/* Success state */}
         {uploadSuccess ? (
           <div
-            className="flex flex-col items-center justify-center py-8"
+            className="flex flex-col items-center justify-center py-8 px-4"
             style={{ color: "var(--color-success)" }}
           >
             <CheckCircle className="h-12 w-12 mb-3" />
             <p className="font-medium">Image uploaded successfully!</p>
           </div>
         ) : (
-          <div className="flex flex-col space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             {/* Current image preview */}
             {hasExistingImage && !previewUrl && (
               <div>
@@ -271,16 +269,15 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
         )}
 
         {!uploadSuccess && (
-          <DialogFooter>
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              style={{
-                backgroundColor: "transparent",
-                border: "1px solid var(--color-border)",
-                color: "var(--color-text-secondary)",
-              }}
+              className="flex-1"
             >
               Cancel
             </Button>
@@ -288,12 +285,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
               type="button"
               disabled={!selectedFile || isUploading}
               onClick={handleUpload}
-              style={{
-                backgroundColor: selectedFile
-                  ? "var(--color-accent)"
-                  : undefined,
-                color: selectedFile ? "var(--color-bg)" : undefined,
-              }}
+              className="flex-1"
             >
               {isUploading ? (
                 <span className="flex items-center">
@@ -326,7 +318,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({
                 </span>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         )}
       </DialogContent>
     </Dialog>

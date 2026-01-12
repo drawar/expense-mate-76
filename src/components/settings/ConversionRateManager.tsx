@@ -487,19 +487,30 @@ export function ConversionRateManager() {
                               )}
                             </Button>
                           </DialogTrigger>
-                          <DialogContent hideCloseButton>
-                            <DialogHeader showCloseButton>
+                          <DialogContent
+                            className="sm:max-w-md max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
+                            hideCloseButton
+                          >
+                            <DialogHeader
+                              className="border-b flex-shrink-0"
+                              showCloseButton
+                              onClose={() => setDeleteConfirmCurrency(null)}
+                            >
                               <DialogTitle>Delete Conversion Rates</DialogTitle>
-                              <DialogDescription>
+                              <DialogDescription className="text-center">
                                 Are you sure you want to delete all conversion
                                 rates for "{sourceCurrency.displayName}"? This
                                 cannot be undone.
                               </DialogDescription>
                             </DialogHeader>
-                            <DialogFooter>
+                            <div
+                              className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+                              style={{ borderColor: "var(--color-border)" }}
+                            >
                               <Button
                                 variant="outline"
                                 onClick={() => setDeleteConfirmCurrency(null)}
+                                className="flex-1"
                               >
                                 Cancel
                               </Button>
@@ -508,10 +519,11 @@ export function ConversionRateManager() {
                                 onClick={() =>
                                   handleDeleteSourceCurrency(sourceCurrency.id)
                                 }
+                                className="flex-1"
                               >
                                 Delete
                               </Button>
-                            </DialogFooter>
+                            </div>
                           </DialogContent>
                         </Dialog>
                       </TableCell>

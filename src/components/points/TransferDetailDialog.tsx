@@ -124,17 +124,21 @@ export function TransferDetailDialog({
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent
-          className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+          className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
         >
-          <DialogHeader showCloseButton>
-            <DialogTitle className="flex items-center gap-2">
+          <DialogHeader
+            className="border-b flex-shrink-0"
+            showCloseButton
+            onClose={onClose}
+          >
+            <DialogTitle className="flex items-center justify-center gap-2">
               <ArrowRight className="h-5 w-5" />
               Points Transfer
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             {/* Transfer Visual */}
             <div className="flex items-center justify-center gap-4 py-4 bg-muted/50 rounded-lg">
               {/* Source */}

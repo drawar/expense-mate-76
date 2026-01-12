@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,157 +144,177 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader showCloseButton>
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={onClose}
+        >
           <DialogTitle>
             {editingIncome ? "Edit Payslip" : "Add Payslip"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <div className="relative">
-              <Input
-                id="name"
-                className="text-left"
-                placeholder="e.g., Salary"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  // Show suggestions when typing and there are matches
-                  if (e.target.value.length > 0 && nameSuggestions.length > 0) {
-                    setNamePopoverOpen(true);
-                  } else {
-                    setNamePopoverOpen(false);
-                  }
-                }}
-                onBlur={() => {
-                  // Delay closing to allow click on suggestion
-                  setTimeout(() => setNamePopoverOpen(false), 150);
-                }}
-                required
-                autoComplete="off"
-              />
-              {namePopoverOpen && nameSuggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-md">
-                  <Command>
-                    <CommandList>
-                      <CommandGroup>
-                        {nameSuggestions.map((suggestion) => (
-                          <CommandItem
-                            key={suggestion}
-                            value={suggestion}
-                            onSelect={() => {
-                              setName(suggestion);
-                              setNamePopoverOpen(false);
-                            }}
-                          >
-                            {suggestion}
-                            {name === suggestion && (
-                              <CheckIcon className="ml-auto h-4 w-4" />
-                            )}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select
-                value={currency}
-                onValueChange={(v) => setCurrency(v as Currency)}
-              >
-                <SelectTrigger id="currency">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
+              <Label htmlFor="name">Name</Label>
+              <div className="relative">
+                <Input
+                  id="name"
+                  className="text-left"
+                  placeholder="e.g., Salary"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    // Show suggestions when typing and there are matches
+                    if (
+                      e.target.value.length > 0 &&
+                      nameSuggestions.length > 0
+                    ) {
+                      setNamePopoverOpen(true);
+                    } else {
+                      setNamePopoverOpen(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay closing to allow click on suggestion
+                    setTimeout(() => setNamePopoverOpen(false), 150);
+                  }}
+                  required
+                  autoComplete="off"
                 />
-              </PopoverContent>
-            </Popover>
+                {namePopoverOpen && nameSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-md">
+                    <Command>
+                      <CommandList>
+                        <CommandGroup>
+                          {nameSuggestions.map((suggestion) => (
+                            <CommandItem
+                              key={suggestion}
+                              value={suggestion}
+                              onSelect={() => {
+                                setName(suggestion);
+                                setNamePopoverOpen(false);
+                              }}
+                            >
+                              {suggestion}
+                              {name === suggestion && (
+                                <CheckIcon className="ml-auto h-4 w-4" />
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Select
+                  value={currency}
+                  onValueChange={(v) => setCurrency(v as Currency)}
+                >
+                  <SelectTrigger id="currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Any additional notes..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any additional notes..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          <DialogFooter className="pt-4">
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
+              className="flex-1"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !date}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !date}
+              className="flex-1"
+            >
               {isSubmitting
                 ? "Saving..."
                 : editingIncome
                   ? "Save Changes"
                   : "Add Payslip"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

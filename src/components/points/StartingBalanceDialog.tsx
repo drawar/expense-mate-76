@@ -8,8 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,119 +105,140 @@ export function StartingBalanceDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader showCloseButton>
+        <DialogHeader
+          className="border-b flex-shrink-0"
+          showCloseButton
+          onClose={onClose}
+        >
           <DialogTitle>
             {isEditing ? "Edit Starting Balance" : "Set Starting Balance"}
           </DialogTitle>
-          <DialogDescription>
-            Enter your current points balance. The system will track all future
-            earning and spending from this baseline.
-          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Reward Currency */}
-          <div className="space-y-2">
-            <Label htmlFor="currency">Reward Currency</Label>
-            <Select
-              value={rewardCurrencyId}
-              onValueChange={setRewardCurrencyId}
-              disabled={isEditing}
-            >
-              <SelectTrigger id="currency">
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {(rewardCurrencies || []).map((currency) => (
-                  <SelectItem key={currency.id} value={currency.id}>
-                    {currency.displayName}
-                    {currency.issuer && (
-                      <span className="text-muted-foreground ml-1">
-                        ({currency.issuer})
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+            <p className="text-sm text-muted-foreground">
+              Enter your current points balance. The system will track all
+              future earning and spending from this baseline.
+            </p>
 
-          {/* Starting Balance */}
-          <div className="space-y-2">
-            <Label htmlFor="balance">Starting Balance</Label>
-            <div className="relative">
-              <CoinsIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="balance"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="0"
-                value={startingBalance}
-                onChange={(e) => setStartingBalance(e.target.value)}
-                className="pl-10"
+            {/* Reward Currency */}
+            <div className="space-y-2">
+              <Label htmlFor="currency">Reward Currency</Label>
+              <Select
+                value={rewardCurrencyId}
+                onValueChange={setRewardCurrencyId}
+                disabled={isEditing}
+              >
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(rewardCurrencies || []).map((currency) => (
+                    <SelectItem key={currency.id} value={currency.id}>
+                      {currency.displayName}
+                      {currency.issuer && (
+                        <span className="text-muted-foreground ml-1">
+                          ({currency.issuer})
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Starting Balance */}
+            <div className="space-y-2">
+              <Label htmlFor="balance">Starting Balance</Label>
+              <div className="relative">
+                <CoinsIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="balance"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                  value={startingBalance}
+                  onChange={(e) => setStartingBalance(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              {selectedCurrency && startingBalance && (
+                <p className="text-sm text-muted-foreground">
+                  {Number(startingBalance).toLocaleString()}{" "}
+                  {selectedCurrency.displayName}
+                </p>
+              )}
+            </div>
+
+            {/* Balance Date */}
+            <div className="space-y-2">
+              <Label>Balance As Of</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !balanceDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {balanceDate ? (
+                      format(balanceDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={balanceDate}
+                    onSelect={(date) => date && setBalanceDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Notes (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Any additional notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
               />
             </div>
-            {selectedCurrency && startingBalance && (
-              <p className="text-sm text-muted-foreground">
-                {Number(startingBalance).toLocaleString()}{" "}
-                {selectedCurrency.displayName}
-              </p>
-            )}
           </div>
 
-          {/* Balance Date */}
-          <div className="space-y-2">
-            <Label>Balance As Of</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !balanceDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {balanceDate ? (
-                    format(balanceDate, "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={balanceDate}
-                  onSelect={(date) => date && setBalanceDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Notes (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any additional notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Footer */}
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
+              className="flex-1"
               disabled={
                 isLoading ||
                 !rewardCurrencyId ||
@@ -230,7 +249,7 @@ export function StartingBalanceDialog({
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Update Balance" : "Set Balance"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
