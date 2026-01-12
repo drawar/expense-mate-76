@@ -307,7 +307,7 @@ export default function PointsManager() {
                     </Card>
                   ))}
                 </div>
-              ) : balances.length === 0 ? (
+              ) : !balances || balances.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
                     <CoinsIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -337,7 +337,7 @@ export default function PointsManager() {
             </div>
 
             {/* Pending Adjustments */}
-            {pendingAdjustments.length > 0 && (
+            {pendingAdjustments && pendingAdjustments.length > 0 && (
               <Card className="border-dashed border-amber-500/50 bg-amber-500/5">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base text-amber-600 dark:text-amber-500">
@@ -381,7 +381,7 @@ export default function PointsManager() {
             )}
 
             {/* Active Goals Preview */}
-            {!goalsLoading && activeGoals.length > 0 && (
+            {!goalsLoading && activeGoals && activeGoals.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium">Active Goals</h2>
@@ -405,7 +405,7 @@ export default function PointsManager() {
             )}
 
             {/* Recent Activity Preview */}
-            {!activityLoading && activityFeed.length > 0 && (
+            {!activityLoading && activityFeed && activityFeed.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -442,7 +442,7 @@ export default function PointsManager() {
                   </Card>
                 ))}
               </div>
-            ) : activeGoals.length === 0 ? (
+            ) : !activeGoals || activeGoals.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center">
                   <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
