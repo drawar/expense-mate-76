@@ -10,7 +10,7 @@
  * - Activity feed of all point movements
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,6 +75,28 @@ type DialogType =
   | "goal"
   | null;
 
+/**
+ * Wrapper component for BalanceCard that handles its own breakdown hook
+ * This avoids the dynamic hooks issue where the number of hooks changes
+ */
+function BalanceCardWithBreakdown({
+  balance,
+  onEditStartingBalance,
+}: {
+  balance: PointsBalance;
+  onEditStartingBalance: () => void;
+}) {
+  const { data: breakdown } = useBalanceBreakdown(balance.rewardCurrencyId);
+
+  return (
+    <BalanceCard
+      balance={balance}
+      breakdown={breakdown ?? undefined}
+      onEditStartingBalance={onEditStartingBalance}
+    />
+  );
+}
+
 export default function PointsManager() {
   // Fetch reward currencies
   const [rewardCurrencies, setRewardCurrencies] = useState<RewardCurrency[]>(
@@ -92,27 +114,9 @@ export default function PointsManager() {
     fetchCurrencies();
   }, []);
 
-  // Balances and breakdowns
+  // Balances
   const { data: balances = [], isLoading: balancesLoading } =
     usePointsBalances();
-
-  // Fetch breakdowns for each balance
-  const breakdownQueries = balances.map((b) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useBalanceBreakdown(b.rewardCurrencyId)
-  );
-  const breakdowns = useMemo(() => {
-    const map = new Map<
-      string,
-      ReturnType<typeof useBalanceBreakdown>["data"]
-    >();
-    balances.forEach((b, i) => {
-      if (breakdownQueries[i]?.data) {
-        map.set(b.rewardCurrencyId, breakdownQueries[i].data);
-      }
-    });
-    return map;
-  }, [balances, breakdownQueries]);
 
   // Goals
   const { data: activeGoals = [], isLoading: goalsLoading } = useActiveGoals();
@@ -144,7 +148,9 @@ export default function PointsManager() {
   // Balance map for goal progress
   const balanceMap = useMemo(() => {
     const map = new Map<string, number>();
-    balances.forEach((b) => map.set(b.rewardCurrencyId, b.currentBalance));
+    (balances || []).forEach((b) =>
+      map.set(b.rewardCurrencyId, b.currentBalance)
+    );
     return map;
   }, [balances]);
 
@@ -322,11 +328,10 @@ export default function PointsManager() {
                 </Card>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {balances.map((balance) => (
-                    <BalanceCard
+                  {(balances || []).map((balance) => (
+                    <BalanceCardWithBreakdown
                       key={balance.id}
                       balance={balance}
-                      breakdown={breakdowns.get(balance.rewardCurrencyId)}
                       onEditStartingBalance={() =>
                         handleOpenBalanceDialog(balance)
                       }
