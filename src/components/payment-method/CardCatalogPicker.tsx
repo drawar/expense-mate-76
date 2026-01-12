@@ -234,17 +234,17 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
                           >
                             <div className="flex items-center gap-3">
                               {/* Card image or fallback */}
-                              <div className="shrink-0 w-16 h-10 rounded overflow-hidden bg-muted flex items-center justify-center">
-                                {imageUrl ? (
-                                  <img
-                                    src={imageUrl}
-                                    alt={card.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={card.name}
+                                  className="h-[37px] w-[58px] object-contain flex-shrink-0 rounded-sm"
+                                />
+                              ) : (
+                                <div className="h-[37px] w-[58px] bg-muted flex items-center justify-center flex-shrink-0 rounded-sm">
                                   <CreditCard className="h-5 w-5 text-muted-foreground" />
-                                )}
-                              </div>
+                                </div>
+                              )}
 
                               {/* Card info */}
                               <div className="flex-1 min-w-0">
