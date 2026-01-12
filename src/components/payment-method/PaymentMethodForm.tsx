@@ -775,6 +775,10 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         open={showCatalogPicker}
         onOpenChange={setShowCatalogPicker}
         onSelectCard={handleCatalogSelection}
+        onCloseAll={() => {
+          setShowCatalogPicker(false);
+          onClose();
+        }}
       />
     </>
   );

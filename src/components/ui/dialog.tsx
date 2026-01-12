@@ -30,54 +30,60 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   hideCloseButton?: boolean;
+  hideOverlay?: boolean;
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, hideCloseButton, onKeyDown, ...props }, ref) => {
-  // Allow native keyboard shortcuts (Ctrl+A, Cmd+A, etc.) in form inputs
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    const isFormInput =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.isContentEditable;
+>(
+  (
+    { className, children, hideCloseButton, hideOverlay, onKeyDown, ...props },
+    ref
+  ) => {
+    // Allow native keyboard shortcuts (Ctrl+A, Cmd+A, etc.) in form inputs
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isFormInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
 
-    // Allow Ctrl/Cmd+A (select all) in form inputs
-    if (isFormInput && (e.ctrlKey || e.metaKey) && e.key === "a") {
-      e.stopPropagation();
-    }
+      // Allow Ctrl/Cmd+A (select all) in form inputs
+      if (isFormInput && (e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.stopPropagation();
+      }
 
-    onKeyDown?.(e);
-  };
+      onKeyDown?.(e);
+    };
 
-  return (
-    <DialogPortal>
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-5 border bg-background px-5 pt-4 pb-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg",
-          className
-        )}
-        onKeyDown={handleKeyDown}
-        {...props}
-      >
-        {children}
-        {!hideCloseButton && (
-          <DialogPrimitive.Close className="absolute right-4 top-4 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-            <X
-              className="h-6 w-6"
-              style={{ color: "var(--color-text-tertiary)" }}
-            />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
-    </DialogPortal>
-  );
-});
+    return (
+      <DialogPortal>
+        {!hideOverlay && <DialogOverlay />}
+        <DialogPrimitive.Content
+          ref={ref}
+          className={cn(
+            "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-5 border bg-background px-5 pt-4 pb-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg",
+            className
+          )}
+          onKeyDown={handleKeyDown}
+          {...props}
+        >
+          {children}
+          {!hideCloseButton && (
+            <DialogPrimitive.Close className="absolute right-4 top-4 h-11 w-11 flex items-center justify-center rounded-lg ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+              <X
+                className="h-6 w-6"
+                style={{ color: "var(--color-text-tertiary)" }}
+              />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    );
+  }
+);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
