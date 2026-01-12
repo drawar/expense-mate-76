@@ -25,6 +25,7 @@ export interface PointsBalance {
   rewardCurrency?: RewardCurrency;
   startingBalance: number;
   currentBalance: number;
+  balanceDate?: Date; // Date the balance was recorded as of
   lastCalculatedAt: Date;
   notes?: string;
   createdAt: Date;
@@ -40,6 +41,7 @@ export interface DbPointsBalance {
   reward_currency_id: string;
   starting_balance: number;
   current_balance: number;
+  balance_date: string | null;
   last_calculated_at: string;
   notes: string | null;
   created_at: string;
@@ -60,6 +62,7 @@ export interface DbPointsBalance {
 export interface PointsBalanceInput {
   rewardCurrencyId: string;
   startingBalance: number;
+  balanceDate?: Date;
   notes?: string;
 }
 
@@ -471,6 +474,7 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
       : undefined,
     startingBalance: Number(db.starting_balance),
     currentBalance: Number(db.current_balance),
+    balanceDate: db.balance_date ? new Date(db.balance_date) : undefined,
     lastCalculatedAt: new Date(db.last_calculated_at),
     notes: db.notes ?? undefined,
     createdAt: new Date(db.created_at),

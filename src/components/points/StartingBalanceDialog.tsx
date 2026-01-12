@@ -22,7 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, CoinsIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Loader2, CoinsIcon, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { PointsBalance, PointsBalanceInput } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
 
@@ -52,6 +60,7 @@ export function StartingBalanceDialog({
     defaultCurrencyId || ""
   );
   const [startingBalance, setStartingBalance] = useState("");
+  const [balanceDate, setBalanceDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
 
   // Reset form when dialog opens/closes or balance changes
@@ -60,10 +69,12 @@ export function StartingBalanceDialog({
       if (existingBalance) {
         setRewardCurrencyId(existingBalance.rewardCurrencyId);
         setStartingBalance(String(existingBalance.startingBalance));
+        setBalanceDate(existingBalance.balanceDate || new Date());
         setNotes(existingBalance.notes || "");
       } else {
         setRewardCurrencyId(defaultCurrencyId || "");
         setStartingBalance("");
+        setBalanceDate(new Date());
         setNotes("");
       }
     }
@@ -84,6 +95,7 @@ export function StartingBalanceDialog({
     await onSubmit({
       rewardCurrencyId,
       startingBalance: numStartingBalance,
+      balanceDate,
       notes: notes.trim() || undefined,
     });
   };
@@ -156,12 +168,43 @@ export function StartingBalanceDialog({
             )}
           </div>
 
+          {/* Balance Date */}
+          <div className="space-y-2">
+            <Label>Balance As Of</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !balanceDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {balanceDate ? (
+                    format(balanceDate, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={balanceDate}
+                  onSelect={(date) => date && setBalanceDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Notes (optional) */}
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
               id="notes"
-              placeholder="e.g., Balance as of January 2026"
+              placeholder="Any additional notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}

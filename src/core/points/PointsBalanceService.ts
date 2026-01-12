@@ -153,6 +153,7 @@ export class PointsBalanceService {
           reward_currency_id: input.rewardCurrencyId,
           starting_balance: input.startingBalance,
           current_balance: currentBalance,
+          balance_date: input.balanceDate?.toISOString() ?? null,
           notes: input.notes,
           last_calculated_at: new Date().toISOString(),
         },
