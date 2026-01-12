@@ -262,7 +262,7 @@ export function GoalProgressList({
   onCancelGoal,
   emptyMessage = "No active goals",
 }: GoalProgressListProps) {
-  if (goals.length === 0) {
+  if (!goals || goals.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         {emptyMessage}

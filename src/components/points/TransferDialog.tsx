@@ -71,11 +71,11 @@ export function TransferDialog({
 
   // Separate currencies by transferability
   const transferableCurrencies = useMemo(
-    () => rewardCurrencies.filter((c) => c.isTransferrable),
+    () => (rewardCurrencies || []).filter((c) => c.isTransferrable),
     [rewardCurrencies]
   );
   const destinationCurrencies = useMemo(
-    () => rewardCurrencies.filter((c) => !c.isTransferrable),
+    () => (rewardCurrencies || []).filter((c) => !c.isTransferrable),
     [rewardCurrencies]
   );
 
@@ -163,10 +163,10 @@ export function TransferDialog({
     });
   };
 
-  const sourceCurrency = rewardCurrencies.find(
+  const sourceCurrency = (rewardCurrencies || []).find(
     (c) => c.id === sourceCurrencyId
   );
-  const destCurrency = rewardCurrencies.find(
+  const destCurrency = (rewardCurrencies || []).find(
     (c) => c.id === destinationCurrencyId
   );
 

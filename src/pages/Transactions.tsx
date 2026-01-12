@@ -253,6 +253,11 @@ const Transactions = () => {
           viewMode={"table"}
           sortOption={sortOption}
           onCategoryEdit={handleCategoryEdit}
+          selectedCurrencies={filterOptions.currencies}
+          onCurrencyFilterChange={(currencies) =>
+            handleFilterChange("currencies", currencies)
+          }
+          allTransactions={transactions}
         />
       </div>
 

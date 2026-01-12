@@ -174,7 +174,7 @@ export function RedemptionDialog({
   };
 
   const isFlightRedemption = redemptionType === "flight";
-  const selectedCurrency = rewardCurrencies.find(
+  const selectedCurrency = (rewardCurrencies || []).find(
     (c) => c.id === rewardCurrencyId
   );
 
@@ -200,7 +200,7 @@ export function RedemptionDialog({
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
-                {rewardCurrencies.map((currency) => (
+                {(rewardCurrencies || []).map((currency) => (
                   <SelectItem key={currency.id} value={currency.id}>
                     {currency.displayName}
                     {currency.issuer && (

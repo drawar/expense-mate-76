@@ -88,7 +88,7 @@ export function StartingBalanceDialog({
     });
   };
 
-  const selectedCurrency = rewardCurrencies.find(
+  const selectedCurrency = (rewardCurrencies || []).find(
     (c) => c.id === rewardCurrencyId
   );
 
@@ -118,7 +118,7 @@ export function StartingBalanceDialog({
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
-                {rewardCurrencies.map((currency) => (
+                {(rewardCurrencies || []).map((currency) => (
                   <SelectItem key={currency.id} value={currency.id}>
                     {currency.displayName}
                     {currency.issuer && (

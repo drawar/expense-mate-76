@@ -239,7 +239,7 @@ export function ActivityFeedList({
   onItemClick,
   emptyMessage = "No activity yet",
 }: ActivityFeedListProps) {
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         {emptyMessage}
