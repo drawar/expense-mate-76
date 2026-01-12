@@ -27,9 +27,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import type {
   PointsAdjustment,
   PointsAdjustmentInput,
@@ -133,7 +137,7 @@ export function AdjustmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edit Adjustment" : "Add Points Adjustment"}
@@ -222,16 +226,45 @@ export function AdjustmentDialog({
             )}
           </div>
 
-          {/* Description */}
+          {/* Description with Markdown support */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="e.g., Welcome bonus from signup, Rakuten cashback, etc."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
+            <Tabs defaultValue="write" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 h-8">
+                <TabsTrigger value="write" className="text-xs">
+                  Write
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="text-xs">
+                  Preview
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="write" className="mt-2">
+                <Textarea
+                  id="description"
+                  placeholder="Supports Markdown (tables, bold, etc.)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  className="font-mono text-sm"
+                />
+              </TabsContent>
+              <TabsContent value="preview" className="mt-2">
+                <div className="min-h-[100px] rounded-md border p-3 prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-xs prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 overflow-x-auto">
+                  {description ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {description}
+                    </ReactMarkdown>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">
+                      Nothing to preview
+                    </span>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Reference Number (optional) */}
