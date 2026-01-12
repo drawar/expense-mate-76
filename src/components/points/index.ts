@@ -12,6 +12,7 @@ export { StartingBalanceDialog } from "./StartingBalanceDialog";
 export { AdjustmentDialog } from "./AdjustmentDialog";
 export { AdjustmentDetailDialog } from "./AdjustmentDetailDialog";
 export { RedemptionDialog } from "./RedemptionDialog";
+export { RedemptionDetailDialog } from "./RedemptionDetailDialog";
 export { TransferDialog } from "./TransferDialog";
 export { GoalDialog } from "./GoalDialog";
 
@@ -20,6 +21,7 @@ export { ActivityFeedItem, ActivityFeedList } from "./ActivityFeedItem";
 
 // Table components
 export { AdjustmentsTable } from "./AdjustmentsTable";
+export { RedemptionsTable } from "./RedemptionsTable";
 
 // Goal components
 export { GoalProgressCard, GoalProgressList } from "./GoalProgressCard";

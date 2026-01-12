@@ -30,6 +30,7 @@ import type {
   PointsBalance,
   PointsGoal,
   PointsAdjustment,
+  PointsRedemption,
   PointsAdjustmentInput,
   PointsRedemptionInput,
   PointsTransferInput,
@@ -47,7 +48,10 @@ import {
   usePointsAdjustments,
   usePointsAdjustmentMutations,
 } from "@/hooks/points/usePointsAdjustments";
-import { usePointsRedemptionMutations } from "@/hooks/points/usePointsRedemptions";
+import {
+  usePointsRedemptions,
+  usePointsRedemptionMutations,
+} from "@/hooks/points/usePointsRedemptions";
 import { usePointsTransferMutations } from "@/hooks/points/usePointsTransfers";
 import {
   useActiveGoals,
@@ -63,6 +67,8 @@ import {
   AdjustmentDetailDialog,
   AdjustmentsTable,
   RedemptionDialog,
+  RedemptionDetailDialog,
+  RedemptionsTable,
   TransferDialog,
   GoalDialog,
   ActivityFeedList,
@@ -74,6 +80,7 @@ type DialogType =
   | "adjustment"
   | "adjustmentDetail"
   | "redemption"
+  | "redemptionDetail"
   | "transfer"
   | "goal"
   | null;
@@ -132,11 +139,16 @@ export default function PointsManager() {
   const { data: allAdjustments = [], isLoading: adjustmentsLoading } =
     usePointsAdjustments();
 
+  // All redemptions (for table view)
+  const { data: allRedemptions = [], isLoading: redemptionsLoading } =
+    usePointsRedemptions();
+
   // Mutations
   const { setStartingBalance } = usePointsBalanceMutations();
   const { addAdjustment, updateAdjustment, deleteAdjustment } =
     usePointsAdjustmentMutations();
-  const { addRedemption } = usePointsRedemptionMutations();
+  const { addRedemption, updateRedemption, deleteRedemption } =
+    usePointsRedemptionMutations();
   const { addTransfer } = usePointsTransferMutations();
   const { addGoal, completeGoal, cancelGoal } = usePointsGoalMutations();
 
@@ -151,6 +163,9 @@ export default function PointsManager() {
   const [editingGoal, setEditingGoal] = useState<PointsGoal | undefined>();
   const [selectedAdjustment, setSelectedAdjustment] = useState<
     PointsAdjustment | undefined
+  >();
+  const [selectedRedemption, setSelectedRedemption] = useState<
+    PointsRedemption | undefined
   >();
 
   // Balance map for goal progress
@@ -196,6 +211,7 @@ export default function PointsManager() {
     setEditingBalance(undefined);
     setEditingGoal(undefined);
     setSelectedAdjustment(undefined);
+    setSelectedRedemption(undefined);
   };
 
   const handleOpenAdjustmentDetail = (adjustment: PointsAdjustment) => {
@@ -213,6 +229,24 @@ export default function PointsManager() {
 
   const handleDeleteAdjustment = async (id: string) => {
     await deleteAdjustment.mutateAsync(id);
+    handleCloseDialog();
+  };
+
+  const handleOpenRedemptionDetail = (redemption: PointsRedemption) => {
+    setSelectedRedemption(redemption);
+    setOpenDialog("redemptionDetail");
+  };
+
+  const handleUpdateRedemption = async (
+    id: string,
+    input: Partial<PointsRedemptionInput>
+  ) => {
+    await updateRedemption.mutateAsync({ id, input });
+    handleCloseDialog();
+  };
+
+  const handleDeleteRedemption = async (id: string) => {
+    await deleteRedemption.mutateAsync(id);
     handleCloseDialog();
   };
 
@@ -392,6 +426,30 @@ export default function PointsManager() {
               </div>
             )}
 
+            {/* Redemptions Table */}
+            {allRedemptions && allRedemptions.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <CoinsIcon className="h-5 w-5" />
+                    Redemptions
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenRedemptionDialog()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Log Redemption
+                  </Button>
+                </div>
+                <RedemptionsTable
+                  redemptions={allRedemptions}
+                  onRowClick={handleOpenRedemptionDetail}
+                />
+              </div>
+            )}
+
             {/* Active Goals Preview */}
             {!goalsLoading && activeGoals && activeGoals.length > 0 && (
               <div>
@@ -547,6 +605,16 @@ export default function PointsManager() {
           rewardCurrencies={rewardCurrencies}
           defaultCurrencyId={selectedCurrencyId}
           isLoading={addRedemption.isPending}
+        />
+
+        <RedemptionDetailDialog
+          redemption={selectedRedemption ?? null}
+          isOpen={openDialog === "redemptionDetail"}
+          onClose={handleCloseDialog}
+          onUpdate={handleUpdateRedemption}
+          onDelete={handleDeleteRedemption}
+          rewardCurrencies={rewardCurrencies}
+          isLoading={updateRedemption.isPending || deleteRedemption.isPending}
         />
 
         <TransferDialog
