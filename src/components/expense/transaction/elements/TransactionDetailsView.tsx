@@ -415,32 +415,29 @@ const TransactionDetailsView = ({
 
       {/* Section 8: Actions (Footer) */}
       <div
-        className="px-4 py-4 border-t flex gap-2 flex-shrink-0"
-        style={{
-          borderColor: "var(--color-border)",
-          backgroundColor: "var(--color-bg)",
-        }}
+        className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+        style={{ borderColor: "var(--color-border)" }}
       >
         {onEdit && (
           <Button
-            variant="secondary"
+            variant="outline"
             className="flex-1"
             onClick={onEdit}
             disabled={isLoading}
           >
-            <EditIcon className="h-4 w-4 mr-1" />
-            Edit transaction
+            <EditIcon className="h-4 w-4 mr-2" />
+            Edit
           </Button>
         )}
         {onDelete && (
           <Button
-            variant="secondary"
+            variant="outline"
             className="flex-1 text-destructive hover:text-destructive"
             onClick={onDelete}
             disabled={isLoading}
           >
-            <TrashIcon className="h-4 w-4 mr-1" />
-            Delete transaction
+            <TrashIcon className="h-4 w-4 mr-2" />
+            Delete
           </Button>
         )}
       </div>
