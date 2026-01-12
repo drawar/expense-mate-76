@@ -220,24 +220,36 @@ export class CategorizationService {
     const normalizedName = this.normalizeMerchantName(merchantName);
     const pattern = this.historicalPatterns.get(normalizedName);
 
-    if (!pattern || pattern.count < 3) {
-      return null; // Not enough data
+    if (!pattern) {
+      return null; // No historical data for this merchant
     }
 
     // Check if current amount is within typical range
     const isTypicalAmount =
       amount >= pattern.minAmount * 0.7 && amount <= pattern.maxAmount * 1.3;
 
-    // Calculate confidence based on consistency and amount similarity
+    // Calculate base confidence based on consistency
     let confidence = pattern.consistency;
+
+    // Adjust confidence based on number of data points
+    // Even 1 manual categorization is valuable, but more data = more confidence
+    if (pattern.count === 1) {
+      confidence = confidence * 0.85; // Single data point - still trust user but slight discount
+    } else if (pattern.count === 2) {
+      confidence = confidence * 0.95; // Two data points - nearly full confidence
+    }
+    // 3+ data points get full confidence from consistency
+
+    // Adjust for amount similarity
     if (isTypicalAmount) {
-      confidence = Math.min(1.0, confidence * 1.2);
+      confidence = Math.min(1.0, confidence * 1.1);
     } else {
-      confidence = confidence * 0.8;
+      confidence = confidence * 0.9;
     }
 
-    // Require at least 70% consistency
-    if (pattern.consistency < 0.7) {
+    // Require at least 50% consistency for patterns with many data points
+    // For 1-2 data points, be more lenient since user explicitly set the category
+    if (pattern.count >= 3 && pattern.consistency < 0.6) {
       return null;
     }
 
@@ -307,12 +319,13 @@ export class CategorizationService {
       }
 
       // Convert to historical patterns
+      // Include patterns with just 1 occurrence - user manual categorizations are valuable
       for (const [merchantName, entry] of patternMap) {
         const totalCount = Array.from(entry.categories.values()).reduce(
           (a, b) => a + b,
           0
         );
-        if (totalCount < 3) continue;
+        if (totalCount < 1) continue; // Need at least 1 data point
 
         // Find most common category
         let maxCount = 0;
@@ -504,8 +517,8 @@ export class CategorizationService {
         .select(
           `
           *,
-          merchants:merchant_id(id, name, mcc, mcc_code, is_online),
-          payment_methods:payment_method_id(id, name, type, issuer)
+          merchants:merchant_id(id, name, mcc, mcc_code, is_online, address),
+          payment_methods:payment_method_id(id, name, type, issuer, currency, points_currency)
         `
         )
         .eq("needs_review", true)
@@ -518,11 +531,62 @@ export class CategorizationService {
         return [];
       }
 
-      return data || [];
+      // Transform raw Supabase data to Transaction type
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        date: row.date,
+        merchant: {
+          id: row.merchants?.id || "",
+          name: row.merchants?.name || "Unknown Merchant",
+          address: row.merchants?.address || undefined,
+          mcc: row.merchants?.mcc ? this.parseMCC(row.merchants.mcc) : null,
+          isOnline: row.merchants?.is_online || false,
+        },
+        amount: parseFloat(row.amount?.toString() || "0"),
+        currency: row.currency || "CAD",
+        paymentMethod: {
+          id: row.payment_methods?.id || "",
+          name: row.payment_methods?.name || "Unknown",
+          type: row.payment_methods?.type || "credit_card",
+          issuer: row.payment_methods?.issuer || "",
+          currency: row.payment_methods?.currency || "CAD",
+          pointsCurrency: row.payment_methods?.points_currency,
+        },
+        paymentAmount: parseFloat(
+          row.payment_amount?.toString() || row.amount?.toString() || "0"
+        ),
+        paymentCurrency: row.payment_currency || row.currency || "CAD",
+        rewardPoints: row.reward_points || 0,
+        basePoints: row.base_points || 0,
+        bonusPoints: row.bonus_points || 0,
+        notes: row.notes || "",
+        needsReview: row.needs_review || false,
+        isRecategorized: row.is_recategorized || false,
+        userCategory: row.user_category || undefined,
+        category: row.category || undefined,
+        isContactless: row.is_contactless || false,
+        categorySuggestionReason: row.category_suggestion_reason || undefined,
+      })) as Transaction[];
     } catch (error) {
       console.error("Error in getTransactionsNeedingReview:", error);
       return [];
     }
+  }
+
+  /**
+   * Parse MCC data from database format
+   */
+  private parseMCC(mcc: unknown): { code: string; description: string } | null {
+    if (!mcc) return null;
+    if (typeof mcc === "object" && mcc !== null) {
+      const mccObj = mcc as { code?: string; description?: string };
+      return {
+        code: mccObj.code || "",
+        description: mccObj.description || "",
+      };
+    }
+    return null;
   }
 
   /**

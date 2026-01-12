@@ -117,7 +117,29 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
 
 function getLoyaltyProgramLogo(currency: string | undefined): string | null {
   if (!currency) return null;
-  return LOYALTY_PROGRAM_LOGOS[currency.toLowerCase()] || null;
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
+  }
+
+  // Try without region suffix like "(SG)", "(CA)", "(US)"
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
+    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
+  }
+
+  // Try partial match (for variations)
+  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
+    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
+      return url;
+    }
+  }
+
+  return null;
 }
 
 // Background colors for logos with non-transparent backgrounds
@@ -128,7 +150,18 @@ const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
 
 function getLoyaltyProgramBgColor(currency: string | undefined): string {
   if (!currency) return "white";
-  return LOYALTY_PROGRAM_BG_COLORS[currency.toLowerCase()] || "white";
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency];
+  }
+
+  // Try without region suffix
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  return LOYALTY_PROGRAM_BG_COLORS[withoutRegion] || "white";
 }
 
 interface TransactionDetailsViewProps {

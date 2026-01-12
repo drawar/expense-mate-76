@@ -18,6 +18,7 @@ interface PointsByCurrency {
   spending: number;
   earnRate: number;
   logoUrl?: string;
+  paymentCurrency?: string;
 }
 
 // Loyalty program logo URLs from Supabase storage
@@ -73,7 +74,29 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
  */
 function getLoyaltyProgramLogo(currency: string | undefined): string | null {
   if (!currency) return null;
-  return LOYALTY_PROGRAM_LOGOS[currency.toLowerCase()] || null;
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
+  }
+
+  // Try without region suffix like "(SG)", "(CA)", "(US)"
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
+    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
+  }
+
+  // Try partial match (for variations)
+  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
+    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
+      return url;
+    }
+  }
+
+  return null;
 }
 
 // Background colors for logos with non-transparent backgrounds
@@ -84,7 +107,18 @@ const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
 
 function getLoyaltyProgramBgColor(currency: string | undefined): string {
   if (!currency) return "white";
-  return LOYALTY_PROGRAM_BG_COLORS[currency.toLowerCase()] || "white";
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency];
+  }
+
+  // Try without region suffix
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  return LOYALTY_PROGRAM_BG_COLORS[withoutRegion] || "white";
 }
 
 /**
@@ -154,10 +188,16 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
   className = "",
 }) => {
   // Aggregate points and spending by currency
+  // Use paymentAmount (card's statement currency) for earn rate calculation
   const pointsByCurrency = React.useMemo(() => {
     const currencyMap = new Map<
       string,
-      { points: number; spending: number; logoUrl?: string }
+      {
+        points: number;
+        spending: number;
+        logoUrl?: string;
+        paymentCurrency?: string;
+      }
     >();
 
     transactions.forEach((tx) => {
@@ -168,21 +208,21 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         points: 0,
         spending: 0,
         logoUrl: undefined,
+        paymentCurrency: undefined,
       };
 
-      // Convert spending to display currency
-      const spending = CurrencyService.convert(
-        tx.amount,
-        tx.currency as Currency,
-        displayCurrency,
-        tx.paymentMethod
-      );
+      // Use paymentAmount (in card's currency) for earn rate calculation
+      // Points are earned based on the statement amount, not transaction amount
+      const spending = tx.paymentAmount ?? tx.amount;
+      const paymentCurrency = tx.paymentCurrency ?? tx.currency;
 
       currencyMap.set(pointsCurrency, {
         points: existing.points + tx.rewardPoints,
         spending: existing.spending + spending,
         // Capture logo_url from reward_currencies (use first one found)
         logoUrl: existing.logoUrl || tx.paymentMethod?.rewardCurrencyLogoUrl,
+        // Track the payment currency for this points type
+        paymentCurrency: existing.paymentCurrency || paymentCurrency,
       });
     });
 
@@ -195,10 +235,11 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
           spending: data.spending,
           earnRate: data.spending > 0 ? data.points / data.spending : 0,
           logoUrl: data.logoUrl,
+          paymentCurrency: data.paymentCurrency,
         })
       )
       .sort((a, b) => b.points - a.points);
-  }, [transactions, displayCurrency]);
+  }, [transactions]);
 
   // Hide when no points earned
   if (pointsByCurrency.length === 0) {
@@ -265,7 +306,14 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                     <TruncatedText text={item.currency} />
                     <p className="text-sm text-muted-foreground">
                       {item.earnRate.toFixed(1)}{" "}
-                      {abbreviatePointsCurrency(item.currency)}/{currencySymbol}
+                      {abbreviatePointsCurrency(item.currency)}/
+                      {item.paymentCurrency === "SGD"
+                        ? "S$"
+                        : item.paymentCurrency === "CAD"
+                          ? "C$"
+                          : item.paymentCurrency === "USD"
+                            ? "$"
+                            : item.paymentCurrency || currencySymbol}
                     </p>
                   </div>
                 </div>

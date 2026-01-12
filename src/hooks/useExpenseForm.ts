@@ -193,13 +193,23 @@ export const useExpenseForm = ({
             pointsCurrency: selectedPaymentMethod.pointsCurrency || "Points",
           });
 
-          // Update form field with calculated value (with guard to prevent loops)
-          if (!defaultValues?.rewardPoints) {
-            const currentValue = form.getValues("rewardPoints");
-            const newValue = totalPoints.toString();
-            if (currentValue !== newValue) {
-              form.setValue("rewardPoints", newValue, { shouldDirty: false });
-            }
+          // Always update form fields with calculated values
+          const currentValue = form.getValues("rewardPoints");
+          const newValue = totalPoints.toString();
+          if (currentValue !== newValue) {
+            form.setValue("rewardPoints", newValue, { shouldDirty: false });
+          }
+
+          const currentBase = form.getValues("basePoints");
+          const newBase = basePoints.toString();
+          if (currentBase !== newBase) {
+            form.setValue("basePoints", newBase, { shouldDirty: false });
+          }
+
+          const currentBonus = form.getValues("bonusPoints");
+          const newBonus = bonusPoints.toString();
+          if (currentBonus !== newBonus) {
+            form.setValue("bonusPoints", newBonus, { shouldDirty: false });
           }
           return;
         }
@@ -255,6 +265,15 @@ export const useExpenseForm = ({
           convertedCurrency
         );
 
+        console.log("🔍 [useExpenseForm] simulateRewards result:", {
+          totalPoints: result.totalPoints,
+          basePoints: result.basePoints,
+          bonusPoints: result.bonusPoints,
+          pointsCurrency: result.pointsCurrency,
+          messages: result.messages,
+          appliedRuleId: result.appliedRuleId,
+        });
+
         // Format message text
         let messageText;
         if (
@@ -280,14 +299,27 @@ export const useExpenseForm = ({
           messages: result.messages,
         });
 
-        // If creating a new transaction (no rewardPoints in defaultValues),
-        // update the form field with calculated value (with guard to prevent loops)
-        if (!defaultValues?.rewardPoints) {
-          const currentValue = form.getValues("rewardPoints");
-          const newValue = result.totalPoints.toString();
-          if (currentValue !== newValue) {
-            form.setValue("rewardPoints", newValue, { shouldDirty: false });
-          }
+        // Always update form fields with calculated values
+        // This ensures points are recalculated in both add and edit modes
+        const currentRewardPoints = form.getValues("rewardPoints");
+        const newRewardPoints = result.totalPoints.toString();
+        if (currentRewardPoints !== newRewardPoints) {
+          form.setValue("rewardPoints", newRewardPoints, {
+            shouldDirty: false,
+          });
+        }
+
+        // Also update basePoints and bonusPoints for accurate tracking
+        const currentBasePoints = form.getValues("basePoints");
+        const newBasePoints = result.basePoints?.toString() || "0";
+        if (currentBasePoints !== newBasePoints) {
+          form.setValue("basePoints", newBasePoints, { shouldDirty: false });
+        }
+
+        const currentBonusPoints = form.getValues("bonusPoints");
+        const newBonusPoints = result.bonusPoints?.toString() || "0";
+        if (currentBonusPoints !== newBonusPoints) {
+          form.setValue("bonusPoints", newBonusPoints, { shouldDirty: false });
         }
       } catch (error) {
         console.error("Error calculating reward points:", error);
@@ -308,7 +340,6 @@ export const useExpenseForm = ({
     shouldOverridePayment,
     paymentAmount,
     eurFareAmount,
-    defaultValues?.rewardPoints,
     form,
   ]);
 
