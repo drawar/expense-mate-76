@@ -7,8 +7,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   SelectedCatalogCardDisplay,
@@ -52,8 +50,6 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
   // Form state
   const [lastFourDigits, setLastFourDigits] = useState("");
   const [statementStartDay, setStatementStartDay] = useState("");
-  const [isMonthlyStatement, setIsMonthlyStatement] = useState(false);
-  const [showBillingDetails, setShowBillingDetails] = useState(false);
 
   // Validation state
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -71,8 +67,8 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
   const validateStatementDay = (value: string): string | undefined => {
     if (!value) return undefined;
     const day = parseInt(value, 10);
-    if (isNaN(day) || day < 1 || day > 28) {
-      return "Must be between 1 and 28";
+    if (isNaN(day) || day < 1 || day > 31) {
+      return "Must be between 1 and 31";
     }
     return undefined;
   };
@@ -105,8 +101,6 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
     if (open) {
       setLastFourDigits("");
       setStatementStartDay("");
-      setIsMonthlyStatement(false);
-      setShowBillingDetails(false);
       setErrors({});
       setTouched({});
     }
@@ -120,7 +114,7 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
       card,
       lastFourDigits,
       statementStartDay,
-      isMonthlyStatement,
+      isMonthlyStatement: false,
     });
   };
 
@@ -157,7 +151,7 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
           className="flex flex-col flex-1 min-h-0 overflow-hidden"
         >
           {/* Scrollable form content */}
-          <div className="px-4 py-4 space-y-5 flex-1 overflow-y-auto min-h-0">
+          <div className="px-4 py-4 space-y-4 flex-1 overflow-y-auto min-h-0">
             {/* Selected card display */}
             <SelectedCatalogCardDisplay card={card} onClear={handleClearCard} />
 
@@ -171,67 +165,14 @@ const PersonalizeCardDialog: React.FC<PersonalizeCardDialogProps> = ({
               autoFocus
             />
 
-            {/* Collapsible billing details */}
-            <div>
-              <button
-                type="button"
-                className="flex items-center gap-2 text-sm py-2"
-                style={{ color: "var(--color-text-secondary)" }}
-                onClick={() => setShowBillingDetails(!showBillingDetails)}
-              >
-                {showBillingDetails ? (
-                  <ChevronUp
-                    className="h-4 w-4"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  />
-                ) : (
-                  <ChevronDown
-                    className="h-4 w-4"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  />
-                )}
-                {showBillingDetails ? "Hide" : "Show"} billing cycle details
-              </button>
-
-              {showBillingDetails && (
-                <div className="pt-2 space-y-4">
-                  <BillingCycleFields
-                    statementStartDay={statementStartDay}
-                    onStatementDayChange={setStatementStartDay}
-                    onStatementDayBlur={() =>
-                      handleFieldBlur("statementStartDay")
-                    }
-                    error={errors.statementStartDay}
-                    touched={touched.statementStartDay}
-                  />
-
-                  {/* Bonus Rewards Cap toggle */}
-                  <div className="py-3 flex items-center justify-between gap-4">
-                    <span
-                      className="text-base md:text-sm font-medium"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      Bonus Rewards Cap
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-base md:text-sm"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        {isMonthlyStatement
-                          ? "By statement month"
-                          : "By calendar month"}
-                      </span>
-                      <Switch
-                        id="isMonthlyStatement"
-                        checked={isMonthlyStatement}
-                        onCheckedChange={setIsMonthlyStatement}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Statement Day */}
+            <BillingCycleFields
+              statementStartDay={statementStartDay}
+              onStatementDayChange={setStatementStartDay}
+              onStatementDayBlur={() => handleFieldBlur("statementStartDay")}
+              error={errors.statementStartDay}
+              touched={touched.statementStartDay}
+            />
           </div>
 
           {/* Footer */}

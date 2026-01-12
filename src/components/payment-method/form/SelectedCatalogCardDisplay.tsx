@@ -1,4 +1,5 @@
 import React from "react";
+import "flag-icons/css/flag-icons.min.css";
 import { CreditCard, X } from "lucide-react";
 import {
   VisaLogoIcon,
@@ -6,6 +7,24 @@ import {
   AmericanExpressLogoIcon,
 } from "react-svg-credit-card-payment-icons";
 import { CardCatalogEntry } from "@/core/catalog";
+
+// Currency to ISO 3166-1-alpha-2 country code mapping (lowercase)
+const currencyToCountry: Record<string, string> = {
+  CAD: "ca",
+  USD: "us",
+  SGD: "sg",
+  EUR: "eu",
+  GBP: "gb",
+  JPY: "jp",
+  AUD: "au",
+  CNY: "cn",
+  INR: "in",
+  TWD: "tw",
+  VND: "vn",
+  IDR: "id",
+  THB: "th",
+  MYR: "my",
+};
 
 // Fallback card images for cards without defaultImageUrl
 const CARD_IMAGE_FALLBACKS: Record<string, string> = {
@@ -117,21 +136,23 @@ export const SelectedCatalogCardDisplay: React.FC<
           >
             {card.name}
           </p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span
-              className="text-xs"
-              style={{ color: "var(--color-text-secondary)" }}
-            >
-              {card.issuer}
-            </span>
-            <span
-              className="text-xs"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
-              {card.currency}
-            </span>
-          </div>
+          <p
+            className="text-xs mt-0.5"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            {card.issuer}
+          </p>
         </div>
+
+        {/* Currency flag */}
+        {card.currency && currencyToCountry[card.currency] && (
+          <div className="shrink-0 w-6 h-6 flex items-center justify-center">
+            <span
+              className={`fi fi-${currencyToCountry[card.currency]}`}
+              style={{ fontSize: "18px" }}
+            />
+          </div>
+        )}
 
         {/* Network logo */}
         {card.network && (

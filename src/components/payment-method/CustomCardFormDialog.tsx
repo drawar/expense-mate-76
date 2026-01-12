@@ -82,6 +82,7 @@ interface ValidationErrors {
   lastFourDigits?: string;
   statementStartDay?: string;
   totalLoaded?: string;
+  purchaseDate?: string;
 }
 
 export interface CustomCardFormData {
@@ -196,11 +197,26 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
     return undefined;
   };
 
-  const validateTotalLoaded = (value: string): string | undefined => {
-    if (!value) return undefined;
+  const validateTotalLoaded = (
+    value: string,
+    isRequired: boolean
+  ): string | undefined => {
+    if (!value) {
+      return isRequired ? "Total loaded is required" : undefined;
+    }
     const amount = parseFloat(value);
     if (isNaN(amount) || amount < 0) {
       return "Must be a positive number";
+    }
+    return undefined;
+  };
+
+  const validatePurchaseDate = (
+    value: string,
+    isRequired: boolean
+  ): string | undefined => {
+    if (!value && isRequired) {
+      return "Purchase date is required";
     }
     return undefined;
   };
@@ -210,10 +226,11 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
     setTouched((prev) => ({ ...prev, [field]: true }));
 
     const newErrors = { ...errors };
-    const isNameRequired = selectedType === "credit_card";
+    const isCreditCardType = selectedType === "credit_card";
+    const isGiftCardType = selectedType === "gift_card";
     switch (field) {
       case "name":
-        newErrors.name = validateName(name, isNameRequired);
+        newErrors.name = validateName(name, isCreditCardType);
         break;
       case "lastFourDigits":
         newErrors.lastFourDigits = validateLastFourDigits(lastFourDigits);
@@ -222,7 +239,16 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
         newErrors.statementStartDay = validateStatementDay(statementStartDay);
         break;
       case "totalLoaded":
-        newErrors.totalLoaded = validateTotalLoaded(totalLoaded);
+        newErrors.totalLoaded = validateTotalLoaded(
+          totalLoaded,
+          isGiftCardType
+        );
+        break;
+      case "purchaseDate":
+        newErrors.purchaseDate = validatePurchaseDate(
+          purchaseDate,
+          isGiftCardType
+        );
         break;
     }
     setErrors(newErrors);
@@ -231,22 +257,31 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
   // Check if form is valid
   const isFormValid = useMemo(() => {
     const isCreditCardType = selectedType === "credit_card";
+    const isGiftCardType = selectedType === "gift_card";
     const nameError = validateName(name, isCreditCardType);
-    const issuerError = validateIssuer(issuer, isCreditCardType);
+    const issuerError = validateIssuer(
+      issuer,
+      isCreditCardType || isGiftCardType
+    );
     const rewardCurrencyError = validateRewardCurrency(
       rewardCurrencyId,
       isCreditCardType
     );
     const digitsError = validateLastFourDigits(lastFourDigits);
     const dayError = validateStatementDay(statementStartDay);
-    const loadedError = validateTotalLoaded(totalLoaded);
+    const loadedError = validateTotalLoaded(totalLoaded, isGiftCardType);
+    const purchaseDateError = validatePurchaseDate(
+      purchaseDate,
+      isGiftCardType
+    );
     return (
       !nameError &&
       !issuerError &&
       !rewardCurrencyError &&
       !digitsError &&
       !dayError &&
-      !loadedError
+      !loadedError &&
+      !purchaseDateError
     );
   }, [
     name,
@@ -255,6 +290,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
     lastFourDigits,
     statementStartDay,
     totalLoaded,
+    purchaseDate,
     selectedType,
   ]);
 
@@ -328,6 +364,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
 
   const isCreditCard = selectedType === "credit_card";
   const isGiftCard = selectedType === "gift_card";
+  const isCash = selectedType === "cash";
   const isCardType = isCreditCard || isGiftCard;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -435,19 +472,125 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                   onClick={() => setShowCurrencyDialog(true)}
                 />
 
-                {/* Issuer (credit card and gift card) */}
+                {/* Issuer (credit card and gift card) - required for both */}
                 {(isCreditCard || isGiftCard) && (
                   <SelectionField
                     label="Issuer"
                     value={getIssuerLabel()}
                     onClick={() => setShowIssuerDialog(true)}
                     placeholder={!issuer}
-                    required={isCreditCard}
+                    required
                   />
                 )}
 
-                {/* Name field - after Issuer, required for credit cards only */}
-                {(isCreditCard || isGiftCard) && (
+                {/* Total Loaded (gift card only) - required */}
+                {isGiftCard && (
+                  <div>
+                    <div className="py-3 flex items-center justify-between gap-4">
+                      <label
+                        htmlFor="totalLoaded"
+                        className="text-base md:text-sm font-medium shrink-0"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        Total Loaded{" "}
+                        <span style={{ color: "var(--color-error)" }}>*</span>
+                      </label>
+                      <Input
+                        id="totalLoaded"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="e.g. 500.00"
+                        value={totalLoaded}
+                        onChange={(e) => setTotalLoaded(e.target.value)}
+                        onBlur={() => handleFieldBlur("totalLoaded")}
+                        className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
+                        style={{
+                          backgroundColor: "transparent",
+                          color: "var(--color-text-primary)",
+                        }}
+                      />
+                    </div>
+                    {touched.totalLoaded && errors.totalLoaded && (
+                      <p
+                        className="text-xs flex items-center gap-1 justify-end"
+                        style={{ color: "var(--color-error)" }}
+                      >
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.totalLoaded}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Purchase Date (gift card only) - required */}
+                {isGiftCard && (
+                  <div>
+                    <div className="py-3 flex items-center justify-between gap-4">
+                      <span
+                        className="text-base md:text-sm font-medium shrink-0"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        Purchase Date{" "}
+                        <span style={{ color: "var(--color-error)" }}>*</span>
+                      </span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-base md:text-sm"
+                            style={{
+                              color: purchaseDate
+                                ? "var(--color-text-primary)"
+                                : "var(--color-text-tertiary)",
+                            }}
+                          >
+                            <span>
+                              {purchaseDate
+                                ? format(new Date(purchaseDate), "PPP")
+                                : "Select date"}
+                            </span>
+                            <CalendarIcon
+                              className="h-4 w-4"
+                              style={{ color: "var(--color-text-tertiary)" }}
+                            />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              purchaseDate ? new Date(purchaseDate) : undefined
+                            }
+                            onSelect={(date) => {
+                              if (date) {
+                                setPurchaseDate(format(date, "yyyy-MM-dd"));
+                              }
+                            }}
+                            disabled={(date) => {
+                              const today = startOfDay(new Date());
+                              const compareDate = startOfDay(date);
+                              return compareDate > today;
+                            }}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    {touched.purchaseDate && errors.purchaseDate && (
+                      <p
+                        className="text-xs flex items-center gap-1 justify-end"
+                        style={{ color: "var(--color-error)" }}
+                      >
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.purchaseDate}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Name field - required for credit cards, optional for gift cards and cash */}
+                {(isCreditCard || isGiftCard || isCash) && (
                   <div>
                     <div className="py-3 flex items-center justify-between gap-4">
                       <label
@@ -463,7 +606,9 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                       <Input
                         id="name"
                         placeholder={
-                          isGiftCard ? "Optional" : "e.g. Chase Sapphire"
+                          isGiftCard || isCash
+                            ? "Optional"
+                            : "e.g. Chase Sapphire"
                         }
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -545,101 +690,6 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                         error={errors.lastFourDigits}
                         touched={touched.lastFourDigits}
                       />
-                    )}
-
-                    {/* Total Loaded (gift card only) */}
-                    {isGiftCard && (
-                      <div>
-                        <div className="py-3 flex items-center justify-between gap-4">
-                          <label
-                            htmlFor="totalLoaded"
-                            className="text-base md:text-sm font-medium shrink-0"
-                            style={{ color: "var(--color-text-secondary)" }}
-                          >
-                            Total Loaded
-                          </label>
-                          <Input
-                            id="totalLoaded"
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="e.g. 500.00"
-                            value={totalLoaded}
-                            onChange={(e) => setTotalLoaded(e.target.value)}
-                            onBlur={() => handleFieldBlur("totalLoaded")}
-                            className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
-                            style={{
-                              backgroundColor: "transparent",
-                              color: "var(--color-text-primary)",
-                            }}
-                          />
-                        </div>
-                        {touched.totalLoaded && errors.totalLoaded && (
-                          <p
-                            className="text-xs flex items-center gap-1 justify-end"
-                            style={{ color: "var(--color-error)" }}
-                          >
-                            <AlertCircle className="h-3 w-3" />
-                            {errors.totalLoaded}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Purchase Date (gift card only) */}
-                    {isGiftCard && (
-                      <div className="py-3 flex items-center justify-between gap-4">
-                        <span
-                          className="text-base md:text-sm font-medium shrink-0"
-                          style={{ color: "var(--color-text-secondary)" }}
-                        >
-                          Purchase Date
-                        </span>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex items-center gap-2 text-base md:text-sm"
-                              style={{
-                                color: purchaseDate
-                                  ? "var(--color-text-primary)"
-                                  : "var(--color-text-tertiary)",
-                              }}
-                            >
-                              <span>
-                                {purchaseDate
-                                  ? format(new Date(purchaseDate), "PPP")
-                                  : "Select date"}
-                              </span>
-                              <CalendarIcon
-                                className="h-4 w-4"
-                                style={{ color: "var(--color-text-tertiary)" }}
-                              />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                              mode="single"
-                              selected={
-                                purchaseDate
-                                  ? new Date(purchaseDate)
-                                  : undefined
-                              }
-                              onSelect={(date) => {
-                                if (date) {
-                                  setPurchaseDate(format(date, "yyyy-MM-dd"));
-                                }
-                              }}
-                              disabled={(date) => {
-                                const today = startOfDay(new Date());
-                                const compareDate = startOfDay(date);
-                                return compareDate > today;
-                              }}
-                              initialFocus
-                              className="pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
                     )}
 
                     {/* Credit card statement day */}
