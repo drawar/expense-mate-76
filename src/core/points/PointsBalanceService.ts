@@ -196,13 +196,16 @@ export class PointsBalanceService {
       rewardCurrencyId
     );
 
-    // Calculate adjustments sum
+    // Calculate adjustments sum (only include adjustments dated today or earlier)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today in local time
     const { data: adjustmentsData } = await supabase
       .from("points_adjustments")
       .select("amount")
       .eq("user_id", userId)
       .eq("reward_currency_id", rewardCurrencyId)
-      .eq("is_deleted", false);
+      .eq("is_deleted", false)
+      .lte("adjustment_date", today.toISOString());
 
     const adjustments = (adjustmentsData ?? []).reduce(
       (sum, a) => sum + Number(a.amount),
