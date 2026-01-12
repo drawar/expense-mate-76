@@ -234,6 +234,10 @@ const PaymentMethods = () => {
         if (totalLoaded) {
           method.totalLoaded = parseFloat(totalLoaded);
         }
+        const purchaseDate = formData.get("purchaseDate") as string;
+        if (purchaseDate) {
+          method.purchaseDate = purchaseDate;
+        }
       }
 
       await handleSaveMethod(method);

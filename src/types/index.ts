@@ -81,6 +81,7 @@ export interface PaymentMethod {
   statementStartDay?: number;
   isMonthlyStatement?: boolean;
   totalLoaded?: number; // For prepaid cards: total amount loaded onto the card
+  purchaseDate?: string; // For gift cards: date the card was purchased
 
   // Card Catalog linkage
   /** Reference to card_catalog for inherited properties. Null for custom cards. */
@@ -139,6 +140,7 @@ export interface DbPaymentMethod {
   is_monthly_statement: boolean | null;
   conversion_rate: Record<string, number> | null;
   total_loaded: number | null; // For prepaid cards: total amount loaded onto the card
+  purchase_date: string | null; // For gift cards: date the card was purchased
   created_at: string;
   updated_at: string;
 }

@@ -57,6 +57,19 @@ const DialogContent = React.forwardRef<
       onKeyDown?.(e);
     };
 
+    // Allow wheel scrolling within scrollable areas
+    const handleWheel = (e: React.WheelEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollableParent =
+        target.closest('[data-scrollable="true"]') ||
+        target.closest(".overflow-y-auto") ||
+        target.closest(".overflow-auto");
+
+      if (scrollableParent) {
+        e.stopPropagation();
+      }
+    };
+
     return (
       <DialogPortal>
         {!hideOverlay && <DialogOverlay />}
@@ -67,6 +80,7 @@ const DialogContent = React.forwardRef<
             className
           )}
           onKeyDown={handleKeyDown}
+          onWheel={handleWheel}
           {...props}
         >
           {children}

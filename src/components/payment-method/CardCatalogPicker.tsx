@@ -18,14 +18,21 @@ import {
   useCardCatalogQuery,
   useCardCatalogRegionsQuery,
 } from "@/hooks/queries/useCardCatalogQuery";
+import PersonalizeCardDialog, {
+  PersonalizeCardData,
+} from "./PersonalizeCardDialog";
 
 interface CardCatalogPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectCard: (card: CardCatalogEntry | null) => void;
+  onCardPersonalized?: (data: PersonalizeCardData) => void;
   onCloseAll?: () => void;
   defaultRegion?: string;
+  isLoading?: boolean;
 }
+
+export type { PersonalizeCardData };
 
 const REGION_LABELS: Record<string, string> = {
   SG: "Singapore",
@@ -98,13 +105,19 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
   open,
   onOpenChange,
   onSelectCard,
+  onCardPersonalized,
   onCloseAll,
   defaultRegion = "ALL",
+  isLoading = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string | undefined>(
     defaultRegion
   );
+  const [selectedCard, setSelectedCard] = useState<CardCatalogEntry | null>(
+    null
+  );
+  const [showPersonalizeDialog, setShowPersonalizeDialog] = useState(false);
 
   // Fetch card catalog and regions
   const { data: cards = [], isLoading: isLoadingCards } = useCardCatalogQuery({
@@ -140,8 +153,9 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
   }, [filteredCards]);
 
   const handleSelectCard = (card: CardCatalogEntry) => {
-    onSelectCard(card);
-    onOpenChange(false);
+    // Open the PersonalizeCardDialog instead of immediately returning
+    setSelectedCard(card);
+    setShowPersonalizeDialog(true);
   };
 
   const handleCreateCustomCard = () => {
@@ -151,152 +165,191 @@ const CardCatalogPicker: React.FC<CardCatalogPickerProps> = ({
 
   const handleClose = () => {
     setSearchQuery("");
+    setSelectedCard(null);
+    setShowPersonalizeDialog(false);
     onOpenChange(false);
   };
 
+  const handlePersonalizeSubmit = (data: PersonalizeCardData) => {
+    if (onCardPersonalized) {
+      onCardPersonalized(data);
+    }
+    // Close all dialogs after submit
+    setShowPersonalizeDialog(false);
+    setSelectedCard(null);
+    onCloseAll?.();
+  };
+
+  const handleBackToCardSelect = () => {
+    // Close PersonalizeCardDialog and stay on CardCatalogPicker
+    setShowPersonalizeDialog(false);
+    setSelectedCard(null);
+  };
+
+  const handlePersonalizeCloseAll = () => {
+    setShowPersonalizeDialog(false);
+    setSelectedCard(null);
+    onCloseAll?.();
+  };
+
+  // Hide parent dialog when child is open
+  const isParentVisible = open && !showPersonalizeDialog;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent
-        className="sm:max-w-lg max-h-[85vh] flex flex-col p-0"
-        hideCloseButton
-        hideOverlay
-      >
-        <DialogHeader
-          className="border-b flex-shrink-0"
-          showBackButton
-          onBack={handleClose}
-          showCloseButton
-          onClose={onCloseAll}
+    <>
+      <Dialog open={isParentVisible} onOpenChange={handleClose}>
+        <DialogContent
+          className="sm:max-w-lg max-h-[85vh] flex flex-col p-0"
+          hideCloseButton
+          hideOverlay
         >
-          <DialogTitle>Select Your Card</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-4 px-5 pb-5 flex-1 min-h-0">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by card name or issuer..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Region Filter */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={selectedRegion === "ALL" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedRegion("ALL")}
-            >
-              All
-            </Button>
-            {regions.map((region) => (
-              <Button
-                key={region}
-                variant={selectedRegion === region ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedRegion(region)}
-              >
-                {REGION_LABELS[region] || region}
-              </Button>
-            ))}
-          </div>
-
-          {/* Card List */}
-          <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-5 px-5">
-            {isLoadingCards ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredCards.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery
-                    ? "No cards match your search"
-                    : "No cards available in this region"}
-                </p>
-                <Button onClick={handleCreateCustomCard} variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Custom Card
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6 pb-4">
-                {Array.from(groupedCards.entries()).map(
-                  ([issuer, issuerCards]) => (
-                    <div key={issuer}>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-2 sticky top-0 bg-background py-1">
-                        {issuer}
-                      </h3>
-                      <div className="space-y-3">
-                        {issuerCards.map((card) => {
-                          const imageUrl = getCardImageUrl(card);
-                          return (
-                            <button
-                              key={card.id}
-                              onClick={() => handleSelectCard(card)}
-                              className="w-full p-4 border rounded-xl hover:bg-accent text-left transition-colors"
-                              style={{ borderColor: "var(--color-border)" }}
-                            >
-                              <div className="flex items-center gap-3">
-                                {/* Card image or fallback */}
-                                {imageUrl ? (
-                                  <img
-                                    src={imageUrl}
-                                    alt={card.name}
-                                    className="h-[37px] w-[58px] object-contain flex-shrink-0 rounded-sm"
-                                  />
-                                ) : (
-                                  <div className="h-[37px] w-[58px] bg-muted flex items-center justify-center flex-shrink-0 rounded-sm">
-                                    <CreditCard className="h-5 w-5 text-muted-foreground" />
-                                  </div>
-                                )}
-
-                                {/* Card info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate">
-                                    {card.name}
-                                  </div>
-                                  {card.pointsCurrency && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                                      Earns {card.pointsCurrency}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Network icon */}
-                                <div className="shrink-0">
-                                  <NetworkIcon network={card.network} />
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Custom Card Option */}
-        <div className="border-t p-5">
-          <Button
-            onClick={handleCreateCustomCard}
-            variant="outline"
-            className="w-full"
+          <DialogHeader
+            className="border-b flex-shrink-0"
+            showBackButton
+            onBack={handleClose}
+            showCloseButton
+            onClose={onCloseAll}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Custom Card (Not in Catalog)
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <DialogTitle>Select Your Card</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 px-5 pb-5 flex-1 min-h-0">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by card name or issuer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Region Filter */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedRegion === "ALL" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedRegion("ALL")}
+              >
+                All
+              </Button>
+              {regions.map((region) => (
+                <Button
+                  key={region}
+                  variant={selectedRegion === region ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedRegion(region)}
+                >
+                  {REGION_LABELS[region] || region}
+                </Button>
+              ))}
+            </div>
+
+            {/* Card List */}
+            <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto -mx-5 px-5">
+              {isLoadingCards ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredCards.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-4">
+                    {searchQuery
+                      ? "No cards match your search"
+                      : "No cards available in this region"}
+                  </p>
+                  <Button onClick={handleCreateCustomCard} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Custom Card
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-6 pb-4">
+                  {Array.from(groupedCards.entries()).map(
+                    ([issuer, issuerCards]) => (
+                      <div key={issuer}>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-2 sticky top-0 bg-background py-1">
+                          {issuer}
+                        </h3>
+                        <div className="space-y-3">
+                          {issuerCards.map((card) => {
+                            const imageUrl = getCardImageUrl(card);
+                            return (
+                              <button
+                                key={card.id}
+                                onClick={() => handleSelectCard(card)}
+                                className="w-full p-4 border rounded-xl hover:bg-accent text-left transition-colors"
+                                style={{ borderColor: "var(--color-border)" }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  {/* Card image or fallback */}
+                                  {imageUrl ? (
+                                    <img
+                                      src={imageUrl}
+                                      alt={card.name}
+                                      className="h-[37px] w-[58px] object-contain flex-shrink-0 rounded-sm"
+                                    />
+                                  ) : (
+                                    <div className="h-[37px] w-[58px] bg-muted flex items-center justify-center flex-shrink-0 rounded-sm">
+                                      <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                  )}
+
+                                  {/* Card info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {card.name}
+                                    </div>
+                                    {card.pointsCurrency && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                        Earns {card.pointsCurrency}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Network icon */}
+                                  <div className="shrink-0">
+                                    <NetworkIcon network={card.network} />
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Custom Card Option */}
+          <div className="border-t p-5">
+            <Button
+              onClick={handleCreateCustomCard}
+              variant="outline"
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Custom Card (Not in Catalog)
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <PersonalizeCardDialog
+        open={showPersonalizeDialog}
+        card={selectedCard}
+        onOpenChange={setShowPersonalizeDialog}
+        onSubmit={handlePersonalizeSubmit}
+        onCloseAll={handlePersonalizeCloseAll}
+        onBackToCardSelect={handleBackToCardSelect}
+        isLoading={isLoading}
+      />
+    </>
   );
 };
 

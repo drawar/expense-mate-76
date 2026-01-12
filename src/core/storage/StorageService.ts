@@ -171,6 +171,7 @@ export class StorageService {
           conversionRate:
             (row.conversion_rate as Record<string, number>) || undefined,
           totalLoaded: row.total_loaded ?? undefined,
+          purchaseDate: row.purchase_date ?? undefined,
           // Card catalog linkage
           cardCatalogId: row.card_catalog_id || undefined,
           nickname: row.nickname || undefined,
@@ -275,6 +276,7 @@ export class StorageService {
         is_monthly_statement: pm.isMonthlyStatement ?? null,
         conversion_rate: pm.conversionRate as unknown,
         total_loaded: pm.totalLoaded ?? null,
+        purchase_date: pm.purchaseDate ?? null,
         // Card catalog linkage
         card_catalog_id: pm.cardCatalogId ?? null,
         nickname: pm.nickname ?? null,

@@ -1,7 +1,6 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface LastFourDigitsFieldProps {
   value: string;
@@ -29,40 +28,38 @@ export const LastFourDigitsField: React.FC<LastFourDigitsFieldProps> = ({
   autoFocus = false,
 }) => {
   return (
-    <div className="space-y-1.5">
-      <Label
-        htmlFor="lastFourDigits"
-        className="text-sm font-medium"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
-        Last 4 Digits{" "}
-        {!required && (
-          <span style={{ color: "var(--color-text-tertiary)" }}>
-            (optional)
-          </span>
-        )}
-      </Label>
-      <Input
-        id="lastFourDigits"
-        name="lastFourDigits"
-        placeholder="1234"
-        maxLength={4}
-        inputMode="numeric"
-        autoFocus={autoFocus}
-        value={value}
-        onChange={(e) => {
-          const newValue = e.target.value.replace(/\D/g, "");
-          onChange(newValue);
-        }}
-        onBlur={onBlur}
-        className="h-11 rounded-lg text-base md:text-sm"
-        style={{
-          borderColor: touched && error ? "var(--color-error)" : undefined,
-        }}
-      />
+    <div>
+      <div className="py-3 flex items-center justify-between gap-4">
+        <label
+          htmlFor="lastFourDigits"
+          className="text-base md:text-sm font-medium shrink-0"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          Last 4 Digits
+        </label>
+        <Input
+          id="lastFourDigits"
+          name="lastFourDigits"
+          placeholder="e.g. 1234"
+          maxLength={4}
+          inputMode="numeric"
+          autoFocus={autoFocus}
+          value={value}
+          onChange={(e) => {
+            const newValue = e.target.value.replace(/\D/g, "");
+            onChange(newValue);
+          }}
+          onBlur={onBlur}
+          className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
+          style={{
+            backgroundColor: "transparent",
+            color: "var(--color-text-primary)",
+          }}
+        />
+      </div>
       {touched && error && (
         <p
-          className="text-xs flex items-center gap-1"
+          className="text-xs flex items-center gap-1 justify-end"
           style={{ color: "var(--color-error)" }}
         >
           <AlertCircle className="h-3 w-3" />

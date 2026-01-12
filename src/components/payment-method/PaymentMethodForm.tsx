@@ -20,14 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
-import CardCatalogPicker from "./CardCatalogPicker";
+import { AlertCircle, CreditCard, Plus } from "lucide-react";
+import CardCatalogPicker, { PersonalizeCardData } from "./CardCatalogPicker";
+import CustomCardFormDialog, {
+  CustomCardFormData,
+} from "./CustomCardFormDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  SelectedCatalogCardDisplay,
-  BillingCycleFields,
-  LastFourDigitsField,
-} from "./form";
+import { BillingCycleFields, LastFourDigitsField } from "./form";
 
 // Credit/debit card issuers
 const CREDIT_CARD_ISSUERS = [
@@ -112,20 +111,19 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   const [totalLoaded, setTotalLoaded] = useState<string>(
     currentMethod?.totalLoaded?.toString() || ""
   );
+  const [purchaseDate, setPurchaseDate] = useState<string>(
+    currentMethod?.purchaseDate || ""
+  );
 
   // Card catalog state
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
-  const [selectedCatalogEntry, setSelectedCatalogEntry] =
-    useState<CardCatalogEntry | null>(null);
+  const [showCustomCardForm, setShowCustomCardForm] = useState(false);
   const [cardCatalogId, setCardCatalogId] = useState<string>(
     currentMethod?.cardCatalogId || ""
   );
   const [nickname, setNickname] = useState<string>(
     currentMethod?.nickname || ""
   );
-
-  // Collapsible section state for lean catalog card flow
-  const [showBillingDetails, setShowBillingDetails] = useState(false);
 
   // Validation state
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -196,21 +194,14 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     setErrors(newErrors);
   };
 
-  // Check if form is valid
+  // Check if form is valid (only used in edit mode)
   const isFormValid = useMemo(() => {
-    // For catalog cards, name is pre-filled from catalog
-    const nameError = selectedCatalogEntry ? undefined : validateName(name);
+    const nameError = validateName(name);
     const digitsError = validateLastFourDigits(lastFourDigits);
     const dayError = validateStatementDay(statementStartDay);
     const loadedError = validateTotalLoaded(totalLoaded);
     return !nameError && !digitsError && !dayError && !loadedError;
-  }, [
-    name,
-    lastFourDigits,
-    statementStartDay,
-    totalLoaded,
-    selectedCatalogEntry,
-  ]);
+  }, [name, lastFourDigits, statementStartDay, totalLoaded]);
 
   // Fetch all reward currencies when dialog opens
   useEffect(() => {
@@ -231,37 +222,109 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     }
   }, [isOpen]);
 
-  // Handle catalog card selection
+  // Handle catalog card selection (for custom card path)
   const handleCatalogSelection = (entry: CardCatalogEntry | null) => {
-    if (entry) {
-      // Selected a card from catalog
-      setSelectedCatalogEntry(entry);
-      setCardCatalogId(entry.id);
-      // Pre-fill fields from catalog
-      setName(entry.name);
-      setIssuer(entry.issuer);
-      setCurrency(entry.currency as Currency);
-      setPointsCurrency(entry.pointsCurrency || "");
-      setRewardCurrencyId(entry.rewardCurrencyId || "");
-      setSelectedType("credit_card");
-    } else {
-      // Creating custom card
-      setSelectedCatalogEntry(null);
-      setCardCatalogId("");
-      // Reset to defaults for manual entry
-      setName("");
-      setIssuer("");
+    if (!entry) {
+      // Creating custom card - open the custom card form
+      setShowCustomCardForm(true);
     }
+    // If entry is provided, it's handled by onCardPersonalized
   };
 
-  // Clear catalog selection
-  const handleClearCatalogSelection = () => {
-    setSelectedCatalogEntry(null);
+  // Handle card personalized submission from PersonalizeCardDialog
+  const handleCardPersonalized = (data: PersonalizeCardData) => {
+    const {
+      card,
+      lastFourDigits: digits,
+      statementStartDay: day,
+      isMonthlyStatement: monthly,
+    } = data;
+
+    // Create a synthetic event with the form data
+    const syntheticEvent = {
+      preventDefault: () => {},
+      currentTarget: {
+        elements: {
+          name: { value: card.name },
+          type: { value: "credit_card" },
+          currency: { value: card.currency },
+          issuer: { value: card.issuer },
+          lastFourDigits: { value: digits },
+          pointsCurrency: { value: card.pointsCurrency || "" },
+          rewardCurrencyId: { value: card.rewardCurrencyId || "" },
+          statementStartDay: { value: day },
+          isMonthlyStatement: { checked: monthly },
+          active: { checked: true },
+          totalLoaded: { value: "" },
+          purchaseDate: { value: "" },
+          cardCatalogId: { value: card.id },
+          nickname: { value: "" },
+        },
+      },
+    } as unknown as React.FormEvent<HTMLFormElement>;
+
+    onSubmit(syntheticEvent);
+  };
+
+  // Handle custom card form submission
+  const handleCustomCardSubmit = (data: CustomCardFormData) => {
+    // Set all form state from the custom card data
+    setName(data.name);
+    setSelectedType(data.type);
+    setCurrency(data.currency);
+    setIssuer(data.issuer);
+    setLastFourDigits(data.lastFourDigits);
+    setPointsCurrency(data.pointsCurrency);
+    setRewardCurrencyId(data.rewardCurrencyId);
+    setStatementStartDay(data.statementStartDay);
+    setIsMonthlyStatement(data.isMonthlyStatement);
+    setTotalLoaded(data.totalLoaded);
+    setPurchaseDate(data.purchaseDate);
     setCardCatalogId("");
-    setName("");
-    setIssuer("");
-    setPointsCurrency("");
-    setRewardCurrencyId("");
+    setSelectedCatalogEntry(null);
+    setShowCustomCardForm(false);
+
+    // Create a synthetic form event and submit
+    const formData = new FormData();
+    formData.set("name", data.name);
+    formData.set("type", data.type);
+    formData.set("currency", data.currency);
+    formData.set("issuer", data.issuer);
+    formData.set("lastFourDigits", data.lastFourDigits);
+    formData.set("pointsCurrency", data.pointsCurrency);
+    formData.set("rewardCurrencyId", data.rewardCurrencyId);
+    formData.set("statementStartDay", data.statementStartDay);
+    formData.set("isMonthlyStatement", data.isMonthlyStatement ? "on" : "");
+    formData.set("active", "on");
+    formData.set("totalLoaded", data.totalLoaded);
+    formData.set("purchaseDate", data.purchaseDate);
+    formData.set("cardCatalogId", "");
+    formData.set("nickname", "");
+
+    // Create a synthetic event with the form data
+    const syntheticEvent = {
+      preventDefault: () => {},
+      currentTarget: {
+        elements: {
+          name: { value: data.name },
+          type: { value: data.type },
+          currency: { value: data.currency },
+          issuer: { value: data.issuer },
+          lastFourDigits: { value: data.lastFourDigits },
+          pointsCurrency: { value: data.pointsCurrency },
+          rewardCurrencyId: { value: data.rewardCurrencyId },
+          statementStartDay: { value: data.statementStartDay },
+          isMonthlyStatement: { checked: data.isMonthlyStatement },
+          active: { checked: true },
+          totalLoaded: { value: data.totalLoaded },
+          purchaseDate: { value: data.purchaseDate },
+          cardCatalogId: { value: "" },
+          nickname: { value: "" },
+        },
+      },
+    } as unknown as React.FormEvent<HTMLFormElement>;
+
+    onSubmit(syntheticEvent);
   };
 
   // Reset all form values when dialog opens with different method
@@ -277,11 +340,10 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     setIsMonthlyStatement(currentMethod?.isMonthlyStatement || false);
     setActive(currentMethod?.active ?? true);
     setTotalLoaded(currentMethod?.totalLoaded?.toString() || "");
+    setPurchaseDate(currentMethod?.purchaseDate || "");
     // Card catalog state
     setCardCatalogId(currentMethod?.cardCatalogId || "");
     setNickname(currentMethod?.nickname || "");
-    setSelectedCatalogEntry(null); // Will be fetched separately if needed
-    setShowBillingDetails(false); // Reset collapsible state
     // Reset validation state
     setErrors({});
     setTouched({});
@@ -311,6 +373,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       />
       <input type="hidden" name="active" value={active ? "on" : ""} />
       <input type="hidden" name="totalLoaded" value={totalLoaded} />
+      <input type="hidden" name="purchaseDate" value={purchaseDate} />
       <input type="hidden" name="cardCatalogId" value={cardCatalogId} />
       <input type="hidden" name="nickname" value={nickname} />
       <input type="hidden" name="issuer" value={issuer} />
@@ -318,84 +381,51 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       {/* Scrollable form content */}
       <div className="px-4 py-4 space-y-5 flex-1 overflow-y-auto min-h-0">
         {/* ============================================ */}
-        {/* LEAN CATALOG CARD FLOW (Add mode only)      */}
+        {/* ADD MODE - Card Selection Options           */}
         {/* ============================================ */}
-        {!isEditing && selectedCatalogEntry ? (
-          <>
-            {/* Selected card display */}
-            <SelectedCatalogCardDisplay
-              card={selectedCatalogEntry}
-              onClear={handleClearCatalogSelection}
-            />
-
-            {/* Last 4 Digits */}
-            <LastFourDigitsField
-              value={lastFourDigits}
-              onChange={setLastFourDigits}
-              onBlur={() => handleFieldBlur("lastFourDigits")}
-              error={errors.lastFourDigits}
-              touched={touched.lastFourDigits}
-              autoFocus
-            />
-
-            {/* Collapsible billing details */}
-            <div>
-              <button
-                type="button"
-                className="flex items-center gap-2 text-sm py-2"
-                style={{ color: "var(--color-text-secondary)" }}
-                onClick={() => setShowBillingDetails(!showBillingDetails)}
-              >
-                {showBillingDetails ? (
-                  <ChevronUp
-                    className="h-4 w-4"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  />
-                ) : (
-                  <ChevronDown
-                    className="h-4 w-4"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  />
-                )}
-                {showBillingDetails ? "Hide" : "Show"} billing cycle details
-              </button>
-
-              {showBillingDetails && (
-                <div className="pt-2">
-                  <BillingCycleFields
-                    statementStartDay={statementStartDay}
-                    isMonthlyStatement={isMonthlyStatement}
-                    onStatementDayChange={setStatementStartDay}
-                    onStatementDayBlur={() =>
-                      handleFieldBlur("statementStartDay")
-                    }
-                    onMonthlyStatementChange={setIsMonthlyStatement}
-                    error={errors.statementStartDay}
-                    touched={touched.statementStartDay}
-                    compact
-                  />
+        {!isEditing ? (
+          <div className="space-y-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-14 rounded-xl text-base justify-start px-4"
+              onClick={() => setShowCatalogPicker(true)}
+            >
+              <CreditCard className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Select Card from Catalog</div>
+                <div
+                  className="text-xs font-normal"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Choose from our database of cards
                 </div>
-              )}
-            </div>
-          </>
+              </div>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-14 rounded-xl text-base justify-start px-4"
+              onClick={() => setShowCustomCardForm(true)}
+            >
+              <Plus className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Create Custom Card</div>
+                <div
+                  className="text-xs font-normal"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Add a card not in our catalog
+                </div>
+              </div>
+            </Button>
+          </div>
         ) : (
           <>
             {/* ============================================ */}
-            {/* FULL FORM (Custom cards or Edit mode)       */}
+            {/* FULL FORM (Edit mode only)                  */}
             {/* ============================================ */}
-
-            {/* Card Catalog Selection - Only for new credit cards */}
-            {!isEditing && isCreditCard && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12 rounded-xl text-base"
-                onClick={() => setShowCatalogPicker(true)}
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Select Card from Catalog
-              </Button>
-            )}
 
             {/* Show linked catalog info when editing */}
             {isEditing && currentMethod?.cardCatalogId && (
@@ -672,19 +702,44 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     </div>
                   )}
 
-                  {/* Credit card billing fields */}
+                  {/* Credit card statement day */}
                   {isCreditCard && (
                     <BillingCycleFields
                       statementStartDay={statementStartDay}
-                      isMonthlyStatement={isMonthlyStatement}
                       onStatementDayChange={setStatementStartDay}
                       onStatementDayBlur={() =>
                         handleFieldBlur("statementStartDay")
                       }
-                      onMonthlyStatementChange={setIsMonthlyStatement}
                       error={errors.statementStartDay}
                       touched={touched.statementStartDay}
                     />
+                  )}
+
+                  {/* Bonus Rewards Cap toggle (credit card only) */}
+                  {isCreditCard && (
+                    <div className="py-3 flex items-center justify-between gap-4">
+                      <span
+                        className="text-base md:text-sm font-medium"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        Bonus Rewards Cap
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-base md:text-sm"
+                          style={{ color: "var(--color-text-primary)" }}
+                        >
+                          {isMonthlyStatement
+                            ? "By statement month"
+                            : "By calendar month"}
+                        </span>
+                        <Switch
+                          id="isMonthlyStatement"
+                          checked={isMonthlyStatement}
+                          onCheckedChange={setIsMonthlyStatement}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </>
@@ -719,38 +774,40 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         )}
       </div>
 
-      {/* Footer */}
-      <div
-        className="px-4 py-4 border-t flex gap-3"
-        style={{
-          flexShrink: 0,
-          borderColor: "var(--color-border)",
-          backgroundColor: "var(--color-bg)",
-          paddingBottom: isMobile
-            ? "max(16px, env(safe-area-inset-bottom))"
-            : "16px",
-        }}
-      >
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          className="flex-1 h-12 rounded-xl font-medium"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={isLoading || !isFormValid}
-          className="flex-1 h-12 rounded-xl font-medium"
+      {/* Footer - only show when editing */}
+      {isEditing && (
+        <div
+          className="px-4 py-4 border-t flex gap-3"
           style={{
-            backgroundColor: isFormValid ? "var(--color-accent)" : undefined,
-            color: isFormValid ? "var(--color-bg)" : undefined,
+            flexShrink: 0,
+            borderColor: "var(--color-border)",
+            backgroundColor: "var(--color-bg)",
+            paddingBottom: isMobile
+              ? "max(16px, env(safe-area-inset-bottom))"
+              : "16px",
           }}
         >
-          {isLoading ? "Saving..." : isEditing ? "Update" : "Add"}
-        </Button>
-      </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 h-12 rounded-xl font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading || !isFormValid}
+            className="flex-1 h-12 rounded-xl font-medium"
+            style={{
+              backgroundColor: isFormValid ? "var(--color-accent)" : undefined,
+              color: isFormValid ? "var(--color-bg)" : undefined,
+            }}
+          >
+            {isLoading ? "Saving..." : isEditing ? "Update" : "Add"}
+          </Button>
+        </div>
+      )}
     </form>
   );
 
@@ -775,10 +832,23 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         open={showCatalogPicker}
         onOpenChange={setShowCatalogPicker}
         onSelectCard={handleCatalogSelection}
+        onCardPersonalized={handleCardPersonalized}
         onCloseAll={() => {
           setShowCatalogPicker(false);
           onClose();
         }}
+        isLoading={isLoading}
+      />
+
+      <CustomCardFormDialog
+        open={showCustomCardForm}
+        onOpenChange={setShowCustomCardForm}
+        onSubmit={handleCustomCardSubmit}
+        onCloseAll={() => {
+          setShowCustomCardForm(false);
+          onClose();
+        }}
+        isLoading={isLoading}
       />
     </>
   );
