@@ -108,7 +108,7 @@ export function AdjustmentDetailDialog({
         open={isOpen && !showEditDialog}
         onOpenChange={(open) => !open && onClose()}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {isPositive ? (

@@ -41,7 +41,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">

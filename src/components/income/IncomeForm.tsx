@@ -144,7 +144,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {editingIncome ? "Edit Payslip" : "Add Payslip"}
