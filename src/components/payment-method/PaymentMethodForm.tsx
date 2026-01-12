@@ -302,13 +302,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   const formContent = (
     <form
       onSubmit={onSubmit}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        flex: 1,
-        minHeight: 0,
-        overflow: "hidden",
-      }}
+      className="flex flex-col flex-1 min-h-0 overflow-hidden"
     >
       {/* Hidden inputs */}
       <input type="hidden" name="name" value={name} />
@@ -329,10 +323,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
       <input type="hidden" name="issuer" value={issuer} />
 
       {/* Scrollable form content */}
-      <div
-        className="px-4 py-4 space-y-5"
-        style={{ flex: 1, overflowY: "auto", minHeight: 0 }}
-      >
+      <div className="px-4 py-4 space-y-5 flex-1 overflow-y-auto min-h-0">
         {/* ============================================ */}
         {/* LEAN CATALOG CARD FLOW (Add mode only)      */}
         {/* ============================================ */}
@@ -777,31 +768,12 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-          className="sm:max-w-md p-0 overflow-hidden"
+          className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            maxHeight: "85vh",
-            gap: 0,
-          }}
         >
-          <DialogHeader
-            className="px-5 py-3 border-b"
-            style={{
-              borderColor: "var(--color-border)",
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <DialogHeader className="px-5 py-3 border-b flex-shrink-0 flex flex-row items-center justify-between">
             <DialogTitle>{title}</DialogTitle>
-            <DialogClose
-              className="h-11 w-11 rounded-lg flex items-center justify-center ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              style={{ marginLeft: "12px" }}
-            >
+            <DialogClose className="h-11 w-11 ml-3 rounded-lg flex items-center justify-center ring-offset-background transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X
                 className="h-6 w-6"
                 style={{ color: "var(--color-text-tertiary)" }}
