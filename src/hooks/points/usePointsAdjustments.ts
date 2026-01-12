@@ -27,6 +27,26 @@ export function usePointsAdjustments(rewardCurrencyId?: string) {
 }
 
 /**
+ * Hook to fetch pending (future-dated) adjustments
+ */
+export function usePendingAdjustments(rewardCurrencyId?: string) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: pointsQueryKeys.pendingAdjustments(rewardCurrencyId),
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return pointsBalanceService.getPendingAdjustments(
+        user.id,
+        rewardCurrencyId
+      );
+    },
+    enabled: !!user?.id,
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
  * Hook for adjustment mutations
  */
 export function usePointsAdjustmentMutations() {

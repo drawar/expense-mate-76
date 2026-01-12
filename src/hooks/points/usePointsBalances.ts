@@ -18,6 +18,8 @@ export const pointsQueryKeys = {
     [...pointsQueryKeys.balances(), "breakdown", currencyId] as const,
   adjustments: (currencyId?: string) =>
     [...pointsQueryKeys.all, "adjustments", currencyId] as const,
+  pendingAdjustments: (currencyId?: string) =>
+    [...pointsQueryKeys.all, "adjustments", "pending", currencyId] as const,
   redemptions: (currencyId?: string) =>
     [...pointsQueryKeys.all, "redemptions", currencyId] as const,
   transfers: (currencyId?: string) =>

@@ -22,7 +22,9 @@ import {
   Target,
   Activity,
   CoinsIcon,
+  Clock,
 } from "lucide-react";
+import { format } from "date-fns";
 import { ConversionService } from "@/core/currency";
 import type { RewardCurrency } from "@/core/currency/types";
 import type {
@@ -41,7 +43,10 @@ import {
   useBalanceBreakdown,
   usePointsBalanceMutations,
 } from "@/hooks/points/usePointsBalances";
-import { usePointsAdjustmentMutations } from "@/hooks/points/usePointsAdjustments";
+import {
+  usePointsAdjustmentMutations,
+  usePendingAdjustments,
+} from "@/hooks/points/usePointsAdjustments";
 import { usePointsRedemptionMutations } from "@/hooks/points/usePointsRedemptions";
 import { usePointsTransferMutations } from "@/hooks/points/usePointsTransfers";
 import {
@@ -115,6 +120,9 @@ export default function PointsManager() {
   // Activity feed
   const { data: activityFeed = [], isLoading: activityLoading } =
     usePointsActivityFeed({ limit: 20 });
+
+  // Pending adjustments
+  const { data: pendingAdjustments = [] } = usePendingAdjustments();
 
   // Mutations
   const { setStartingBalance } = usePointsBalanceMutations();
@@ -327,6 +335,50 @@ export default function PointsManager() {
                 </div>
               )}
             </div>
+
+            {/* Pending Adjustments */}
+            {pendingAdjustments.length > 0 && (
+              <Card className="border-dashed border-amber-500/50 bg-amber-500/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base text-amber-600 dark:text-amber-500">
+                    <Clock className="h-4 w-4" />
+                    Pending Adjustments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {pendingAdjustments.map((adj) => (
+                      <div
+                        key={adj.id}
+                        className="flex items-center justify-between py-2 border-b last:border-0"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {adj.description || adj.adjustmentType}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {adj.rewardCurrency?.displayName} •{" "}
+                            {format(adj.adjustmentDate, "MMM d, yyyy")}
+                          </div>
+                        </div>
+                        <div
+                          className={`text-sm font-medium ${
+                            adj.amount >= 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {adj.amount >= 0 ? "+" : ""}
+                          {adj.amount.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    These adjustments will be added to your balance on their
+                    scheduled dates.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Active Goals Preview */}
             {!goalsLoading && activeGoals.length > 0 && (

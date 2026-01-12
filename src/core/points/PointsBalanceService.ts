@@ -387,6 +387,45 @@ export class PointsBalanceService {
   }
 
   /**
+   * Get pending (future-dated) adjustments for a user
+   */
+  async getPendingAdjustments(
+    userId: string,
+    rewardCurrencyId?: string
+  ): Promise<PointsAdjustment[]> {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today in local time
+
+    let query = supabase
+      .from("points_adjustments")
+      .select(
+        `
+        *,
+        reward_currencies (
+          id, code, display_name, issuer, is_transferrable
+        )
+      `
+      )
+      .eq("user_id", userId)
+      .eq("is_deleted", false)
+      .gt("adjustment_date", today.toISOString())
+      .order("adjustment_date", { ascending: true });
+
+    if (rewardCurrencyId) {
+      query = query.eq("reward_currency_id", rewardCurrencyId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching pending adjustments:", error);
+      return [];
+    }
+
+    return (data as DbPointsAdjustment[]).map(toPointsAdjustment);
+  }
+
+  /**
    * Add a new adjustment
    */
   async addAdjustment(input: PointsAdjustmentInput): Promise<PointsAdjustment> {
