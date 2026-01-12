@@ -432,7 +432,7 @@ const TransactionDetailsView = ({
         {onDelete && (
           <Button
             variant="outline"
-            className="flex-1 text-destructive hover:text-destructive"
+            className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
             onClick={onDelete}
             disabled={isLoading}
           >
