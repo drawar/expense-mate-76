@@ -18,5 +18,8 @@ export { GoalDialog } from "./GoalDialog";
 // Activity feed components
 export { ActivityFeedItem, ActivityFeedList } from "./ActivityFeedItem";
 
+// Table components
+export { AdjustmentsTable } from "./AdjustmentsTable";
+
 // Goal components
 export { GoalProgressCard, GoalProgressList } from "./GoalProgressCard";

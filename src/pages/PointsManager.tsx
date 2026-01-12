@@ -22,7 +22,6 @@ import {
   Target,
   Activity,
   CoinsIcon,
-  Clock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ConversionService } from "@/core/currency";
@@ -45,8 +44,8 @@ import {
   usePointsBalanceMutations,
 } from "@/hooks/points/usePointsBalances";
 import {
+  usePointsAdjustments,
   usePointsAdjustmentMutations,
-  usePendingAdjustments,
 } from "@/hooks/points/usePointsAdjustments";
 import { usePointsRedemptionMutations } from "@/hooks/points/usePointsRedemptions";
 import { usePointsTransferMutations } from "@/hooks/points/usePointsTransfers";
@@ -62,6 +61,7 @@ import {
   StartingBalanceDialog,
   AdjustmentDialog,
   AdjustmentDetailDialog,
+  AdjustmentsTable,
   RedemptionDialog,
   TransferDialog,
   GoalDialog,
@@ -128,8 +128,9 @@ export default function PointsManager() {
   const { data: activityFeed = [], isLoading: activityLoading } =
     usePointsActivityFeed({ limit: 20 });
 
-  // Pending adjustments
-  const { data: pendingAdjustments = [] } = usePendingAdjustments();
+  // All adjustments (for table view)
+  const { data: allAdjustments = [], isLoading: adjustmentsLoading } =
+    usePointsAdjustments();
 
   // Mutations
   const { setStartingBalance } = usePointsBalanceMutations();
@@ -367,57 +368,28 @@ export default function PointsManager() {
               )}
             </div>
 
-            {/* Pending Adjustments */}
-            {pendingAdjustments && pendingAdjustments.length > 0 && (
-              <Card className="border-dashed border-amber-500/50 bg-amber-500/5">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base text-amber-600 dark:text-amber-500">
-                    <Clock className="h-4 w-4" />
-                    Pending Adjustments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="divide-y">
-                    {pendingAdjustments.map((adj) => (
-                      <div
-                        key={adj.id}
-                        onClick={() => handleOpenAdjustmentDetail(adj)}
-                        className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-amber-500/10 cursor-pointer transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium">
-                            {adj.adjustmentType === "bonus"
-                              ? "Sign-up Bonus"
-                              : adj.adjustmentType === "promotional"
-                                ? "Promotional"
-                                : adj.adjustmentType === "correction"
-                                  ? "Correction"
-                                  : adj.adjustmentType === "expired"
-                                    ? "Expired Points"
-                                    : "Other"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {adj.rewardCurrency?.displayName} •{" "}
-                            {format(adj.adjustmentDate, "MMM d, yyyy")}
-                          </div>
-                        </div>
-                        <div
-                          className={`text-sm font-medium ${
-                            adj.amount >= 0 ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {adj.amount >= 0 ? "+" : ""}
-                          {adj.amount.toLocaleString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    These adjustments will be added to your balance on their
-                    scheduled dates.
-                  </p>
-                </CardContent>
-              </Card>
+            {/* Points Adjustments Table */}
+            {allAdjustments && allAdjustments.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Points Adjustments
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenAdjustmentDialog()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Adjustment
+                  </Button>
+                </div>
+                <AdjustmentsTable
+                  adjustments={allAdjustments}
+                  onRowClick={handleOpenAdjustmentDetail}
+                />
+              </div>
             )}
 
             {/* Active Goals Preview */}
