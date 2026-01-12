@@ -425,7 +425,6 @@ const TransactionDetailsView = ({
             onClick={onEdit}
             disabled={isLoading}
           >
-            <EditIcon className="h-4 w-4 mr-2" />
             Edit
           </Button>
         )}
@@ -436,7 +435,6 @@ const TransactionDetailsView = ({
             onClick={onDelete}
             disabled={isLoading}
           >
-            <TrashIcon className="h-4 w-4 mr-2" />
             Delete
           </Button>
         )}
