@@ -15,6 +15,7 @@ import { Plus } from "lucide-react";
 import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRule } from "@/core/rewards/types";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
+import { cardCatalogService } from "@/core/catalog";
 
 // Helper to get card network from issuer/name
 const getCardNetwork = (issuer: string, name: string): string => {
@@ -138,13 +139,37 @@ const PaymentMethods = () => {
 
     // For each payment method, fetch its rules from the reward_rules table
     for (const method of paymentMethods) {
-      // Use CardTypeIdService to generate consistent card type ID
-      let cardTypeId = method.id;
-      if (method.issuer && method.name) {
+      let cardTypeId: string | null = null;
+
+      // For catalog-linked cards, use the catalog entry's cardTypeId
+      if (method.cardCatalogId) {
+        try {
+          const catalogEntry = await cardCatalogService.getCardById(
+            method.cardCatalogId
+          );
+          if (catalogEntry?.cardTypeId) {
+            cardTypeId = catalogEntry.cardTypeId;
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to fetch catalog entry for rule lookup:",
+            method.cardCatalogId,
+            error
+          );
+        }
+      }
+
+      // Fall back to generating cardTypeId from issuer/name for custom cards
+      if (!cardTypeId && method.issuer && method.name) {
         cardTypeId = cardTypeIdService.generateCardTypeId(
           method.issuer,
           method.name
         );
+      }
+
+      // Last resort: use payment method ID
+      if (!cardTypeId) {
+        cardTypeId = method.id;
       }
 
       // Use RuleRepository to get rules from Supabase reward_rules table
