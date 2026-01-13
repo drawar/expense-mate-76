@@ -82,20 +82,13 @@ export const TransactionDetailsSection: React.FC<
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Transaction Amount
-                {allowNegativeAmount && (
-                  <span className="text-xs text-muted-foreground ml-2 font-normal">
-                    (positive or negative)
-                  </span>
-                )}
-              </FormLabel>
+              <FormLabel>Transaction Amount</FormLabel>
               <FormControl>
                 <MossInput
                   type="number"
                   min={allowNegativeAmount ? undefined : "0.01"}
                   step="0.01"
-                  placeholder={allowNegativeAmount ? "0.00 (+ or -)" : "0.00"}
+                  placeholder="0.00"
                   {...field}
                   onChange={(e) => {
                     field.onChange(e);

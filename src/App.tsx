@@ -34,30 +34,38 @@ function App() {
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize RuleRepository on app mount
-    try {
-      console.log("Initializing RuleRepository...");
-      initializeRuleRepository(supabase);
-      console.log("RuleRepository initialized successfully");
+    const initialize = async () => {
+      // Initialize RuleRepository on app mount
+      try {
+        console.log("Initializing RuleRepository...");
+        initializeRuleRepository(supabase);
+        console.log("RuleRepository initialized successfully");
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("Failed to initialize RuleRepository:", errorMessage);
+        setInitError(errorMessage);
+
+        // Show error toast to user
+        toast.error("Initialization Error", {
+          description:
+            "Failed to initialize reward rules system. Some features may not work correctly.",
+          duration: 5000,
+        });
+      }
+
+      // Detect user locale (must complete before app renders)
+      try {
+        const locale = await LocaleService.detectLocale();
+        console.log(`Locale detected: ${locale.country} → ${locale.currency}`);
+      } catch (error) {
+        console.warn("Failed to detect locale:", error);
+      }
+
       setIsInitialized(true);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error("Failed to initialize RuleRepository:", errorMessage);
-      setInitError(errorMessage);
+    };
 
-      // Show error toast to user
-      toast.error("Initialization Error", {
-        description:
-          "Failed to initialize reward rules system. Some features may not work correctly.",
-        duration: 5000,
-      });
-    }
-
-    // Detect user locale (non-blocking)
-    LocaleService.detectLocale().then((locale) => {
-      console.log(`Locale detected: ${locale.country} → ${locale.currency}`);
-    });
+    initialize();
   }, []);
 
   // Show loading state while initializing
