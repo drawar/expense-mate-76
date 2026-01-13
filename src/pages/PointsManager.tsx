@@ -115,20 +115,27 @@ function BalanceCardWithBreakdown({
 }
 
 export default function PointsManager() {
-  // Fetch reward currencies
+  // Fetch reward currencies and conversion rates
   const [rewardCurrencies, setRewardCurrencies] = useState<RewardCurrency[]>(
     []
   );
+  const [conversionRates, setConversionRates] = useState<
+    Array<{ sourceCurrencyId: string; targetCurrencyId: string; rate: number }>
+  >([]);
   const [currenciesLoading, setCurrenciesLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCurrencies = async () => {
+    const fetchData = async () => {
       const conversionService = ConversionService.getInstance();
-      const currencies = await conversionService.getRewardCurrencies();
+      const [currencies, rates] = await Promise.all([
+        conversionService.getRewardCurrencies(),
+        conversionService.getAllConversionRatesWithCurrencies(),
+      ]);
       setRewardCurrencies(currencies);
+      setConversionRates(rates);
       setCurrenciesLoading(false);
     };
-    fetchCurrencies();
+    fetchData();
   }, []);
 
   // Balances
@@ -681,6 +688,7 @@ export default function PointsManager() {
           onClose={handleCloseDialog}
           onSubmit={handleSubmitTransfer}
           rewardCurrencies={rewardCurrencies}
+          conversionRates={conversionRates}
           defaultSourceCurrencyId={selectedCurrencyId}
           isLoading={addTransfer.isPending}
         />

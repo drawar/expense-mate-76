@@ -26,6 +26,15 @@ import SelectionDialog, {
 import type { PointsTransferInput } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
 
+/**
+ * Conversion rate data for filtering destination programs
+ */
+export interface ConversionRateData {
+  sourceCurrencyId: string;
+  targetCurrencyId: string;
+  rate: number;
+}
+
 const FEE_CURRENCY_OPTIONS: SelectionOption[] = [
   { value: "USD", label: "USD" },
   { value: "SGD", label: "SGD" },
@@ -39,6 +48,7 @@ interface TransferDialogProps {
   onClose: () => void;
   onSubmit: (input: PointsTransferInput) => Promise<void>;
   rewardCurrencies: RewardCurrency[];
+  conversionRates?: ConversionRateData[];
   defaultSourceCurrencyId?: string;
   isLoading?: boolean;
 }
@@ -48,6 +58,7 @@ export function TransferDialog({
   onClose,
   onSubmit,
   rewardCurrencies,
+  conversionRates = [],
   defaultSourceCurrencyId,
   isLoading = false,
 }: TransferDialogProps) {
@@ -89,11 +100,34 @@ export function TransferDialog({
     description: c.issuer || undefined,
   }));
 
-  const destOptions: SelectionOption[] = destinationCurrencies.map((c) => ({
-    value: c.id,
-    label: c.displayName,
-    description: c.issuer || undefined,
-  }));
+  // Filter destination options to only show programs that have conversion rates
+  // from the selected source program
+  const destOptions: SelectionOption[] = useMemo(() => {
+    if (!sourceCurrencyId || conversionRates.length === 0) {
+      // If no source selected or no rates, show all destinations
+      return destinationCurrencies.map((c) => ({
+        value: c.id,
+        label: c.displayName,
+        description: c.issuer || undefined,
+      }));
+    }
+
+    // Get target currency IDs that have rates from the selected source
+    const validTargetIds = new Set(
+      conversionRates
+        .filter((r) => r.sourceCurrencyId === sourceCurrencyId)
+        .map((r) => r.targetCurrencyId)
+    );
+
+    // Filter and map destination currencies
+    return destinationCurrencies
+      .filter((c) => validTargetIds.has(c.id))
+      .map((c) => ({
+        value: c.id,
+        label: c.displayName,
+        description: c.issuer || undefined,
+      }));
+  }, [destinationCurrencies, sourceCurrencyId, conversionRates]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -111,6 +145,43 @@ export function TransferDialog({
       setTransferDate(new Date());
     }
   }, [isOpen, defaultSourceCurrencyId]);
+
+  // Clear destination if it's no longer valid for the selected source
+  useEffect(() => {
+    if (
+      sourceCurrencyId &&
+      destinationCurrencyId &&
+      conversionRates.length > 0
+    ) {
+      const isValid = conversionRates.some(
+        (r) =>
+          r.sourceCurrencyId === sourceCurrencyId &&
+          r.targetCurrencyId === destinationCurrencyId
+      );
+      if (!isValid) {
+        setDestinationCurrencyId("");
+        setConversionRate("1");
+      }
+    }
+  }, [sourceCurrencyId, conversionRates]);
+
+  // Auto-fill conversion rate when source and destination are selected
+  useEffect(() => {
+    if (
+      sourceCurrencyId &&
+      destinationCurrencyId &&
+      conversionRates.length > 0
+    ) {
+      const rate = conversionRates.find(
+        (r) =>
+          r.sourceCurrencyId === sourceCurrencyId &&
+          r.targetCurrencyId === destinationCurrencyId
+      );
+      if (rate) {
+        setConversionRate(String(rate.rate));
+      }
+    }
+  }, [sourceCurrencyId, destinationCurrencyId, conversionRates]);
 
   // Auto-calculate destination amount when source or rate changes
   useEffect(() => {
