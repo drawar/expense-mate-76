@@ -43,6 +43,8 @@ interface PaymentFunctionsListProps {
   onEdit: (method: PaymentMethod) => void;
   onImageUpload: (method: PaymentMethod) => void;
   onRulesChanged?: () => void;
+  /** Resolved cardTypeId from catalog or generated from issuer/name */
+  resolvedCardTypeId?: string;
 }
 
 export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
@@ -52,6 +54,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
   onEdit,
   onImageUpload,
   onRulesChanged,
+  resolvedCardTypeId,
 }) => {
   const { data: allTransactions = [] } = useTransactionsQuery();
 
@@ -572,6 +575,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
           paymentMethod={paymentMethod}
           rewardRules={rewardRules}
           onRulesChanged={onRulesChanged}
+          resolvedCardTypeId={resolvedCardTypeId}
         />
       )}
 

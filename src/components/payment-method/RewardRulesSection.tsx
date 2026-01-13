@@ -49,6 +49,8 @@ interface RewardRulesSectionProps {
   paymentMethod: PaymentMethod;
   rewardRules: RewardRule[];
   onRulesChanged?: () => void;
+  /** Resolved cardTypeId from catalog or generated from issuer/name */
+  resolvedCardTypeId?: string;
 }
 
 type QuickSetupType =
@@ -164,6 +166,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   paymentMethod,
   rewardRules,
   onRulesChanged,
+  resolvedCardTypeId,
 }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<RewardRule | null>(null);
@@ -197,13 +200,15 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
     });
   };
 
+  // Use resolved cardTypeId (from catalog) if provided, otherwise generate from issuer/name
   const cardTypeId =
-    paymentMethod.issuer && paymentMethod.name
+    resolvedCardTypeId ||
+    (paymentMethod.issuer && paymentMethod.name
       ? cardTypeIdService.generateCardTypeId(
           paymentMethod.issuer,
           paymentMethod.name
         )
-      : paymentMethod.id;
+      : paymentMethod.id);
 
   const quickSetupConfig = getQuickSetupConfig(paymentMethod);
 
@@ -273,10 +278,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "American Express",
-        "Cobalt"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -453,10 +456,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "American Express",
-        "Platinum"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -596,10 +597,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "American Express",
-        "Aeroplan Reserve"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -749,10 +748,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "Neo Financial",
-        "Cathay World Elite"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -932,10 +929,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "HSBC",
-        "Revolution Visa Platinum"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -2227,10 +2222,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "MBNA",
-        "Amazon.ca Rewards World MasterCard"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules
@@ -2448,10 +2441,8 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       initializeRuleRepository(supabase);
       const repository = getRuleRepository();
 
-      const setupCardTypeId = cardTypeIdService.generateCardTypeId(
-        "American Express",
-        "Green"
-      );
+      // Use the resolved cardTypeId from catalog (or generated from issuer/name)
+      const setupCardTypeId = cardTypeId;
       addSetupLog(`Card Type ID: ${setupCardTypeId}`);
 
       // Delete existing rules

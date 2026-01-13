@@ -106,6 +106,10 @@ const PaymentMethods = () => {
   const [paymentMethodRules, setPaymentMethodRules] = useState<
     Record<string, RewardRule[]>
   >({});
+  // Track resolved cardTypeIds for each payment method (from catalog or generated)
+  const [resolvedCardTypeIds, setResolvedCardTypeIds] = useState<
+    Record<string, string>
+  >({});
   const ruleRepository = useMemo(() => RuleRepository.getInstance(), []);
   const { toast } = useToast();
 
@@ -136,6 +140,7 @@ const PaymentMethods = () => {
     if (!paymentMethods.length) return;
 
     const rulesMap: Record<string, RewardRule[]> = {};
+    const cardTypeIdMap: Record<string, string> = {};
 
     // For each payment method, fetch its rules from the reward_rules table
     for (const method of paymentMethods) {
@@ -172,12 +177,16 @@ const PaymentMethods = () => {
         cardTypeId = method.id;
       }
 
+      // Store the resolved cardTypeId
+      cardTypeIdMap[method.id] = cardTypeId;
+
       // Use RuleRepository to get rules from Supabase reward_rules table
       const rules = await ruleRepository.getRulesForCardType(cardTypeId);
       rulesMap[method.id] = rules;
     }
 
     setPaymentMethodRules(rulesMap);
+    setResolvedCardTypeIds(cardTypeIdMap);
   };
 
   useEffect(() => {
@@ -517,6 +526,7 @@ const PaymentMethods = () => {
                   fetchRulesForPaymentMethods();
                   refetch();
                 }}
+                resolvedCardTypeId={resolvedCardTypeIds[selectedMethod.id]}
               />
             )}
           </div>
