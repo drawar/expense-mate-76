@@ -123,21 +123,18 @@ class LocaleServiceClass {
 
   private async fetchLocale(): Promise<LocaleCache> {
     try {
-      // Using ip-api.com - free, no API key needed
-      // Returns: { country, countryCode, ... }
-      const response = await fetch(
-        "http://ip-api.com/json/?fields=countryCode",
-        {
-          signal: AbortSignal.timeout(5000), // 5 second timeout
-        }
-      );
+      // Using ipapi.co - free tier (1000 req/day), supports HTTPS
+      // Returns: { country_code, currency, ... }
+      const response = await fetch("https://ipapi.co/json/", {
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      const countryCode = data.countryCode || "CA";
+      const countryCode = data.country_code || "CA";
       const currency =
         COUNTRY_CURRENCY_MAP[countryCode] || COUNTRY_CURRENCY_MAP.DEFAULT;
 
