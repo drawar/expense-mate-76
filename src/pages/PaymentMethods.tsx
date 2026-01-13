@@ -177,52 +177,85 @@ const PaymentMethods = () => {
     event.preventDefault();
 
     try {
-      const formData = new FormData(event.currentTarget);
+      // Try to create FormData from real form element
+      // For synthetic events (from PersonalizeCardDialog/CustomCardFormDialog),
+      // FormData won't work, so we fall back to reading from elements directly
+      let formData: FormData | null = null;
+      try {
+        if (event.currentTarget instanceof HTMLFormElement) {
+          formData = new FormData(event.currentTarget);
+        }
+      } catch {
+        // Synthetic event - FormData construction failed
+      }
+
+      // Helper to get form values - works with both real FormData and synthetic events
+      type FormElements = Record<
+        string,
+        { value?: string; checked?: boolean } | undefined
+      >;
+      const elements = (event.currentTarget as { elements?: FormElements })
+        ?.elements;
+
+      const getValue = (name: string): string => {
+        const fromFormData = formData?.get(name);
+        if (fromFormData !== null && fromFormData !== undefined) {
+          return fromFormData as string;
+        }
+        return elements?.[name]?.value || "";
+      };
+
+      const getChecked = (name: string): boolean => {
+        const fromFormData = formData?.get(name);
+        if (fromFormData !== null && fromFormData !== undefined) {
+          return fromFormData === "on";
+        }
+        return elements?.[name]?.checked || false;
+      };
 
       const method: PaymentMethod = {
         // Preserve existing fields when editing
         ...(editingMethod || {}),
         id: editingMethod?.id || uuidv4(),
-        name: formData.get("name") as string,
-        type: formData.get("type") as "cash" | "credit_card" | "gift_card",
-        currency: (formData.get("currency") as Currency) || ("USD" as Currency),
-        issuer: (formData.get("issuer") as string) || "Cash", // Provide default issuer
-        active: formData.get("active") === "on",
+        name: getValue("name"),
+        type: getValue("type") as "cash" | "credit_card" | "gift_card",
+        currency: (getValue("currency") as Currency) || ("USD" as Currency),
+        issuer: getValue("issuer") || "Cash", // Provide default issuer
+        active: getChecked("active"),
       };
 
       // Add last 4 digits for credit card and gift card
       if (method.type === "credit_card" || method.type === "gift_card") {
-        method.lastFourDigits =
-          (formData.get("lastFourDigits") as string) || undefined;
+        method.lastFourDigits = getValue("lastFourDigits") || undefined;
       }
 
       // Add credit card specific fields if applicable
       if (method.type === "credit_card") {
-        const pointsCurrency = formData.get("pointsCurrency") as string;
+        const pointsCurrency = getValue("pointsCurrency");
         if (pointsCurrency) {
           method.pointsCurrency = pointsCurrency;
         }
 
-        const rewardCurrencyId = formData.get("rewardCurrencyId") as string;
+        const rewardCurrencyId = getValue("rewardCurrencyId");
         if (rewardCurrencyId) {
           method.rewardCurrencyId = rewardCurrencyId;
         }
 
-        const statementDay = formData.get("statementStartDay") as string;
+        const statementDay = getValue("statementStartDay");
         // Always set statementStartDay - use undefined if empty to allow clearing
         method.statementStartDay = statementDay
           ? parseInt(statementDay, 10)
           : undefined;
 
-        method.isMonthlyStatement = formData.get("isMonthlyStatement") === "on";
+        method.isMonthlyStatement = getChecked("isMonthlyStatement");
 
         // Card catalog linkage
-        const cardCatalogId = formData.get("cardCatalogId") as string;
+        const cardCatalogId = getValue("cardCatalogId");
         if (cardCatalogId) {
           method.cardCatalogId = cardCatalogId;
         }
 
-        const nickname = formData.get("nickname") as string;
+        const nickname = getValue("nickname");
         if (nickname) {
           method.nickname = nickname;
         }
@@ -230,11 +263,11 @@ const PaymentMethods = () => {
 
       // Add gift card specific fields if applicable
       if (method.type === "gift_card") {
-        const totalLoaded = formData.get("totalLoaded") as string;
+        const totalLoaded = getValue("totalLoaded");
         if (totalLoaded) {
           method.totalLoaded = parseFloat(totalLoaded);
         }
-        const purchaseDate = formData.get("purchaseDate") as string;
+        const purchaseDate = getValue("purchaseDate");
         if (purchaseDate) {
           method.purchaseDate = purchaseDate;
         }
