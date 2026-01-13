@@ -1,4 +1,7 @@
-import { ConversionRateManager } from "@/components/settings";
+import {
+  ConversionRateManager,
+  DefaultCurrencySelector,
+} from "@/components/settings";
 
 /**
  * Settings page for managing application configuration
@@ -19,6 +22,7 @@ export default function Settings() {
         </div>
 
         <div className="grid gap-6">
+          <DefaultCurrencySelector />
           <ConversionRateManager />
         </div>
       </div>
