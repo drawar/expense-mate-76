@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,17 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Tag,
-  Hash,
-  FileText,
-  Edit2,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -44,6 +39,7 @@ import type { RewardCurrency } from "@/core/currency/types";
 import { AdjustmentDialog } from "./AdjustmentDialog";
 
 const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
+  starting_balance: "Starting Balance",
   bonus: "Sign-up / Welcome Bonus",
   promotional: "Promotional Bonus",
   correction: "Correction",
@@ -76,11 +72,14 @@ export function AdjustmentDetailDialog({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   if (!adjustment) return null;
 
   const isPositive = adjustment.amount >= 0;
   const currencyName = adjustment.rewardCurrency?.displayName ?? "Points";
+  const hasAdditionalDetails =
+    adjustment.referenceNumber || adjustment.description;
 
   const handleEdit = () => {
     setShowEditDialog(true);
@@ -118,84 +117,73 @@ export function AdjustmentDetailDialog({
             onClose={onClose}
           >
             <DialogTitle className="flex items-center justify-center gap-2">
-              {isPositive ? (
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              ) : (
-                <TrendingDown className="h-5 w-5 text-red-500" />
-              )}
-              {ADJUSTMENT_TYPE_LABELS[adjustment.adjustmentType]}
+              {currencyName}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-            {/* Amount */}
-            <div className="text-center py-4 bg-muted/50 rounded-lg">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
+            {/* Amount (Hero) */}
+            <div className="py-2 text-center">
               <p
-                className={`text-3xl font-bold ${
-                  isPositive ? "text-green-600" : "text-red-600"
-                }`}
+                className="text-4xl font-semibold"
+                style={{
+                  color: isPositive
+                    ? "var(--color-accent)"
+                    : "var(--color-error)",
+                }}
               >
                 {isPositive ? "+" : ""}
                 {adjustment.amount.toLocaleString()}
               </p>
-              <p className="text-sm text-muted-foreground">{currencyName}</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
+                <span>{format(adjustment.adjustmentDate, "yyyy-MM-dd")}</span>
+                <span>·</span>
+                <span>{ADJUSTMENT_TYPE_LABELS[adjustment.adjustmentType]}</span>
+              </div>
             </div>
 
-            {/* Details */}
-            <div className="space-y-3">
-              {/* Date */}
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">
-                    {format(adjustment.adjustmentDate, "MMMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Type */}
-              <div className="flex items-center gap-3">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-medium">
-                    {ADJUSTMENT_TYPE_LABELS[adjustment.adjustmentType]}
-                  </p>
-                </div>
-              </div>
-
-              {/* Reference Number */}
-              {adjustment.referenceNumber && (
-                <div className="flex items-center gap-3">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Reference</p>
-                    <p className="font-medium font-mono">
-                      {adjustment.referenceNumber}
-                    </p>
+            {/* Additional Details (Collapsible) */}
+            {hasAdditionalDetails && (
+              <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+                    <span className="text-xs font-medium uppercase tracking-wide">
+                      Additional details
+                    </span>
+                    {isDetailsOpen ? (
+                      <ChevronUpIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    {adjustment.referenceNumber && (
+                      <div className="flex justify-between">
+                        <span>Reference</span>
+                        <span className="font-mono text-xs">
+                          {adjustment.referenceNumber}
+                        </span>
+                      </div>
+                    )}
+                    {adjustment.description && (
+                      <div className="pt-2 border-t">
+                        <span className="block mb-1">Notes</span>
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                          >
+                            {adjustment.description}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {adjustment.description && (
-                <div className="flex items-start gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-muted-foreground mb-1">Notes</p>
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                      >
-                        {adjustment.description}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -209,16 +197,14 @@ export function AdjustmentDetailDialog({
               onClick={handleEdit}
               disabled={isLoading}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
               Edit
             </Button>
             <Button
-              variant="destructive"
-              className="flex-1"
+              variant="outline"
+              className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isLoading}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
           </div>

@@ -5,12 +5,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { pointsBalanceService } from "@/core/points";
-import type { PointsAdjustmentInput } from "@/core/points";
+import type { PointsAdjustmentInput, PointsAdjustment } from "@/core/points";
 import { pointsQueryKeys } from "./usePointsBalances";
 import { toast } from "sonner";
 
 /**
- * Hook to fetch adjustments
+ * Hook to fetch adjustments (including starting balances as synthetic entries)
  */
 export function usePointsAdjustments(rewardCurrencyId?: string) {
   const { user } = useAuth();
@@ -19,7 +19,44 @@ export function usePointsAdjustments(rewardCurrencyId?: string) {
     queryKey: pointsQueryKeys.adjustments(rewardCurrencyId),
     queryFn: async () => {
       if (!user?.id) return [];
-      return pointsBalanceService.getAdjustments(user.id, rewardCurrencyId);
+
+      // Get regular adjustments
+      const adjustments = await pointsBalanceService.getAdjustments(
+        user.id,
+        rewardCurrencyId
+      );
+
+      // Get all balances to create synthetic starting balance entries
+      const balances = await pointsBalanceService.getAllBalances(user.id);
+
+      // Convert starting balances to synthetic adjustment entries
+      const startingBalanceAdjustments: PointsAdjustment[] = balances
+        .filter((b) => b.startingBalance !== 0)
+        .filter(
+          (b) => !rewardCurrencyId || b.rewardCurrencyId === rewardCurrencyId
+        )
+        .map((balance) => ({
+          id: `starting-balance-${balance.rewardCurrencyId}`,
+          userId: user.id,
+          rewardCurrencyId: balance.rewardCurrencyId,
+          rewardCurrency: balance.rewardCurrency,
+          amount: balance.startingBalance,
+          adjustmentType: "starting_balance" as const,
+          description: balance.notes || "Starting balance",
+          adjustmentDate: balance.balanceDate || balance.createdAt,
+          createdAt: balance.createdAt,
+          updatedAt: balance.updatedAt,
+        }));
+
+      // Merge and sort by date (newest first)
+      const allAdjustments = [...adjustments, ...startingBalanceAdjustments];
+      allAdjustments.sort(
+        (a, b) =>
+          new Date(b.adjustmentDate).getTime() -
+          new Date(a.adjustmentDate).getTime()
+      );
+
+      return allAdjustments;
     },
     enabled: !!user?.id,
     staleTime: 30 * 1000,

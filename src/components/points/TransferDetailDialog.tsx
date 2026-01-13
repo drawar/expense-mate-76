@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,17 +28,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowRight,
-  Calendar,
-  Hash,
-  FileText,
-  Trash2,
+  ChevronDownIcon,
+  ChevronUpIcon,
   Loader2,
   CoinsIcon,
-  Percent,
-  DollarSign,
 } from "lucide-react";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import type { PointsTransfer } from "@/core/points/types";
 
 // Loyalty program logos
@@ -101,6 +101,7 @@ export function TransferDetailDialog({
 }: TransferDetailDialogProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   if (!transfer) return null;
 
@@ -108,6 +109,11 @@ export function TransferDetailDialog({
   const destName = transfer.destinationCurrency?.displayName ?? "Points";
   const sourceLogo = getLoyaltyProgramLogo(sourceName);
   const destLogo = getLoyaltyProgramLogo(destName);
+  const hasAdditionalDetails =
+    transfer.transferBonusRate ||
+    transfer.transferFee > 0 ||
+    transfer.referenceNumber ||
+    transfer.notes;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -133,164 +139,149 @@ export function TransferDetailDialog({
             onClose={onClose}
           >
             <DialogTitle className="flex items-center justify-center gap-2">
-              <ArrowRight className="h-5 w-5" />
               Points Transfer
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-            {/* Transfer Visual */}
-            <div className="flex items-center justify-center gap-4 py-4 bg-muted/50 rounded-lg">
-              {/* Source */}
-              <div className="text-center">
-                {sourceLogo ? (
-                  <img
-                    src={sourceLogo}
-                    alt={sourceName}
-                    className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center mx-auto">
-                    <CoinsIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                )}
-                <p className="text-sm font-medium mt-2">{sourceName}</p>
-                <p className="text-lg font-bold text-red-600">
-                  -{transfer.sourceAmount.toLocaleString()}
-                </p>
-              </div>
-
-              {/* Arrow */}
-              <ArrowRight className="h-6 w-6 text-muted-foreground" />
-
-              {/* Destination */}
-              <div className="text-center">
-                {destLogo ? (
-                  <img
-                    src={destLogo}
-                    alt={destName}
-                    className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center mx-auto">
-                    <CoinsIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                )}
-                <p className="text-sm font-medium mt-2">{destName}</p>
-                <p className="text-lg font-bold text-green-600">
-                  +{transfer.destinationAmount.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="space-y-3">
-              {/* Conversion Rate */}
-              <div className="flex items-center gap-3">
-                <Percent className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Conversion Rate
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
+            {/* Transfer Visual (Hero) */}
+            <div className="py-2">
+              <div className="flex items-center justify-center gap-4">
+                {/* Source */}
+                <div className="text-center">
+                  {sourceLogo ? (
+                    <img
+                      src={sourceLogo}
+                      alt={sourceName}
+                      className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                      <CoinsIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2 max-w-[100px] truncate">
+                    {sourceName}
                   </p>
-                  <p className="font-medium">{transfer.conversionRate}:1</p>
+                  <p
+                    className="text-xl font-semibold"
+                    style={{ color: "var(--color-error)" }}
+                  >
+                    -{transfer.sourceAmount.toLocaleString()}
+                  </p>
                 </div>
-              </div>
 
-              {/* Transfer Bonus */}
-              {transfer.transferBonusRate && transfer.transferBonusRate > 0 && (
-                <div className="flex items-center gap-3">
-                  <Percent className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Transfer Bonus
-                    </p>
-                    <Badge
-                      variant="outline"
-                      className="text-green-600 border-green-300 bg-green-50"
-                    >
-                      +{(transfer.transferBonusRate * 100).toFixed(0)}%
-                    </Badge>
-                  </div>
-                </div>
-              )}
+                {/* Arrow */}
+                <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
 
-              {/* Transfer Fee */}
-              {transfer.transferFee > 0 && (
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Transfer Fee
-                    </p>
-                    <p className="font-medium text-red-600">
-                      {transfer.transferFeeCurrency === "USD" && "$"}
-                      {transfer.transferFeeCurrency === "CAD" && "C$"}
-                      {transfer.transferFeeCurrency === "SGD" && "S$"}
-                      {!["USD", "CAD", "SGD"].includes(
-                        transfer.transferFeeCurrency ?? ""
-                      ) && `${transfer.transferFeeCurrency ?? ""} `}
-                      {transfer.transferFee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Transfer Date */}
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Transfer Date</p>
-                  <p className="font-medium">
-                    {format(transfer.transferDate, "MMMM d, yyyy")}
+                {/* Destination */}
+                <div className="text-center">
+                  {destLogo ? (
+                    <img
+                      src={destLogo}
+                      alt={destName}
+                      className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                      <CoinsIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2 max-w-[100px] truncate">
+                    {destName}
+                  </p>
+                  <p
+                    className="text-xl font-semibold"
+                    style={{ color: "var(--color-accent)" }}
+                  >
+                    +{transfer.destinationAmount.toLocaleString()}
                   </p>
                 </div>
               </div>
-
-              {/* Reference Number */}
-              {transfer.referenceNumber && (
-                <div className="flex items-center gap-3">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Reference</p>
-                    <p className="font-medium font-mono">
-                      {transfer.referenceNumber}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {transfer.notes && (
-                <div className="flex items-start gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Notes</p>
-                    <p className="font-medium">{transfer.notes}</p>
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-3">
+                <span>{format(transfer.transferDate, "yyyy-MM-dd")}</span>
+                <span>·</span>
+                <span>{transfer.conversionRate}:1 rate</span>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={onClose}
-                disabled={isLoading}
-              >
-                Close
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isLoading}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
+            {/* Additional Details (Collapsible) */}
+            {hasAdditionalDetails && (
+              <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+                    <span className="text-xs font-medium uppercase tracking-wide">
+                      Additional details
+                    </span>
+                    {isDetailsOpen ? (
+                      <ChevronUpIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    {transfer.transferBonusRate &&
+                      transfer.transferBonusRate > 0 && (
+                        <div className="flex justify-between">
+                          <span>Transfer bonus</span>
+                          <span
+                            className="font-medium"
+                            style={{ color: "var(--color-accent)" }}
+                          >
+                            +{(transfer.transferBonusRate * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+                    {transfer.transferFee > 0 && (
+                      <div className="flex justify-between">
+                        <span>Transfer fee</span>
+                        <span className="text-foreground">
+                          {transfer.transferFeeCurrency === "USD" && "$"}
+                          {transfer.transferFeeCurrency === "CAD" && "C$"}
+                          {transfer.transferFeeCurrency === "SGD" && "S$"}
+                          {transfer.transferFeeCurrency === "EUR" && "€"}
+                          {!["USD", "CAD", "SGD", "EUR"].includes(
+                            transfer.transferFeeCurrency ?? ""
+                          ) && `${transfer.transferFeeCurrency ?? ""} `}
+                          {transfer.transferFee.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {transfer.referenceNumber && (
+                      <div className="flex justify-between">
+                        <span>Reference</span>
+                        <span className="font-mono text-xs text-foreground">
+                          {transfer.referenceNumber}
+                        </span>
+                      </div>
+                    )}
+                    {transfer.notes && (
+                      <div className="pt-2 border-t">
+                        <span className="block mb-1">Notes</span>
+                        <p className="text-foreground">{transfer.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div
+            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <Button
+              variant="outline"
+              className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isLoading}
+            >
+              Delete
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

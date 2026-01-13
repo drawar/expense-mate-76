@@ -131,12 +131,13 @@ export class PointsBalanceService {
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
-    // Calculate current balance components
+    // Get current period earned and other balance components
     const breakdown = await this.calculateBalanceBreakdown(
       user.id,
       input.rewardCurrencyId
     );
 
+    // Current balance = new starting balance + current period earned + adjustments - redemptions ± transfers
     const currentBalance =
       input.startingBalance +
       breakdown.earnedFromTransactions +
@@ -190,11 +191,13 @@ export class PointsBalanceService {
     const balance = await this.getBalance(userId, rewardCurrencyId);
     const startingBalance = balance?.startingBalance ?? 0;
 
-    // Calculate earned from transactions
-    const earnedFromTransactions = await this.getEarnedFromTransactions(
-      userId,
-      rewardCurrencyId
-    );
+    // Calculate earned from transactions (current statement period only)
+    // This is used for both display AND current balance calculation
+    const earnedFromTransactions =
+      await this.getEarnedFromTransactionsCurrentPeriod(
+        userId,
+        rewardCurrencyId
+      );
 
     // Calculate adjustments sum (only include adjustments dated today or earlier)
     const today = new Date();
@@ -251,6 +254,7 @@ export class PointsBalanceService {
       0
     );
 
+    // Current balance = starting balance + current period earned + adjustments - redemptions ± transfers
     const currentBalance =
       startingBalance +
       earnedFromTransactions +
@@ -261,7 +265,7 @@ export class PointsBalanceService {
 
     return {
       startingBalance,
-      earnedFromTransactions,
+      earnedFromTransactions, // This is current period only (for display)
       adjustments,
       redemptions,
       transfersOut,
@@ -271,17 +275,39 @@ export class PointsBalanceService {
   }
 
   /**
-   * Get earned points from transactions for a currency
+   * Calculate the current statement period start date for a given statement day
    */
-  private async getEarnedFromTransactions(
+  private calculateStatementPeriodStart(statementDay: number | null): Date {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    // If no statement day set (or day 1), use calendar month (1st of current month)
+    if (!statementDay || statementDay === 1) {
+      return new Date(currentYear, currentMonth, 1);
+    }
+
+    // If we're past the statement day this month, period started this month
+    // Otherwise, period started last month
+    if (today.getDate() >= statementDay) {
+      return new Date(currentYear, currentMonth, statementDay);
+    } else {
+      return new Date(currentYear, currentMonth - 1, statementDay);
+    }
+  }
+
+  /**
+   * Get earned points from transactions for a currency (CURRENT STATEMENT PERIOD only - for display)
+   */
+  private async getEarnedFromTransactionsCurrentPeriod(
     userId: string,
     rewardCurrencyId: string
   ): Promise<number> {
     try {
-      // Get payment methods that earn this currency
+      // Get payment methods that earn this currency (with statement day)
       const { data: paymentMethods } = await supabase
         .from("payment_methods")
-        .select("id")
+        .select("id, statement_start_day")
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
 
@@ -289,22 +315,39 @@ export class PointsBalanceService {
         return 0;
       }
 
-      const paymentMethodIds = paymentMethods.map((pm) => pm.id);
+      let totalPoints = 0;
 
-      // Sum total_points from transactions for these payment methods
-      const { data: transactions } = await supabase
-        .from("transactions")
-        .select("total_points")
-        .eq("user_id", userId)
-        .in("payment_method_id", paymentMethodIds)
-        .or("is_deleted.is.null,is_deleted.eq.false");
+      // For each payment method, get transactions from its current statement period
+      for (const pm of paymentMethods) {
+        const statementPeriodStart = this.calculateStatementPeriodStart(
+          pm.statement_start_day
+        );
 
-      return (transactions ?? []).reduce(
-        (sum, t) => sum + (Number(t.total_points) || 0),
-        0
-      );
+        // Format date as YYYY-MM-DD for comparison with transaction date field
+        const startDateStr = statementPeriodStart.toISOString().split("T")[0];
+
+        // Sum total_points from transactions for this payment method
+        // only from the current statement period
+        const { data: transactions } = await supabase
+          .from("transactions")
+          .select("total_points")
+          .eq("user_id", userId)
+          .eq("payment_method_id", pm.id)
+          .gte("date", startDateStr)
+          .or("is_deleted.is.null,is_deleted.eq.false");
+
+        totalPoints += (transactions ?? []).reduce(
+          (sum, t) => sum + (Number(t.total_points) || 0),
+          0
+        );
+      }
+
+      return totalPoints;
     } catch (error) {
-      console.error("Error calculating earned from transactions:", error);
+      console.error(
+        "Error calculating earned from transactions (current period):",
+        error
+      );
       return 0;
     }
   }

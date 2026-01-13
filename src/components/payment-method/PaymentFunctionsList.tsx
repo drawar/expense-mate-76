@@ -153,16 +153,15 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
     0
   );
 
-  // Calculate current statement period
+  // Calculate current statement period based on statementStartDay
   const getStatementPeriod = () => {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    const statementDay = paymentMethod.statementStartDay || 1;
-    const isStatementMonth = paymentMethod.isMonthlyStatement;
+    const statementDay = paymentMethod.statementStartDay;
 
-    if (!isStatementMonth) {
-      // Calendar month: 1st to last day of month
+    // If no statement day set (or day 1), use calendar month
+    if (!statementDay || statementDay === 1) {
       const firstDay = new Date(currentYear, currentMonth, 1);
       const lastDay = new Date(currentYear, currentMonth + 1, 0);
       const daysRemaining = lastDay.getDate() - today.getDate();
@@ -174,18 +173,29 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
       };
     }
 
+    // Statement period based on statementStartDay
+    const effectiveStatementDay = statementDay;
+
     // Statement month: based on statement start day
     let startDate: Date;
     let endDate: Date;
 
-    if (today.getDate() >= statementDay) {
+    if (today.getDate() >= effectiveStatementDay) {
       // Current statement period started this month
-      startDate = new Date(currentYear, currentMonth, statementDay);
-      endDate = new Date(currentYear, currentMonth + 1, statementDay - 1);
+      startDate = new Date(currentYear, currentMonth, effectiveStatementDay);
+      endDate = new Date(
+        currentYear,
+        currentMonth + 1,
+        effectiveStatementDay - 1
+      );
     } else {
       // Current statement period started last month
-      startDate = new Date(currentYear, currentMonth - 1, statementDay);
-      endDate = new Date(currentYear, currentMonth, statementDay - 1);
+      startDate = new Date(
+        currentYear,
+        currentMonth - 1,
+        effectiveStatementDay
+      );
+      endDate = new Date(currentYear, currentMonth, effectiveStatementDay - 1);
     }
 
     const daysRemaining = Math.ceil(

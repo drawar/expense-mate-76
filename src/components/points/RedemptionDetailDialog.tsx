@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,24 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Plane,
-  Hotel,
-  Gift,
-  CreditCard,
-  ArrowRight,
-  Calendar,
-  Hash,
-  FileText,
-  Users,
-  MapPin,
-  Edit2,
-  Trash2,
-  Loader2,
-  CoinsIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import type {
   PointsRedemption,
   PointsRedemptionInput,
@@ -48,23 +37,14 @@ import type { RewardCurrency } from "@/core/currency/types";
 import { RedemptionDialog } from "./RedemptionDialog";
 import { CPPBadge } from "./BalanceCard";
 
-const REDEMPTION_TYPE_CONFIG: Record<
-  RedemptionType,
-  { label: string; icon: React.ReactNode }
-> = {
-  flight: { label: "Flight Award", icon: <Plane className="h-5 w-5" /> },
-  hotel: { label: "Hotel Reward", icon: <Hotel className="h-5 w-5" /> },
-  merchandise: { label: "Merchandise", icon: <Gift className="h-5 w-5" /> },
-  cash_back: { label: "Cash Back", icon: <CreditCard className="h-5 w-5" /> },
-  statement_credit: {
-    label: "Statement Credit",
-    icon: <CreditCard className="h-5 w-5" />,
-  },
-  transfer_out: {
-    label: "Transfer to Partner",
-    icon: <ArrowRight className="h-5 w-5" />,
-  },
-  other: { label: "Other", icon: <CoinsIcon className="h-5 w-5" /> },
+const REDEMPTION_TYPE_LABELS: Record<RedemptionType, string> = {
+  flight: "Flight Award",
+  hotel: "Hotel Reward",
+  merchandise: "Merchandise",
+  cash_back: "Cash Back",
+  statement_credit: "Statement Credit",
+  transfer_out: "Transfer to Partner",
+  other: "Other",
 };
 
 const CABIN_CLASS_LABELS: Record<CabinClass, string> = {
@@ -99,11 +79,19 @@ export function RedemptionDetailDialog({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   if (!redemption) return null;
 
   const currencyName = redemption.rewardCurrency?.displayName ?? "Points";
-  const typeConfig = REDEMPTION_TYPE_CONFIG[redemption.redemptionType];
+  const hasAdditionalDetails =
+    redemption.flightRoute ||
+    redemption.cabinClass ||
+    redemption.airline ||
+    (redemption.passengers && redemption.passengers > 0) ||
+    redemption.travelDate ||
+    redemption.bookingReference ||
+    redemption.description;
 
   const handleEdit = () => {
     setShowEditDialog(true);
@@ -141,18 +129,24 @@ export function RedemptionDetailDialog({
             onClose={onClose}
           >
             <DialogTitle className="flex items-center justify-center gap-2">
-              {typeConfig.icon}
-              {typeConfig.label}
+              {currencyName}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-            {/* Points Redeemed */}
-            <div className="text-center py-4 bg-muted/50 rounded-lg">
-              <p className="text-3xl font-bold text-red-600">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
+            {/* Amount (Hero) */}
+            <div className="py-2 text-center">
+              <p
+                className="text-4xl font-semibold"
+                style={{ color: "var(--color-error)" }}
+              >
                 -{redemption.pointsRedeemed.toLocaleString()}
               </p>
-              <p className="text-sm text-muted-foreground">{currencyName}</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
+                <span>{format(redemption.redemptionDate, "yyyy-MM-dd")}</span>
+                <span>·</span>
+                <span>{REDEMPTION_TYPE_LABELS[redemption.redemptionType]}</span>
+              </div>
               {redemption.cpp && (
                 <div className="mt-2">
                   <CPPBadge cpp={redemption.cpp} />
@@ -162,12 +156,16 @@ export function RedemptionDetailDialog({
 
             {/* Cash Value */}
             {redemption.cashValue && (
-              <div className="text-center py-2 border rounded-lg">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                  Cash Value
+                </p>
                 <p className="text-lg font-semibold">
                   {redemption.cashValueCurrency === "USD" && "$"}
                   {redemption.cashValueCurrency === "CAD" && "C$"}
                   {redemption.cashValueCurrency === "SGD" && "S$"}
-                  {!["USD", "CAD", "SGD"].includes(
+                  {redemption.cashValueCurrency === "EUR" && "€"}
+                  {!["USD", "CAD", "SGD", "EUR"].includes(
                     redemption.cashValueCurrency ?? ""
                   ) && `${redemption.cashValueCurrency} `}
                   {redemption.cashValue.toLocaleString(undefined, {
@@ -175,108 +173,86 @@ export function RedemptionDetailDialog({
                     maximumFractionDigits: 2,
                   })}
                 </p>
-                <p className="text-xs text-muted-foreground">Cash Value</p>
               </div>
             )}
 
-            {/* Details */}
-            <div className="space-y-3">
-              {/* Flight Route */}
-              {redemption.flightRoute && (
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Route</p>
-                    <p className="font-medium">{redemption.flightRoute}</p>
+            {/* Additional Details (Collapsible) */}
+            {hasAdditionalDetails && (
+              <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+                    <span className="text-xs font-medium uppercase tracking-wide">
+                      Additional details
+                    </span>
+                    {isDetailsOpen ? (
+                      <ChevronUpIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    {redemption.flightRoute && (
+                      <div className="flex justify-between">
+                        <span>Route</span>
+                        <span className="text-foreground">
+                          {redemption.flightRoute}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.cabinClass && (
+                      <div className="flex justify-between">
+                        <span>Cabin</span>
+                        <span className="text-foreground">
+                          {CABIN_CLASS_LABELS[redemption.cabinClass]}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.airline && (
+                      <div className="flex justify-between">
+                        <span>Airline</span>
+                        <span className="text-foreground">
+                          {redemption.airline}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.passengers && redemption.passengers > 0 && (
+                      <div className="flex justify-between">
+                        <span>Passengers</span>
+                        <span className="text-foreground">
+                          {redemption.passengers}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.travelDate && (
+                      <div className="flex justify-between">
+                        <span>Travel date</span>
+                        <span className="text-foreground">
+                          {format(redemption.travelDate, "yyyy-MM-dd")}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.bookingReference && (
+                      <div className="flex justify-between">
+                        <span>Reference</span>
+                        <span className="font-mono text-xs text-foreground">
+                          {redemption.bookingReference}
+                        </span>
+                      </div>
+                    )}
+                    {redemption.description && (
+                      <div className="pt-2 border-t">
+                        <span className="block mb-1">Notes</span>
+                        <p className="text-foreground">
+                          {redemption.description}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-
-              {/* Cabin Class */}
-              {redemption.cabinClass && (
-                <div className="flex items-center gap-3">
-                  <Plane className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cabin</p>
-                    <p className="font-medium">
-                      {CABIN_CLASS_LABELS[redemption.cabinClass]}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Airline */}
-              {redemption.airline && (
-                <div className="flex items-center gap-3">
-                  <Plane className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Airline</p>
-                    <p className="font-medium">{redemption.airline}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Passengers */}
-              {redemption.passengers && redemption.passengers > 0 && (
-                <div className="flex items-center gap-3">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Passengers</p>
-                    <p className="font-medium">{redemption.passengers}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Redemption Date */}
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Redemption Date
-                  </p>
-                  <p className="font-medium">
-                    {format(redemption.redemptionDate, "MMMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Travel Date */}
-              {redemption.travelDate && (
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Travel Date</p>
-                    <p className="font-medium">
-                      {format(redemption.travelDate, "MMMM d, yyyy")}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Booking Reference */}
-              {redemption.bookingReference && (
-                <div className="flex items-center gap-3">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Reference</p>
-                    <p className="font-medium font-mono">
-                      {redemption.bookingReference}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {redemption.description && (
-                <div className="flex items-start gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Notes</p>
-                    <p className="font-medium">{redemption.description}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -290,16 +266,14 @@ export function RedemptionDetailDialog({
               onClick={handleEdit}
               disabled={isLoading}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
               Edit
             </Button>
             <Button
-              variant="destructive"
-              className="flex-1"
+              variant="outline"
+              className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isLoading}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
           </div>

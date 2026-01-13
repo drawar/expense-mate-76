@@ -11,33 +11,34 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, ArrowRight } from "lucide-react";
+import { ChevronRight, Loader2, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import type { PointsTransfer, PointsTransferInput } from "@/core/points/types";
+import SelectionDialog, {
+  SelectionOption,
+} from "@/components/payment-method/SelectionDialog";
+import type { PointsTransferInput } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
+
+const FEE_CURRENCY_OPTIONS: SelectionOption[] = [
+  { value: "USD", label: "USD" },
+  { value: "SGD", label: "SGD" },
+  { value: "CAD", label: "CAD" },
+  { value: "EUR", label: "EUR" },
+  { value: "GBP", label: "GBP" },
+];
 
 interface TransferDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (input: PointsTransferInput) => Promise<void>;
   rewardCurrencies: RewardCurrency[];
-  transfer?: PointsTransfer; // For editing
   defaultSourceCurrencyId?: string;
   isLoading?: boolean;
 }
@@ -47,12 +48,9 @@ export function TransferDialog({
   onClose,
   onSubmit,
   rewardCurrencies,
-  transfer,
   defaultSourceCurrencyId,
   isLoading = false,
 }: TransferDialogProps) {
-  const isEditing = !!transfer;
-
   // Form state
   const [sourceCurrencyId, setSourceCurrencyId] = useState(
     defaultSourceCurrencyId || ""
@@ -68,6 +66,12 @@ export function TransferDialog({
   const [notes, setNotes] = useState("");
   const [transferDate, setTransferDate] = useState<Date>(new Date());
 
+  // Selection dialog state
+  const [showSourceDialog, setShowSourceDialog] = useState(false);
+  const [showDestDialog, setShowDestDialog] = useState(false);
+  const [showFeeCurrencyDialog, setShowFeeCurrencyDialog] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   // Separate currencies by transferability
   const transferableCurrencies = useMemo(
     () => (rewardCurrencies || []).filter((c) => c.isTransferrable),
@@ -78,40 +82,35 @@ export function TransferDialog({
     [rewardCurrencies]
   );
 
-  // Reset form when dialog opens/closes or transfer changes
+  // Build options for selection dialogs
+  const sourceOptions: SelectionOption[] = transferableCurrencies.map((c) => ({
+    value: c.id,
+    label: c.displayName,
+    description: c.issuer || undefined,
+  }));
+
+  const destOptions: SelectionOption[] = destinationCurrencies.map((c) => ({
+    value: c.id,
+    label: c.displayName,
+    description: c.issuer || undefined,
+  }));
+
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
-      if (transfer) {
-        setSourceCurrencyId(transfer.sourceCurrencyId);
-        setSourceAmount(String(transfer.sourceAmount));
-        setDestinationCurrencyId(transfer.destinationCurrencyId);
-        setDestinationAmount(String(transfer.destinationAmount));
-        setConversionRate(String(transfer.conversionRate));
-        setTransferBonusRate(
-          transfer.transferBonusRate ? String(transfer.transferBonusRate) : ""
-        );
-        setTransferFee(
-          transfer.transferFee ? String(transfer.transferFee) : ""
-        );
-        setTransferFeeCurrency(transfer.transferFeeCurrency || "USD");
-        setReferenceNumber(transfer.referenceNumber || "");
-        setNotes(transfer.notes || "");
-        setTransferDate(transfer.transferDate);
-      } else {
-        setSourceCurrencyId(defaultSourceCurrencyId || "");
-        setSourceAmount("");
-        setDestinationCurrencyId("");
-        setDestinationAmount("");
-        setConversionRate("1");
-        setTransferBonusRate("");
-        setTransferFee("");
-        setTransferFeeCurrency("USD");
-        setReferenceNumber("");
-        setNotes("");
-        setTransferDate(new Date());
-      }
+      setSourceCurrencyId(defaultSourceCurrencyId || "");
+      setSourceAmount("");
+      setDestinationCurrencyId("");
+      setDestinationAmount("");
+      setConversionRate("1");
+      setTransferBonusRate("");
+      setTransferFee("");
+      setTransferFeeCurrency("USD");
+      setReferenceNumber("");
+      setNotes("");
+      setTransferDate(new Date());
     }
-  }, [isOpen, transfer, defaultSourceCurrencyId]);
+  }, [isOpen, defaultSourceCurrencyId]);
 
   // Auto-calculate destination amount when source or rate changes
   useEffect(() => {
@@ -170,276 +169,448 @@ export function TransferDialog({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
-        hideCloseButton
-      >
-        <DialogHeader
-          className="border-b flex-shrink-0"
-          showCloseButton
-          onClose={onClose}
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent
+          className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
+          hideCloseButton
         >
-          <DialogTitle>
-            {isEditing ? "Edit Transfer" : "Record Points Transfer"}
-          </DialogTitle>
-        </DialogHeader>
+          <DialogHeader
+            className="border-b flex-shrink-0"
+            showCloseButton
+            onClose={onClose}
+          >
+            <DialogTitle>Record Points Transfer</DialogTitle>
+          </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 min-h-0 overflow-hidden"
-        >
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-            {/* Source Currency */}
-            <div className="space-y-2">
-              <Label htmlFor="sourceCurrency">From (Source Program)</Label>
-              <Select
-                value={sourceCurrencyId}
-                onValueChange={setSourceCurrencyId}
-                disabled={isEditing}
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 min-h-0">
+              {/* FROM Section */}
+              <p
+                className="text-xs font-medium uppercase tracking-wide pb-1"
+                style={{ color: "var(--color-text-tertiary)" }}
               >
-                <SelectTrigger id="sourceCurrency">
-                  <SelectValue placeholder="Select source program" />
-                </SelectTrigger>
-                <SelectContent>
-                  {transferableCurrencies.map((currency) => (
-                    <SelectItem key={currency.id} value={currency.id}>
-                      {currency.displayName}
-                      {currency.issuer && (
-                        <span className="text-muted-foreground ml-1">
-                          ({currency.issuer})
-                        </span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                From
+              </p>
 
-            {/* Source Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="sourceAmount">Points to Transfer</Label>
-              <Input
-                id="sourceAmount"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="50000"
-                value={sourceAmount}
-                onChange={(e) => setSourceAmount(e.target.value)}
-              />
+              {/* Source Currency */}
+              <button
+                type="button"
+                onClick={() => setShowSourceDialog(true)}
+                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+              >
+                <span
+                  className="font-medium whitespace-nowrap shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Source Program
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {sourceCurrency?.displayName || "Select program"}
+                  </span>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                </span>
+              </button>
+
+              {/* Source Amount */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="sourceAmount"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Points
+                </label>
+                <Input
+                  id="sourceAmount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="50000"
+                  value={sourceAmount}
+                  onChange={(e) =>
+                    setSourceAmount(e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                  }}
+                />
+              </div>
+
+              {/* Source Preview */}
               {sourceCurrency && sourceAmount && (
-                <p className="text-sm text-muted-foreground">
-                  {Number(sourceAmount).toLocaleString()}{" "}
+                <p
+                  className="text-sm text-right pb-2"
+                  style={{ color: "var(--color-error)" }}
+                >
+                  -{Number(sourceAmount).toLocaleString()}{" "}
                   {sourceCurrency.displayName}
                 </p>
               )}
-            </div>
 
-            {/* Transfer Arrow Visual */}
-            <div className="flex items-center justify-center py-2">
-              <ArrowRight className="h-6 w-6 text-muted-foreground" />
-            </div>
-
-            {/* Destination Currency */}
-            <div className="space-y-2">
-              <Label htmlFor="destCurrency">To (Destination Program)</Label>
-              <Select
-                value={destinationCurrencyId}
-                onValueChange={setDestinationCurrencyId}
-                disabled={isEditing}
-              >
-                <SelectTrigger id="destCurrency">
-                  <SelectValue placeholder="Select destination program" />
-                </SelectTrigger>
-                <SelectContent>
-                  {destinationCurrencies.map((currency) => (
-                    <SelectItem key={currency.id} value={currency.id}>
-                      {currency.displayName}
-                      {currency.issuer && (
-                        <span className="text-muted-foreground ml-1">
-                          ({currency.issuer})
-                        </span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Conversion Rate & Bonus */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="rate">Conversion Rate</Label>
-                <Input
-                  id="rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="1.0"
-                  value={conversionRate}
-                  onChange={(e) => setConversionRate(e.target.value)}
+              {/* Transfer Arrow */}
+              <div className="flex items-center justify-center py-3">
+                <ArrowRight
+                  className="h-5 w-5"
+                  style={{ color: "var(--color-text-tertiary)" }}
                 />
-                <p className="text-xs text-muted-foreground">
-                  1:{conversionRate || "1"} ratio
-                </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bonus">Transfer Bonus %</Label>
+
+              {/* TO Section */}
+              <p
+                className="text-xs font-medium uppercase tracking-wide pb-1"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                To
+              </p>
+
+              {/* Destination Currency */}
+              <button
+                type="button"
+                onClick={() => setShowDestDialog(true)}
+                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+              >
+                <span
+                  className="font-medium whitespace-nowrap shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Destination Program
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {destCurrency?.displayName || "Select program"}
+                  </span>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                </span>
+              </button>
+
+              {/* Conversion Rate */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="rate"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Rate
+                </label>
+                <div className="flex items-center gap-1">
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    1:
+                  </span>
+                  <Input
+                    id="rate"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="1"
+                    value={conversionRate}
+                    onChange={(e) => setConversionRate(e.target.value)}
+                    className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-16"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-text-primary)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Transfer Bonus */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="bonus"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Bonus %
+                </label>
                 <Input
                   id="bonus"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="25"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
                   value={transferBonusRate}
-                  onChange={(e) => setTransferBonusRate(e.target.value)}
+                  onChange={(e) =>
+                    setTransferBonusRate(e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-20"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                  }}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Optional promo bonus
-                </p>
               </div>
-            </div>
 
-            {/* Destination Amount (calculated) */}
-            <div className="space-y-2">
-              <Label htmlFor="destAmount">Points Received</Label>
-              <Input
-                id="destAmount"
-                type="number"
-                min="0"
-                step="1"
-                value={destinationAmount}
-                onChange={(e) => setDestinationAmount(e.target.value)}
-              />
+              {/* Destination Amount */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="destAmount"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Points Received
+                </label>
+                <Input
+                  id="destAmount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="50000"
+                  value={destinationAmount}
+                  onChange={(e) =>
+                    setDestinationAmount(e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                  }}
+                />
+              </div>
+
+              {/* Destination Preview */}
               {destCurrency && destinationAmount && (
-                <p className="text-sm text-muted-foreground">
-                  {Number(destinationAmount).toLocaleString()}{" "}
+                <p
+                  className="text-sm text-right pb-2"
+                  style={{ color: "var(--color-accent)" }}
+                >
+                  +{Number(destinationAmount).toLocaleString()}{" "}
                   {destCurrency.displayName}
                 </p>
               )}
-            </div>
 
-            {/* Transfer Fee (optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="fee">Transfer Fee (optional)</Label>
-              <div className="flex gap-2">
-                <Select
-                  value={transferFeeCurrency}
-                  onValueChange={setTransferFeeCurrency}
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="SGD">SGD</SelectItem>
-                    <SelectItem value="CAD">CAD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  id="fee"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={transferFee}
-                  onChange={(e) => setTransferFee(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            {/* Reference Number (optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="reference">Reference Number (optional)</Label>
-              <Input
-                id="reference"
-                placeholder="e.g., Confirmation number"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-              />
-            </div>
-
-            {/* Notes (optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="e.g., 25% bonus promotion Q1 2025"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            {/* Transfer Date */}
-            <div className="space-y-2">
-              <Label>Transfer Date</Label>
-              <Popover>
+              {/* Transfer Date */}
+              <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !transferDate && "text-muted-foreground"
-                    )}
+                  <button
+                    type="button"
+                    className="w-full py-3 flex items-center justify-between text-base md:text-sm"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {transferDate ? (
-                      format(transferDate, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
+                    <span
+                      className="font-medium whitespace-nowrap shrink-0"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      Date
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {format(transferDate, "yyyy-MM-dd")}
+                      </span>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      />
+                    </span>
+                  </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                     mode="single"
                     selected={transferDate}
-                    onSelect={(date) => date && setTransferDate(date)}
+                    onSelect={(date) => {
+                      if (date) {
+                        setTransferDate(date);
+                        setShowDatePicker(false);
+                      }
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
-            </div>
-          </div>
 
-          {/* Footer */}
-          <div
-            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
+              {/* Optional Fields Section */}
+              <div className="pt-4">
+                <p
+                  className="text-xs font-medium uppercase tracking-wide pb-2"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Optional
+                </p>
+
+                {/* Transfer Fee Currency */}
+                <button
+                  type="button"
+                  onClick={() => setShowFeeCurrencyDialog(true)}
+                  className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                >
+                  <span
+                    className="font-medium whitespace-nowrap shrink-0"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Fee Currency
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="truncate"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {transferFeeCurrency}
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  </span>
+                </button>
+
+                {/* Transfer Fee */}
+                <div className="py-3 flex items-center justify-between gap-4">
+                  <label
+                    htmlFor="fee"
+                    className="text-base md:text-sm font-medium shrink-0"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Fee Amount
+                  </label>
+                  <Input
+                    id="fee"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={transferFee}
+                    onChange={(e) => setTransferFee(e.target.value)}
+                    className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-24"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-text-primary)",
+                    }}
+                  />
+                </div>
+
+                {/* Reference Number */}
+                <div className="py-3 flex items-center justify-between gap-4">
+                  <label
+                    htmlFor="reference"
+                    className="text-base md:text-sm font-medium shrink-0"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Reference
+                  </label>
+                  <Input
+                    id="reference"
+                    placeholder="Optional"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-text-primary)",
+                    }}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="pt-2 space-y-2">
+                  <label
+                    htmlFor="notes"
+                    className="text-base md:text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Notes
+                  </label>
+                  <Textarea
+                    id="notes"
+                    placeholder="e.g., 25% bonus promotion Q1 2025"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                    className="text-base md:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+              style={{ borderColor: "var(--color-border)" }}
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={
-                isLoading ||
-                !sourceCurrencyId ||
-                !destinationCurrencyId ||
-                !sourceAmount ||
-                Number(sourceAmount) <= 0 ||
-                !destinationAmount ||
-                Number(destinationAmount) <= 0
-              }
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Record Transfer"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={
+                  isLoading ||
+                  !sourceCurrencyId ||
+                  !destinationCurrencyId ||
+                  !sourceAmount ||
+                  Number(sourceAmount) <= 0 ||
+                  !destinationAmount ||
+                  Number(destinationAmount) <= 0
+                }
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Record Transfer
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Selection Dialogs */}
+      <SelectionDialog
+        isOpen={showSourceDialog}
+        onClose={() => setShowSourceDialog(false)}
+        title="Source Program"
+        options={sourceOptions}
+        selectedValue={sourceCurrencyId}
+        onSelect={(value) => {
+          setSourceCurrencyId(value);
+          setShowSourceDialog(false);
+        }}
+      />
+
+      <SelectionDialog
+        isOpen={showDestDialog}
+        onClose={() => setShowDestDialog(false)}
+        title="Destination Program"
+        options={destOptions}
+        selectedValue={destinationCurrencyId}
+        onSelect={(value) => {
+          setDestinationCurrencyId(value);
+          setShowDestDialog(false);
+        }}
+      />
+
+      <SelectionDialog
+        isOpen={showFeeCurrencyDialog}
+        onClose={() => setShowFeeCurrencyDialog(false)}
+        title="Fee Currency"
+        options={FEE_CURRENCY_OPTIONS}
+        selectedValue={transferFeeCurrency}
+        onSelect={(value) => {
+          setTransferFeeCurrency(value);
+          setShowFeeCurrencyDialog(false);
+        }}
+      />
+    </>
   );
 }
 

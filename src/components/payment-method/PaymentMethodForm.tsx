@@ -10,21 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CreditCard, Plus } from "lucide-react";
+import { AlertCircle, CreditCard, Plus, ChevronRight } from "lucide-react";
 import CardCatalogPicker, { PersonalizeCardData } from "./CardCatalogPicker";
 import CustomCardFormDialog, {
   CustomCardFormData,
 } from "./CustomCardFormDialog";
+import SelectionDialog, { SelectionOption } from "./SelectionDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BillingCycleFields, LastFourDigitsField } from "./form";
 
@@ -54,6 +47,31 @@ const CARD_ISSUERS = [
   ...GIFT_CARD_ISSUERS,
 ].sort() as unknown as readonly string[];
 
+const currencyOptions = CurrencyService.getCurrencyOptions();
+
+// Type options for selection dialog
+const TYPE_OPTIONS: SelectionOption[] = [
+  {
+    value: "credit_card",
+    label: "Credit Card",
+    description: "Visa, Mastercard, Amex, etc.",
+  },
+  { value: "gift_card", label: "Gift Card", description: "Prepaid gift cards" },
+  { value: "cash", label: "Cash", description: "Cash payments" },
+];
+
+// Currency options for selection dialog
+const CURRENCY_OPTIONS: SelectionOption[] = currencyOptions.map((opt) => ({
+  value: opt.value,
+  label: opt.label,
+}));
+
+// Issuer options for selection dialog
+const ISSUER_OPTIONS: SelectionOption[] = CARD_ISSUERS.map((issuer) => ({
+  value: issuer,
+  label: issuer,
+}));
+
 // Validation error type
 interface ValidationErrors {
   name?: string;
@@ -70,8 +88,6 @@ interface PaymentMethodFormProps {
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   isOpen: boolean; // Add this prop to control the dialog open state
 }
-
-const currencyOptions = CurrencyService.getCurrencyOptions();
 
 const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   currentMethod,
@@ -105,7 +121,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     currentMethod?.statementStartDay?.toString() || ""
   );
   const [isMonthlyStatement, setIsMonthlyStatement] = useState<boolean>(
-    currentMethod?.isMonthlyStatement || false
+    currentMethod?.isMonthlyStatement ?? false
   );
   const [active, setActive] = useState<boolean>(currentMethod?.active ?? true);
   const [totalLoaded, setTotalLoaded] = useState<string>(
@@ -134,6 +150,43 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     []
   );
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(false);
+
+  // Selection dialog states (for edit mode)
+  const [showTypeDialog, setShowTypeDialog] = useState(false);
+  const [showCurrencyDialog, setShowCurrencyDialog] = useState(false);
+  const [showIssuerDialog, setShowIssuerDialog] = useState(false);
+  const [showRewardsCurrencyDialog, setShowRewardsCurrencyDialog] =
+    useState(false);
+
+  // Helper to get display labels
+  const getTypeLabel = () =>
+    TYPE_OPTIONS.find((o) => o.value === selectedType)?.label || "Select type";
+  const getCurrencyLabel = () =>
+    CURRENCY_OPTIONS.find((o) => o.value === currency)?.label ||
+    "Select currency";
+  const getIssuerLabel = () => issuer || "Select issuer";
+  const getRewardsCurrencyLabel = () => {
+    if (isLoadingCurrencies) return "Loading...";
+    return (
+      rewardCurrencies.find((c) => c.id === rewardCurrencyId)?.displayName ||
+      "Select rewards currency"
+    );
+  };
+
+  // Reward currency options for selection dialog
+  const rewardCurrencyOptions: SelectionOption[] = useMemo(() => {
+    return rewardCurrencies.map((curr) => ({
+      value: curr.id,
+      label: curr.displayName,
+    }));
+  }, [rewardCurrencies]);
+
+  // Check if any child dialog is open (for edit mode)
+  const isChildDialogOpen =
+    showTypeDialog ||
+    showCurrencyDialog ||
+    showIssuerDialog ||
+    showRewardsCurrencyDialog;
 
   // Validation functions
   const validateName = (value: string): string | undefined => {
@@ -281,7 +334,6 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     setTotalLoaded(data.totalLoaded);
     setPurchaseDate(data.purchaseDate);
     setCardCatalogId("");
-    setSelectedCatalogEntry(null);
     setShowCustomCardForm(false);
 
     // Create a synthetic form event and submit
@@ -337,7 +389,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     setPointsCurrency(currentMethod?.pointsCurrency || "");
     setRewardCurrencyId(currentMethod?.rewardCurrencyId || "");
     setStatementStartDay(currentMethod?.statementStartDay?.toString() || "");
-    setIsMonthlyStatement(currentMethod?.isMonthlyStatement || false);
+    setIsMonthlyStatement(currentMethod?.isMonthlyStatement ?? false);
     setActive(currentMethod?.active ?? true);
     setTotalLoaded(currentMethod?.totalLoaded?.toString() || "");
     setPurchaseDate(currentMethod?.purchaseDate || "");
@@ -455,58 +507,59 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
             <div className="space-y-4">
               {/* Nickname field (editing catalog card) */}
               {isEditing && currentMethod?.cardCatalogId ? (
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="nickname"
-                    className="text-sm font-medium"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    Nickname
-                  </Label>
-                  <Input
-                    id="nickname"
-                    name="nickname-field"
-                    placeholder="e.g. My Travel Card (optional)"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    className="h-11 rounded-lg text-base md:text-sm"
-                  />
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
-                    Optional custom name for this card
-                  </p>
+                <div>
+                  <div className="py-3 flex items-center justify-between gap-4">
+                    <label
+                      htmlFor="nickname"
+                      className="text-base md:text-sm font-medium shrink-0"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      Nickname
+                    </label>
+                    <Input
+                      id="nickname"
+                      name="nickname-field"
+                      placeholder="e.g. My Travel Card"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
+                      style={{
+                        backgroundColor: "transparent",
+                        color: "var(--color-text-primary)",
+                      }}
+                    />
+                  </div>
                 </div>
               ) : (
                 /* Name field (custom cards) */
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="name"
-                    className="text-sm font-medium"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    Name <span style={{ color: "var(--color-error)" }}>*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="e.g. Chase Sapphire"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onBlur={() => handleFieldBlur("name")}
-                    required
-                    className="h-11 rounded-lg text-base md:text-sm"
-                    style={{
-                      borderColor:
-                        touched.name && errors.name
-                          ? "var(--color-error)"
-                          : undefined,
-                    }}
-                  />
+                <div>
+                  <div className="py-3 flex items-center justify-between gap-4">
+                    <label
+                      htmlFor="name"
+                      className="text-base md:text-sm font-medium shrink-0"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      Name{" "}
+                      <span style={{ color: "var(--color-error)" }}>*</span>
+                    </label>
+                    <Input
+                      id="name"
+                      name="name"
+                      placeholder="e.g. Chase Sapphire"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onBlur={() => handleFieldBlur("name")}
+                      required
+                      className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
+                      style={{
+                        backgroundColor: "transparent",
+                        color: "var(--color-text-primary)",
+                      }}
+                    />
+                  </div>
                   {touched.name && errors.name && (
                     <p
-                      className="text-xs flex items-center gap-1"
+                      className="text-xs flex items-center gap-1 justify-end"
                       style={{ color: "var(--color-error)" }}
                     >
                       <AlertCircle className="h-3 w-3" />
@@ -518,119 +571,149 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
               {/* Type + Currency (custom cards only, not when editing catalog card) */}
               {!(isEditing && currentMethod?.cardCatalogId) && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="type"
-                      className="text-sm font-medium"
+                <>
+                  {/* Type field */}
+                  <button
+                    type="button"
+                    onClick={() => setShowTypeDialog(true)}
+                    className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                  >
+                    <span
+                      className="font-medium whitespace-nowrap shrink-0"
                       style={{ color: "var(--color-text-secondary)" }}
                     >
                       Type
-                    </Label>
-                    <Select
-                      value={selectedType}
-                      onValueChange={setSelectedType}
-                    >
-                      <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="credit_card">Credit Card</SelectItem>
-                        <SelectItem value="gift_card">Gift Card</SelectItem>
-                        <SelectItem value="cash">Cash</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="currency"
-                      className="text-sm font-medium"
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {getTypeLabel()}
+                      </span>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      />
+                    </span>
+                  </button>
+
+                  {/* Currency field */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrencyDialog(true)}
+                    className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                  >
+                    <span
+                      className="font-medium whitespace-nowrap shrink-0"
                       style={{ color: "var(--color-text-secondary)" }}
                     >
                       Currency
-                    </Label>
-                    <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
-                        <SelectValue placeholder="Currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencyOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {getCurrencyLabel()}
+                      </span>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      />
+                    </span>
+                  </button>
+                </>
               )}
 
               {/* Issuer (credit card and gift card) */}
               {(isCreditCard || isGiftCard) && (
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="issuer"
-                    className="text-sm font-medium"
+                <button
+                  type="button"
+                  onClick={() => setShowIssuerDialog(true)}
+                  className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                >
+                  <span
+                    className="font-medium whitespace-nowrap shrink-0"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
                     Issuer
-                  </Label>
-                  <Select value={issuer} onValueChange={setIssuer}>
-                    <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
-                      <SelectValue placeholder="Select issuer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CARD_ISSUERS.map((issuerOption) => (
-                        <SelectItem key={issuerOption} value={issuerOption}>
-                          {issuerOption}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="truncate"
+                      style={{
+                        color: issuer
+                          ? "var(--color-text-primary)"
+                          : "var(--color-text-tertiary)",
+                      }}
+                    >
+                      {getIssuerLabel()}
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  </span>
+                </button>
               )}
 
               {/* Rewards Currency (credit card only, custom cards) */}
               {isCreditCard && !(isEditing && currentMethod?.cardCatalogId) && (
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="rewardCurrency"
-                    className="text-sm font-medium"
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsCurrencyDialog(true)}
+                  className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                >
+                  <span
+                    className="font-medium whitespace-nowrap shrink-0"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
                     Rewards Currency
-                  </Label>
-                  <Select
-                    key={`${rewardCurrencies.length}-${rewardCurrencyId}`}
-                    value={rewardCurrencyId}
-                    onValueChange={(value) => {
-                      setRewardCurrencyId(value);
-                      const selected = rewardCurrencies.find(
-                        (c) => c.id === value
-                      );
-                      if (selected) {
-                        setPointsCurrency(selected.displayName);
-                      }
-                    }}
-                    disabled={isLoadingCurrencies}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="truncate"
+                      style={{
+                        color: rewardCurrencyId
+                          ? "var(--color-text-primary)"
+                          : "var(--color-text-tertiary)",
+                      }}
+                    >
+                      {getRewardsCurrencyLabel()}
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  </span>
+                </button>
+              )}
+
+              {/* Bonus Rewards Cap toggle (credit card only) */}
+              {isCreditCard && (
+                <div className="py-3 flex items-center justify-between gap-4">
+                  <span
+                    className="text-base md:text-sm font-medium"
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
-                    <SelectTrigger className="h-11 rounded-lg text-base md:text-sm">
-                      <SelectValue
-                        placeholder={
-                          isLoadingCurrencies
-                            ? "Loading..."
-                            : "Select rewards currency"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rewardCurrencies.map((curr) => (
-                        <SelectItem key={curr.id} value={curr.id}>
-                          {curr.displayName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    Bonus Rewards Cap
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-base md:text-sm"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {isMonthlyStatement
+                        ? "By statement month"
+                        : "By calendar month"}
+                    </span>
+                    <Switch
+                      id="isMonthlyStatement"
+                      checked={isMonthlyStatement}
+                      onCheckedChange={setIsMonthlyStatement}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -657,48 +740,40 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
                   {/* Total Loaded (gift card only) */}
                   {isGiftCard && (
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="totalLoaded"
-                        className="text-sm font-medium"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        Total Loaded
-                      </Label>
-                      <Input
-                        id="totalLoaded"
-                        name="totalLoaded"
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="0.01"
-                        placeholder="500.00"
-                        value={totalLoaded}
-                        onChange={(e) => setTotalLoaded(e.target.value)}
-                        onBlur={() => handleFieldBlur("totalLoaded")}
-                        className="h-11 rounded-lg text-base md:text-sm"
-                        style={{
-                          borderColor:
-                            touched.totalLoaded && errors.totalLoaded
-                              ? "var(--color-error)"
-                              : undefined,
-                        }}
-                      />
+                    <div>
+                      <div className="py-3 flex items-center justify-between gap-4">
+                        <label
+                          htmlFor="totalLoaded"
+                          className="text-base md:text-sm font-medium shrink-0"
+                          style={{ color: "var(--color-text-secondary)" }}
+                        >
+                          Total Loaded
+                        </label>
+                        <Input
+                          id="totalLoaded"
+                          name="totalLoaded"
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="e.g. 500.00"
+                          value={totalLoaded}
+                          onChange={(e) => setTotalLoaded(e.target.value)}
+                          onBlur={() => handleFieldBlur("totalLoaded")}
+                          className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"
+                          style={{
+                            backgroundColor: "transparent",
+                            color: "var(--color-text-primary)",
+                          }}
+                        />
+                      </div>
                       {touched.totalLoaded && errors.totalLoaded && (
                         <p
-                          className="text-xs flex items-center gap-1"
+                          className="text-xs flex items-center gap-1 justify-end"
                           style={{ color: "var(--color-error)" }}
                         >
                           <AlertCircle className="h-3 w-3" />
                           {errors.totalLoaded}
                         </p>
                       )}
-                      <p
-                        className="text-xs"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      >
-                        Total amount loaded onto this prepaid card
-                      </p>
                     </div>
                   )}
 
@@ -714,60 +789,33 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       touched={touched.statementStartDay}
                     />
                   )}
-
-                  {/* Bonus Rewards Cap toggle (credit card only) */}
-                  {isCreditCard && (
-                    <div className="py-3 flex items-center justify-between gap-4">
-                      <span
-                        className="text-base md:text-sm font-medium"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        Bonus Rewards Cap
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-base md:text-sm"
-                          style={{ color: "var(--color-text-primary)" }}
-                        >
-                          {isMonthlyStatement
-                            ? "By statement month"
-                            : "By calendar month"}
-                        </span>
-                        <Switch
-                          id="isMonthlyStatement"
-                          checked={isMonthlyStatement}
-                          onCheckedChange={setIsMonthlyStatement}
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
               </>
             )}
 
             {/* === STATUS TOGGLE (Edit mode only) === */}
             {isEditing && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label
-                    className="text-sm font-medium"
-                    style={{ color: "var(--color-text-secondary)" }}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <span
+                  className="text-base md:text-sm font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Status
+                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-base md:text-sm"
+                    style={{ color: "var(--color-text-primary)" }}
                   >
-                    Status
-                  </Label>
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
-                    {active ? "Card is active" : "Card is hidden"}
-                  </p>
+                    {active ? "Active" : "Hidden"}
+                  </span>
+                  <Switch
+                    id="active"
+                    name="active"
+                    checked={active}
+                    onCheckedChange={setActive}
+                  />
                 </div>
-                <Switch
-                  id="active"
-                  name="active"
-                  checked={active}
-                  onCheckedChange={setActive}
-                />
               </div>
             )}
           </>
@@ -813,13 +861,17 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
 
   const title = isEditing ? "Edit Payment Method" : "Add Payment Method";
 
+  // Hide parent dialog when child dialog is open (for edit mode)
+  const isParentVisible = isEditing ? isOpen && !isChildDialogOpen : isOpen;
+
   // Use Dialog for both mobile and desktop
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isParentVisible} onOpenChange={onClose}>
         <DialogContent
           className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
+          hideOverlay={isEditing && isChildDialogOpen}
         >
           <DialogHeader className="border-b flex-shrink-0" showCloseButton>
             <DialogTitle>{title}</DialogTitle>
@@ -850,6 +902,67 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
         }}
         isLoading={isLoading}
       />
+
+      {/* Selection Dialogs (for edit mode) */}
+      {isEditing && (
+        <>
+          {/* Type Selection Dialog */}
+          <SelectionDialog
+            open={showTypeDialog}
+            onOpenChange={setShowTypeDialog}
+            onSelect={setSelectedType}
+            onCloseAll={onClose}
+            title="Select Type"
+            options={TYPE_OPTIONS}
+            selectedValue={selectedType}
+          />
+
+          {/* Currency Selection Dialog */}
+          <SelectionDialog
+            open={showCurrencyDialog}
+            onOpenChange={setShowCurrencyDialog}
+            onSelect={(v) => setCurrency(v as Currency)}
+            onCloseAll={onClose}
+            title="Select Currency"
+            options={CURRENCY_OPTIONS}
+            selectedValue={currency}
+            searchable
+            searchPlaceholder="Search currencies..."
+          />
+
+          {/* Issuer Selection Dialog */}
+          <SelectionDialog
+            open={showIssuerDialog}
+            onOpenChange={setShowIssuerDialog}
+            onSelect={setIssuer}
+            onCloseAll={onClose}
+            title="Select Issuer"
+            options={ISSUER_OPTIONS}
+            selectedValue={issuer}
+            searchable
+            searchPlaceholder="Search issuers..."
+          />
+
+          {/* Rewards Currency Selection Dialog */}
+          <SelectionDialog
+            open={showRewardsCurrencyDialog}
+            onOpenChange={setShowRewardsCurrencyDialog}
+            onSelect={(value) => {
+              setRewardCurrencyId(value);
+              const selected = rewardCurrencies.find((c) => c.id === value);
+              if (selected) {
+                setPointsCurrency(selected.displayName);
+              }
+            }}
+            onCloseAll={onClose}
+            title="Select Rewards Currency"
+            options={rewardCurrencyOptions}
+            selectedValue={rewardCurrencyId}
+            searchable
+            searchPlaceholder="Search rewards currencies..."
+          />
+        </>
+      )}
     </>
   );
 };

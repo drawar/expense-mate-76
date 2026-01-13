@@ -11,27 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import SelectionDialog, {
+  SelectionOption,
+} from "@/components/payment-method/SelectionDialog";
 import type {
   PointsAdjustment,
   PointsAdjustmentInput,
@@ -45,6 +39,18 @@ const ADJUSTMENT_TYPES: { value: AdjustmentType; label: string }[] = [
   { value: "correction", label: "Correction" },
   { value: "expired", label: "Expired Points" },
   { value: "other", label: "Other" },
+];
+
+const ADJUSTMENT_TYPE_OPTIONS: SelectionOption[] = ADJUSTMENT_TYPES.map(
+  (t) => ({
+    value: t.value,
+    label: t.label,
+  })
+);
+
+const SIGN_OPTIONS: SelectionOption[] = [
+  { value: "add", label: "Add (+)" },
+  { value: "subtract", label: "Subtract (-)" },
 ];
 
 interface AdjustmentDialogProps {
@@ -78,6 +84,12 @@ export function AdjustmentDialog({
   const [description, setDescription] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [adjustmentDate, setAdjustmentDate] = useState<Date>(new Date());
+
+  // Selection dialog state
+  const [showCurrencyDialog, setShowCurrencyDialog] = useState(false);
+  const [showTypeDialog, setShowTypeDialog] = useState(false);
+  const [showSignDialog, setShowSignDialog] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Reset form when dialog opens/closes or adjustment changes
   useEffect(() => {
@@ -133,201 +145,332 @@ export function AdjustmentDialog({
     (c) => c.id === rewardCurrencyId
   );
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
-        hideCloseButton
-      >
-        <DialogHeader
-          className="border-b flex-shrink-0"
-          showCloseButton
-          onClose={onClose}
-        >
-          <DialogTitle>
-            {isEditing ? "Edit Adjustment" : "Add Points Adjustment"}
-          </DialogTitle>
-        </DialogHeader>
+  // Build currency options for selection dialog
+  const currencyOptions: SelectionOption[] = (rewardCurrencies || []).map(
+    (c) => ({
+      value: c.id,
+      label: c.displayName,
+      description: c.issuer || undefined,
+    })
+  );
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+  const getTypeLabel = () => {
+    return (
+      ADJUSTMENT_TYPES.find((t) => t.value === adjustmentType)?.label || "Other"
+    );
+  };
+
+  const getSignLabel = () => {
+    return isNegative ? "Subtract (-)" : "Add (+)";
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent
+          className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
+          hideCloseButton
         >
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-            {/* Reward Currency */}
-            <div className="space-y-2">
-              <Label htmlFor="currency">Reward Currency</Label>
-              <Select
-                value={rewardCurrencyId}
-                onValueChange={setRewardCurrencyId}
+          <DialogHeader
+            className="border-b flex-shrink-0"
+            showCloseButton
+            onClose={onClose}
+          >
+            <DialogTitle>
+              {isEditing ? "Edit Adjustment" : "Add Points Adjustment"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 min-h-0">
+              {/* Reward Currency */}
+              <button
+                type="button"
+                onClick={() => !isEditing && setShowCurrencyDialog(true)}
+                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
                 disabled={isEditing}
               >
-                <SelectTrigger id="currency">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(rewardCurrencies || []).map((currency) => (
-                    <SelectItem key={currency.id} value={currency.id}>
-                      {currency.displayName}
-                      {currency.issuer && (
-                        <span className="text-muted-foreground ml-1">
-                          ({currency.issuer})
-                        </span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Adjustment Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type">Adjustment Type</Label>
-              <Select
-                value={adjustmentType}
-                onValueChange={(v) => setAdjustmentType(v as AdjustmentType)}
-              >
-                <SelectTrigger id="type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ADJUSTMENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Points Amount</Label>
-              <div className="flex gap-2">
-                <Select
-                  value={isNegative ? "subtract" : "add"}
-                  onValueChange={(v) => setIsNegative(v === "subtract")}
+                <span
+                  className="font-medium whitespace-nowrap shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
                 >
-                  <SelectTrigger className="w-28">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="add">Add (+)</SelectItem>
-                    <SelectItem value="subtract">Subtract (-)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  Reward Currency
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {selectedCurrency?.displayName || "Select currency"}
+                  </span>
+                  {!isEditing && (
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  )}
+                </span>
+              </button>
+
+              {/* Adjustment Type */}
+              <button
+                type="button"
+                onClick={() => setShowTypeDialog(true)}
+                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+              >
+                <span
+                  className="font-medium whitespace-nowrap shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Type
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {getTypeLabel()}
+                  </span>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                </span>
+              </button>
+
+              {/* Points Amount - Sign selector */}
+              <button
+                type="button"
+                onClick={() => setShowSignDialog(true)}
+                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+              >
+                <span
+                  className="font-medium whitespace-nowrap shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Operation
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {getSignLabel()}
+                  </span>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                </span>
+              </button>
+
+              {/* Points Amount - Input */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="amount"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Amount
+                </label>
                 <Input
                   id="amount"
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="10000"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="flex-1"
+                  onChange={(e) =>
+                    setAmount(e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                  }}
                 />
               </div>
+
+              {/* Amount Preview */}
               {selectedCurrency && amount && (
-                <p className="text-sm text-muted-foreground">
+                <p
+                  className="text-sm text-right pb-2"
+                  style={{
+                    color: isNegative
+                      ? "var(--color-error)"
+                      : "var(--color-accent)",
+                  }}
+                >
                   {isNegative ? "-" : "+"}
                   {Number(amount).toLocaleString()}{" "}
                   {selectedCurrency.displayName}
                 </p>
               )}
-            </div>
 
-            {/* Description with Markdown support */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Supports Markdown (tables, bold, etc.)"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-              {description && (
-                <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  >
-                    {description}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-
-            {/* Reference Number (optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="reference">Reference Number (optional)</Label>
-              <Input
-                id="reference"
-                placeholder="e.g., Confirmation code"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-              />
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label>Adjustment Date</Label>
-              <Popover>
+              {/* Adjustment Date */}
+              <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !adjustmentDate && "text-muted-foreground"
-                    )}
+                  <button
+                    type="button"
+                    className="w-full py-3 flex items-center justify-between text-base md:text-sm"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {adjustmentDate ? (
-                      format(adjustmentDate, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
+                    <span
+                      className="font-medium whitespace-nowrap shrink-0"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      Date
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {format(adjustmentDate, "yyyy-MM-dd")}
+                      </span>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      />
+                    </span>
+                  </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                     mode="single"
                     selected={adjustmentDate}
-                    onSelect={(date) => date && setAdjustmentDate(date)}
+                    onSelect={(date) => {
+                      if (date) {
+                        setAdjustmentDate(date);
+                        setShowDatePicker(false);
+                      }
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
-            </div>
-          </div>
 
-          {/* Footer */}
-          <div
-            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
+              {/* Reference Number (optional) */}
+              <div className="py-3 flex items-center justify-between gap-4">
+                <label
+                  htmlFor="reference"
+                  className="text-base md:text-sm font-medium shrink-0"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Reference
+                </label>
+                <Input
+                  id="reference"
+                  placeholder="Optional"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-40"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                  }}
+                />
+              </div>
+
+              {/* Description with Markdown support */}
+              <div className="pt-4 space-y-2">
+                <label
+                  htmlFor="description"
+                  className="text-base md:text-sm font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Notes
+                </label>
+                <Textarea
+                  id="description"
+                  placeholder="Supports Markdown (tables, bold, etc.)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="text-base md:text-sm"
+                />
+                {description && (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {description}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+              style={{ borderColor: "var(--color-border)" }}
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={
-                isLoading || !rewardCurrencyId || !amount || Number(amount) <= 0
-              }
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Adjustment"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={
+                  isLoading ||
+                  !rewardCurrencyId ||
+                  !amount ||
+                  Number(amount) <= 0
+                }
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditing ? "Save Changes" : "Add Adjustment"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Selection Dialogs */}
+      <SelectionDialog
+        isOpen={showCurrencyDialog}
+        onClose={() => setShowCurrencyDialog(false)}
+        title="Reward Currency"
+        options={currencyOptions}
+        selectedValue={rewardCurrencyId}
+        onSelect={(value) => {
+          setRewardCurrencyId(value);
+          setShowCurrencyDialog(false);
+        }}
+      />
+
+      <SelectionDialog
+        isOpen={showTypeDialog}
+        onClose={() => setShowTypeDialog(false)}
+        title="Adjustment Type"
+        options={ADJUSTMENT_TYPE_OPTIONS}
+        selectedValue={adjustmentType}
+        onSelect={(value) => {
+          setAdjustmentType(value as AdjustmentType);
+          setShowTypeDialog(false);
+        }}
+      />
+
+      <SelectionDialog
+        isOpen={showSignDialog}
+        onClose={() => setShowSignDialog(false)}
+        title="Operation"
+        options={SIGN_OPTIONS}
+        selectedValue={isNegative ? "subtract" : "add"}
+        onSelect={(value) => {
+          setIsNegative(value === "subtract");
+          setShowSignDialog(false);
+        }}
+      />
+    </>
   );
 }
 

@@ -230,6 +230,16 @@ export default function PointsManager() {
   };
 
   const handleOpenAdjustmentDetail = (adjustment: PointsAdjustment) => {
+    // If it's a starting balance entry, open the balance edit dialog instead
+    if (adjustment.adjustmentType === "starting_balance") {
+      const balance = balances.find(
+        (b) => b.rewardCurrencyId === adjustment.rewardCurrencyId
+      );
+      if (balance) {
+        handleOpenBalanceDialog(balance);
+        return;
+      }
+    }
     setSelectedAdjustment(adjustment);
     setOpenDialog("adjustmentDetail");
   };

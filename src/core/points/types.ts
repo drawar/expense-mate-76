@@ -71,6 +71,7 @@ export interface PointsBalanceInput {
 // ============================================================================
 
 export type AdjustmentType =
+  | "starting_balance"
   | "bonus"
   | "correction"
   | "expired"

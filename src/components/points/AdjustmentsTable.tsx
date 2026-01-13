@@ -87,6 +87,7 @@ function getLoyaltyProgramLogo(currency: string | undefined): string | null {
 }
 
 const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
+  starting_balance: "Starting Balance",
   bonus: "Sign-up Bonus",
   promotional: "Promotional",
   correction: "Correction",

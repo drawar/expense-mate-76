@@ -130,10 +130,10 @@ export function BalanceCard({
           )}
         </div>
 
-        {/* Current Balance */}
+        {/* Current Balance - always use calculated breakdown, never stored value */}
         <div className="mb-4">
           <p className="text-3xl font-semibold text-foreground">
-            {formatNumber(balance.currentBalance)}
+            {breakdown ? formatNumber(breakdown.currentBalance) : "—"}
           </p>
           <p className="text-sm text-muted-foreground">Current Balance</p>
         </div>

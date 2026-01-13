@@ -33,7 +33,6 @@ export const BillingCycleFields: React.FC<BillingCycleFieldsProps> = ({
         </label>
         <Input
           id="statementStartDay"
-          name="statementStartDay"
           type="text"
           inputMode="numeric"
           maxLength={2}
