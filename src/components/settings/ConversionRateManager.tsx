@@ -384,154 +384,150 @@ export function ConversionRateManager() {
 
         {!isLoading && sourceCurrenciesWithRates.length > 0 && (
           <>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-medium">
-                      Source Currency
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-medium">Source Currency</TableHead>
+                  {targetCurrencies.map((currency) => (
+                    <TableHead
+                      key={currency.id}
+                      className="text-center font-medium"
+                    >
+                      {currency.displayName}
                     </TableHead>
-                    {targetCurrencies.map((currency) => (
-                      <TableHead
-                        key={currency.id}
-                        className="text-center font-medium"
-                      >
-                        {currency.displayName}
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-[80px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sourceCurrenciesWithRates.map((sourceCurrency) => (
-                    <TableRow key={sourceCurrency.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div>{sourceCurrency.displayName}</div>
-                          {sourceCurrency.issuer && (
-                            <div className="text-xs text-muted-foreground">
-                              {sourceCurrency.issuer}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      {targetCurrencies.map((targetCurrency) => {
-                        const rate = getRate(
-                          sourceCurrency.id,
-                          targetCurrency.id
-                        );
-                        const isEditing =
-                          editingCell?.sourceCurrencyId === sourceCurrency.id &&
-                          editingCell?.targetCurrencyId === targetCurrency.id;
+                  ))}
+                  <TableHead className="w-[80px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sourceCurrenciesWithRates.map((sourceCurrency) => (
+                  <TableRow key={sourceCurrency.id}>
+                    <TableCell className="font-medium">
+                      <div>
+                        <div>{sourceCurrency.displayName}</div>
+                        {sourceCurrency.issuer && (
+                          <div className="text-xs text-muted-foreground">
+                            {sourceCurrency.issuer}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    {targetCurrencies.map((targetCurrency) => {
+                      const rate = getRate(
+                        sourceCurrency.id,
+                        targetCurrency.id
+                      );
+                      const isEditing =
+                        editingCell?.sourceCurrencyId === sourceCurrency.id &&
+                        editingCell?.targetCurrencyId === targetCurrency.id;
 
-                        return (
-                          <TableCell
-                            key={targetCurrency.id}
-                            className="text-center cursor-pointer hover:bg-muted/50"
-                            onClick={() =>
-                              !isEditing &&
-                              handleCellClick(
-                                sourceCurrency.id,
-                                targetCurrency.id
-                              )
-                            }
-                          >
-                            {isEditing ? (
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                min="0"
-                                value={editingCell.value}
-                                onChange={(e) =>
-                                  handleInputChange(e.target.value)
-                                }
-                                onBlur={handleCellSave}
-                                onKeyDown={handleKeyPress}
-                                autoFocus
-                                className="w-24 mx-auto text-center"
-                              />
-                            ) : (
-                              <span
-                                className={
-                                  rate !== undefined
-                                    ? ""
-                                    : "text-muted-foreground"
-                                }
-                              >
-                                {rate !== undefined ? rate.toFixed(4) : "-"}
-                              </span>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell>
-                        <Dialog
-                          open={deleteConfirmCurrency === sourceCurrency.id}
-                          onOpenChange={(open) =>
-                            setDeleteConfirmCurrency(
-                              open ? sourceCurrency.id : null
+                      return (
+                        <TableCell
+                          key={targetCurrency.id}
+                          className="text-center cursor-pointer hover:bg-muted/50"
+                          onClick={() =>
+                            !isEditing &&
+                            handleCellClick(
+                              sourceCurrency.id,
+                              targetCurrency.id
                             )
                           }
                         >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              disabled={isDeleting === sourceCurrency.id}
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              step="0.0001"
+                              min="0"
+                              value={editingCell.value}
+                              onChange={(e) =>
+                                handleInputChange(e.target.value)
+                              }
+                              onBlur={handleCellSave}
+                              onKeyDown={handleKeyPress}
+                              autoFocus
+                              className="w-24 mx-auto text-center"
+                            />
+                          ) : (
+                            <span
+                              className={
+                                rate !== undefined
+                                  ? ""
+                                  : "text-muted-foreground"
+                              }
                             >
-                              {isDeleting === sourceCurrency.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent
-                            className="sm:max-w-md max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
-                            hideCloseButton
+                              {rate !== undefined ? rate.toFixed(4) : "-"}
+                            </span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell>
+                      <Dialog
+                        open={deleteConfirmCurrency === sourceCurrency.id}
+                        onOpenChange={(open) =>
+                          setDeleteConfirmCurrency(
+                            open ? sourceCurrency.id : null
+                          )
+                        }
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={isDeleting === sourceCurrency.id}
                           >
-                            <DialogHeader
-                              className="border-b flex-shrink-0"
-                              showCloseButton
-                              onClose={() => setDeleteConfirmCurrency(null)}
+                            {isDeleting === sourceCurrency.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent
+                          className="sm:max-w-md max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
+                          hideCloseButton
+                        >
+                          <DialogHeader
+                            className="border-b flex-shrink-0"
+                            showCloseButton
+                            onClose={() => setDeleteConfirmCurrency(null)}
+                          >
+                            <DialogTitle>Delete Conversion Rates</DialogTitle>
+                            <DialogDescription className="text-center">
+                              Are you sure you want to delete all conversion
+                              rates for "{sourceCurrency.displayName}"? This
+                              cannot be undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div
+                            className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+                            style={{ borderColor: "var(--color-border)" }}
+                          >
+                            <Button
+                              variant="outline"
+                              onClick={() => setDeleteConfirmCurrency(null)}
+                              className="flex-1"
                             >
-                              <DialogTitle>Delete Conversion Rates</DialogTitle>
-                              <DialogDescription className="text-center">
-                                Are you sure you want to delete all conversion
-                                rates for "{sourceCurrency.displayName}"? This
-                                cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div
-                              className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
-                              style={{ borderColor: "var(--color-border)" }}
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() =>
+                                handleDeleteSourceCurrency(sourceCurrency.id)
+                              }
+                              className="flex-1"
                             >
-                              <Button
-                                variant="outline"
-                                onClick={() => setDeleteConfirmCurrency(null)}
-                                className="flex-1"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() =>
-                                  handleDeleteSourceCurrency(sourceCurrency.id)
-                                }
-                                className="flex-1"
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                              Delete
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-muted-foreground">
