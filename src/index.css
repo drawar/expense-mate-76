@@ -146,7 +146,12 @@
   .overflow-auto {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    touch-action: pan-y;
+  }
+
+  /* Allow horizontal scrolling where needed */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
   }
 }
 
