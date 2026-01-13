@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Currency } from "@/types";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { LocaleService } from "@/core/locale";
+import { UserPreferencesService } from "@/core/preferences";
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Globe } from "lucide-react";
+import { Globe, Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 /**
@@ -30,19 +31,51 @@ export function DefaultCurrencySelector() {
   const [detectedCountry, setDetectedCountry] = useState<string | null>(
     LocaleService.getCountry()
   );
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Update state if locale detection completes after mount
-    setSelectedCurrency(CurrencyService.getDefaultCurrency());
-    setDetectedCountry(LocaleService.getCountry());
+    // Load saved preference from database
+    const loadPreference = async () => {
+      setIsLoading(true);
+      try {
+        const savedCurrency = await UserPreferencesService.getDefaultCurrency();
+        if (savedCurrency) {
+          setSelectedCurrency(savedCurrency);
+          // Also update localStorage for quick access
+          LocaleService.setDefaultCurrency(savedCurrency);
+        } else {
+          // No saved preference, use locale detection
+          setSelectedCurrency(CurrencyService.getDefaultCurrency());
+        }
+        setDetectedCountry(LocaleService.getCountry());
+      } catch (error) {
+        console.error("Failed to load currency preference:", error);
+        setSelectedCurrency(CurrencyService.getDefaultCurrency());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPreference();
   }, []);
 
-  const handleCurrencyChange = (value: Currency) => {
+  const handleCurrencyChange = async (value: Currency) => {
     setSelectedCurrency(value);
+    setIsSaving(true);
+
+    // Save to localStorage for quick access
     LocaleService.setDefaultCurrency(value);
+
+    // Save to database for persistence
+    const saved = await UserPreferencesService.setDefaultCurrency(value);
+
+    setIsSaving(false);
+
     toast({
       title: "Default currency updated",
-      description: `New expenses will default to ${value}`,
+      description: saved
+        ? `New expenses will default to ${value}`
+        : `Saved locally. Sign in to sync across devices.`,
     });
   };
 
@@ -75,9 +108,22 @@ export function DefaultCurrencySelector() {
             <Select
               value={selectedCurrency}
               onValueChange={handleCurrencyChange}
+              disabled={isLoading || isSaving}
             >
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select currency" />
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </span>
+                ) : isSaving ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  <SelectValue placeholder="Select currency" />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {currencyOptions.map((option) => (
