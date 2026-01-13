@@ -105,8 +105,9 @@ class LocaleServiceClass {
    * Uses ip-api.com (free, no API key required, 45 requests/minute limit)
    */
   async detectLocale(): Promise<LocaleCache> {
-    // Return cached result if valid
-    if (this.cache) {
+    // Return cached result if valid AND it was a successful detection
+    // (country !== "UNKNOWN" means it was successfully detected)
+    if (this.cache && this.cache.country !== "UNKNOWN") {
       return this.cache;
     }
 
@@ -152,15 +153,18 @@ class LocaleServiceClass {
     } catch (error) {
       console.warn("Failed to detect locale, using default:", error);
 
-      // Return default on failure
+      // Return default on failure but DON'T cache it long-term
+      // This allows retry on next app load
       const fallback: LocaleCache = {
-        country: "CA",
+        country: "UNKNOWN",
         currency: "CAD",
-        timestamp: Date.now(),
+        // Use a timestamp from 6 days ago so it expires in 1 day
+        // This allows retry sooner rather than waiting 7 days
+        timestamp: Date.now() - 6 * 24 * 60 * 60 * 1000,
       };
 
+      // Only set in-memory cache, don't persist failed detection
       this.cache = fallback;
-      this.saveToStorage(fallback);
       return fallback;
     }
   }
