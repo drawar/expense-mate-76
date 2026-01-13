@@ -332,7 +332,7 @@ export function ConversionRateManager() {
   );
 
   return (
-    <Card className="w-full">
+    <Card className="w-full overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

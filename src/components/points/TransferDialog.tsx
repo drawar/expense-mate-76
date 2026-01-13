@@ -576,8 +576,9 @@ export function TransferDialog({
 
       {/* Selection Dialogs */}
       <SelectionDialog
-        isOpen={showSourceDialog}
-        onClose={() => setShowSourceDialog(false)}
+        open={showSourceDialog}
+        onOpenChange={(open) => setShowSourceDialog(open)}
+        onCloseAll={onClose}
         title="Source Program"
         options={sourceOptions}
         selectedValue={sourceCurrencyId}
@@ -588,8 +589,9 @@ export function TransferDialog({
       />
 
       <SelectionDialog
-        isOpen={showDestDialog}
-        onClose={() => setShowDestDialog(false)}
+        open={showDestDialog}
+        onOpenChange={(open) => setShowDestDialog(open)}
+        onCloseAll={onClose}
         title="Destination Program"
         options={destOptions}
         selectedValue={destinationCurrencyId}
@@ -600,8 +602,9 @@ export function TransferDialog({
       />
 
       <SelectionDialog
-        isOpen={showFeeCurrencyDialog}
-        onClose={() => setShowFeeCurrencyDialog(false)}
+        open={showFeeCurrencyDialog}
+        onOpenChange={(open) => setShowFeeCurrencyDialog(open)}
+        onCloseAll={onClose}
         title="Fee Currency"
         options={FEE_CURRENCY_OPTIONS}
         selectedValue={transferFeeCurrency}
