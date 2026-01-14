@@ -111,6 +111,11 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
   "aeroplan points":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
+  ocbc$:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
+  "ocbc dollars":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
+  ocbc: "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
 };
 
 function getLoyaltyProgramLogo(currency: string | undefined): string | null {
