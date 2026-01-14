@@ -57,6 +57,8 @@ export function TransfersTable({
               const destLogo = transfer.destinationCurrency?.logoUrl;
               const sourceBgColor = transfer.sourceCurrency?.bgColor;
               const destBgColor = transfer.destinationCurrency?.bgColor;
+              const sourceLogoScale = transfer.sourceCurrency?.logoScale;
+              const destLogoScale = transfer.destinationCurrency?.logoScale;
 
               return (
                 <TableRow
@@ -68,14 +70,23 @@ export function TransfersTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {sourceLogo ? (
-                        <img
-                          src={sourceLogo}
-                          alt={sourceName}
-                          className="h-7 w-7 rounded-full object-contain p-0.5"
+                        <div
+                          className="h-7 w-7 rounded-full flex items-center justify-center overflow-hidden"
                           style={{
                             backgroundColor: sourceBgColor || "#ffffff",
                           }}
-                        />
+                        >
+                          <img
+                            src={sourceLogo}
+                            alt={sourceName}
+                            className="h-7 w-7 object-contain"
+                            style={
+                              sourceLogoScale
+                                ? { transform: `scale(${sourceLogoScale})` }
+                                : undefined
+                            }
+                          />
+                        </div>
                       ) : (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
                           <CoinsIcon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -89,12 +100,21 @@ export function TransfersTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {destLogo ? (
-                        <img
-                          src={destLogo}
-                          alt={destName}
-                          className="h-7 w-7 rounded-full object-contain p-0.5"
+                        <div
+                          className="h-7 w-7 rounded-full flex items-center justify-center overflow-hidden"
                           style={{ backgroundColor: destBgColor || "#ffffff" }}
-                        />
+                        >
+                          <img
+                            src={destLogo}
+                            alt={destName}
+                            className="h-7 w-7 object-contain"
+                            style={
+                              destLogoScale
+                                ? { transform: `scale(${destLogoScale})` }
+                                : undefined
+                            }
+                          />
+                        </div>
                       ) : (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
                           <CoinsIcon className="h-3.5 w-3.5 text-muted-foreground" />

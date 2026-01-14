@@ -85,6 +85,7 @@ export function RedemptionsTable({
                 redemption.rewardCurrency?.displayName ?? "Points";
               const logoUrl = redemption.rewardCurrency?.logoUrl;
               const bgColor = redemption.rewardCurrency?.bgColor;
+              const logoScale = redemption.rewardCurrency?.logoScale;
               const typeConfig =
                 REDEMPTION_TYPE_CONFIG[redemption.redemptionType];
 
@@ -98,12 +99,21 @@ export function RedemptionsTable({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {logoUrl ? (
-                        <img
-                          src={logoUrl}
-                          alt={currencyName}
-                          className="h-8 w-8 rounded-full object-contain p-0.5"
+                        <div
+                          className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden"
                           style={{ backgroundColor: bgColor || "#ffffff" }}
-                        />
+                        >
+                          <img
+                            src={logoUrl}
+                            alt={currencyName}
+                            className="h-8 w-8 object-contain"
+                            style={
+                              logoScale
+                                ? { transform: `scale(${logoScale})` }
+                                : undefined
+                            }
+                          />
+                        </div>
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                           <CoinsIcon className="h-4 w-4 text-muted-foreground" />
