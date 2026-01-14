@@ -450,27 +450,37 @@ export function TransferDialog({
                 >
                   Rate
                 </label>
-                <div className="flex items-center gap-1">
+                {selectedRate?.sourceBlock && selectedRate?.targetBlock ? (
                   <span
-                    className="text-sm"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-base md:text-sm"
+                    style={{ color: "var(--color-text-primary)" }}
                   >
-                    1:
+                    {selectedRate.sourceBlock.toLocaleString()}:
+                    {selectedRate.targetBlock.toLocaleString()}
                   </span>
-                  <Input
-                    id="rate"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="1"
-                    value={conversionRate}
-                    onChange={(e) => setConversionRate(e.target.value)}
-                    className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-16"
-                    style={{
-                      backgroundColor: "transparent",
-                      color: "var(--color-text-primary)",
-                    }}
-                  />
-                </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
+                      1:
+                    </span>
+                    <Input
+                      id="rate"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="1"
+                      value={conversionRate}
+                      onChange={(e) => setConversionRate(e.target.value)}
+                      className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-16"
+                      style={{
+                        backgroundColor: "transparent",
+                        color: "var(--color-text-primary)",
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Transfer Bonus */}
