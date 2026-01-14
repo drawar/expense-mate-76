@@ -546,21 +546,6 @@ export default function PointsManager() {
                 />
               </div>
             )}
-
-            {/* Recent Activity Preview */}
-            {!activityLoading && activityFeed && activityFeed.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Activity className="h-4 w-4" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ActivityFeedList items={activityFeed.slice(0, 5)} />
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
           {/* Goals Tab */}

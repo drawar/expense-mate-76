@@ -47,6 +47,122 @@ const FEE_CURRENCY_OPTIONS: SelectionOption[] = [
   { value: "GBP", label: "GBP" },
 ];
 
+// Loyalty program logo URLs
+const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
+  krisflyer:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
+  "krisflyer miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
+  avios:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
+  "membership rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
+  "membership rewards points (ca)":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
+  "hsbc rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
+  "td rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
+  "citi thankyou":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  thankyou:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
+  "asia miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
+  aeroplan:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
+  "flying blue":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
+  "dbs points":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/dbs-points.png",
+  uni$: "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/uob-uni.png",
+  "mileage bank":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/jl-mileagebank.png",
+  "miles&smiles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/tk-milessmiles.png",
+  mileageplus:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ua-mileageplus.png",
+  "royal orchid":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/tg-royalorchid.png",
+  "fortune wings":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/mu-fortunewings.png",
+  "guest miles":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ey-guest.png",
+  "etihad guest":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ey-guest.png",
+  "frequent flyer":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/qf-frequentflyer.png",
+  "infinity mileagelands":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/br-infinitymileagelands.png",
+  lotusmiles:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/vn-lotusmiles.png",
+  "ihg rewards":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ihg-rewards.png",
+  "marriott bonvoy":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/marriott-bonvoy.png",
+};
+
+function getLoyaltyProgramLogo(currency: string | undefined): string | null {
+  if (!currency) return null;
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
+  }
+
+  // Try without region suffix like "(SG)", "(CA)", "(US)"
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
+    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
+  }
+
+  // Try partial match (for variations)
+  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
+    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
+      return url;
+    }
+  }
+
+  return null;
+}
+
+// Background colors for logos with non-transparent backgrounds
+const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
+  "membership rewards": "#006FCF", // Amex blue
+  "membership rewards points": "#006FCF",
+  "membership rewards points (ca)": "#006FCF",
+};
+
+function getLoyaltyProgramBgColor(currency: string | undefined): string {
+  if (!currency) return "white";
+  const normalizedCurrency = currency.toLowerCase();
+
+  // Direct match first
+  if (LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency]) {
+    return LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency];
+  }
+
+  // Try without region suffix
+  const withoutRegion = normalizedCurrency
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  if (LOYALTY_PROGRAM_BG_COLORS[withoutRegion]) {
+    return LOYALTY_PROGRAM_BG_COLORS[withoutRegion];
+  }
+
+  // Try partial match
+  for (const [key, color] of Object.entries(LOYALTY_PROGRAM_BG_COLORS)) {
+    if (normalizedCurrency.includes(key)) {
+      return color;
+    }
+  }
+
+  return "white";
+}
+
 interface TransferDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -308,18 +424,20 @@ export function TransferDialog({
           >
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
               {/* Visual Ratio Display */}
-              <div className="flex items-stretch gap-2">
+              <div className="flex items-stretch gap-3">
                 {/* Source Box */}
                 <div
-                  className="flex-1 rounded-xl p-4 flex flex-col"
+                  className="flex-1 rounded-xl p-4 flex flex-col items-center"
                   style={{ backgroundColor: "var(--color-bg-tertiary)" }}
                 >
-                  {/* Source Amount - Editable */}
+                  {/* Source Amount - Editable only after both programs selected */}
                   <Input
                     id="sourceAmount"
                     type="text"
                     inputMode="numeric"
-                    placeholder="0"
+                    placeholder={
+                      sourceCurrencyId && destinationCurrencyId ? "0" : "—"
+                    }
                     value={
                       sourceAmount ? Number(sourceAmount).toLocaleString() : ""
                     }
@@ -327,28 +445,49 @@ export function TransferDialog({
                       const raw = e.target.value.replace(/[^0-9]/g, "");
                       setSourceAmount(raw);
                     }}
-                    className="h-auto text-2xl font-semibold text-center border-none shadow-none p-0 focus-visible:ring-0 bg-transparent"
+                    disabled={!sourceCurrencyId || !destinationCurrencyId}
+                    className="h-10 w-full text-xl font-semibold text-center border-none shadow-none p-0 focus-visible:ring-0 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ color: "var(--color-text-primary)" }}
                   />
                   {/* Source Currency Selector */}
                   <button
                     type="button"
                     onClick={() => setShowSourceDialog(true)}
-                    className="mt-2 flex items-center justify-center gap-1 text-sm"
+                    className="mt-1 flex items-center justify-center gap-1 text-xs"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
-                    <span className="truncate max-w-[120px]">
+                    <span className="text-center line-clamp-2">
                       {sourceCurrency?.displayName || "Select program"}
                     </span>
                     <ChevronDown
-                      className="h-4 w-4 shrink-0"
+                      className="h-3 w-3 shrink-0"
                       style={{ color: "var(--color-text-tertiary)" }}
                     />
                   </button>
+                  {/* Source Currency Logo */}
+                  {getLoyaltyProgramLogo(sourceCurrency?.displayName) && (
+                    <div
+                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{
+                        backgroundColor: getLoyaltyProgramBgColor(
+                          sourceCurrency?.displayName
+                        ),
+                      }}
+                    >
+                      <img
+                        src={
+                          getLoyaltyProgramLogo(sourceCurrency?.displayName)!
+                        }
+                        alt={sourceCurrency?.displayName}
+                        className="h-[60px] w-[60px] object-contain"
+                        style={{ transform: "scale(0.85)" }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Arrow */}
-                <div className="flex items-center px-1">
+                <div className="flex items-center">
                   <ArrowRight
                     className="h-5 w-5"
                     style={{ color: "var(--color-text-tertiary)" }}
@@ -357,33 +496,60 @@ export function TransferDialog({
 
                 {/* Destination Box */}
                 <div
-                  className="flex-1 rounded-xl p-4 flex flex-col"
+                  className="flex-1 rounded-xl p-4 flex flex-col items-center"
                   style={{ backgroundColor: "var(--color-bg-tertiary)" }}
                 >
-                  {/* Destination Amount - Calculated */}
+                  {/* Destination Amount - Calculated (only show when valid source amount and no validation error) */}
                   <div
-                    className="text-2xl font-semibold text-center"
+                    className={`h-10 flex items-center text-xl font-semibold text-center ${
+                      !sourceAmount ||
+                      Number(sourceAmount) <= 0 ||
+                      validationError
+                        ? "opacity-50"
+                        : ""
+                    }`}
                     style={{ color: "var(--color-accent)" }}
                   >
-                    {destinationAmount
+                    {sourceAmount &&
+                    Number(sourceAmount) > 0 &&
+                    destinationAmount &&
+                    !validationError
                       ? Number(destinationAmount).toLocaleString()
-                      : "0"}
+                      : "—"}
                   </div>
                   {/* Destination Currency Selector */}
                   <button
                     type="button"
                     onClick={() => setShowDestDialog(true)}
-                    className="mt-2 flex items-center justify-center gap-1 text-sm"
+                    className="mt-1 flex items-center justify-center gap-1 text-xs"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
-                    <span className="truncate max-w-[120px]">
+                    <span className="text-center line-clamp-2">
                       {destCurrency?.displayName || "Select program"}
                     </span>
                     <ChevronDown
-                      className="h-4 w-4 shrink-0"
+                      className="h-3 w-3 shrink-0"
                       style={{ color: "var(--color-text-tertiary)" }}
                     />
                   </button>
+                  {/* Destination Currency Logo */}
+                  {getLoyaltyProgramLogo(destCurrency?.displayName) && (
+                    <div
+                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{
+                        backgroundColor: getLoyaltyProgramBgColor(
+                          destCurrency?.displayName
+                        ),
+                      }}
+                    >
+                      <img
+                        src={getLoyaltyProgramLogo(destCurrency?.displayName)!}
+                        alt={destCurrency?.displayName}
+                        className="h-[60px] w-[60px] object-contain"
+                        style={{ transform: "scale(0.85)" }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -396,21 +562,6 @@ export function TransferDialog({
                   {validationError}
                 </p>
               )}
-
-              {/* Transfer rate hint */}
-              {selectedRate &&
-                selectedRate.sourceBlock &&
-                selectedRate.targetBlock && (
-                  <p
-                    className="text-xs text-center"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
-                    {`${selectedRate.sourceBlock.toLocaleString()} pts → ${selectedRate.targetBlock.toLocaleString()} mi`}
-                    {selectedRate.transferIncrement
-                      ? ` · +${((selectedRate.sourceBlock * selectedRate.transferIncrement) / selectedRate.targetBlock).toLocaleString()} pts increments`
-                      : ` · Multiples only`}
-                  </p>
-                )}
 
               {/* Transfer Details Section */}
               <div className="space-y-1 pt-2">

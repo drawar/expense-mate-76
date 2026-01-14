@@ -12,7 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CoinsIcon } from "lucide-react";
 import { format, isToday, startOfDay } from "date-fns";
 import type { PointsAdjustment, AdjustmentType } from "@/core/points/types";
@@ -122,7 +127,7 @@ export function AdjustmentsTable({
             <TableHead className="w-[140px]">Type</TableHead>
             <TableHead className="w-[120px]">Amount</TableHead>
             <TableHead className="w-[130px]">Date</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="w-[50px] text-center">Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -190,23 +195,36 @@ export function AdjustmentsTable({
                     </span>
                   </TableCell>
 
-                  {/* Status */}
+                  {/* Status - Colored dot with tooltip */}
                   <TableCell>
-                    {status === "pending" ? (
-                      <Badge
-                        variant="outline"
-                        className="text-amber-600 border-amber-300 bg-amber-50"
-                      >
-                        Pending
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-green-600 border-green-300 bg-green-50"
-                      >
-                        Confirmed
-                      </Badge>
-                    )}
+                    <div className="flex justify-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex items-center justify-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span
+                                className="h-3 w-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    status === "pending"
+                                      ? "#C9A227" // Japandi ochre/amber
+                                      : "#7D8E74", // Japandi sage green
+                                }}
+                              />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {status === "pending" ? "Pending" : "Confirmed"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
