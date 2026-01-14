@@ -1,5 +1,6 @@
 /**
  * TransferDialog - Form dialog for recording point transfers between programs
+ * Visual ratio display design inspired by Qatar Airways Privilege Club
  */
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -18,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronRight, Loader2, ArrowRight } from "lucide-react";
+import { ChevronRight, ChevronDown, Loader2, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import SelectionDialog, {
   SelectionOption,
@@ -305,291 +306,187 @@ export function TransferDialog({
             onSubmit={handleSubmit}
             className="flex flex-col flex-1 min-h-0 overflow-hidden"
           >
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 min-h-0">
-              {/* FROM Section */}
-              <p
-                className="text-xs font-medium uppercase tracking-wide pb-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                From
-              </p>
-
-              {/* Source Currency */}
-              <button
-                type="button"
-                onClick={() => setShowSourceDialog(true)}
-                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
-              >
-                <span
-                  className="font-medium whitespace-nowrap shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+              {/* Visual Ratio Display */}
+              <div className="flex items-stretch gap-2">
+                {/* Source Box */}
+                <div
+                  className="flex-1 rounded-xl p-4 flex flex-col"
+                  style={{ backgroundColor: "var(--color-bg-tertiary)" }}
                 >
-                  Source Program
-                </span>
-                <span className="flex items-center gap-1">
-                  <span
-                    className="truncate"
+                  {/* Source Amount - Editable */}
+                  <Input
+                    id="sourceAmount"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={
+                      sourceAmount ? Number(sourceAmount).toLocaleString() : ""
+                    }
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      setSourceAmount(raw);
+                    }}
+                    className="h-auto text-2xl font-semibold text-center border-none shadow-none p-0 focus-visible:ring-0 bg-transparent"
                     style={{ color: "var(--color-text-primary)" }}
+                  />
+                  {/* Source Currency Selector */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSourceDialog(true)}
+                    className="mt-2 flex items-center justify-center gap-1 text-sm"
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
-                    {sourceCurrency?.displayName || "Select program"}
-                  </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0"
+                    <span className="truncate max-w-[120px]">
+                      {sourceCurrency?.displayName || "Select program"}
+                    </span>
+                    <ChevronDown
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  </button>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center px-1">
+                  <ArrowRight
+                    className="h-5 w-5"
                     style={{ color: "var(--color-text-tertiary)" }}
                   />
-                </span>
-              </button>
+                </div>
 
-              {/* Source Amount */}
-              <div className="py-3 flex items-center justify-between gap-4">
-                <label
-                  htmlFor="sourceAmount"
-                  className="text-base md:text-sm font-medium shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
+                {/* Destination Box */}
+                <div
+                  className="flex-1 rounded-xl p-4 flex flex-col"
+                  style={{ backgroundColor: "var(--color-bg-tertiary)" }}
                 >
-                  Points
-                </label>
-                <Input
-                  id="sourceAmount"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="50000"
-                  value={sourceAmount}
-                  onChange={(e) =>
-                    setSourceAmount(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "var(--color-text-primary)",
-                  }}
-                />
+                  {/* Destination Amount - Calculated */}
+                  <div
+                    className="text-2xl font-semibold text-center"
+                    style={{ color: "var(--color-accent)" }}
+                  >
+                    {destinationAmount
+                      ? Number(destinationAmount).toLocaleString()
+                      : "0"}
+                  </div>
+                  {/* Destination Currency Selector */}
+                  <button
+                    type="button"
+                    onClick={() => setShowDestDialog(true)}
+                    className="mt-2 flex items-center justify-center gap-1 text-sm"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    <span className="truncate max-w-[120px]">
+                      {destCurrency?.displayName || "Select program"}
+                    </span>
+                    <ChevronDown
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  </button>
+                </div>
               </div>
 
-              {/* Source Preview / Validation Error */}
-              {validationError ? (
+              {/* Validation Error */}
+              {validationError && (
                 <p
-                  className="text-sm text-right pb-2"
+                  className="text-sm text-center"
                   style={{ color: "var(--color-error)" }}
                 >
                   {validationError}
                 </p>
-              ) : sourceCurrency && sourceAmount ? (
-                <p
-                  className="text-sm text-right pb-2"
-                  style={{ color: "var(--color-error)" }}
-                >
-                  -{Number(sourceAmount).toLocaleString()}{" "}
-                  {sourceCurrency.displayName}
-                </p>
-              ) : null}
+              )}
 
-              {/* Transfer constraints hint */}
+              {/* Transfer rate hint */}
               {selectedRate &&
                 selectedRate.sourceBlock &&
                 selectedRate.targetBlock && (
                   <p
-                    className="text-xs text-right pb-2"
+                    className="text-xs text-center"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    {`${selectedRate.sourceBlock.toLocaleString()} pts = ${selectedRate.targetBlock.toLocaleString()} mi`}
+                    {`${selectedRate.sourceBlock.toLocaleString()} pts → ${selectedRate.targetBlock.toLocaleString()} mi`}
                     {selectedRate.transferIncrement
-                      ? ` · Then +${((selectedRate.sourceBlock * selectedRate.transferIncrement) / selectedRate.targetBlock).toLocaleString()} pts`
+                      ? ` · +${((selectedRate.sourceBlock * selectedRate.transferIncrement) / selectedRate.targetBlock).toLocaleString()} pts increments`
                       : ` · Multiples only`}
                   </p>
                 )}
 
-              {/* Transfer Arrow */}
-              <div className="flex items-center justify-center py-3">
-                <ArrowRight
-                  className="h-5 w-5"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                />
-              </div>
-
-              {/* TO Section */}
-              <p
-                className="text-xs font-medium uppercase tracking-wide pb-1"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                To
-              </p>
-
-              {/* Destination Currency */}
-              <button
-                type="button"
-                onClick={() => setShowDestDialog(true)}
-                className="w-full py-3 flex items-center justify-between text-base md:text-sm"
-              >
-                <span
-                  className="font-medium whitespace-nowrap shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Destination Program
-                </span>
-                <span className="flex items-center gap-1">
-                  <span
-                    className="truncate"
-                    style={{ color: "var(--color-text-primary)" }}
+              {/* Transfer Details Section */}
+              <div className="space-y-1 pt-2">
+                {/* Transfer Bonus */}
+                <div className="py-3 flex items-center justify-between gap-4">
+                  <label
+                    htmlFor="bonus"
+                    className="text-base md:text-sm font-medium shrink-0"
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
-                    {destCurrency?.displayName || "Select program"}
-                  </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  />
-                </span>
-              </button>
-
-              {/* Conversion Rate */}
-              <div className="py-3 flex items-center justify-between gap-4">
-                <label
-                  htmlFor="rate"
-                  className="text-base md:text-sm font-medium shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Rate
-                </label>
-                {selectedRate?.sourceBlock && selectedRate?.targetBlock ? (
-                  <span
-                    className="text-base md:text-sm"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    {selectedRate.sourceBlock.toLocaleString()}:
-                    {selectedRate.targetBlock.toLocaleString()}
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--color-text-tertiary)" }}
-                    >
-                      1:
-                    </span>
-                    <Input
-                      id="rate"
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="1"
-                      value={conversionRate}
-                      onChange={(e) => setConversionRate(e.target.value)}
-                      className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-16"
-                      style={{
-                        backgroundColor: "transparent",
-                        color: "var(--color-text-primary)",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Transfer Bonus */}
-              <div className="py-3 flex items-center justify-between gap-4">
-                <label
-                  htmlFor="bonus"
-                  className="text-base md:text-sm font-medium shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Bonus %
-                </label>
-                <Input
-                  id="bonus"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={transferBonusRate}
-                  onChange={(e) =>
-                    setTransferBonusRate(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-20"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "var(--color-text-primary)",
-                  }}
-                />
-              </div>
-
-              {/* Destination Amount */}
-              <div className="py-3 flex items-center justify-between gap-4">
-                <label
-                  htmlFor="destAmount"
-                  className="text-base md:text-sm font-medium shrink-0"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Points Received
-                </label>
-                <Input
-                  id="destAmount"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="50000"
-                  value={destinationAmount}
-                  onChange={(e) =>
-                    setDestinationAmount(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                  className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "var(--color-text-primary)",
-                  }}
-                />
-              </div>
-
-              {/* Destination Preview */}
-              {destCurrency && destinationAmount && (
-                <p
-                  className="text-sm text-right pb-2"
-                  style={{ color: "var(--color-accent)" }}
-                >
-                  +{Number(destinationAmount).toLocaleString()}{" "}
-                  {destCurrency.displayName}
-                </p>
-              )}
-
-              {/* Transfer Date */}
-              <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="w-full py-3 flex items-center justify-between text-base md:text-sm"
-                  >
-                    <span
-                      className="font-medium whitespace-nowrap shrink-0"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      Date
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span
-                        className="truncate"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        {format(transferDate, "yyyy-MM-dd")}
-                      </span>
-                      <ChevronRight
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      />
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={transferDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setTransferDate(date);
-                        setShowDatePicker(false);
-                      }
+                    Bonus %
+                  </label>
+                  <Input
+                    id="bonus"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={transferBonusRate}
+                    onChange={(e) =>
+                      setTransferBonusRate(
+                        e.target.value.replace(/[^0-9]/g, "")
+                      )
+                    }
+                    className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-20"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "var(--color-text-primary)",
                     }}
-                    initialFocus
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+
+                {/* Transfer Date */}
+                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                    >
+                      <span
+                        className="font-medium whitespace-nowrap shrink-0"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        Date
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span
+                          className="truncate"
+                          style={{ color: "var(--color-text-primary)" }}
+                        >
+                          {format(transferDate, "yyyy-MM-dd")}
+                        </span>
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: "var(--color-text-tertiary)" }}
+                        />
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={transferDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setTransferDate(date);
+                          setShowDatePicker(false);
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               {/* Optional Fields Section */}
-              <div className="pt-4">
+              <div className="pt-2">
                 <p
                   className="text-xs font-medium uppercase tracking-wide pb-2"
                   style={{ color: "var(--color-text-tertiary)" }}
