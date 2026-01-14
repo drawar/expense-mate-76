@@ -61,7 +61,8 @@
       "Bash(export:*)",
       "Bash(xargs kill:*)",
       "Bash(git check-ignore:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(yes:*)"
     ]
   }
 }

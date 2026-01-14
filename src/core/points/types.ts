@@ -53,6 +53,8 @@ export interface DbPointsBalance {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
 }
 
@@ -118,6 +120,8 @@ export interface DbPointsAdjustment {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
 }
 
@@ -207,6 +211,8 @@ export interface DbPointsRedemption {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
 }
 
@@ -287,6 +293,8 @@ export interface DbPointsTransfer {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
   destination_currency?: {
     id: string;
@@ -294,6 +302,8 @@ export interface DbPointsTransfer {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
 }
 
@@ -371,6 +381,8 @@ export interface DbPointsGoal {
     display_name: string;
     issuer: string | null;
     is_transferrable: boolean;
+    logo_url: string | null;
+    bg_color: string | null;
   };
 }
 
@@ -471,6 +483,8 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
           displayName: db.reward_currencies.display_name,
           issuer: db.reward_currencies.issuer ?? undefined,
           isTransferrable: db.reward_currencies.is_transferrable,
+          logoUrl: db.reward_currencies.logo_url ?? undefined,
+          bgColor: db.reward_currencies.bg_color ?? undefined,
         }
       : undefined,
     startingBalance: Number(db.starting_balance),
@@ -498,6 +512,8 @@ export function toPointsAdjustment(db: DbPointsAdjustment): PointsAdjustment {
           displayName: db.reward_currencies.display_name,
           issuer: db.reward_currencies.issuer ?? undefined,
           isTransferrable: db.reward_currencies.is_transferrable,
+          logoUrl: db.reward_currencies.logo_url ?? undefined,
+          bgColor: db.reward_currencies.bg_color ?? undefined,
         }
       : undefined,
     amount: Number(db.amount),
@@ -525,6 +541,8 @@ export function toPointsRedemption(db: DbPointsRedemption): PointsRedemption {
           displayName: db.reward_currencies.display_name,
           issuer: db.reward_currencies.issuer ?? undefined,
           isTransferrable: db.reward_currencies.is_transferrable,
+          logoUrl: db.reward_currencies.logo_url ?? undefined,
+          bgColor: db.reward_currencies.bg_color ?? undefined,
         }
       : undefined,
     pointsRedeemed: Number(db.points_redeemed),
@@ -560,6 +578,8 @@ export function toPointsTransfer(db: DbPointsTransfer): PointsTransfer {
           displayName: db.source_currency.display_name,
           issuer: db.source_currency.issuer ?? undefined,
           isTransferrable: db.source_currency.is_transferrable,
+          logoUrl: db.source_currency.logo_url ?? undefined,
+          bgColor: db.source_currency.bg_color ?? undefined,
         }
       : undefined,
     sourceAmount: Number(db.source_amount),
@@ -571,6 +591,8 @@ export function toPointsTransfer(db: DbPointsTransfer): PointsTransfer {
           displayName: db.destination_currency.display_name,
           issuer: db.destination_currency.issuer ?? undefined,
           isTransferrable: db.destination_currency.is_transferrable,
+          logoUrl: db.destination_currency.logo_url ?? undefined,
+          bgColor: db.destination_currency.bg_color ?? undefined,
         }
       : undefined,
     destinationAmount: Number(db.destination_amount),
@@ -603,6 +625,8 @@ export function toPointsGoal(db: DbPointsGoal): PointsGoal {
           displayName: db.reward_currencies.display_name,
           issuer: db.reward_currencies.issuer ?? undefined,
           isTransferrable: db.reward_currencies.is_transferrable,
+          logoUrl: db.reward_currencies.logo_url ?? undefined,
+          bgColor: db.reward_currencies.bg_color ?? undefined,
         }
       : undefined,
     goalName: db.goal_name,
