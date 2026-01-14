@@ -162,6 +162,7 @@ function abbreviatePointsCurrency(currency: string | undefined): string {
     velocity: "Vel",
     ocbc$: "OCBC$",
     "ocbc dollars": "OCBC$",
+    ocbc: "OCBC$",
     points: "pts",
     pts: "pts",
   };
