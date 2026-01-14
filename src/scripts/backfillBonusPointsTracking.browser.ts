@@ -1,7 +1,9 @@
 /**
  * Backfill Bonus Points Tracking (Browser version)
  *
- * This script recalculates and tracks bonus points for existing transactions.
+ * This script reads bonus_points from the transactions table and tracks them.
+ * If transactions are missing bonus_points, run fixMissingBonusPoints first.
+ *
  * Run from browser console after logging into the app:
  *   (await import('/src/scripts/backfillBonusPointsTracking.browser.ts')).backfillBonusPointsTracking()
  */
@@ -201,7 +203,7 @@ export async function backfillBonusPointsTracking() {
   const userId = session.user.id;
   console.log("✅ Authenticated as:", session.user.email, "\n");
 
-  // Fetch all transactions with bonus points
+  // Fetch transactions with bonus points > 0
   console.log("Fetching transactions with bonus points...");
   const { data: transactions, error: txError } = await supabase
     .from("transactions")
@@ -236,6 +238,9 @@ export async function backfillBonusPointsTracking() {
 
   if (!transactions || transactions.length === 0) {
     console.log("No transactions with bonus points found.");
+    console.log(
+      "If transactions are missing bonus_points, run fixMissingBonusPoints first."
+    );
     return;
   }
 
@@ -272,8 +277,18 @@ export async function backfillBonusPointsTracking() {
 
   console.log(`Loaded ${allRules?.length || 0} reward rules\n`);
 
-  // Build tracking records
+  // Build tracking records and group transactions by period
   const trackingMap = new Map<string, TrackingRecord>();
+  const periodTransactions = new Map<
+    string,
+    Array<{
+      date: string;
+      merchant: string;
+      amount: number;
+      bonusPoints: number;
+      ruleName: string;
+    }>
+  >();
 
   let processed = 0;
   let skipped = 0;
@@ -324,6 +339,7 @@ export async function backfillBonusPointsTracking() {
       promoStartDate
     );
 
+    // Use stored bonus_points from the transactions table
     const valueToTrack =
       capType === "spend_amount"
         ? (tx.payment_amount ?? tx.amount)
@@ -356,14 +372,41 @@ export async function backfillBonusPointsTracking() {
       });
     }
 
-    const merchant = tx.merchants?.name || "Unknown";
-    console.log(
-      `📝 ${tx.date.substring(0, 10)} | ${merchant.substring(0, 25).padEnd(25)} | ` +
-        `${capType === "spend_amount" ? "$" + valueToTrack.toFixed(2) : valueToTrack + " pts"} | ` +
-        `Rule: ${rule.name.substring(0, 30)}`
-    );
+    // Group transaction details by period for display
+    const periodKey = `${paymentMethod.name}|${period.year}-${String(period.month).padStart(2, "0")}|${periodType}`;
+    const txList = periodTransactions.get(periodKey) || [];
+    txList.push({
+      date: tx.date.substring(0, 10),
+      merchant: tx.merchants?.name || "Unknown",
+      amount: tx.payment_amount ?? tx.amount,
+      bonusPoints: tx.bonus_points,
+      ruleName: rule.name,
+    });
+    periodTransactions.set(periodKey, txList);
 
     processed++;
+  }
+
+  // Display transactions grouped by period
+  console.log("\n=== Transactions by Statement Period ===\n");
+  const sortedPeriods = Array.from(periodTransactions.keys()).sort();
+  for (const periodKey of sortedPeriods) {
+    const [cardName, period, periodType] = periodKey.split("|");
+    const txList = periodTransactions.get(periodKey)!;
+    const totalPoints = txList.reduce((sum, t) => sum + t.bonusPoints, 0);
+
+    console.log(`📅 ${cardName} - ${period} (${periodType})`);
+    console.log(`   Statement period: ${period}`);
+    console.log(`   ─────────────────────────────────────────────────────────`);
+
+    for (const t of txList) {
+      console.log(
+        `   ${t.date} | ${t.merchant.substring(0, 25).padEnd(25)} | $${t.amount.toFixed(2).padStart(10)} | ${String(t.bonusPoints).padStart(6)} pts`
+      );
+    }
+
+    console.log(`   ─────────────────────────────────────────────────────────`);
+    console.log(`   TOTAL: ${totalPoints.toLocaleString()} pts\n`);
   }
 
   // Upsert tracking records
