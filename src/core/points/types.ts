@@ -55,6 +55,7 @@ export interface DbPointsBalance {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
 }
 
@@ -122,6 +123,7 @@ export interface DbPointsAdjustment {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
 }
 
@@ -213,6 +215,7 @@ export interface DbPointsRedemption {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
 }
 
@@ -295,6 +298,7 @@ export interface DbPointsTransfer {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
   destination_currency?: {
     id: string;
@@ -304,6 +308,7 @@ export interface DbPointsTransfer {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
 }
 
@@ -383,6 +388,7 @@ export interface DbPointsGoal {
     is_transferrable: boolean;
     logo_url: string | null;
     bg_color: string | null;
+    logo_scale: number | null;
   };
 }
 
@@ -485,6 +491,7 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
           isTransferrable: db.reward_currencies.is_transferrable,
           logoUrl: db.reward_currencies.logo_url ?? undefined,
           bgColor: db.reward_currencies.bg_color ?? undefined,
+          logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
     startingBalance: Number(db.starting_balance),
@@ -514,6 +521,7 @@ export function toPointsAdjustment(db: DbPointsAdjustment): PointsAdjustment {
           isTransferrable: db.reward_currencies.is_transferrable,
           logoUrl: db.reward_currencies.logo_url ?? undefined,
           bgColor: db.reward_currencies.bg_color ?? undefined,
+          logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
     amount: Number(db.amount),
@@ -543,6 +551,7 @@ export function toPointsRedemption(db: DbPointsRedemption): PointsRedemption {
           isTransferrable: db.reward_currencies.is_transferrable,
           logoUrl: db.reward_currencies.logo_url ?? undefined,
           bgColor: db.reward_currencies.bg_color ?? undefined,
+          logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
     pointsRedeemed: Number(db.points_redeemed),
@@ -580,6 +589,7 @@ export function toPointsTransfer(db: DbPointsTransfer): PointsTransfer {
           isTransferrable: db.source_currency.is_transferrable,
           logoUrl: db.source_currency.logo_url ?? undefined,
           bgColor: db.source_currency.bg_color ?? undefined,
+          logoScale: db.source_currency.logo_scale ?? undefined,
         }
       : undefined,
     sourceAmount: Number(db.source_amount),
@@ -593,6 +603,7 @@ export function toPointsTransfer(db: DbPointsTransfer): PointsTransfer {
           isTransferrable: db.destination_currency.is_transferrable,
           logoUrl: db.destination_currency.logo_url ?? undefined,
           bgColor: db.destination_currency.bg_color ?? undefined,
+          logoScale: db.destination_currency.logo_scale ?? undefined,
         }
       : undefined,
     destinationAmount: Number(db.destination_amount),
@@ -627,6 +638,7 @@ export function toPointsGoal(db: DbPointsGoal): PointsGoal {
           isTransferrable: db.reward_currencies.is_transferrable,
           logoUrl: db.reward_currencies.logo_url ?? undefined,
           bgColor: db.reward_currencies.bg_color ?? undefined,
+          logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
     goalName: db.goal_name,

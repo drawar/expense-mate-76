@@ -65,7 +65,7 @@ export class PointsBalanceService {
           `
           *,
           reward_currencies (
-            id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+            id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
           )
         `
         )
@@ -98,7 +98,7 @@ export class PointsBalanceService {
           `
           *,
           reward_currencies (
-            id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+            id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
           )
         `
         )
@@ -166,7 +166,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -376,7 +376,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -407,7 +407,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -445,7 +445,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -493,7 +493,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -549,7 +549,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -619,7 +619,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -673,7 +673,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -742,7 +742,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -812,10 +812,10 @@ export class PointsBalanceService {
         `
         *,
         source_currency:reward_currencies!points_transfers_source_currency_id_fkey (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         ),
         destination_currency:reward_currencies!points_transfers_destination_currency_id_fkey (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -869,10 +869,10 @@ export class PointsBalanceService {
         `
         *,
         source_currency:reward_currencies!points_transfers_source_currency_id_fkey (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         ),
         destination_currency:reward_currencies!points_transfers_destination_currency_id_fkey (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -944,7 +944,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -998,7 +998,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )
@@ -1056,7 +1056,7 @@ export class PointsBalanceService {
         `
         *,
         reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
       `
       )

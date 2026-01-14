@@ -22,6 +22,7 @@ export interface RewardCurrency {
   isTransferrable: boolean;
   logoUrl?: string;
   bgColor?: string;
+  logoScale?: number;
 }
 
 /**
@@ -35,6 +36,7 @@ export interface DbRewardCurrency {
   is_transferrable: boolean;
   logo_url: string | null;
   bg_color: string | null;
+  logo_scale: number | null;
   created_at: string;
 }
 
@@ -87,6 +89,7 @@ export function toRewardCurrency(db: DbRewardCurrency): RewardCurrency {
     isTransferrable: db.is_transferrable,
     logoUrl: db.logo_url ?? undefined,
     bgColor: db.bg_color ?? undefined,
+    logoScale: db.logo_scale ?? undefined,
   };
 }
 

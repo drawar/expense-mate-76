@@ -19,6 +19,7 @@ interface PointsByCurrency {
   earnRate: number;
   logoUrl?: string;
   bgColor?: string;
+  logoScale?: number;
   paymentCurrency?: string;
 }
 
@@ -101,6 +102,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         spending: number;
         logoUrl?: string;
         bgColor?: string;
+        logoScale?: number;
         paymentCurrency?: string;
       }
     >();
@@ -114,6 +116,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         spending: 0,
         logoUrl: undefined,
         bgColor: undefined,
+        logoScale: undefined,
         paymentCurrency: undefined,
       };
 
@@ -125,9 +128,11 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
       currencyMap.set(pointsCurrency, {
         points: existing.points + tx.rewardPoints,
         spending: existing.spending + spending,
-        // Capture logo_url and bg_color from reward_currencies (use first one found)
+        // Capture logo_url, bg_color, and logo_scale from reward_currencies (use first one found)
         logoUrl: existing.logoUrl || tx.paymentMethod?.rewardCurrencyLogoUrl,
         bgColor: existing.bgColor || tx.paymentMethod?.rewardCurrencyBgColor,
+        logoScale:
+          existing.logoScale || tx.paymentMethod?.rewardCurrencyLogoScale,
         // Track the payment currency for this points type
         paymentCurrency: existing.paymentCurrency || paymentCurrency,
       });
@@ -143,6 +148,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
           earnRate: data.spending > 0 ? data.points / data.spending : 0,
           logoUrl: data.logoUrl,
           bgColor: data.bgColor,
+          logoScale: data.logoScale,
           paymentCurrency: data.paymentCurrency,
         })
       )
@@ -195,7 +201,11 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                         src={logoUrl}
                         alt={item.currency}
                         className="h-[37px] w-[37px] object-contain"
-                        style={{ transform: "scale(0.85)" }}
+                        style={
+                          item.logoScale
+                            ? { transform: `scale(${item.logoScale})` }
+                            : undefined
+                        }
                       />
                     </div>
                   ) : (

@@ -131,6 +131,7 @@ const TransactionDetailsView = ({
   const pointsCurrency = transaction.paymentMethod.pointsCurrency || "points";
   const loyaltyLogo = transaction.paymentMethod.rewardCurrencyLogoUrl;
   const loyaltyBgColor = transaction.paymentMethod.rewardCurrencyBgColor;
+  const loyaltyLogoScale = transaction.paymentMethod.rewardCurrencyLogoScale;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -237,7 +238,11 @@ const TransactionDetailsView = ({
                     src={loyaltyLogo}
                     alt={pointsCurrency}
                     className="h-16 w-16 object-contain"
-                    style={{ transform: "scale(0.85)" }}
+                    style={
+                      loyaltyLogoScale
+                        ? { transform: `scale(${loyaltyLogoScale})` }
+                        : undefined
+                    }
                   />
                 </div>
               ) : (

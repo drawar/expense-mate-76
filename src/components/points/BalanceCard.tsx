@@ -33,6 +33,7 @@ export function BalanceCard({
   const currencyName = balance.rewardCurrency?.displayName ?? "Points";
   const logoUrl = balance.rewardCurrency?.logoUrl;
   const bgColor = balance.rewardCurrency?.bgColor;
+  const logoScale = balance.rewardCurrency?.logoScale;
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -44,12 +45,19 @@ export function BalanceCard({
         {/* Header with logo and currency name */}
         <div className="flex items-center gap-3 mb-4">
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={currencyName}
-              className="w-10 h-10 rounded-full object-contain p-1"
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
               style={{ backgroundColor: bgColor || "#ffffff" }}
-            />
+            >
+              <img
+                src={logoUrl}
+                alt={currencyName}
+                className="w-10 h-10 object-contain"
+                style={
+                  logoScale ? { transform: `scale(${logoScale})` } : undefined
+                }
+              />
+            </div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <CoinsIcon className="w-5 h-5 text-primary" />

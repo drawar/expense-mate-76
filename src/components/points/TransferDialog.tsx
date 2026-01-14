@@ -360,7 +360,13 @@ export function TransferDialog({
                         src={sourceCurrency.logoUrl}
                         alt={sourceCurrency?.displayName}
                         className="h-[60px] w-[60px] object-contain"
-                        style={{ transform: "scale(0.85)" }}
+                        style={
+                          sourceCurrency?.logoScale
+                            ? {
+                                transform: `scale(${sourceCurrency.logoScale})`,
+                              }
+                            : undefined
+                        }
                       />
                     </div>
                   )}
@@ -424,7 +430,11 @@ export function TransferDialog({
                         src={destCurrency.logoUrl}
                         alt={destCurrency?.displayName}
                         className="h-[60px] w-[60px] object-contain"
-                        style={{ transform: "scale(0.85)" }}
+                        style={
+                          destCurrency?.logoScale
+                            ? { transform: `scale(${destCurrency.logoScale})` }
+                            : undefined
+                        }
                       />
                     </div>
                   )}
