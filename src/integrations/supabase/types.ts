@@ -69,17 +69,19 @@ export type Database = {
           updated_at: string;
           reward_currency_id: string | null;
           target_currency_id: string | null;
-          minimum_transfer: number | null;
+          source_block: number | null;
+          target_block: number | null;
           transfer_increment: number | null;
         };
         Insert: {
           id?: string;
-          conversion_rate: number;
+          conversion_rate?: number;
           created_at?: string;
           updated_at?: string;
           reward_currency_id?: string | null;
           target_currency_id?: string | null;
-          minimum_transfer?: number | null;
+          source_block?: number | null;
+          target_block?: number | null;
           transfer_increment?: number | null;
         };
         Update: {
@@ -89,7 +91,8 @@ export type Database = {
           updated_at?: string;
           reward_currency_id?: string | null;
           target_currency_id?: string | null;
-          minimum_transfer?: number | null;
+          source_block?: number | null;
+          target_block?: number | null;
           transfer_increment?: number | null;
         };
         Relationships: [

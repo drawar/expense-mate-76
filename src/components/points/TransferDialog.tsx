@@ -33,7 +33,8 @@ export interface ConversionRateData {
   sourceCurrencyId: string;
   targetCurrencyId: string;
   rate: number;
-  minimumTransfer: number | null;
+  sourceBlock: number | null;
+  targetBlock: number | null;
   transferIncrement: number | null;
 }
 
@@ -192,26 +193,37 @@ export function TransferDialog({
     }
   }, [selectedRate]);
 
-  // Validate source amount against minimum transfer and increment constraints
+  // Validate source amount against block and increment constraints
   const validationError = useMemo(() => {
     if (!sourceAmount || !selectedRate) return null;
 
     const amount = Number(sourceAmount);
     if (isNaN(amount) || amount <= 0) return null;
 
-    const { minimumTransfer, transferIncrement } = selectedRate;
+    const { sourceBlock, targetBlock, transferIncrement } = selectedRate;
 
-    // Check minimum transfer
-    if (minimumTransfer && amount < minimumTransfer) {
-      return `Minimum transfer is ${minimumTransfer.toLocaleString()} points`;
+    // Check minimum transfer (sourceBlock is the minimum)
+    if (sourceBlock && amount < sourceBlock) {
+      return `Minimum transfer is ${sourceBlock.toLocaleString()} points`;
     }
 
-    // Check increment
-    if (transferIncrement) {
-      const baseAmount = minimumTransfer || 0;
-      const amountAfterMin = amount - baseAmount;
-      if (amountAfterMin > 0 && amountAfterMin % transferIncrement !== 0) {
-        return `Transfer must be in increments of ${transferIncrement.toLocaleString()} points`;
+    // Check increment constraints
+    if (sourceBlock && targetBlock) {
+      if (transferIncrement) {
+        // transferIncrement applies to TARGET miles (e.g., HSBC allows +2 miles increments)
+        // Calculate source increment: sourceBlock * transferIncrement / targetBlock
+        // e.g., HSBC: 50000 * 2 / 10000 = 10 points per 2 miles
+        const sourceIncrement = (sourceBlock * transferIncrement) / targetBlock;
+        const amountAfterMin = amount - sourceBlock;
+
+        if (amountAfterMin > 0 && amountAfterMin % sourceIncrement !== 0) {
+          return `Transfer must be ${sourceBlock.toLocaleString()} + multiples of ${sourceIncrement.toLocaleString()} points`;
+        }
+      } else {
+        // No transferIncrement: transfers must be exact multiples of sourceBlock
+        if (amount % sourceBlock !== 0) {
+          return `Transfer must be in multiples of ${sourceBlock.toLocaleString()} points`;
+        }
       }
     }
 
@@ -374,19 +386,16 @@ export function TransferDialog({
 
               {/* Transfer constraints hint */}
               {selectedRate &&
-                (selectedRate.minimumTransfer ||
-                  selectedRate.transferIncrement) && (
+                selectedRate.sourceBlock &&
+                selectedRate.targetBlock && (
                   <p
                     className="text-xs text-right pb-2"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    {selectedRate.minimumTransfer &&
-                      `Min: ${selectedRate.minimumTransfer.toLocaleString()}`}
-                    {selectedRate.minimumTransfer &&
-                      selectedRate.transferIncrement &&
-                      " · "}
-                    {selectedRate.transferIncrement &&
-                      `Increments: ${selectedRate.transferIncrement.toLocaleString()}`}
+                    {`${selectedRate.sourceBlock.toLocaleString()} pts = ${selectedRate.targetBlock.toLocaleString()} mi`}
+                    {selectedRate.transferIncrement
+                      ? ` · Then +${((selectedRate.sourceBlock * selectedRate.transferIncrement) / selectedRate.targetBlock).toLocaleString()} pts`
+                      : ` · Multiples only`}
                   </p>
                 )}
 

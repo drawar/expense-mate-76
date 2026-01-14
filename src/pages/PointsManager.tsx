@@ -124,7 +124,8 @@ export default function PointsManager() {
       sourceCurrencyId: string;
       targetCurrencyId: string;
       rate: number;
-      minimumTransfer: number | null;
+      sourceBlock: number | null;
+      targetBlock: number | null;
       transferIncrement: number | null;
     }>
   >([]);

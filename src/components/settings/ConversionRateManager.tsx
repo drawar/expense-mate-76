@@ -42,8 +42,8 @@ import {
  * Rate data for a single transfer partner
  */
 type RateData = {
-  rate: number;
-  minimumTransfer: number | null;
+  sourceBlock: number | null;
+  targetBlock: number | null;
   transferIncrement: number | null;
 };
 
@@ -72,8 +72,8 @@ export function ConversionRateManager() {
     Record<
       string,
       {
-        rate: string;
-        minimumTransfer: string;
+        sourceBlock: string;
+        targetBlock: string;
         transferIncrement: string;
       }
     >
@@ -114,8 +114,8 @@ export function ConversionRateManager() {
           matrix[rate.sourceCurrencyId] = {};
         }
         matrix[rate.sourceCurrencyId][rate.targetCurrencyId] = {
-          rate: rate.rate,
-          minimumTransfer: rate.minimumTransfer,
+          sourceBlock: rate.sourceBlock,
+          targetBlock: rate.targetBlock,
           transferIncrement: rate.transferIncrement,
         };
       }
@@ -154,12 +154,12 @@ export function ConversionRateManager() {
     const rates = matrix[sourceId] || {};
     const editing: Record<
       string,
-      { rate: string; minimumTransfer: string; transferIncrement: string }
+      { sourceBlock: string; targetBlock: string; transferIncrement: string }
     > = {};
     for (const [targetId, rateData] of Object.entries(rates)) {
       editing[targetId] = {
-        rate: rateData.rate.toString(),
-        minimumTransfer: rateData.minimumTransfer?.toString() || "",
+        sourceBlock: rateData.sourceBlock?.toString() || "",
+        targetBlock: rateData.targetBlock?.toString() || "",
         transferIncrement: rateData.transferIncrement?.toString() || "",
       };
     }
@@ -191,7 +191,7 @@ export function ConversionRateManager() {
    */
   const handleRateChange = (
     targetId: string,
-    field: "rate" | "minimumTransfer" | "transferIncrement",
+    field: "sourceBlock" | "targetBlock" | "transferIncrement",
     value: string
   ) => {
     setEditingRates((prev) => ({
@@ -231,8 +231,8 @@ export function ConversionRateManager() {
     setEditingRates((prev) => ({
       ...prev,
       [newPartnerId]: {
-        rate: "1.0",
-        minimumTransfer: "",
+        sourceBlock: "10000",
+        targetBlock: "10000",
         transferIncrement: "",
       },
     }));
@@ -251,23 +251,20 @@ export function ConversionRateManager() {
     setError(null);
 
     try {
-      // Validate all rates
+      // Validate all blocks
       for (const [targetId, fields] of Object.entries(editingRates)) {
-        const rateValue = parseFloat(fields.rate);
-        if (isNaN(rateValue) || rateValue <= 0) {
-          const target = targetCurrencies.find((t) => t.id === targetId);
+        const sourceBlock = parseInt(fields.sourceBlock);
+        const targetBlock = parseInt(fields.targetBlock);
+        const target = targetCurrencies.find((t) => t.id === targetId);
+
+        if (isNaN(sourceBlock) || sourceBlock <= 0) {
           throw new Error(
-            `Invalid rate for ${target?.displayName || targetId}`
+            `Invalid source block for ${target?.displayName || targetId}`
           );
         }
-        if (
-          fields.minimumTransfer &&
-          (isNaN(parseInt(fields.minimumTransfer)) ||
-            parseInt(fields.minimumTransfer) <= 0)
-        ) {
-          const target = targetCurrencies.find((t) => t.id === targetId);
+        if (isNaN(targetBlock) || targetBlock <= 0) {
           throw new Error(
-            `Invalid minimum transfer for ${target?.displayName || targetId}`
+            `Invalid target block for ${target?.displayName || targetId}`
           );
         }
         if (
@@ -275,7 +272,6 @@ export function ConversionRateManager() {
           (isNaN(parseInt(fields.transferIncrement)) ||
             parseInt(fields.transferIncrement) <= 0)
         ) {
-          const target = targetCurrencies.find((t) => t.id === targetId);
           throw new Error(
             `Invalid transfer increment for ${target?.displayName || targetId}`
           );
@@ -287,10 +283,8 @@ export function ConversionRateManager() {
         ([targetId, fields]) => ({
           sourceCurrencyId: selectedSourceId,
           targetCurrencyId: targetId,
-          rate: parseFloat(fields.rate),
-          minimumTransfer: fields.minimumTransfer
-            ? parseInt(fields.minimumTransfer)
-            : null,
+          sourceBlock: parseInt(fields.sourceBlock),
+          targetBlock: parseInt(fields.targetBlock),
           transferIncrement: fields.transferIncrement
             ? parseInt(fields.transferIncrement)
             : null,
@@ -313,8 +307,8 @@ export function ConversionRateManager() {
         updated[selectedSourceId] = {};
         for (const update of updates) {
           updated[selectedSourceId][update.targetCurrencyId] = {
-            rate: update.rate,
-            minimumTransfer: update.minimumTransfer,
+            sourceBlock: update.sourceBlock,
+            targetBlock: update.targetBlock,
             transferIncrement: update.transferIncrement,
           };
         }
@@ -641,50 +635,24 @@ export function ConversionRateManager() {
                                     color: "var(--color-text-tertiary)",
                                   }}
                                 >
-                                  Rate (1 pt =)
-                                </label>
-                                <Input
-                                  type="number"
-                                  step="0.0001"
-                                  min="0"
-                                  value={editingRates[partner.id]?.rate || ""}
-                                  onChange={(e) =>
-                                    handleRateChange(
-                                      partner.id,
-                                      "rate",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="text-center"
-                                  placeholder="1.0"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  className="text-xs mb-1 block"
-                                  style={{
-                                    color: "var(--color-text-tertiary)",
-                                  }}
-                                >
-                                  Min Transfer
+                                  Source Points
                                 </label>
                                 <Input
                                   type="number"
                                   step="1"
-                                  min="0"
+                                  min="1"
                                   value={
-                                    editingRates[partner.id]?.minimumTransfer ||
-                                    ""
+                                    editingRates[partner.id]?.sourceBlock || ""
                                   }
                                   onChange={(e) =>
                                     handleRateChange(
                                       partner.id,
-                                      "minimumTransfer",
+                                      "sourceBlock",
                                       e.target.value
                                     )
                                   }
                                   className="text-center"
-                                  placeholder="None"
+                                  placeholder="10000"
                                 />
                               </div>
                               <div>
@@ -694,7 +662,34 @@ export function ConversionRateManager() {
                                     color: "var(--color-text-tertiary)",
                                   }}
                                 >
-                                  Increment
+                                  = Target Miles
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={
+                                    editingRates[partner.id]?.targetBlock || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleRateChange(
+                                      partner.id,
+                                      "targetBlock",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="text-center"
+                                  placeholder="10000"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  className="text-xs mb-1 block"
+                                  style={{
+                                    color: "var(--color-text-tertiary)",
+                                  }}
+                                >
+                                  +Miles Inc.
                                 </label>
                                 <Input
                                   type="number"
@@ -712,7 +707,7 @@ export function ConversionRateManager() {
                                     )
                                   }
                                   className="text-center"
-                                  placeholder="None"
+                                  placeholder="Block"
                                 />
                               </div>
                             </div>

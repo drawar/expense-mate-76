@@ -345,7 +345,8 @@ export class ConversionService {
       sourceCurrencyId: string;
       targetCurrencyId: string;
       rate: number;
-      minimumTransfer: number | null;
+      sourceBlock: number | null;
+      targetBlock: number | null;
       transferIncrement: number | null;
     }>
   > {
@@ -354,7 +355,7 @@ export class ConversionService {
       const { data, error } = await (supabase as any)
         .from("conversion_rates")
         .select(
-          "id, reward_currency_id, target_currency_id, conversion_rate, minimum_transfer, transfer_increment"
+          "id, reward_currency_id, target_currency_id, conversion_rate, source_block, target_block, transfer_increment"
         )
         .not("reward_currency_id", "is", null)
         .not("target_currency_id", "is", null);
@@ -374,14 +375,19 @@ export class ConversionService {
           reward_currency_id: string;
           target_currency_id: string;
           conversion_rate: number;
-          minimum_transfer: number | null;
+          source_block: number | null;
+          target_block: number | null;
           transfer_increment: number | null;
         }) => ({
           id: row.id,
           sourceCurrencyId: row.reward_currency_id,
           targetCurrencyId: row.target_currency_id,
-          rate: row.conversion_rate,
-          minimumTransfer: row.minimum_transfer,
+          rate:
+            row.source_block && row.target_block
+              ? row.target_block / row.source_block
+              : row.conversion_rate,
+          sourceBlock: row.source_block,
+          targetBlock: row.target_block,
           transferIncrement: row.transfer_increment,
         })
       );
@@ -436,22 +442,18 @@ export class ConversionService {
     updates: Array<{
       sourceCurrencyId: string;
       targetCurrencyId: string;
-      rate: number;
-      minimumTransfer?: number | null;
+      sourceBlock: number;
+      targetBlock: number;
       transferIncrement?: number | null;
     }>
   ): Promise<void> {
-    // Validate all rates
+    // Validate all blocks
     for (const update of updates) {
-      if (update.rate <= 0) {
-        throw new Error("All conversion rates must be positive numbers");
+      if (update.sourceBlock <= 0) {
+        throw new Error("Source block must be a positive number");
       }
-      if (
-        update.minimumTransfer !== undefined &&
-        update.minimumTransfer !== null &&
-        update.minimumTransfer <= 0
-      ) {
-        throw new Error("Minimum transfer must be a positive number");
+      if (update.targetBlock <= 0) {
+        throw new Error("Target block must be a positive number");
       }
       if (
         update.transferIncrement !== undefined &&
@@ -466,8 +468,9 @@ export class ConversionService {
       const upsertData = updates.map((update) => ({
         reward_currency_id: update.sourceCurrencyId,
         target_currency_id: update.targetCurrencyId,
-        conversion_rate: update.rate,
-        minimum_transfer: update.minimumTransfer ?? null,
+        source_block: update.sourceBlock,
+        target_block: update.targetBlock,
+        conversion_rate: update.targetBlock / update.sourceBlock,
         transfer_increment: update.transferIncrement ?? null,
       }));
 
