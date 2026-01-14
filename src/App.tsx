@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
 import { LocaleService } from "@/core/locale";
+import { UserPreferencesService } from "@/core/preferences";
 import { toast } from "sonner";
 
 // Export queryClient so it can be cleared on logout
@@ -60,6 +61,17 @@ function App() {
         console.log(`Locale detected: ${locale.country} → ${locale.currency}`);
       } catch (error) {
         console.warn("Failed to detect locale:", error);
+      }
+
+      // Load saved currency preference from database (if user is logged in)
+      try {
+        const savedCurrency = await UserPreferencesService.getDefaultCurrency();
+        if (savedCurrency) {
+          LocaleService.setDefaultCurrency(savedCurrency);
+          console.log(`Loaded saved currency preference: ${savedCurrency}`);
+        }
+      } catch (error) {
+        console.warn("Failed to load currency preference:", error);
       }
 
       setIsInitialized(true);
