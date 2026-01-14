@@ -644,8 +644,8 @@ export class CardRegistry {
   /**
    * 6. OCBC Rewards World Card Rule
    * Tiered earning rates with shared monthly cap of 10,000 bonus points:
-   * - Tier 1: 28X points on selected department stores/Watsons
-   * - Tier 2: 18X points on other retail/dining
+   * - Tier 1: 15X points on selected department stores/Watsons (5 base + 70 bonus per $5)
+   * - Tier 2: 10X points on other retail/dining (5 base + 45 bonus per $5)
    */
   private createOCBCRewardsWorldCardRule(): RewardRule {
     return {
@@ -661,7 +661,7 @@ export class CardRegistry {
       conditions: [], // Base rule applies to all transactions
       reward: {
         calculationMethod: "standard",
-        baseMultiplier: 1,
+        baseMultiplier: 5,
         bonusMultiplier: 0, // Base rule has 0 bonus by default
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor5",
@@ -673,7 +673,7 @@ export class CardRegistry {
           {
             name: "Tier 1 - Selected Retail",
             priority: 1,
-            multiplier: 14, // 28x points per $5 (base 2x + bonus 26x)
+            multiplier: 70, // 15X total per $5 (5 base + 70 bonus = 75 per $5)
             condition: {
               type: "compound",
               operation: "any", // OR logic
@@ -697,7 +697,7 @@ export class CardRegistry {
           {
             name: "Tier 2 - Shopping & Dining",
             priority: 2,
-            multiplier: 9, // 18x points per $5 (base 2x + bonus 16x)
+            multiplier: 45, // 10X total per $5 (5 base + 45 bonus = 50 per $5)
             condition: {
               type: "mcc",
               operation: "include",
