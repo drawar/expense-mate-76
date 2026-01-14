@@ -67,6 +67,10 @@ const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
   "aeroplan points":
     "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
+  ocbc$:
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
+  "ocbc dollars":
+    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
 };
 
 /**
@@ -156,6 +160,8 @@ function abbreviatePointsCurrency(currency: string | undefined): string {
     "flying blue": "FB",
     "marriott bonvoy": "MB",
     velocity: "Vel",
+    ocbc$: "OCBC$",
+    "ocbc dollars": "OCBC$",
     points: "pts",
     pts: "pts",
   };
