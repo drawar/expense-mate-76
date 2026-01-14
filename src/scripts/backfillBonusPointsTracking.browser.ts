@@ -7,6 +7,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { getStatementPeriodYearMonth } from "@/utils/dates/formatters";
 
 interface TransactionRow {
   id: string;
@@ -87,24 +88,9 @@ function getPeriodKey(
     };
   }
 
-  // For statement_month periods, calculate which statement period the date falls into
-  // Statement period runs from statementDay of one month to (statementDay-1) of next month
-  // e.g., statement_day=19 means periods are: Dec 19 - Jan 18, Jan 19 - Feb 18, etc.
-  const txDay = date.getDate();
-  let periodYear = date.getFullYear();
-  let periodMonth = date.getMonth() + 1; // 1-indexed
-
-  // If transaction is BEFORE the statement day, it belongs to the PREVIOUS month's period
-  // e.g., Jan 5 with statement_day=19 → belongs to Dec period (Dec 19 - Jan 18)
-  if (txDay < statementDay) {
-    periodMonth -= 1;
-    if (periodMonth === 0) {
-      periodMonth = 12;
-      periodYear -= 1;
-    }
-  }
-
-  return { year: periodYear, month: periodMonth, statementDay };
+  // For statement_month periods, use the shared utility function
+  const { year, month } = getStatementPeriodYearMonth(date, statementDay);
+  return { year, month, statementDay };
 }
 
 // Check if a transaction matches a rule's conditions

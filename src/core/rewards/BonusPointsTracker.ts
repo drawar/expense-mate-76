@@ -11,6 +11,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SpendingPeriodType, RewardRule } from "./types";
+import { getStatementPeriodYearMonth } from "@/utils/dates/formatters";
 
 /** What type of value is being capped */
 export type CapType = "bonus_points" | "spend_amount";
@@ -551,22 +552,8 @@ export class BonusPointsTracker {
       };
     }
 
-    // For statement_month, calculate which statement period the date falls into
-    // e.g., statement_day=19 means periods are: Dec 19 - Jan 18, Jan 19 - Feb 18, etc.
-    const txDay = date.getDate();
-    let periodYear = date.getFullYear();
-    let periodMonth = date.getMonth() + 1; // 1-indexed
-
-    // If date is BEFORE the statement day, it belongs to the PREVIOUS month's period
-    if (txDay < statementDay) {
-      periodMonth -= 1;
-      if (periodMonth === 0) {
-        periodMonth = 12;
-        periodYear -= 1;
-      }
-    }
-
-    return { year: periodYear, month: periodMonth };
+    // For statement_month, use the shared utility function
+    return getStatementPeriodYearMonth(date, statementDay);
   }
 
   /**
