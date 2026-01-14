@@ -15,67 +15,6 @@ import {
 import { PointsBalance, BalanceBreakdown, getCppRating } from "@/core/points";
 import { cn } from "@/lib/utils";
 
-// Loyalty program logo URLs (reused from PointsEarnedCard)
-const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
-  krisflyer:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  "krisflyer miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  avios:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
-  "membership rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
-  "membership rewards points (ca)":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
-  "hsbc rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "td rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
-  "citi thankyou":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "citi thankyou points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  thankyou:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "asia miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  aeroplan:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  "flying blue":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  ocbc$:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
-  "ocbc dollars":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
-};
-
-function getLoyaltyProgramLogo(currency: string | undefined): string | null {
-  if (!currency) return null;
-  const normalizedCurrency = currency.toLowerCase();
-
-  // Direct match first
-  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
-  }
-
-  // Try without region suffix like "(SG)", "(CA)", "(US)"
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
-    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
-  }
-
-  // Try partial match (for variations)
-  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
-    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
-      return url;
-    }
-  }
-
-  return null;
-}
-
 interface BalanceCardProps {
   balance: PointsBalance;
   breakdown?: BalanceBreakdown;
@@ -92,7 +31,7 @@ export function BalanceCard({
   className,
 }: BalanceCardProps) {
   const currencyName = balance.rewardCurrency?.displayName ?? "Points";
-  const logoUrl = getLoyaltyProgramLogo(currencyName);
+  const logoUrl = balance.rewardCurrency?.logoUrl;
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });

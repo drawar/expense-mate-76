@@ -16,72 +16,6 @@ import { CoinsIcon, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import type { PointsTransfer } from "@/core/points/types";
 
-// Loyalty program logos (reused from other components)
-const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
-  krisflyer:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  "krisflyer miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  avios:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
-  "membership rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
-  "membership rewards points (ca)":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
-  "hsbc rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "hsbc rewards points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "td rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
-  "citi thankyou":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "citi thankyou points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "citi thankyou points (sg)":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  thankyou:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "asia miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  asiamiles:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  "flying blue":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  flyingblue:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  "flying blue miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  aeroplan:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  "aeroplan points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-};
-
-function getLoyaltyProgramLogo(currency: string | undefined): string | null {
-  if (!currency) return null;
-  const normalizedCurrency = currency.toLowerCase();
-
-  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
-  }
-
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
-    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
-  }
-
-  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
-    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
-      return url;
-    }
-  }
-
-  return null;
-}
-
 interface TransfersTableProps {
   transfers: PointsTransfer[];
   onRowClick?: (transfer: PointsTransfer) => void;
@@ -119,8 +53,8 @@ export function TransfersTable({
                 transfer.sourceCurrency?.displayName ?? "Points";
               const destName =
                 transfer.destinationCurrency?.displayName ?? "Points";
-              const sourceLogo = getLoyaltyProgramLogo(sourceName);
-              const destLogo = getLoyaltyProgramLogo(destName);
+              const sourceLogo = transfer.sourceCurrency?.logoUrl;
+              const destLogo = transfer.destinationCurrency?.logoUrl;
 
               return (
                 <TableRow

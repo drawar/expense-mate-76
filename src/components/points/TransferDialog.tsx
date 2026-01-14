@@ -47,122 +47,6 @@ const FEE_CURRENCY_OPTIONS: SelectionOption[] = [
   { value: "GBP", label: "GBP" },
 ];
 
-// Loyalty program logo URLs
-const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
-  krisflyer:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  "krisflyer miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  avios:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
-  "membership rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
-  "membership rewards points (ca)":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
-  "hsbc rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "td rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
-  "citi thankyou":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  thankyou:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "asia miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  aeroplan:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  "flying blue":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  "dbs points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/dbs-points.png",
-  uni$: "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/uob-uni.png",
-  "mileage bank":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/jl-mileagebank.png",
-  "miles&smiles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/tk-milessmiles.png",
-  mileageplus:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ua-mileageplus.png",
-  "royal orchid":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/tg-royalorchid.png",
-  "fortune wings":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/mu-fortunewings.png",
-  "guest miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ey-guest.png",
-  "etihad guest":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ey-guest.png",
-  "frequent flyer":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/qf-frequentflyer.png",
-  "infinity mileagelands":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/br-infinitymileagelands.png",
-  lotusmiles:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/vn-lotusmiles.png",
-  "ihg rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ihg-rewards.png",
-  "marriott bonvoy":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/marriott-bonvoy.png",
-};
-
-function getLoyaltyProgramLogo(currency: string | undefined): string | null {
-  if (!currency) return null;
-  const normalizedCurrency = currency.toLowerCase();
-
-  // Direct match first
-  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
-  }
-
-  // Try without region suffix like "(SG)", "(CA)", "(US)"
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
-    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
-  }
-
-  // Try partial match (for variations)
-  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
-    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
-      return url;
-    }
-  }
-
-  return null;
-}
-
-// Background colors for logos with non-transparent backgrounds
-const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
-  "membership rewards": "#006FCF", // Amex blue
-  "membership rewards points": "#006FCF",
-  "membership rewards points (ca)": "#006FCF",
-};
-
-function getLoyaltyProgramBgColor(currency: string | undefined): string {
-  if (!currency) return "white";
-  const normalizedCurrency = currency.toLowerCase();
-
-  // Direct match first
-  if (LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency];
-  }
-
-  // Try without region suffix
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  if (LOYALTY_PROGRAM_BG_COLORS[withoutRegion]) {
-    return LOYALTY_PROGRAM_BG_COLORS[withoutRegion];
-  }
-
-  // Try partial match
-  for (const [key, color] of Object.entries(LOYALTY_PROGRAM_BG_COLORS)) {
-    if (normalizedCurrency.includes(key)) {
-      return color;
-    }
-  }
-
-  return "white";
-}
-
 interface TransferDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -465,19 +349,10 @@ export function TransferDialog({
                     />
                   </button>
                   {/* Source Currency Logo */}
-                  {getLoyaltyProgramLogo(sourceCurrency?.displayName) && (
-                    <div
-                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
-                      style={{
-                        backgroundColor: getLoyaltyProgramBgColor(
-                          sourceCurrency?.displayName
-                        ),
-                      }}
-                    >
+                  {sourceCurrency?.logoUrl && (
+                    <div className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white">
                       <img
-                        src={
-                          getLoyaltyProgramLogo(sourceCurrency?.displayName)!
-                        }
+                        src={sourceCurrency.logoUrl}
                         alt={sourceCurrency?.displayName}
                         className="h-[60px] w-[60px] object-contain"
                         style={{ transform: "scale(0.85)" }}
@@ -533,17 +408,10 @@ export function TransferDialog({
                     />
                   </button>
                   {/* Destination Currency Logo */}
-                  {getLoyaltyProgramLogo(destCurrency?.displayName) && (
-                    <div
-                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
-                      style={{
-                        backgroundColor: getLoyaltyProgramBgColor(
-                          destCurrency?.displayName
-                        ),
-                      }}
-                    >
+                  {destCurrency?.logoUrl && (
+                    <div className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white">
                       <img
-                        src={getLoyaltyProgramLogo(destCurrency?.displayName)!}
+                        src={destCurrency.logoUrl}
                         alt={destCurrency?.displayName}
                         className="h-[60px] w-[60px] object-contain"
                         style={{ transform: "scale(0.85)" }}

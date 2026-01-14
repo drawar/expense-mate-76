@@ -436,38 +436,38 @@ export function AdjustmentDialog({
 
       {/* Selection Dialogs */}
       <SelectionDialog
-        isOpen={showCurrencyDialog}
-        onClose={() => setShowCurrencyDialog(false)}
+        open={showCurrencyDialog}
+        onOpenChange={setShowCurrencyDialog}
+        onCloseAll={onClose}
         title="Reward Currency"
         options={currencyOptions}
         selectedValue={rewardCurrencyId}
         onSelect={(value) => {
           setRewardCurrencyId(value);
-          setShowCurrencyDialog(false);
         }}
       />
 
       <SelectionDialog
-        isOpen={showTypeDialog}
-        onClose={() => setShowTypeDialog(false)}
+        open={showTypeDialog}
+        onOpenChange={setShowTypeDialog}
+        onCloseAll={onClose}
         title="Adjustment Type"
         options={ADJUSTMENT_TYPE_OPTIONS}
         selectedValue={adjustmentType}
         onSelect={(value) => {
           setAdjustmentType(value as AdjustmentType);
-          setShowTypeDialog(false);
         }}
       />
 
       <SelectionDialog
-        isOpen={showSignDialog}
-        onClose={() => setShowSignDialog(false)}
+        open={showSignDialog}
+        onOpenChange={setShowSignDialog}
+        onCloseAll={onClose}
         title="Operation"
         options={SIGN_OPTIONS}
         selectedValue={isNegative ? "subtract" : "add"}
         onSelect={(value) => {
           setIsNegative(value === "subtract");
-          setShowSignDialog(false);
         }}
       />
     </>

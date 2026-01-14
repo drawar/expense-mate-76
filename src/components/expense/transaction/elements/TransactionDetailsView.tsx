@@ -67,106 +67,6 @@ import {
 } from "lucide-react";
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
 
-// Loyalty program logo URLs (synced with PointsEarnedCard)
-const LOYALTY_PROGRAM_LOGOS: Record<string, string> = {
-  krisflyer:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  "krisflyer miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/krisflyer.png",
-  avios:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/avios.png",
-  "membership rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/membership-rewards.png",
-  "membership rewards points (ca)":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amex-mr.png",
-  "hsbc rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "hsbc rewards points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/hsbc-rewards.png",
-  "td rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/td-rewards.png",
-  "citi thankyou":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "citi thankyou points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  thankyou:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "thankyou points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/citi-thankyou.png",
-  "asia miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  asiamiles:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/cx-asiamiles.png",
-  "amazon rewards":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/amazon-rewards.png",
-  "flying blue":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  flyingblue:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  "flying blue miles":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  "flying blue points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/afklm-flyingblue.png",
-  aeroplan:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  "aeroplan points":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ac-aeroplan.png",
-  ocbc$:
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
-  "ocbc dollars":
-    "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
-  ocbc: "https://yulueezoyjxobhureuxj.supabase.co/storage/v1/object/public/loyalty-programs/ocbc-dollars.png",
-};
-
-function getLoyaltyProgramLogo(currency: string | undefined): string | null {
-  if (!currency) return null;
-  const normalizedCurrency = currency.toLowerCase();
-
-  // Direct match first
-  if (LOYALTY_PROGRAM_LOGOS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_LOGOS[normalizedCurrency];
-  }
-
-  // Try without region suffix like "(SG)", "(CA)", "(US)"
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  if (LOYALTY_PROGRAM_LOGOS[withoutRegion]) {
-    return LOYALTY_PROGRAM_LOGOS[withoutRegion];
-  }
-
-  // Try partial match (for variations)
-  for (const [key, url] of Object.entries(LOYALTY_PROGRAM_LOGOS)) {
-    if (normalizedCurrency.includes(key) || key.includes(withoutRegion)) {
-      return url;
-    }
-  }
-
-  return null;
-}
-
-// Background colors for logos with non-transparent backgrounds
-const LOYALTY_PROGRAM_BG_COLORS: Record<string, string> = {
-  "membership rewards": "#006FCF", // Amex blue
-  "membership rewards points (ca)": "#006FCF",
-};
-
-function getLoyaltyProgramBgColor(currency: string | undefined): string {
-  if (!currency) return "white";
-  const normalizedCurrency = currency.toLowerCase();
-
-  // Direct match first
-  if (LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency]) {
-    return LOYALTY_PROGRAM_BG_COLORS[normalizedCurrency];
-  }
-
-  // Try without region suffix
-  const withoutRegion = normalizedCurrency
-    .replace(/\s*\([^)]+\)\s*$/, "")
-    .trim();
-  return LOYALTY_PROGRAM_BG_COLORS[withoutRegion] || "white";
-}
-
 interface TransactionDetailsViewProps {
   transaction: Transaction;
   onCategoryChange?: (category: string) => void;
@@ -229,7 +129,7 @@ const TransactionDetailsView = ({
     : null;
 
   const pointsCurrency = transaction.paymentMethod.pointsCurrency || "points";
-  const loyaltyLogo = getLoyaltyProgramLogo(pointsCurrency);
+  const loyaltyLogo = transaction.paymentMethod.rewardCurrencyLogoUrl;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -328,12 +228,7 @@ const TransactionDetailsView = ({
             </p>
             <div className="flex items-center gap-3">
               {loyaltyLogo ? (
-                <div
-                  className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden"
-                  style={{
-                    backgroundColor: getLoyaltyProgramBgColor(pointsCurrency),
-                  }}
-                >
+                <div className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden bg-white">
                   <img
                     src={loyaltyLogo}
                     alt={pointsCurrency}
