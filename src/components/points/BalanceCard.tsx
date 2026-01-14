@@ -32,6 +32,7 @@ export function BalanceCard({
 }: BalanceCardProps) {
   const currencyName = balance.rewardCurrency?.displayName ?? "Points";
   const logoUrl = balance.rewardCurrency?.logoUrl;
+  const bgColor = balance.rewardCurrency?.bgColor;
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -46,7 +47,8 @@ export function BalanceCard({
             <img
               src={logoUrl}
               alt={currencyName}
-              className="w-10 h-10 rounded-full object-contain bg-white p-1"
+              className="w-10 h-10 rounded-full object-contain p-1"
+              style={{ backgroundColor: bgColor || "#ffffff" }}
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

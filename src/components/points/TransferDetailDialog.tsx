@@ -61,6 +61,8 @@ export function TransferDetailDialog({
   const destName = transfer.destinationCurrency?.displayName ?? "Points";
   const sourceLogo = transfer.sourceCurrency?.logoUrl;
   const destLogo = transfer.destinationCurrency?.logoUrl;
+  const sourceBgColor = transfer.sourceCurrency?.bgColor;
+  const destBgColor = transfer.destinationCurrency?.bgColor;
   const hasAdditionalDetails =
     transfer.transferBonusRate ||
     transfer.transferFee > 0 ||
@@ -105,7 +107,8 @@ export function TransferDetailDialog({
                     <img
                       src={sourceLogo}
                       alt={sourceName}
-                      className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
+                      className="h-12 w-12 rounded-full object-contain p-1 mx-auto"
+                      style={{ backgroundColor: sourceBgColor || "#ffffff" }}
                     />
                   ) : (
                     <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto">
@@ -132,7 +135,8 @@ export function TransferDetailDialog({
                     <img
                       src={destLogo}
                       alt={destName}
-                      className="h-12 w-12 rounded-full object-contain bg-white p-1 mx-auto"
+                      className="h-12 w-12 rounded-full object-contain p-1 mx-auto"
+                      style={{ backgroundColor: destBgColor || "#ffffff" }}
                     />
                   ) : (
                     <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto">

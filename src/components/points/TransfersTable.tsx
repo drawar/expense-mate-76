@@ -55,6 +55,8 @@ export function TransfersTable({
                 transfer.destinationCurrency?.displayName ?? "Points";
               const sourceLogo = transfer.sourceCurrency?.logoUrl;
               const destLogo = transfer.destinationCurrency?.logoUrl;
+              const sourceBgColor = transfer.sourceCurrency?.bgColor;
+              const destBgColor = transfer.destinationCurrency?.bgColor;
 
               return (
                 <TableRow
@@ -69,7 +71,10 @@ export function TransfersTable({
                         <img
                           src={sourceLogo}
                           alt={sourceName}
-                          className="h-7 w-7 rounded-full object-contain bg-white p-0.5"
+                          className="h-7 w-7 rounded-full object-contain p-0.5"
+                          style={{
+                            backgroundColor: sourceBgColor || "#ffffff",
+                          }}
                         />
                       ) : (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
@@ -87,7 +92,8 @@ export function TransfersTable({
                         <img
                           src={destLogo}
                           alt={destName}
-                          className="h-7 w-7 rounded-full object-contain bg-white p-0.5"
+                          className="h-7 w-7 rounded-full object-contain p-0.5"
+                          style={{ backgroundColor: destBgColor || "#ffffff" }}
                         />
                       ) : (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">

@@ -73,6 +73,7 @@ export function AdjustmentsTable({
               const currencyName =
                 adjustment.rewardCurrency?.displayName ?? "Points";
               const logoUrl = adjustment.rewardCurrency?.logoUrl;
+              const bgColor = adjustment.rewardCurrency?.bgColor;
               const isPositive = adjustment.amount >= 0;
               const status = getStatus(adjustment.adjustmentDate);
 
@@ -89,7 +90,8 @@ export function AdjustmentsTable({
                         <img
                           src={logoUrl}
                           alt={currencyName}
-                          className="h-8 w-8 rounded-full object-contain bg-white p-0.5"
+                          className="h-8 w-8 rounded-full object-contain p-0.5"
+                          style={{ backgroundColor: bgColor || "#ffffff" }}
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">

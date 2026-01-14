@@ -130,6 +130,7 @@ const TransactionDetailsView = ({
 
   const pointsCurrency = transaction.paymentMethod.pointsCurrency || "points";
   const loyaltyLogo = transaction.paymentMethod.rewardCurrencyLogoUrl;
+  const loyaltyBgColor = transaction.paymentMethod.rewardCurrencyBgColor;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -228,7 +229,10 @@ const TransactionDetailsView = ({
             </p>
             <div className="flex items-center gap-3">
               {loyaltyLogo ? (
-                <div className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden bg-white">
+                <div
+                  className="h-16 w-16 flex items-center justify-center relative rounded-full overflow-hidden"
+                  style={{ backgroundColor: loyaltyBgColor || "#ffffff" }}
+                >
                   <img
                     src={loyaltyLogo}
                     alt={pointsCurrency}

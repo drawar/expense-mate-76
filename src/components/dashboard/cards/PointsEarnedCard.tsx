@@ -18,6 +18,7 @@ interface PointsByCurrency {
   spending: number;
   earnRate: number;
   logoUrl?: string;
+  bgColor?: string;
   paymentCurrency?: string;
 }
 
@@ -99,6 +100,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         points: number;
         spending: number;
         logoUrl?: string;
+        bgColor?: string;
         paymentCurrency?: string;
       }
     >();
@@ -111,6 +113,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         points: 0,
         spending: 0,
         logoUrl: undefined,
+        bgColor: undefined,
         paymentCurrency: undefined,
       };
 
@@ -122,8 +125,9 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
       currencyMap.set(pointsCurrency, {
         points: existing.points + tx.rewardPoints,
         spending: existing.spending + spending,
-        // Capture logo_url from reward_currencies (use first one found)
+        // Capture logo_url and bg_color from reward_currencies (use first one found)
         logoUrl: existing.logoUrl || tx.paymentMethod?.rewardCurrencyLogoUrl,
+        bgColor: existing.bgColor || tx.paymentMethod?.rewardCurrencyBgColor,
         // Track the payment currency for this points type
         paymentCurrency: existing.paymentCurrency || paymentCurrency,
       });
@@ -138,6 +142,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
           spending: data.spending,
           earnRate: data.spending > 0 ? data.points / data.spending : 0,
           logoUrl: data.logoUrl,
+          bgColor: data.bgColor,
           paymentCurrency: data.paymentCurrency,
         })
       )
@@ -172,6 +177,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
         <div className="space-y-3">
           {pointsByCurrency.map((item) => {
             const logoUrl = item.logoUrl;
+            const bgColor = item.bgColor;
             return (
               <div
                 key={item.currency}
@@ -181,7 +187,10 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                 <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
                   {/* Loyalty Program Logo */}
                   {logoUrl ? (
-                    <div className="h-[37px] w-[37px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white">
+                    <div
+                      className="h-[37px] w-[37px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{ backgroundColor: bgColor || "#ffffff" }}
+                    >
                       <img
                         src={logoUrl}
                         alt={item.currency}

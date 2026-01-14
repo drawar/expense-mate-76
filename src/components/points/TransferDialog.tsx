@@ -350,7 +350,12 @@ export function TransferDialog({
                   </button>
                   {/* Source Currency Logo */}
                   {sourceCurrency?.logoUrl && (
-                    <div className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white">
+                    <div
+                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{
+                        backgroundColor: sourceCurrency?.bgColor || "#ffffff",
+                      }}
+                    >
                       <img
                         src={sourceCurrency.logoUrl}
                         alt={sourceCurrency?.displayName}
@@ -409,7 +414,12 @@ export function TransferDialog({
                   </button>
                   {/* Destination Currency Logo */}
                   {destCurrency?.logoUrl && (
-                    <div className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white">
+                    <div
+                      className="mt-2 h-[60px] w-[60px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      style={{
+                        backgroundColor: destCurrency?.bgColor || "#ffffff",
+                      }}
+                    >
                       <img
                         src={destCurrency.logoUrl}
                         alt={destCurrency?.displayName}

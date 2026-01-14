@@ -74,6 +74,7 @@ export interface PaymentMethod {
   pointsCurrency?: string;
   rewardCurrencyId?: string;
   rewardCurrencyLogoUrl?: string;
+  rewardCurrencyBgColor?: string;
   active: boolean;
   rewardRules?: unknown[];
   conversionRate?: Record<string, number>;

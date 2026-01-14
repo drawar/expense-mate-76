@@ -84,6 +84,7 @@ export function RedemptionsTable({
               const currencyName =
                 redemption.rewardCurrency?.displayName ?? "Points";
               const logoUrl = redemption.rewardCurrency?.logoUrl;
+              const bgColor = redemption.rewardCurrency?.bgColor;
               const typeConfig =
                 REDEMPTION_TYPE_CONFIG[redemption.redemptionType];
 
@@ -100,7 +101,8 @@ export function RedemptionsTable({
                         <img
                           src={logoUrl}
                           alt={currencyName}
-                          className="h-8 w-8 rounded-full object-contain bg-white p-0.5"
+                          className="h-8 w-8 rounded-full object-contain p-0.5"
+                          style={{ backgroundColor: bgColor || "#ffffff" }}
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">

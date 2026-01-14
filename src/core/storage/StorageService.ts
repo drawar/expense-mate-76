@@ -86,11 +86,11 @@ export class StorageService {
         "StorageService.getPaymentMethods: Querying Supabase for payment methods...",
         { includeInactive }
       );
-      // Join with card_catalog for default_image_url and reward_currencies for display_name and logo_url
+      // Join with card_catalog for default_image_url and reward_currencies for display_name, logo_url, and bg_color
       let query = supabase
         .from("payment_methods")
         .select(
-          "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url)"
+          "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url, bg_color)"
         );
 
       // Only filter by active status if not including inactive
@@ -138,11 +138,12 @@ export class StorageService {
           row.card_catalog as { default_image_url?: string } | null
         )?.default_image_url;
 
-        // Get display_name and logo_url from reward_currencies as single source of truth
+        // Get display_name, logo_url, and bg_color from reward_currencies as single source of truth
         // Fall back to points_currency for backwards compatibility
         const rewardCurrency = row.reward_currencies as {
           display_name?: string;
           logo_url?: string;
+          bg_color?: string;
         } | null;
 
         return {
@@ -161,6 +162,7 @@ export class StorageService {
             rewardCurrency?.display_name || row.points_currency || undefined,
           rewardCurrencyId: row.reward_currency_id || undefined,
           rewardCurrencyLogoUrl: rewardCurrency?.logo_url || undefined,
+          rewardCurrencyBgColor: rewardCurrency?.bg_color || undefined,
           active: row.is_active ?? true,
           rewardRules: (row.reward_rules as unknown[]) || [],
           selectedCategories: Array.isArray(row.selected_categories)
@@ -500,7 +502,7 @@ export class StorageService {
             is_monthly_statement, conversion_rate, reward_currency_id,
             card_catalog_id,
             card_catalog(default_image_url),
-            reward_currencies(display_name, logo_url)
+            reward_currencies(display_name, logo_url, bg_color)
           ),
           merchants:merchant_id(
             id, name, address, mcc, mcc_code, is_online, coordinates, is_deleted
@@ -551,6 +553,7 @@ export class StorageService {
           const rewardCurrency = row.payment_methods?.reward_currencies as {
             display_name?: string;
             logo_url?: string;
+            bg_color?: string;
           } | null;
           const catalogImageUrl = (
             row.payment_methods?.card_catalog as {
@@ -576,6 +579,7 @@ export class StorageService {
             rewardCurrencyId:
               row.payment_methods?.reward_currency_id || undefined,
             rewardCurrencyLogoUrl: rewardCurrency?.logo_url || undefined,
+            rewardCurrencyBgColor: rewardCurrency?.bg_color || undefined,
             active: row.payment_methods?.is_active || true,
             rewardRules: row.payment_methods?.reward_rules || [],
             selectedCategories: row.payment_methods?.selected_categories || [],
