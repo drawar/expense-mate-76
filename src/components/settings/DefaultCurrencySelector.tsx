@@ -110,7 +110,7 @@ export function DefaultCurrencySelector() {
               onValueChange={handleCurrencyChange}
               disabled={isLoading || isSaving}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="flex-1">
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
