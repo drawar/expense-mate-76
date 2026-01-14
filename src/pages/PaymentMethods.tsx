@@ -16,6 +16,10 @@ import { RuleRepository } from "@/core/rewards/RuleRepository";
 import { RewardRule } from "@/core/rewards/types";
 import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 import { cardCatalogService } from "@/core/catalog";
+import {
+  getQuickSetupService,
+  getQuickSetupConfig,
+} from "@/core/rewards/QuickSetupService";
 
 // Helper to get card network from issuer/name
 const getCardNetwork = (issuer: string, name: string): string => {
@@ -321,6 +325,7 @@ const PaymentMethods = () => {
   const handleSaveMethod = async (method: PaymentMethod) => {
     try {
       let updatedMethods: PaymentMethod[];
+      const isNewCatalogCard = !editingMethod && method.cardCatalogId;
 
       if (editingMethod) {
         // Update existing method
@@ -342,6 +347,48 @@ const PaymentMethods = () => {
 
       setIsFormOpen(false);
       setEditingMethod(null);
+
+      // Auto-initialize reward rules for new catalog cards
+      if (isNewCatalogCard && method.cardCatalogId) {
+        const setupConfig = getQuickSetupConfig({
+          issuer: method.issuer,
+          name: method.name,
+        });
+
+        if (setupConfig) {
+          try {
+            // Get the cardTypeId from the catalog entry
+            const catalogEntry = await cardCatalogService.getCardById(
+              method.cardCatalogId
+            );
+            const cardTypeId =
+              catalogEntry?.cardTypeId ||
+              cardTypeIdService.generateCardTypeId(
+                method.issuer || "",
+                method.name
+              );
+
+            // Run quick setup
+            const quickSetupService = getQuickSetupService();
+            const result = await quickSetupService.runSetupIfAvailable(
+              { id: method.id, issuer: method.issuer, name: method.name },
+              cardTypeId
+            );
+
+            if (result.success && result.rulesCreated > 0) {
+              toast({
+                title: "Reward Rules Initialized",
+                description: `${result.rulesCreated} reward rule${result.rulesCreated > 1 ? "s" : ""} configured for ${method.name}`,
+              });
+            }
+          } catch (setupError) {
+            console.error("Error auto-initializing reward rules:", setupError);
+            // Don't show error toast - card was saved successfully,
+            // user can manually set up rules later
+          }
+        }
+      }
+
       refetch(); // Refresh the data
     } catch (error) {
       console.error("Error saving payment method:", error);

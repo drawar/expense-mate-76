@@ -95,3 +95,15 @@ export {
   ValidationError,
   PersistenceError,
 } from "./errors";
+
+// Re-export QuickSetupService
+export {
+  QuickSetupService,
+  getQuickSetupService,
+  getQuickSetupConfig,
+} from "./QuickSetupService";
+export type {
+  QuickSetupType,
+  QuickSetupConfig,
+  QuickSetupResult,
+} from "./QuickSetupService";
