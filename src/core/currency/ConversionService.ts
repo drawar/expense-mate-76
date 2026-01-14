@@ -345,13 +345,17 @@ export class ConversionService {
       sourceCurrencyId: string;
       targetCurrencyId: string;
       rate: number;
+      minimumTransfer: number | null;
+      transferIncrement: number | null;
     }>
   > {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("conversion_rates")
-        .select("id, reward_currency_id, target_currency_id, conversion_rate")
+        .select(
+          "id, reward_currency_id, target_currency_id, conversion_rate, minimum_transfer, transfer_increment"
+        )
         .not("reward_currency_id", "is", null)
         .not("target_currency_id", "is", null);
 
@@ -370,11 +374,15 @@ export class ConversionService {
           reward_currency_id: string;
           target_currency_id: string;
           conversion_rate: number;
+          minimum_transfer: number | null;
+          transfer_increment: number | null;
         }) => ({
           id: row.id,
           sourceCurrencyId: row.reward_currency_id,
           targetCurrencyId: row.target_currency_id,
           rate: row.conversion_rate,
+          minimumTransfer: row.minimum_transfer,
+          transferIncrement: row.transfer_increment,
         })
       );
     } catch (error) {
@@ -429,12 +437,28 @@ export class ConversionService {
       sourceCurrencyId: string;
       targetCurrencyId: string;
       rate: number;
+      minimumTransfer?: number | null;
+      transferIncrement?: number | null;
     }>
   ): Promise<void> {
     // Validate all rates
     for (const update of updates) {
       if (update.rate <= 0) {
         throw new Error("All conversion rates must be positive numbers");
+      }
+      if (
+        update.minimumTransfer !== undefined &&
+        update.minimumTransfer !== null &&
+        update.minimumTransfer <= 0
+      ) {
+        throw new Error("Minimum transfer must be a positive number");
+      }
+      if (
+        update.transferIncrement !== undefined &&
+        update.transferIncrement !== null &&
+        update.transferIncrement <= 0
+      ) {
+        throw new Error("Transfer increment must be a positive number");
       }
     }
 
@@ -443,6 +467,8 @@ export class ConversionService {
         reward_currency_id: update.sourceCurrencyId,
         target_currency_id: update.targetCurrencyId,
         conversion_rate: update.rate,
+        minimum_transfer: update.minimumTransfer ?? null,
+        transfer_increment: update.transferIncrement ?? null,
       }));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

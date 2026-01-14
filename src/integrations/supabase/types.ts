@@ -69,6 +69,8 @@ export type Database = {
           updated_at: string;
           reward_currency_id: string | null;
           target_currency_id: string | null;
+          minimum_transfer: number | null;
+          transfer_increment: number | null;
         };
         Insert: {
           id?: string;
@@ -77,6 +79,8 @@ export type Database = {
           updated_at?: string;
           reward_currency_id?: string | null;
           target_currency_id?: string | null;
+          minimum_transfer?: number | null;
+          transfer_increment?: number | null;
         };
         Update: {
           id?: string;
@@ -85,6 +89,8 @@ export type Database = {
           updated_at?: string;
           reward_currency_id?: string | null;
           target_currency_id?: string | null;
+          minimum_transfer?: number | null;
+          transfer_increment?: number | null;
         };
         Relationships: [
           {

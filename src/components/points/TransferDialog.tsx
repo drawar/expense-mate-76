@@ -33,6 +33,8 @@ export interface ConversionRateData {
   sourceCurrencyId: string;
   targetCurrencyId: string;
   rate: number;
+  minimumTransfer: number | null;
+  transferIncrement: number | null;
 }
 
 const FEE_CURRENCY_OPTIONS: SelectionOption[] = [
@@ -165,23 +167,56 @@ export function TransferDialog({
     }
   }, [sourceCurrencyId, conversionRates]);
 
-  // Auto-fill conversion rate when source and destination are selected
-  useEffect(() => {
+  // Get the selected conversion rate with its transfer constraints
+  const selectedRate = useMemo(() => {
     if (
-      sourceCurrencyId &&
-      destinationCurrencyId &&
-      conversionRates.length > 0
+      !sourceCurrencyId ||
+      !destinationCurrencyId ||
+      conversionRates.length === 0
     ) {
-      const rate = conversionRates.find(
+      return null;
+    }
+    return (
+      conversionRates.find(
         (r) =>
           r.sourceCurrencyId === sourceCurrencyId &&
           r.targetCurrencyId === destinationCurrencyId
-      );
-      if (rate) {
-        setConversionRate(String(rate.rate));
+      ) || null
+    );
+  }, [sourceCurrencyId, destinationCurrencyId, conversionRates]);
+
+  // Auto-fill conversion rate when source and destination are selected
+  useEffect(() => {
+    if (selectedRate) {
+      setConversionRate(String(selectedRate.rate));
+    }
+  }, [selectedRate]);
+
+  // Validate source amount against minimum transfer and increment constraints
+  const validationError = useMemo(() => {
+    if (!sourceAmount || !selectedRate) return null;
+
+    const amount = Number(sourceAmount);
+    if (isNaN(amount) || amount <= 0) return null;
+
+    const { minimumTransfer, transferIncrement } = selectedRate;
+
+    // Check minimum transfer
+    if (minimumTransfer && amount < minimumTransfer) {
+      return `Minimum transfer is ${minimumTransfer.toLocaleString()} points`;
+    }
+
+    // Check increment
+    if (transferIncrement) {
+      const baseAmount = minimumTransfer || 0;
+      const amountAfterMin = amount - baseAmount;
+      if (amountAfterMin > 0 && amountAfterMin % transferIncrement !== 0) {
+        return `Transfer must be in increments of ${transferIncrement.toLocaleString()} points`;
       }
     }
-  }, [sourceCurrencyId, destinationCurrencyId, conversionRates]);
+
+    return null;
+  }, [sourceAmount, selectedRate]);
 
   // Auto-calculate destination amount when source or rate changes
   useEffect(() => {
@@ -319,8 +354,15 @@ export function TransferDialog({
                 />
               </div>
 
-              {/* Source Preview */}
-              {sourceCurrency && sourceAmount && (
+              {/* Source Preview / Validation Error */}
+              {validationError ? (
+                <p
+                  className="text-sm text-right pb-2"
+                  style={{ color: "var(--color-error)" }}
+                >
+                  {validationError}
+                </p>
+              ) : sourceCurrency && sourceAmount ? (
                 <p
                   className="text-sm text-right pb-2"
                   style={{ color: "var(--color-error)" }}
@@ -328,7 +370,25 @@ export function TransferDialog({
                   -{Number(sourceAmount).toLocaleString()}{" "}
                   {sourceCurrency.displayName}
                 </p>
-              )}
+              ) : null}
+
+              {/* Transfer constraints hint */}
+              {selectedRate &&
+                (selectedRate.minimumTransfer ||
+                  selectedRate.transferIncrement) && (
+                  <p
+                    className="text-xs text-right pb-2"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    {selectedRate.minimumTransfer &&
+                      `Min: ${selectedRate.minimumTransfer.toLocaleString()}`}
+                    {selectedRate.minimumTransfer &&
+                      selectedRate.transferIncrement &&
+                      " · "}
+                    {selectedRate.transferIncrement &&
+                      `Increments: ${selectedRate.transferIncrement.toLocaleString()}`}
+                  </p>
+                )}
 
               {/* Transfer Arrow */}
               <div className="flex items-center justify-center py-3">
@@ -634,7 +694,8 @@ export function TransferDialog({
                   !sourceAmount ||
                   Number(sourceAmount) <= 0 ||
                   !destinationAmount ||
-                  Number(destinationAmount) <= 0
+                  Number(destinationAmount) <= 0 ||
+                  !!validationError
                 }
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

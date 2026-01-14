@@ -120,7 +120,13 @@ export default function PointsManager() {
     []
   );
   const [conversionRates, setConversionRates] = useState<
-    Array<{ sourceCurrencyId: string; targetCurrencyId: string; rate: number }>
+    Array<{
+      sourceCurrencyId: string;
+      targetCurrencyId: string;
+      rate: number;
+      minimumTransfer: number | null;
+      transferIncrement: number | null;
+    }>
   >([]);
   const [currenciesLoading, setCurrenciesLoading] = useState(true);
 
