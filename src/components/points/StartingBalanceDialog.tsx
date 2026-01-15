@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import {
   Select,
   SelectContent,
@@ -215,11 +218,24 @@ export function StartingBalanceDialog({
               <Label htmlFor="notes">Notes (optional)</Label>
               <Textarea
                 id="notes"
-                placeholder="Any additional notes"
+                placeholder="Any additional notes (supports markdown)"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
               />
+              {notes.trim() && (
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-headings:my-2 prose-headings:font-semibold">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {notes}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
