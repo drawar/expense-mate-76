@@ -13,7 +13,13 @@ export class CurrencyService {
   /**
    * List of currencies that don't use decimal places
    */
-  private static readonly NO_DECIMAL_CURRENCIES = ["JPY", "VND", "IDR", "TWD"];
+  private static readonly NO_DECIMAL_CURRENCIES = [
+    "JPY",
+    "VND",
+    "IDR",
+    "TWD",
+    "KRW",
+  ];
 
   /**
    * Live exchange rates cache (populated by refreshRates)
@@ -50,6 +56,7 @@ export class CurrencyService {
     THB: "฿",
     MYR: "RM",
     QAR: "QR",
+    KRW: "₩",
   };
 
   /**
@@ -75,6 +82,7 @@ export class CurrencyService {
       THB: 36.17,
       MYR: 4.72,
       QAR: 3.64,
+      KRW: 1450,
     },
     EUR: {
       USD: 1.08,
@@ -92,6 +100,7 @@ export class CurrencyService {
       THB: 38.99,
       MYR: 5.09,
       QAR: 3.93,
+      KRW: 1562,
     },
     GBP: {
       USD: 1.27,
@@ -109,6 +118,7 @@ export class CurrencyService {
       THB: 46.0,
       MYR: 6.0,
       QAR: 4.62,
+      KRW: 1840,
     },
     JPY: {
       USD: 0.0066,
@@ -126,6 +136,7 @@ export class CurrencyService {
       THB: 0.24,
       MYR: 0.031,
       QAR: 0.024,
+      KRW: 9.55,
     },
     AUD: {
       USD: 0.65,
@@ -143,6 +154,7 @@ export class CurrencyService {
       THB: 23.61,
       MYR: 3.08,
       QAR: 2.37,
+      KRW: 948,
     },
     CAD: {
       USD: 0.73,
@@ -160,6 +172,7 @@ export class CurrencyService {
       THB: 26.53,
       MYR: 3.46,
       QAR: 2.66,
+      KRW: 1058,
     },
     CNY: {
       USD: 0.14,
@@ -177,6 +190,7 @@ export class CurrencyService {
       THB: 4.98,
       MYR: 0.65,
       QAR: 0.51,
+      KRW: 200,
     },
     INR: {
       USD: 0.012,
@@ -194,6 +208,7 @@ export class CurrencyService {
       THB: 0.43,
       MYR: 0.057,
       QAR: 0.044,
+      KRW: 17.4,
     },
     TWD: {
       USD: 0.031,
@@ -211,6 +226,7 @@ export class CurrencyService {
       THB: 1.12,
       MYR: 0.15,
       QAR: 0.11,
+      KRW: 44.9,
     },
     SGD: {
       USD: 0.74,
@@ -228,6 +244,7 @@ export class CurrencyService {
       THB: 26.88,
       MYR: 3.51,
       QAR: 2.69,
+      KRW: 1074,
     },
     VND: {
       USD: 0.00004,
@@ -245,6 +262,7 @@ export class CurrencyService {
       THB: 0.0014,
       MYR: 0.00019,
       QAR: 0.00015,
+      KRW: 0.057,
     },
     IDR: {
       USD: 0.000062,
@@ -262,6 +280,7 @@ export class CurrencyService {
       THB: 0.0022,
       MYR: 0.00029,
       QAR: 0.00023,
+      KRW: 0.09,
     },
     THB: {
       USD: 0.028,
@@ -279,6 +298,7 @@ export class CurrencyService {
       THB: 1,
       MYR: 0.13,
       QAR: 0.1,
+      KRW: 40.1,
     },
     MYR: {
       USD: 0.21,
@@ -296,6 +316,7 @@ export class CurrencyService {
       THB: 7.66,
       MYR: 1,
       QAR: 0.77,
+      KRW: 307,
     },
     QAR: {
       USD: 0.27,
@@ -313,6 +334,25 @@ export class CurrencyService {
       THB: 9.94,
       MYR: 1.3,
       QAR: 1,
+      KRW: 399,
+    },
+    KRW: {
+      USD: 0.00069,
+      EUR: 0.00064,
+      GBP: 0.00054,
+      JPY: 0.105,
+      AUD: 0.00106,
+      CAD: 0.00095,
+      CNY: 0.005,
+      INR: 0.057,
+      TWD: 0.022,
+      SGD: 0.00093,
+      VND: 17.4,
+      IDR: 11.1,
+      THB: 0.025,
+      MYR: 0.0033,
+      QAR: 0.0025,
+      KRW: 1,
     },
   };
 
@@ -338,6 +378,7 @@ export class CurrencyService {
     { value: "THB", label: "THB - Thai Baht (฿)" },
     { value: "MYR", label: "MYR - Malaysian Ringgit (RM)" },
     { value: "QAR", label: "QAR - Qatari Riyal (QR)" },
+    { value: "KRW", label: "KRW - South Korean Won (₩)" },
   ];
 
   /**

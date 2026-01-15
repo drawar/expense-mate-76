@@ -59,7 +59,8 @@ export type Currency =
   | "IDR"
   | "THB"
   | "MYR"
-  | "QAR";
+  | "QAR"
+  | "KRW";
 
 export interface PaymentMethod {
   id: string;

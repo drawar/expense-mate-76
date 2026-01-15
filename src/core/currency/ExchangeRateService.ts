@@ -60,6 +60,7 @@ export class ExchangeRateService {
     "IDR",
     "THB",
     "MYR",
+    "KRW",
   ];
 
   /**

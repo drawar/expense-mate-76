@@ -21,6 +21,7 @@ const SUPPORTED_CURRENCIES: Currency[] = [
   "IDR",
   "THB",
   "MYR",
+  "KRW",
 ];
 
 /**
