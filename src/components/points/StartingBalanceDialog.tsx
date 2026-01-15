@@ -205,7 +205,7 @@ export function StartingBalanceDialog({
                 <PopoverContent
                   className="w-auto p-0"
                   align="start"
-                  side="bottom"
+                  side="top"
                   sideOffset={4}
                 >
                   <Calendar
