@@ -151,7 +151,7 @@ export default function PointsManager() {
     usePointsBalances();
 
   // Payment methods (for card-specific balance selection)
-  const { data: paymentMethods = [] } = usePaymentMethods();
+  const { paymentMethods = [] } = usePaymentMethods();
 
   // Goals
   const { data: activeGoals = [], isLoading: goalsLoading } = useActiveGoals();
