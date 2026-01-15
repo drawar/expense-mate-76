@@ -162,7 +162,12 @@ export const TransactionDetailsSection: React.FC<
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  side="top"
+                  sideOffset={4}
+                >
                   <Calendar
                     mode="single"
                     selected={field.value}
@@ -172,6 +177,7 @@ export const TransactionDetailsSection: React.FC<
                         field.onChange(date);
                       }
                     }}
+                    defaultMonth={field.value}
                     disabled={(date) => {
                       // Compare dates without time to avoid timezone edge cases
                       // This ensures "today" is always selectable regardless of current time

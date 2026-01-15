@@ -508,7 +508,12 @@ export function TransferDialog({
                       </span>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="end"
+                    side="top"
+                    sideOffset={4}
+                  >
                     <Calendar
                       mode="single"
                       selected={transferDate}
@@ -518,6 +523,8 @@ export function TransferDialog({
                           setShowDatePicker(false);
                         }
                       }}
+                      defaultMonth={transferDate}
+                      disabled={(date) => date > new Date()}
                       initialFocus
                     />
                   </PopoverContent>

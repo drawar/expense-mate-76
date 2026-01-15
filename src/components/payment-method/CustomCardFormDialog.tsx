@@ -555,7 +555,12 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                             />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
+                        <PopoverContent
+                          className="w-auto p-0"
+                          align="end"
+                          side="top"
+                          sideOffset={4}
+                        >
                           <Calendar
                             mode="single"
                             selected={
@@ -566,6 +571,9 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                                 setPurchaseDate(format(date, "yyyy-MM-dd"));
                               }
                             }}
+                            defaultMonth={
+                              purchaseDate ? new Date(purchaseDate) : undefined
+                            }
                             disabled={(date) => {
                               const today = startOfDay(new Date());
                               const compareDate = startOfDay(date);

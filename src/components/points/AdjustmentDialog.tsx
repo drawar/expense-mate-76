@@ -336,7 +336,12 @@ export function AdjustmentDialog({
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="end"
+                  side="top"
+                  sideOffset={4}
+                >
                   <Calendar
                     mode="single"
                     selected={adjustmentDate}
@@ -346,6 +351,8 @@ export function AdjustmentDialog({
                         setShowDatePicker(false);
                       }
                     }}
+                    defaultMonth={adjustmentDate}
+                    disabled={(date) => date > new Date()}
                     initialFocus
                   />
                 </PopoverContent>

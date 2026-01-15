@@ -340,11 +340,17 @@ export function GoalDialog({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  side="top"
+                  sideOffset={4}
+                >
                   <Calendar
                     mode="single"
                     selected={targetDate}
                     onSelect={setTargetDate}
+                    defaultMonth={targetDate}
                     initialFocus
                     disabled={(date) => date < new Date()}
                   />

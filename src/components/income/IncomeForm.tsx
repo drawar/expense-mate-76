@@ -267,11 +267,18 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                     {date ? format(date, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  side="top"
+                  sideOffset={4}
+                >
                   <Calendar
                     mode="single"
                     selected={date}
                     onSelect={setDate}
+                    defaultMonth={date}
+                    disabled={(date) => date > new Date()}
                     initialFocus
                   />
                 </PopoverContent>
