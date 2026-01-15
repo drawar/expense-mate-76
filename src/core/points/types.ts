@@ -62,10 +62,6 @@ export interface DbPointsBalance {
     bg_color: string | null;
     logo_scale: number | null;
   };
-  // Joined from card_catalog for card_type_id display name
-  card_catalog?: {
-    display_name: string;
-  };
 }
 
 /**
@@ -506,7 +502,7 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
         }
       : undefined,
     cardTypeId: db.card_type_id ?? undefined,
-    cardTypeName: db.card_catalog?.display_name ?? undefined,
+    cardTypeName: undefined, // Card type name is derived from cardTypeId in the UI
     startingBalance: Number(db.starting_balance),
     currentBalance: Number(db.current_balance),
     balanceDate: db.balance_date ? new Date(db.balance_date) : undefined,
