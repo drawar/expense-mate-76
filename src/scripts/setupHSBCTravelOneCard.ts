@@ -2,10 +2,10 @@
  * Script to manually set up reward rules for HSBC TravelOne card
  *
  * Run in browser console:
- * 1. Go to the Payment Methods page
+ * 1. Go to the Payment Methods page in the app
  * 2. Open browser dev tools (F12)
  * 3. Go to Console tab
- * 4. Paste this script and press Enter
+ * 4. Paste the BROWSER VERSION below and press Enter
  *
  * Or run via CLI:
  * npx tsx src/scripts/setupHSBCTravelOneCard.ts
@@ -15,6 +15,51 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+
+/**
+ * BROWSER VERSION - Copy everything below this line to paste in browser console:
+ *
+(async () => {
+  const cardTypeId = "hsbc-travelone";
+
+  // Get supabase client from window
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+  const supabase = createClient(
+    "https://yulueezoyjxobhureuxj.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHVlZXpveWp4b2JodXJldXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMjM1MTEsImV4cCI6MjA3NzU5OTUxMX0.QpTFICkI0IWYdq2Me4Rp3DFrCAs_QiVZEmUywACnqAE"
+  );
+
+  // Delete existing rules
+  await supabase.from("reward_rules").delete().eq("card_type_id", cardTypeId);
+
+  // Create 6x foreign currency rule
+  const { error: e1 } = await supabase.from("reward_rules").insert({
+    card_type_id: cardTypeId,
+    name: "6x Points on Foreign Currency",
+    description: "Earn 6 HSBC Rewards Points per S$1 on foreign currency transactions",
+    enabled: true, priority: 2,
+    conditions: [{ type: "currency", operation: "not_equals", values: ["SGD"] }],
+    calculation_method: "standard", base_multiplier: 1, bonus_multiplier: 5,
+    points_rounding_strategy: "floor", amount_rounding_strategy: "none", block_size: 1,
+  });
+  if (e1) { console.error("Error:", e1); return; }
+  console.log("✓ Created: 6x Points on Foreign Currency");
+
+  // Create 3x local spend rule
+  const { error: e2 } = await supabase.from("reward_rules").insert({
+    card_type_id: cardTypeId,
+    name: "3x Points on Local Spend",
+    description: "Earn 3 HSBC Rewards Points per S$1 on local SGD transactions",
+    enabled: true, priority: 1, conditions: [],
+    calculation_method: "standard", base_multiplier: 1, bonus_multiplier: 2,
+    points_rounding_strategy: "floor", amount_rounding_strategy: "none", block_size: 1,
+  });
+  if (e2) { console.error("Error:", e2); return; }
+  console.log("✓ Created: 3x Points on Local Spend");
+  console.log("✅ Done! Refresh the page.");
+})();
+ *
+ */
 
 async function setupHSBCTravelOne() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
