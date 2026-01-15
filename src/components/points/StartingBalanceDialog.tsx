@@ -89,7 +89,7 @@ export function StartingBalanceDialog({
         if (!cardTypes.has(typeId)) {
           cardTypes.set(typeId, {
             id: typeId,
-            name: `${pm.issuer} ${pm.name}`,
+            name: pm.issuer ? `${pm.issuer} ${pm.name}` : pm.name,
           });
         }
       });
