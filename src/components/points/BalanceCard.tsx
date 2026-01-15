@@ -88,7 +88,6 @@ export function BalanceCard({
           <p className="text-3xl font-semibold text-foreground">
             {breakdown ? formatNumber(breakdown.currentBalance) : "—"}
           </p>
-          <p className="text-sm text-muted-foreground">Current Balance</p>
         </div>
 
         {/* Balance Breakdown */}

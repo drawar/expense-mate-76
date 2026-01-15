@@ -55,6 +55,8 @@ interface TransferDialogProps {
   conversionRates?: ConversionRateData[];
   defaultSourceCurrencyId?: string;
   isLoading?: boolean;
+  /** Map of rewardCurrencyId -> current balance for displaying source balance */
+  sourceBalances?: Map<string, number>;
 }
 
 export function TransferDialog({
@@ -65,6 +67,7 @@ export function TransferDialog({
   conversionRates = [],
   defaultSourceCurrencyId,
   isLoading = false,
+  sourceBalances,
 }: TransferDialogProps) {
   // Form state
   const [sourceCurrencyId, setSourceCurrencyId] = useState(
@@ -370,6 +373,17 @@ export function TransferDialog({
                       />
                     </div>
                   )}
+                  {/* Source Balance */}
+                  {sourceCurrencyId &&
+                    sourceBalances?.has(sourceCurrencyId) && (
+                      <p
+                        className="mt-2 text-xs"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      >
+                        Balance:{" "}
+                        {sourceBalances.get(sourceCurrencyId)?.toLocaleString()}
+                      </p>
+                    )}
                 </div>
 
                 {/* Arrow */}
