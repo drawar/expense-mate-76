@@ -22,6 +22,7 @@ export type QuickSetupType =
   | "amex-aeroplan-reserve"
   | "neo-cathay"
   | "hsbc-revolution"
+  | "hsbc-travelone"
   | "brim-afklm"
   | "mbna-amazon";
 
@@ -109,6 +110,14 @@ export function getQuickSetupConfig(
     };
   }
 
+  if (issuer.includes("hsbc") && name.includes("travelone")) {
+    return {
+      type: "hsbc-travelone",
+      name: "HSBC TravelOne",
+      description: "6x foreign currency, 3x local spend (HSBC Rewards Points)",
+    };
+  }
+
   if (issuer.includes("brim") && name.includes("air france")) {
     return {
       type: "brim-afklm",
@@ -190,6 +199,8 @@ export class QuickSetupService {
           return await this.setupNeoCathay(cardTypeId, paymentMethodId);
         case "hsbc-revolution":
           return await this.setupHSBCRevolution(cardTypeId);
+        case "hsbc-travelone":
+          return await this.setupHSBCTravelOne(cardTypeId);
         case "brim-afklm":
           return await this.setupBrimAFKLM(cardTypeId);
         case "mbna-amazon":
@@ -802,6 +813,54 @@ export class QuickSetupService {
         baseMultiplier: 1,
         bonusMultiplier: 0,
         pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    return { success: true, rulesCreated: 2 };
+  }
+
+  private async setupHSBCTravelOne(
+    cardTypeId: string
+  ): Promise<QuickSetupResult> {
+    // 6x on Foreign Currency spend
+    await this.repository.createRule({
+      cardTypeId,
+      name: "6x Points on Foreign Currency",
+      description:
+        "Earn 6 HSBC Rewards Points per S$1 on foreign currency transactions (= 2.4 mpd at best transfer ratio)",
+      enabled: true,
+      priority: 2,
+      conditions: [
+        { type: "currency", operation: "not_equals", values: ["SGD"] },
+      ],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 5,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    // 3x on Local (SGD) spend
+    await this.repository.createRule({
+      cardTypeId,
+      name: "3x Points on Local Spend",
+      description:
+        "Earn 3 HSBC Rewards Points per S$1 on local SGD transactions (= 1.2 mpd at best transfer ratio)",
+      enabled: true,
+      priority: 1,
+      conditions: [],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 2,
+        pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "none",
         blockSize: 1,
         bonusTiers: [],
