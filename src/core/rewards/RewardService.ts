@@ -981,6 +981,7 @@ export class RewardService {
       case "include":
         return values.includes(currencyUpper);
       case "exclude":
+      case "not_equals":
         return !values.includes(currencyUpper);
       case "equals":
         return values.length > 0 && values[0] === currencyUpper;
