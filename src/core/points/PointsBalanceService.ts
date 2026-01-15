@@ -106,12 +106,11 @@ export class PointsBalanceService {
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
 
-      if (cardTypeId !== undefined) {
-        if (cardTypeId) {
-          query = query.eq("card_type_id", cardTypeId);
-        } else {
-          query = query.is("card_type_id", null);
-        }
+      // Filter by card_type_id - if not specified, get pooled balance (null)
+      if (cardTypeId) {
+        query = query.eq("card_type_id", cardTypeId);
+      } else {
+        query = query.is("card_type_id", null);
       }
 
       const { data, error } = await query.maybeSingle();
