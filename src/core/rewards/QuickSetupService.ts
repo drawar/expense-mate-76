@@ -1092,32 +1092,11 @@ export class QuickSetupService {
 
   private async setupDBSWWMC(cardTypeId: string): Promise<QuickSetupResult> {
     // DBS Woman's World Mastercard (Singapore)
-    // Points are awarded per S$5 spend (base), S$1 for convenient calculation
     // 10x online (4 mpd) capped at S$1,000/month, 1x other (0.4 mpd)
     // Points expire 1 year after earning
 
-    // Online shopping MCCs - e-commerce and online transactions
-    const onlineMCCs = [
-      // Online shopping / mail order / telephone order
-      "5961", // Catalog Merchant
-      "5962", // Direct Marketing - Travel Services
-      "5963", // Door-to-Door Sales
-      "5964", // Direct Marketing - Catalog Merchant
-      "5965", // Direct Marketing - Combination Catalog/Retail
-      "5966", // Direct Marketing - Outbound Telemarketing
-      "5967", // Direct Marketing - Inbound Teleservices
-      "5968", // Direct Marketing - Continuity/Subscription
-      "5969", // Direct Marketing - Not Elsewhere Classified
-      // Travel booking sites
-      "4722", // Travel Agencies
-      // Streaming / digital services
-      "5815", // Digital Goods - Audiovisual
-      "5816", // Digital Goods - Games
-      "5817", // Digital Goods - Apps
-      "5818", // Digital Goods - Large Digital Goods Merchant
-    ];
-
     // 10x on Online Spend (capped at S$1,000/month)
+    // Uses transaction isOnline flag instead of MCC detection
     await this.repository.createRule({
       cardTypeId,
       name: "10x DBS Points on Online Spend",
@@ -1125,7 +1104,9 @@ export class QuickSetupService {
         "Earn 10 DBS Points per S$1 on online purchases (= 4 mpd). Capped at S$1,000 online spend per calendar month.",
       enabled: true,
       priority: 2,
-      conditions: [{ type: "mcc", operation: "include", values: onlineMCCs }],
+      conditions: [
+        { type: "transaction_type", operation: "include", values: ["online"] },
+      ],
       reward: {
         calculationMethod: "standard",
         baseMultiplier: 1,
