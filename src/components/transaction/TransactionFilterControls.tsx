@@ -402,6 +402,7 @@ export const TransactionFilterControls: React.FC<
                       to: range?.to ? endOfDay(range.to) : null,
                     });
                   }}
+                  disabled={(date) => date > new Date()}
                   numberOfMonths={2}
                   initialFocus
                 />
