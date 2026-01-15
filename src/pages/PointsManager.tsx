@@ -62,6 +62,7 @@ import {
   usePointsGoalMutations,
 } from "@/hooks/points/usePointsGoals";
 import { usePointsActivityFeed } from "@/hooks/points/usePointsActivityFeed";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 // Components
 import {
@@ -148,6 +149,9 @@ export default function PointsManager() {
   // Balances
   const { data: balances = [], isLoading: balancesLoading } =
     usePointsBalances();
+
+  // Payment methods (for card-specific balance selection)
+  const { data: paymentMethods = [] } = usePaymentMethods();
 
   // Goals
   const { data: activeGoals = [], isLoading: goalsLoading } = useActiveGoals();
@@ -632,6 +636,7 @@ export default function PointsManager() {
           onClose={handleCloseDialog}
           onSubmit={handleSubmitBalance}
           rewardCurrencies={rewardCurrencies}
+          paymentMethods={paymentMethods}
           existingBalance={editingBalance}
           defaultCurrencyId={selectedCurrencyId}
           isLoading={setStartingBalance.isPending}

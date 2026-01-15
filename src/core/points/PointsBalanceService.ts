@@ -66,6 +66,9 @@ export class PointsBalanceService {
           *,
           reward_currencies (
             id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+          ),
+          card_catalog (
+            display_name
           )
         `
         )
@@ -85,35 +88,46 @@ export class PointsBalanceService {
   }
 
   /**
-   * Get balance for a specific currency
+   * Get balance for a specific currency (returns first match if multiple card-specific balances exist)
    */
   async getBalance(
     userId: string,
-    rewardCurrencyId: string
+    rewardCurrencyId: string,
+    cardTypeId?: string
   ): Promise<PointsBalance | null> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("points_balances")
         .select(
           `
           *,
           reward_currencies (
             id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+          ),
+          card_catalog (
+            display_name
           )
         `
         )
         .eq("user_id", userId)
-        .eq("reward_currency_id", rewardCurrencyId)
-        .single();
+        .eq("reward_currency_id", rewardCurrencyId);
+
+      if (cardTypeId !== undefined) {
+        if (cardTypeId) {
+          query = query.eq("card_type_id", cardTypeId);
+        } else {
+          query = query.is("card_type_id", null);
+        }
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          // Not found
-          return null;
-        }
         console.error("Error fetching balance:", error);
         return null;
       }
+
+      if (!data) return null;
 
       return toPointsBalance(data as DbPointsBalance);
     } catch (error) {
@@ -132,6 +146,7 @@ export class PointsBalanceService {
     if (!user) throw new Error("Not authenticated");
 
     // Get current period earned and other balance components
+    // TODO: When card_type_id filtering is needed, update calculateBalanceBreakdown
     const breakdown = await this.calculateBalanceBreakdown(
       user.id,
       input.rewardCurrencyId
@@ -146,31 +161,76 @@ export class PointsBalanceService {
       breakdown.transfersOut +
       breakdown.transfersIn;
 
-    const { data, error } = await supabase
+    // Check if balance exists for this (user, currency, card_type)
+    let query = supabase
       .from("points_balances")
-      .upsert(
-        {
-          user_id: user.id,
-          reward_currency_id: input.rewardCurrencyId,
-          starting_balance: input.startingBalance,
-          current_balance: currentBalance,
-          balance_date: input.balanceDate?.toISOString() ?? null,
-          notes: input.notes,
-          last_calculated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id,reward_currency_id",
-        }
-      )
-      .select(
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("reward_currency_id", input.rewardCurrencyId);
+
+    if (input.cardTypeId) {
+      query = query.eq("card_type_id", input.cardTypeId);
+    } else {
+      query = query.is("card_type_id", null);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+
+    const balanceData = {
+      user_id: user.id,
+      reward_currency_id: input.rewardCurrencyId,
+      card_type_id: input.cardTypeId || null,
+      starting_balance: input.startingBalance,
+      current_balance: currentBalance,
+      balance_date: input.balanceDate?.toISOString() ?? null,
+      expiry_date: input.expiryDate?.toISOString() ?? null,
+      notes: input.notes,
+      last_calculated_at: new Date().toISOString(),
+    };
+
+    let data;
+    let error;
+
+    if (existing?.id) {
+      // Update existing balance
+      const result = await supabase
+        .from("points_balances")
+        .update(balanceData)
+        .eq("id", existing.id)
+        .select(
+          `
+          *,
+          reward_currencies (
+            id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+          ),
+          card_catalog (
+            display_name
+          )
         `
-        *,
-        reward_currencies (
-          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
         )
-      `
-      )
-      .single();
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Insert new balance
+      const result = await supabase
+        .from("points_balances")
+        .insert(balanceData)
+        .select(
+          `
+          *,
+          reward_currencies (
+            id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+          ),
+          card_catalog (
+            display_name
+          )
+        `
+        )
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error("Error setting starting balance:", error);
@@ -354,6 +414,7 @@ export class PointsBalanceService {
 
   /**
    * Recalculate and update current balance for a currency
+   * Note: This updates ALL balances for the currency (both pooled and card-specific)
    */
   async recalculateBalance(
     userId: string,
@@ -377,6 +438,9 @@ export class PointsBalanceService {
         *,
         reward_currencies (
           id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+        ),
+        card_catalog (
+          display_name
         )
       `
       )

@@ -2,7 +2,7 @@
  * StartingBalanceDialog - Form dialog for setting starting balance for a currency
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,17 +29,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, CoinsIcon, CalendarIcon } from "lucide-react";
+import { Loader2, CoinsIcon, CalendarIcon, CreditCardIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { PointsBalance, PointsBalanceInput } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
+import type { PaymentMethod } from "@/types";
+import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 
 interface StartingBalanceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (input: PointsBalanceInput) => Promise<void>;
   rewardCurrencies: RewardCurrency[];
+  paymentMethods?: PaymentMethod[]; // For card-specific balance selection
   existingBalance?: PointsBalance; // For editing
   defaultCurrencyId?: string;
   isLoading?: boolean;
@@ -50,6 +53,7 @@ export function StartingBalanceDialog({
   onClose,
   onSubmit,
   rewardCurrencies,
+  paymentMethods = [],
   existingBalance,
   defaultCurrencyId,
   isLoading = false,
@@ -60,26 +64,75 @@ export function StartingBalanceDialog({
   const [rewardCurrencyId, setRewardCurrencyId] = useState(
     defaultCurrencyId || ""
   );
+  const [cardTypeId, setCardTypeId] = useState<string>("");
   const [startingBalance, setStartingBalance] = useState("");
   const [balanceDate, setBalanceDate] = useState<Date>(new Date());
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
+
+  // Get card types that earn the selected currency
+  const cardTypesForCurrency = useMemo(() => {
+    if (!rewardCurrencyId) return [];
+
+    // Get unique card types from payment methods that earn this currency
+    const cardTypes = new Map<string, { id: string; name: string }>();
+    paymentMethods
+      .filter(
+        (pm) =>
+          pm.rewardCurrencyId === rewardCurrencyId && pm.type === "credit_card"
+      )
+      .forEach((pm) => {
+        const typeId = cardTypeIdService.generateCardTypeId(
+          pm.issuer || "",
+          pm.name
+        );
+        if (!cardTypes.has(typeId)) {
+          cardTypes.set(typeId, {
+            id: typeId,
+            name: `${pm.issuer} ${pm.name}`,
+          });
+        }
+      });
+    return Array.from(cardTypes.values());
+  }, [rewardCurrencyId, paymentMethods]);
+
+  // Check if selected currency is transferable (has non-pooled balances)
+  const selectedCurrencyIsTransferrable = useMemo(() => {
+    const currency = rewardCurrencies.find((c) => c.id === rewardCurrencyId);
+    return currency?.isTransferrable ?? false;
+  }, [rewardCurrencyId, rewardCurrencies]);
+
+  // Show card type selector only for transferable currencies with multiple cards
+  const showCardTypeSelector =
+    selectedCurrencyIsTransferrable && cardTypesForCurrency.length > 0;
 
   // Reset form when dialog opens/closes or balance changes
   useEffect(() => {
     if (isOpen) {
       if (existingBalance) {
         setRewardCurrencyId(existingBalance.rewardCurrencyId);
+        setCardTypeId(existingBalance.cardTypeId || "");
         setStartingBalance(String(existingBalance.startingBalance));
         setBalanceDate(existingBalance.balanceDate || new Date());
+        setExpiryDate(existingBalance.expiryDate);
         setNotes(existingBalance.notes || "");
       } else {
         setRewardCurrencyId(defaultCurrencyId || "");
+        setCardTypeId("");
         setStartingBalance("");
         setBalanceDate(new Date());
+        setExpiryDate(undefined);
         setNotes("");
       }
     }
   }, [isOpen, existingBalance, defaultCurrencyId]);
+
+  // Reset card type when currency changes
+  useEffect(() => {
+    if (!isEditing) {
+      setCardTypeId("");
+    }
+  }, [rewardCurrencyId, isEditing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,8 +148,10 @@ export function StartingBalanceDialog({
 
     await onSubmit({
       rewardCurrencyId,
+      cardTypeId: cardTypeId || undefined,
       startingBalance: numStartingBalance,
       balanceDate,
+      expiryDate,
       notes: notes.trim() || undefined,
     });
   };
@@ -158,6 +213,39 @@ export function StartingBalanceDialog({
               </Select>
             </div>
 
+            {/* Card Type (for transferable currencies with multiple cards) */}
+            {showCardTypeSelector && (
+              <div className="space-y-2">
+                <Label htmlFor="cardType">
+                  <span className="flex items-center gap-2">
+                    <CreditCardIcon className="h-4 w-4" />
+                    Card Type (optional)
+                  </span>
+                </Label>
+                <Select
+                  value={cardTypeId}
+                  onValueChange={setCardTypeId}
+                  disabled={isEditing && !!existingBalance?.cardTypeId}
+                >
+                  <SelectTrigger id="cardType">
+                    <SelectValue placeholder="Pooled balance (all cards)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Pooled balance (all cards)</SelectItem>
+                    {cardTypesForCurrency.map((cardType) => (
+                      <SelectItem key={cardType.id} value={cardType.id}>
+                        {cardType.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Some programs have separate point pools per card. Select a
+                  specific card to track its balance separately.
+                </p>
+              </div>
+            )}
+
             {/* Starting Balance */}
             <div className="space-y-2">
               <Label htmlFor="balance">Starting Balance</Label>
@@ -216,6 +304,55 @@ export function StartingBalanceDialog({
                     disabled={(date) => date > new Date()}
                     initialFocus
                   />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Expiry Date (optional) */}
+            <div className="space-y-2">
+              <Label>Expiry Date (optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? (
+                      format(expiryDate, "PPP")
+                    ) : (
+                      <span>No expiry date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  side="top"
+                  sideOffset={4}
+                >
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    defaultMonth={expiryDate || new Date()}
+                    initialFocus
+                  />
+                  {expiryDate && (
+                    <div className="p-2 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-muted-foreground"
+                        onClick={() => setExpiryDate(undefined)}
+                      >
+                        Clear expiry date
+                      </Button>
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
             </div>

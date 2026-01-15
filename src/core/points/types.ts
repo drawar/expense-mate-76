@@ -23,9 +23,12 @@ export interface PointsBalance {
   userId: string;
   rewardCurrencyId: string;
   rewardCurrency?: RewardCurrency;
+  cardTypeId?: string; // Card type for card-specific balances (e.g., 'citi-rewards-visa')
+  cardTypeName?: string; // Display name of the card type (joined from card_catalog)
   startingBalance: number;
   currentBalance: number;
   balanceDate?: Date; // Date the balance was recorded as of
+  expiryDate?: Date; // Date when points expire
   lastCalculatedAt: Date;
   notes?: string;
   createdAt: Date;
@@ -39,9 +42,11 @@ export interface DbPointsBalance {
   id: string;
   user_id: string;
   reward_currency_id: string;
+  card_type_id: string | null;
   starting_balance: number;
   current_balance: number;
   balance_date: string | null;
+  expiry_date: string | null;
   last_calculated_at: string;
   notes: string | null;
   created_at: string;
@@ -57,6 +62,10 @@ export interface DbPointsBalance {
     bg_color: string | null;
     logo_scale: number | null;
   };
+  // Joined from card_catalog for card_type_id display name
+  card_catalog?: {
+    display_name: string;
+  };
 }
 
 /**
@@ -64,8 +73,10 @@ export interface DbPointsBalance {
  */
 export interface PointsBalanceInput {
   rewardCurrencyId: string;
+  cardTypeId?: string; // Card type for card-specific balances
   startingBalance: number;
   balanceDate?: Date;
+  expiryDate?: Date;
   notes?: string;
 }
 
@@ -494,9 +505,12 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
           logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
+    cardTypeId: db.card_type_id ?? undefined,
+    cardTypeName: db.card_catalog?.display_name ?? undefined,
     startingBalance: Number(db.starting_balance),
     currentBalance: Number(db.current_balance),
     balanceDate: db.balance_date ? new Date(db.balance_date) : undefined,
+    expiryDate: db.expiry_date ? new Date(db.expiry_date) : undefined,
     lastCalculatedAt: new Date(db.last_calculated_at),
     notes: db.notes ?? undefined,
     createdAt: new Date(db.created_at),

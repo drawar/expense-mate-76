@@ -5,13 +5,16 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   CoinsIcon,
   Edit2,
   TrendingUp,
   TrendingDown,
   ArrowRightLeft,
+  Clock,
 } from "lucide-react";
+import { format } from "date-fns";
 import { PointsBalance, BalanceBreakdown, getCppRating } from "@/core/points";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +44,17 @@ export function BalanceCard({
 
   return (
     <Card className={cn("relative overflow-hidden", className)}>
+      {/* Expiry Badge - positioned absolute top right */}
+      {balance.expiryDate && (
+        <Badge
+          variant="outline"
+          className="absolute top-3 right-3 text-xs font-normal bg-background/80 backdrop-blur-sm"
+        >
+          <Clock className="h-3 w-3 mr-1" />
+          Expires {format(balance.expiryDate, "MMM d, yyyy")}
+        </Badge>
+      )}
+
       <CardContent className="pt-6">
         {/* Header with logo and currency name */}
         <div className="flex items-center gap-3 mb-4">
@@ -63,11 +77,16 @@ export function BalanceCard({
               <CoinsIcon className="w-5 h-5 text-primary" />
             </div>
           )}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="font-medium text-foreground">{currencyName}</h3>
             {balance.rewardCurrency?.issuer && (
               <p className="text-xs text-muted-foreground">
                 {balance.rewardCurrency.issuer}
+              </p>
+            )}
+            {balance.cardTypeName && (
+              <p className="text-xs text-muted-foreground truncate">
+                via {balance.cardTypeName}
               </p>
             )}
           </div>
@@ -75,7 +94,7 @@ export function BalanceCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
               onClick={onEditStartingBalance}
             >
               <Edit2 className="h-4 w-4" />
