@@ -24,7 +24,8 @@ export type QuickSetupType =
   | "hsbc-revolution"
   | "hsbc-travelone"
   | "brim-afklm"
-  | "mbna-amazon";
+  | "mbna-amazon"
+  | "dbs-wwmc";
 
 export interface QuickSetupConfig {
   type: QuickSetupType;
@@ -139,6 +140,14 @@ export function getQuickSetupConfig(
     };
   }
 
+  if (issuer.includes("dbs") && name.includes("woman")) {
+    return {
+      type: "dbs-wwmc",
+      name: "DBS Woman's World",
+      description: "10x online ($1K cap/month = 4 mpd), 1x other (0.4 mpd)",
+    };
+  }
+
   return null;
 }
 
@@ -208,6 +217,8 @@ export class QuickSetupService {
           return await this.setupBrimAFKLM(cardTypeId);
         case "mbna-amazon":
           return await this.setupMBNAAmazon(cardTypeId);
+        case "dbs-wwmc":
+          return await this.setupDBSWWMC(cardTypeId);
         default:
           return {
             success: false,
@@ -1077,6 +1088,79 @@ export class QuickSetupService {
     });
 
     return { success: true, rulesCreated: 4 };
+  }
+
+  private async setupDBSWWMC(cardTypeId: string): Promise<QuickSetupResult> {
+    // DBS Woman's World Mastercard (Singapore)
+    // Points are awarded per S$5 spend (base), S$1 for convenient calculation
+    // 10x online (4 mpd) capped at S$1,000/month, 1x other (0.4 mpd)
+    // Points expire 1 year after earning
+
+    // Online shopping MCCs - e-commerce and online transactions
+    const onlineMCCs = [
+      // Online shopping / mail order / telephone order
+      "5961", // Catalog Merchant
+      "5962", // Direct Marketing - Travel Services
+      "5963", // Door-to-Door Sales
+      "5964", // Direct Marketing - Catalog Merchant
+      "5965", // Direct Marketing - Combination Catalog/Retail
+      "5966", // Direct Marketing - Outbound Telemarketing
+      "5967", // Direct Marketing - Inbound Teleservices
+      "5968", // Direct Marketing - Continuity/Subscription
+      "5969", // Direct Marketing - Not Elsewhere Classified
+      // Travel booking sites
+      "4722", // Travel Agencies
+      // Streaming / digital services
+      "5815", // Digital Goods - Audiovisual
+      "5816", // Digital Goods - Games
+      "5817", // Digital Goods - Apps
+      "5818", // Digital Goods - Large Digital Goods Merchant
+    ];
+
+    // 10x on Online Spend (capped at S$1,000/month)
+    await this.repository.createRule({
+      cardTypeId,
+      name: "10x DBS Points on Online Spend",
+      description:
+        "Earn 10 DBS Points per S$1 on online purchases (= 4 mpd). Capped at S$1,000 online spend per calendar month.",
+      enabled: true,
+      priority: 2,
+      conditions: [{ type: "mcc", operation: "include", values: onlineMCCs }],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 9,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        monthlyCap: 1000,
+        monthlyCapType: "spend_amount",
+        monthlySpendPeriodType: "calendar",
+        bonusTiers: [],
+      },
+    });
+
+    // 1x on All Other Purchases
+    await this.repository.createRule({
+      cardTypeId,
+      name: "1x DBS Points on All Other Purchases",
+      description:
+        "Earn 1 DBS Point per S$1 on all other purchases (= 0.4 mpd)",
+      enabled: true,
+      priority: 1,
+      conditions: [],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 0,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    return { success: true, rulesCreated: 2 };
   }
 }
 
