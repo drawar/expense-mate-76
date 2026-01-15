@@ -213,6 +213,7 @@ export function StartingBalanceDialog({
                     selected={balanceDate}
                     onSelect={(date) => date && setBalanceDate(date)}
                     defaultMonth={balanceDate}
+                    disabled={(date) => date > new Date()}
                     initialFocus
                   />
                 </PopoverContent>
