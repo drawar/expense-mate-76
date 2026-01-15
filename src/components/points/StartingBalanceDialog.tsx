@@ -96,15 +96,8 @@ export function StartingBalanceDialog({
     return Array.from(cardTypes.values());
   }, [rewardCurrencyId, paymentMethods]);
 
-  // Check if selected currency is transferable (has non-pooled balances)
-  const selectedCurrencyIsTransferrable = useMemo(() => {
-    const currency = rewardCurrencies.find((c) => c.id === rewardCurrencyId);
-    return currency?.isTransferrable ?? false;
-  }, [rewardCurrencyId, rewardCurrencies]);
-
-  // Show card type selector only for transferable currencies with multiple cards
-  const showCardTypeSelector =
-    selectedCurrencyIsTransferrable && cardTypesForCurrency.length > 0;
+  // Show card type selector when there are card types available for the selected currency
+  const showCardTypeSelector = cardTypesForCurrency.length > 0;
 
   // Reset form when dialog opens/closes or balance changes
   useEffect(() => {
