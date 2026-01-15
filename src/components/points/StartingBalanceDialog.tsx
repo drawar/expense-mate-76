@@ -141,7 +141,8 @@ export function StartingBalanceDialog({
 
     await onSubmit({
       rewardCurrencyId,
-      cardTypeId: cardTypeId || undefined,
+      cardTypeId:
+        cardTypeId && cardTypeId !== "__pooled__" ? cardTypeId : undefined,
       startingBalance: numStartingBalance,
       balanceDate,
       expiryDate,
@@ -224,7 +225,9 @@ export function StartingBalanceDialog({
                     <SelectValue placeholder="Pooled balance (all cards)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Pooled balance (all cards)</SelectItem>
+                    <SelectItem value="__pooled__">
+                      Pooled balance (all cards)
+                    </SelectItem>
                     {cardTypesForCurrency.map((cardType) => (
                       <SelectItem key={cardType.id} value={cardType.id}>
                         {cardType.name}
