@@ -110,7 +110,10 @@ export function getQuickSetupConfig(
     };
   }
 
-  if (issuer.includes("hsbc") && name.includes("travelone")) {
+  if (
+    issuer.includes("hsbc") &&
+    (name.includes("travelone") || name.includes("travel one"))
+  ) {
     return {
       type: "hsbc-travelone",
       name: "HSBC TravelOne",
