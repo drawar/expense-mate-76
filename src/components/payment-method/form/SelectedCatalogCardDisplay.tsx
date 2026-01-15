@@ -24,6 +24,8 @@ const currencyToCountry: Record<string, string> = {
   IDR: "id",
   THB: "th",
   MYR: "my",
+  QAR: "qa",
+  KRW: "kr",
 };
 
 // Fallback card images for cards without defaultImageUrl

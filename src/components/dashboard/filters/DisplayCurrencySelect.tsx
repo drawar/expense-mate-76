@@ -28,6 +28,8 @@ const currencyToCountry: Record<string, string> = {
   IDR: "id",
   THB: "th",
   MYR: "my",
+  QAR: "qa",
+  KRW: "kr",
 };
 
 export interface DisplayCurrencySelectProps {
