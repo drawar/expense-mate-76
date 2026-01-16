@@ -21,14 +21,69 @@ export class RewardService {
   }
 
   /**
-   * Get the card type ID for a payment method.
-   * If linked to a catalog entry, uses the catalog's cardTypeId for consistent reward rule lookup.
-   * Falls back to generating from issuer + name for custom cards.
+   * Get reward rules for a payment method.
    *
-   * @param paymentMethod The payment method to get the card type ID for
-   * @returns The card type ID (either from catalog or generated)
+   * PREFERRED: Uses card_catalog_id (UUID) for direct rule lookup.
+   * FALLBACK: Uses card_type_id (TEXT) for backward compatibility.
+   *
+   * @param paymentMethod The payment method to get rules for
+   * @returns Promise resolving to array of applicable reward rules
    */
-  private async getCardTypeId(paymentMethod: PaymentMethod): Promise<string> {
+  private async getRulesForPaymentMethod(
+    paymentMethod: PaymentMethod
+  ): Promise<RewardRule[]> {
+    // PREFERRED: Use card_catalog_id for rule lookup (no mismatch possible)
+    if (paymentMethod.cardCatalogId) {
+      try {
+        const rules = await this.ruleRepository.getRulesForCardCatalogId(
+          paymentMethod.cardCatalogId
+        );
+        if (rules && rules.length > 0) {
+          logger.info(
+            "getRulesForPaymentMethod",
+            "Found rules via cardCatalogId",
+            {
+              paymentMethodId: paymentMethod.id,
+              cardCatalogId: paymentMethod.cardCatalogId,
+              rulesCount: rules.length,
+            }
+          );
+          return rules;
+        }
+        logger.debug(
+          "getRulesForPaymentMethod",
+          "No rules via cardCatalogId, trying cardTypeId",
+          {
+            paymentMethodId: paymentMethod.id,
+            cardCatalogId: paymentMethod.cardCatalogId,
+          }
+        );
+      } catch (error) {
+        logger.warn(
+          "getRulesForPaymentMethod",
+          "Failed to fetch rules by cardCatalogId",
+          {
+            paymentMethodId: paymentMethod.id,
+            cardCatalogId: paymentMethod.cardCatalogId,
+            error: error instanceof Error ? error.message : String(error),
+          }
+        );
+        // Fall through to card_type_id lookup
+      }
+    }
+
+    // FALLBACK: Use card_type_id for backward compatibility
+    const cardTypeId = await this.getCardTypeIdFallback(paymentMethod);
+    return this.ruleRepository.getRulesForCardType(cardTypeId);
+  }
+
+  /**
+   * @deprecated Use getRulesForPaymentMethod instead.
+   * Gets card_type_id for backward compatibility with legacy rules.
+   */
+  private async getCardTypeIdFallback(
+    paymentMethod: PaymentMethod
+  ): Promise<string> {
     // If linked to a catalog entry, use the catalog's cardTypeId
     if (paymentMethod.cardCatalogId) {
       try {
@@ -36,7 +91,7 @@ export class RewardService {
           paymentMethod.cardCatalogId
         );
         if (catalog?.cardTypeId) {
-          logger.debug("getCardTypeId", "Using catalog cardTypeId", {
+          logger.debug("getCardTypeIdFallback", "Using catalog cardTypeId", {
             paymentMethodId: paymentMethod.id,
             cardCatalogId: paymentMethod.cardCatalogId,
             catalogCardTypeId: catalog.cardTypeId,
@@ -44,12 +99,11 @@ export class RewardService {
           return catalog.cardTypeId;
         }
       } catch (error) {
-        logger.warn("getCardTypeId", "Failed to fetch catalog entry", {
+        logger.warn("getCardTypeIdFallback", "Failed to fetch catalog entry", {
           paymentMethodId: paymentMethod.id,
           cardCatalogId: paymentMethod.cardCatalogId,
           error: error instanceof Error ? error.message : String(error),
         });
-        // Fall through to generate from issuer + name
       }
     }
 
@@ -91,13 +145,10 @@ export class RewardService {
       // Determine which amount to use for calculations
       const calculationAmount = this.getCalculationAmount(input);
 
-      // 1. Get card type ID for the payment method
-      // Uses catalog cardTypeId if linked, otherwise generates from issuer + name
-      const cardTypeId = await this.getCardTypeId(input.paymentMethod);
-
-      // Log card type ID generation (Requirement 4.1)
-      logger.info("calculateRewards", "Generated card type ID", {
-        cardTypeId,
+      // Log calculation start (Requirement 4.1)
+      logger.info("calculateRewards", "Starting reward calculation", {
+        paymentMethodId: input.paymentMethod.id,
+        cardCatalogId: input.paymentMethod.cardCatalogId,
         issuer: input.paymentMethod.issuer,
         name: input.paymentMethod.name,
         amount: input.amount,
@@ -111,20 +162,21 @@ export class RewardService {
         isContactless: input.isContactless,
       });
 
-      // 2. Find rules for this card type
-      const allRules =
-        await this.ruleRepository.getRulesForCardType(cardTypeId);
+      // 1. Find rules for this payment method (prefers card_catalog_id, falls back to card_type_id)
+      const allRules = await this.getRulesForPaymentMethod(input.paymentMethod);
 
       // Log number of rules retrieved (Requirement 4.2)
       logger.info("calculateRewards", "Retrieved rules from repository", {
-        cardTypeId,
+        paymentMethodId: input.paymentMethod.id,
+        cardCatalogId: input.paymentMethod.cardCatalogId,
         totalRules: allRules?.length || 0,
         enabledRules: allRules?.filter((r) => r.enabled).length || 0,
       });
 
       if (!allRules || allRules.length === 0) {
         logger.warn("calculateRewards", "No reward rules found", {
-          cardTypeId,
+          paymentMethodId: input.paymentMethod.id,
+          cardCatalogId: input.paymentMethod.cardCatalogId,
         });
         return {
           totalPoints: 0,
@@ -157,7 +209,8 @@ export class RewardService {
 
       if (applicableRules.length === 0) {
         logger.warn("calculateRewards", "No applicable rules found", {
-          cardTypeId,
+          paymentMethodId: input.paymentMethod.id,
+          cardCatalogId: input.paymentMethod.cardCatalogId,
           totalRules: allRules.length,
           enabledRules: allRules.filter((r) => r.enabled).length,
         });
@@ -533,7 +586,8 @@ export class RewardService {
 
       // If no rule was successfully applied
       logger.warn("calculateRewards", "No rule successfully applied", {
-        cardTypeId,
+        paymentMethodId: input.paymentMethod.id,
+        cardCatalogId: input.paymentMethod.cardCatalogId,
         applicableRulesCount: applicableRules.length,
       });
       return {

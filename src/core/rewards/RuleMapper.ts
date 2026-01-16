@@ -87,6 +87,7 @@ export class RuleMapper {
     return {
       id: dbRule.id,
       cardTypeId: dbRule.card_type_id,
+      cardCatalogId: dbRule.card_catalog_id ?? undefined,
       name: dbRule.name,
       description: dbRule.description || "",
       enabled: dbRule.enabled ?? true,
@@ -187,6 +188,7 @@ export class RuleMapper {
     return {
       id: rule.id,
       card_type_id: rule.cardTypeId,
+      card_catalog_id: rule.cardCatalogId ?? null,
       name: rule.name,
       description: rule.description || null,
       enabled: rule.enabled ?? true,

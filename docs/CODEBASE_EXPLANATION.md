@@ -5,13 +5,73 @@ expense-mate codebase.
 
 ---
 
-## Card Type ID System
+## Card Matching System
 
 ### Overview
 
-The `card_type_id` is a unique identifier used to associate reward rules, points
-balances, and transactions with specific credit cards. It's generated from the
-payment method's `issuer` and `name` fields.
+The system uses **UUID foreign keys** to link reward rules and points balances
+to cards. This replaces the legacy TEXT-based `card_type_id` which caused
+mismatch problems when issuer/name changed.
+
+### New Architecture (UUID-based)
+
+| Table             | Old Column     | New Column          | Links To             |
+| ----------------- | -------------- | ------------------- | -------------------- |
+| `reward_rules`    | `card_type_id` | `card_catalog_id`   | `card_catalog.id`    |
+| `points_balances` | `card_type_id` | `payment_method_id` | `payment_methods.id` |
+
+### Rule Matching Flow
+
+**New (Preferred):**
+
+```
+Transaction → PaymentMethod.card_catalog_id (UUID)
+           → Match reward_rules.card_catalog_id (UUID)
+           → Return matching rules
+```
+
+**Fallback (Backward Compatibility):**
+
+```
+Transaction → PaymentMethod
+           → CardTypeIdService.generateCardTypeId(issuer, name)
+           → "citi-rewards-visa-signature" (TEXT)
+           → Match reward_rules.card_type_id (TEXT)
+```
+
+### Balance Lookup Flow
+
+**New (Preferred):**
+
+```
+points_balances.payment_method_id → payment_methods.card_catalog_id → card_catalog → card info
+```
+
+**Fallback:**
+
+```
+points_balances.card_type_id → card_catalog.card_type_id → card info
+```
+
+### Why UUIDs Solve the Mismatch Problem
+
+| Scenario                   | TEXT (card_type_id)        | UUID (card_catalog_id)      |
+| -------------------------- | -------------------------- | --------------------------- |
+| User renames issuer        | Stored ID becomes stale    | UUID unchanged, still works |
+| Lookup by generated string | May not match stored value | N/A - UUID is immutable     |
+| Foreign key integrity      | None (just a string)       | Database enforces validity  |
+
+**Example:** User changes "Citibank" → "Citi"
+
+- TEXT: Generated `citi-...` ≠ stored `citibank-...` → **No match**
+- UUID: `card_catalog_id` unchanged → **Still matches**
+
+---
+
+## Legacy Card Type ID System (Deprecated)
+
+> **Note:** This system is being phased out in favor of UUID foreign keys. Kept
+> for backward compatibility during migration.
 
 ### Generation Logic
 
@@ -32,61 +92,14 @@ generateCardTypeId(issuer: string, name: string): string {
 3. Replace spaces with hyphens
 4. Concatenate as `{issuer}-{name}`
 
-**Examples:** | Issuer | Name | Generated card_type_id |
-|--------|------|------------------------| | Citibank | Rewards Visa Signature |
-`citibank-rewards-visa-signature` | | Citi | Rewards Visa Signature |
-`citi-rewards-visa-signature` | | American Express | Platinum Card |
-`american-express-platinum-card` | | Chase | Sapphire Reserve |
-`chase-sapphire-reserve` |
-
-### Where card_type_id is Used
-
-#### 1. Stored in Database (Static)
-
-| Table             | Column         | When Stored                                                     |
-| ----------------- | -------------- | --------------------------------------------------------------- |
-| `points_balances` | `card_type_id` | When creating a card-specific balance via StartingBalanceDialog |
-| `reward_rules`    | `card_type_id` | When creating reward rules for a card                           |
-| `card_catalog`    | `card_type_id` | Seed data for universal card definitions                        |
-
-#### 2. Generated at Runtime (Dynamic)
-
-| Location                                                        | Purpose                                                        |
-| --------------------------------------------------------------- | -------------------------------------------------------------- |
-| `PointsBalanceService.getEarnedFromTransactionsCurrentPeriod()` | Filter payment methods by card type to calculate earned points |
-| `RewardService.calculateRewards()`                              | Match reward rules to payment method                           |
-| `StartingBalanceDialog`                                         | Build list of card types for selection                         |
-
-### The Mismatch Problem
-
-The `card_type_id` is **stored once** when you create a balance or rule, but
-**regenerated dynamically** when calculating. If the payment method's `issuer`
-or `name` changes, the stored value becomes stale.
-
-**Example scenario:**
-
-| Step | Action                                              | Result                                    |
-| ---- | --------------------------------------------------- | ----------------------------------------- |
-| 1    | Create balance with issuer="Citibank"               | Stored: `citibank-rewards-visa-signature` |
-| 2    | User edits payment method, changes issuer to "Citi" | Payment method updated                    |
-| 3    | System calculates earned points                     | Generated: `citi-rewards-visa-signature`  |
-| 4    | Compare stored vs generated                         | `citibank-...` ≠ `citi-...`               |
-| 5    | Result                                              | **No match → 0 earned points displayed**  |
-
-**Fix:** When changing a payment method's issuer or name, you must also update:
-
-- `points_balances.card_type_id`
-- `reward_rules.card_type_id`
-- `card_catalog.card_type_id` (if applicable)
-
 ### Key Files
 
-| File                                              | Purpose                                       |
-| ------------------------------------------------- | --------------------------------------------- |
-| `src/core/rewards/CardTypeIdService.ts`           | Centralized ID generation service             |
-| `src/core/points/PointsBalanceService.ts`         | Balance calculations, earned points filtering |
-| `src/components/points/StartingBalanceDialog.tsx` | UI for creating card-specific balances        |
-| `src/core/rewards/RewardService.ts`               | Reward calculation using card_type_id         |
+| File                                              | Purpose                                          |
+| ------------------------------------------------- | ------------------------------------------------ |
+| `src/core/rewards/CardTypeIdService.ts`           | @deprecated - ID generation service              |
+| `src/core/points/PointsBalanceService.ts`         | Balance calculations                             |
+| `src/components/points/StartingBalanceDialog.tsx` | UI for creating card-specific balances           |
+| `src/core/rewards/RewardService.ts`               | Reward calculation (prefers card_catalog_id now) |
 
 ---
 
@@ -113,14 +126,18 @@ Current Balance = Starting Balance
 
 ### Card-Specific vs Pooled Balances
 
-| Type          | Description                                    | `card_type_id`      |
-| ------------- | ---------------------------------------------- | ------------------- |
-| Pooled        | All cards earning a currency share one balance | `NULL`              |
-| Card-Specific | Each card has its own separate balance         | Set to generated ID |
+| Type          | Description                                    | `payment_method_id` | `card_type_id` (legacy) |
+| ------------- | ---------------------------------------------- | ------------------- | ----------------------- |
+| Pooled        | All cards earning a currency share one balance | `NULL`              | `NULL`                  |
+| Card-Specific | Each card has its own separate balance         | Set to UUID         | Set to TEXT ID          |
 
 **Use case for card-specific:** Programs like Citi ThankYou Points where
 different cards (Prestige, Rewards+) have separate point pools that can't be
 combined.
+
+**New schema:** Uses `payment_method_id` (UUID FK) instead of `card_type_id`
+(TEXT). The UUID links to `payment_methods.id`, which has `card_catalog_id` for
+card info lookup.
 
 ### Key Files
 
@@ -142,71 +159,54 @@ card properties (images, reward currency, etc.).
 
 ### Key Fields
 
-| Field                | Description                                     |
-| -------------------- | ----------------------------------------------- |
-| `card_type_id`       | Unique identifier (matches generated ID format) |
-| `issuer`             | Card issuer name (e.g., "American Express")     |
-| `name`               | Card name (e.g., "Platinum Card")               |
-| `default_image_url`  | Card face image URL                             |
-| `reward_currency_id` | Associated reward currency                      |
-| `region`             | Geographic region (SG, CA, US, etc.)            |
+| Field                | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `id`                 | **Primary key (UUID)** - Used for FK relationships |
+| `card_type_id`       | Legacy TEXT identifier (being phased out)          |
+| `issuer`             | Card issuer name (e.g., "American Express")        |
+| `name`               | Card name (e.g., "Platinum Card")                  |
+| `default_image_url`  | Card face image URL                                |
+| `reward_currency_id` | Associated reward currency                         |
+| `region`             | Geographic region (SG, CA, US, etc.)               |
 
-### card_type_id in card_catalog
-
-The `card_type_id` in `card_catalog` is **manually set seed data** - it's NOT
-dynamically generated. However, it should follow the same format that
-`CardTypeIdService.generateCardTypeId()` would produce from the `issuer` and
-`name` fields.
-
-**Example card_catalog entry:**
-
-```sql
-INSERT INTO card_catalog (card_type_id, issuer, name, ...)
-VALUES ('citi-rewards-visa-signature', 'Citi', 'Rewards Visa Signature', ...);
-```
-
-The `card_type_id` value `'citi-rewards-visa-signature'` matches what
-`generateCardTypeId('Citi', 'Rewards Visa Signature')` would produce.
-
-### The Lookup Chain
-
-When displaying a card-specific balance, the system looks up card info:
+### Linking Hierarchy
 
 ```
-points_balances.card_type_id  →  card_catalog.card_type_id  →  card name & image
+payment_methods.card_catalog_id → card_catalog.id → card info (name, image, currency)
+                                                  ↓
+reward_rules.card_catalog_id ─────────────────────┘
 ```
 
-**Flow:**
+**Key relationships:**
 
-1. `points_balances` has `card_type_id = 'citi-rewards-visa-signature'`
-2. System queries
-   `card_catalog WHERE card_type_id = 'citi-rewards-visa-signature'`
-3. If found: displays `cardTypeName` and `cardImageUrl` from catalog
-4. If NOT found: card name and image won't display
+- `payment_methods.card_catalog_id` → `card_catalog.id` (card info)
+- `reward_rules.card_catalog_id` → `card_catalog.id` (rule matching)
+- `points_balances.payment_method_id` → `payment_methods.id` (balance → card)
 
-### Mismatch Scenarios
+### Fetching Card Info for Balances (New)
 
-| Scenario | points_balances.card_type_id      | card_catalog.card_type_id     | Result                            |
-| -------- | --------------------------------- | ----------------------------- | --------------------------------- |
-| Match    | `citi-rewards-visa-signature`     | `citi-rewards-visa-signature` | Card name & image display         |
-| Mismatch | `citibank-rewards-visa-signature` | `citi-rewards-visa-signature` | No card name/image (lookup fails) |
-| Missing  | `citi-rewards-visa-signature`     | (entry doesn't exist)         | No card name/image                |
-
-### Fetching Card Info for Balances
-
-When displaying card-specific balances, the system fetches card name and image
-from `card_catalog`:
+With the new schema, card info is fetched via the payment method:
 
 ```typescript
-// PointsBalanceService.getAllBalances()
+// New: via payment_method_id → payment_methods → card_catalog
+const balance = await getBalance(rewardCurrencyId, paymentMethodId);
+const paymentMethod = await getPaymentMethod(balance.paymentMethodId);
+const cardInfo = await cardCatalog.getById(paymentMethod.cardCatalogId);
+
+balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
+balance.cardImageUrl = cardInfo.defaultImageUrl;
+```
+
+### Legacy Lookup (Deprecated)
+
+The old TEXT-based lookup is kept for backward compatibility:
+
+```typescript
+// Legacy: via card_type_id TEXT match
 const { data: catalogData } = await supabase
   .from("card_catalog")
   .select("card_type_id, issuer, name, default_image_url")
   .in("card_type_id", cardTypeIds);
-
-// Set on balance object
-balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
-balance.cardImageUrl = cardInfo.imageUrl;
 ```
 
 ### Key Files

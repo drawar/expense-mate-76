@@ -65,21 +65,30 @@ export function usePointsBalance(rewardCurrencyId: string) {
 
 /**
  * Hook to fetch balance breakdown
+ * @param rewardCurrencyId - The currency to fetch breakdown for
+ * @param cardTypeId - @deprecated Use paymentMethodId instead. Legacy card type identifier.
+ * @param paymentMethodId - The payment method UUID for card-specific balances
  */
 export function useBalanceBreakdown(
   rewardCurrencyId: string,
-  cardTypeId?: string
+  cardTypeId?: string,
+  paymentMethodId?: string
 ) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: [...pointsQueryKeys.breakdown(rewardCurrencyId), cardTypeId],
+    queryKey: [
+      ...pointsQueryKeys.breakdown(rewardCurrencyId),
+      cardTypeId,
+      paymentMethodId,
+    ],
     queryFn: async (): Promise<BalanceBreakdown | null> => {
       if (!user?.id) return null;
       return pointsBalanceService.calculateBalanceBreakdown(
         user.id,
         rewardCurrencyId,
-        cardTypeId
+        cardTypeId,
+        paymentMethodId
       );
     },
     enabled: !!user?.id && !!rewardCurrencyId,

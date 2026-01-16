@@ -1,6 +1,9 @@
 export interface RewardRule {
   id: string;
+  /** @deprecated Use cardCatalogId instead. Kept for backward compatibility with existing rules. */
   cardTypeId: string;
+  /** UUID foreign key to card_catalog. Preferred over cardTypeId for rule matching. */
+  cardCatalogId?: string;
   name: string;
   description: string;
   enabled: boolean;
@@ -109,6 +112,8 @@ export interface PaymentMethodInput {
   issuer: string;
   name: string;
   pointsCurrency?: string;
+  /** Card catalog UUID for rule matching via card_catalog_id */
+  cardCatalogId?: string;
 }
 
 /**
@@ -201,7 +206,10 @@ export interface CardType {
  */
 export interface DbRewardRule {
   id: string;
+  /** @deprecated Use card_catalog_id instead. Kept for backward compatibility with existing rules. */
   card_type_id: string;
+  /** UUID foreign key to card_catalog. Preferred over card_type_id for rule matching. */
+  card_catalog_id: string | null;
   name: string;
   description: string | null;
   enabled: boolean | null;

@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils";
 import type { PointsBalance, PointsBalanceInput } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
 import type { PaymentMethod } from "@/types";
-import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 
 interface StartingBalanceDialogProps {
   isOpen: boolean;
@@ -64,54 +63,44 @@ export function StartingBalanceDialog({
   const [rewardCurrencyId, setRewardCurrencyId] = useState(
     defaultCurrencyId || ""
   );
-  const [cardTypeId, setCardTypeId] = useState<string>("");
+  const [paymentMethodId, setPaymentMethodId] = useState<string>("");
   const [startingBalance, setStartingBalance] = useState("");
   const [balanceDate, setBalanceDate] = useState<Date>(new Date());
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
 
-  // Get card types that earn the selected currency
-  const cardTypesForCurrency = useMemo(() => {
+  // Get payment methods that earn the selected currency
+  const paymentMethodsForCurrency = useMemo(() => {
     if (!rewardCurrencyId) return [];
 
-    // Get unique card types from payment methods that earn this currency
-    const cardTypes = new Map<string, { id: string; name: string }>();
-    paymentMethods
+    // Get credit card payment methods that earn this currency
+    return paymentMethods
       .filter(
         (pm) =>
           pm.rewardCurrencyId === rewardCurrencyId && pm.type === "credit_card"
       )
-      .forEach((pm) => {
-        const typeId = cardTypeIdService.generateCardTypeId(
-          pm.issuer || "",
-          pm.name
-        );
-        if (!cardTypes.has(typeId)) {
-          cardTypes.set(typeId, {
-            id: typeId,
-            name: pm.issuer ? `${pm.issuer} ${pm.name}` : pm.name,
-          });
-        }
-      });
-    return Array.from(cardTypes.values());
+      .map((pm) => ({
+        id: pm.id,
+        name: pm.issuer ? `${pm.issuer} ${pm.name}` : pm.name,
+      }));
   }, [rewardCurrencyId, paymentMethods]);
 
-  // Show card type selector when there are card types available for the selected currency
-  const showCardTypeSelector = cardTypesForCurrency.length > 0;
+  // Show payment method selector when there are cards available for the selected currency
+  const showPaymentMethodSelector = paymentMethodsForCurrency.length > 0;
 
   // Reset form when dialog opens/closes or balance changes
   useEffect(() => {
     if (isOpen) {
       if (existingBalance) {
         setRewardCurrencyId(existingBalance.rewardCurrencyId);
-        setCardTypeId(existingBalance.cardTypeId || "");
+        setPaymentMethodId(existingBalance.paymentMethodId || "");
         setStartingBalance(String(existingBalance.startingBalance));
         setBalanceDate(existingBalance.balanceDate || new Date());
         setExpiryDate(existingBalance.expiryDate);
         setNotes(existingBalance.notes || "");
       } else {
         setRewardCurrencyId(defaultCurrencyId || "");
-        setCardTypeId("");
+        setPaymentMethodId("");
         setStartingBalance("");
         setBalanceDate(new Date());
         setExpiryDate(undefined);
@@ -120,10 +109,10 @@ export function StartingBalanceDialog({
     }
   }, [isOpen, existingBalance, defaultCurrencyId]);
 
-  // Reset card type when currency changes
+  // Reset payment method when currency changes
   useEffect(() => {
     if (!isEditing) {
-      setCardTypeId("");
+      setPaymentMethodId("");
     }
   }, [rewardCurrencyId, isEditing]);
 
@@ -141,8 +130,10 @@ export function StartingBalanceDialog({
 
     await onSubmit({
       rewardCurrencyId,
-      cardTypeId:
-        cardTypeId && cardTypeId !== "__pooled__" ? cardTypeId : undefined,
+      paymentMethodId:
+        paymentMethodId && paymentMethodId !== "__pooled__"
+          ? paymentMethodId
+          : undefined,
       startingBalance: numStartingBalance,
       balanceDate,
       expiryDate,
@@ -207,30 +198,30 @@ export function StartingBalanceDialog({
               </Select>
             </div>
 
-            {/* Card Type (for transferable currencies with multiple cards) */}
-            {showCardTypeSelector && (
+            {/* Card Selection (for transferable currencies with multiple cards) */}
+            {showPaymentMethodSelector && (
               <div className="space-y-2">
-                <Label htmlFor="cardType">
+                <Label htmlFor="paymentMethod">
                   <span className="flex items-center gap-2">
                     <CreditCardIcon className="h-4 w-4" />
-                    Card Type (optional)
+                    Card (optional)
                   </span>
                 </Label>
                 <Select
-                  value={cardTypeId}
-                  onValueChange={setCardTypeId}
-                  disabled={isEditing && !!existingBalance?.cardTypeId}
+                  value={paymentMethodId}
+                  onValueChange={setPaymentMethodId}
+                  disabled={isEditing && !!existingBalance?.paymentMethodId}
                 >
-                  <SelectTrigger id="cardType">
+                  <SelectTrigger id="paymentMethod">
                     <SelectValue placeholder="Pooled balance (all cards)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__pooled__">
                       Pooled balance (all cards)
                     </SelectItem>
-                    {cardTypesForCurrency.map((cardType) => (
-                      <SelectItem key={cardType.id} value={cardType.id}>
-                        {cardType.name}
+                    {paymentMethodsForCurrency.map((pm) => (
+                      <SelectItem key={pm.id} value={pm.id}>
+                        {pm.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

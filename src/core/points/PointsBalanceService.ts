@@ -78,7 +78,64 @@ export class PointsBalanceService {
         return [];
       }
 
-      // Get unique card_type_ids to fetch card names
+      // Get unique payment_method_ids to fetch card info via payment_method → card_catalog
+      const paymentMethodIds = [
+        ...new Set(
+          (data as DbPointsBalance[])
+            .map((b) => b.payment_method_id)
+            .filter((id): id is string => id !== null)
+        ),
+      ];
+
+      // PREFERRED: Fetch card info via payment_method_id → card_catalog
+      const cardInfoByPaymentMethodId = new Map<
+        string,
+        { issuer: string; name: string; imageUrl?: string }
+      >();
+      if (paymentMethodIds.length > 0) {
+        try {
+          const { data: pmData } = await supabase
+            .from("payment_methods")
+            .select("id, card_catalog_id")
+            .in("id", paymentMethodIds);
+
+          if (pmData) {
+            const catalogIds = pmData
+              .map((pm) => pm.card_catalog_id)
+              .filter((id): id is string => id !== null);
+
+            if (catalogIds.length > 0) {
+              const { data: catalogData } = await supabase
+                .from("card_catalog")
+                .select("id, issuer, name, default_image_url")
+                .in("id", catalogIds);
+
+              if (catalogData) {
+                const catalogById = new Map(catalogData.map((c) => [c.id, c]));
+                for (const pm of pmData) {
+                  if (pm.card_catalog_id) {
+                    const catalog = catalogById.get(pm.card_catalog_id);
+                    if (catalog) {
+                      cardInfoByPaymentMethodId.set(pm.id, {
+                        issuer: catalog.issuer,
+                        name: catalog.name,
+                        imageUrl: catalog.default_image_url ?? undefined,
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching card info via payment_method_id:",
+            error
+          );
+        }
+      }
+
+      // FALLBACK: Get card_type_ids for legacy lookup
       const cardTypeIds = [
         ...new Set(
           (data as DbPointsBalance[])
@@ -87,7 +144,7 @@ export class PointsBalanceService {
         ),
       ];
 
-      // Fetch card catalog entries for these card types
+      // Fetch card catalog entries for legacy card_type_id lookup
       const cardCatalogMap = new Map<
         string,
         { issuer: string; name: string; imageUrl?: string }
@@ -110,13 +167,24 @@ export class PointsBalanceService {
           }
         } catch (catalogError) {
           console.error("Error fetching card catalog:", catalogError);
-          // Continue without card names
         }
       }
 
       // Map balances with card names and images
       return (data as DbPointsBalance[]).map((db) => {
         const balance = toPointsBalance(db);
+
+        // PREFERRED: Use payment_method_id for card info lookup
+        if (db.payment_method_id) {
+          const cardInfo = cardInfoByPaymentMethodId.get(db.payment_method_id);
+          if (cardInfo) {
+            balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
+            balance.cardImageUrl = cardInfo.imageUrl;
+            return balance;
+          }
+        }
+
+        // FALLBACK: Use card_type_id for legacy lookup
         if (db.card_type_id) {
           const cardInfo = cardCatalogMap.get(db.card_type_id);
           if (cardInfo) {
@@ -134,11 +202,15 @@ export class PointsBalanceService {
 
   /**
    * Get balance for a specific currency (returns first match if multiple card-specific balances exist)
+   *
+   * @param paymentMethodId - PREFERRED: UUID of payment method for card-specific balance
+   * @param cardTypeId - DEPRECATED: Legacy TEXT identifier for backward compatibility
    */
   async getBalance(
     userId: string,
     rewardCurrencyId: string,
-    cardTypeId?: string
+    cardTypeId?: string,
+    paymentMethodId?: string
   ): Promise<PointsBalance | null> {
     try {
       let query = supabase
@@ -154,11 +226,15 @@ export class PointsBalanceService {
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
 
-      // Filter by card_type_id - if not specified, get pooled balance (null)
-      if (cardTypeId) {
+      // PREFERRED: Filter by payment_method_id
+      if (paymentMethodId) {
+        query = query.eq("payment_method_id", paymentMethodId);
+      } else if (cardTypeId) {
+        // FALLBACK: Filter by card_type_id (legacy)
         query = query.eq("card_type_id", cardTypeId);
       } else {
-        query = query.is("card_type_id", null);
+        // Pooled balance: both are null
+        query = query.is("card_type_id", null).is("payment_method_id", null);
       }
 
       const { data, error } = await query.maybeSingle();
@@ -172,7 +248,38 @@ export class PointsBalanceService {
 
       const balance = toPointsBalance(data as DbPointsBalance);
 
-      // Fetch card name and image from catalog if this is a card-specific balance
+      // Fetch card name and image from catalog
+      // PREFERRED: via payment_method_id → card_catalog
+      if (data.payment_method_id) {
+        try {
+          const { data: pmData } = await supabase
+            .from("payment_methods")
+            .select("card_catalog_id")
+            .eq("id", data.payment_method_id)
+            .maybeSingle();
+
+          if (pmData?.card_catalog_id) {
+            const { data: catalogData } = await supabase
+              .from("card_catalog")
+              .select("issuer, name, default_image_url")
+              .eq("id", pmData.card_catalog_id)
+              .maybeSingle();
+
+            if (catalogData) {
+              balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
+              balance.cardImageUrl = catalogData.default_image_url ?? undefined;
+              return balance;
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching card info via payment_method_id:",
+            error
+          );
+        }
+      }
+
+      // FALLBACK: via card_type_id (legacy)
       if (data.card_type_id) {
         try {
           const { data: catalogData } = await supabase
@@ -187,7 +294,6 @@ export class PointsBalanceService {
           }
         } catch (catalogError) {
           console.error("Error fetching card catalog:", catalogError);
-          // Continue without card name
         }
       }
 
@@ -208,10 +314,11 @@ export class PointsBalanceService {
     if (!user) throw new Error("Not authenticated");
 
     // Get current period earned and other balance components
-    // TODO: When card_type_id filtering is needed, update calculateBalanceBreakdown
     const breakdown = await this.calculateBalanceBreakdown(
       user.id,
-      input.rewardCurrencyId
+      input.rewardCurrencyId,
+      input.cardTypeId,
+      input.paymentMethodId
     );
 
     // Current balance = new starting balance + current period earned + adjustments - redemptions ± transfers
@@ -223,17 +330,22 @@ export class PointsBalanceService {
       breakdown.transfersOut +
       breakdown.transfersIn;
 
-    // Check if balance exists for this (user, currency, card_type)
+    // Check if balance exists for this (user, currency, payment_method/card_type)
     let query = supabase
       .from("points_balances")
       .select("id")
       .eq("user_id", user.id)
       .eq("reward_currency_id", input.rewardCurrencyId);
 
-    if (input.cardTypeId) {
+    // PREFERRED: Use payment_method_id
+    if (input.paymentMethodId) {
+      query = query.eq("payment_method_id", input.paymentMethodId);
+    } else if (input.cardTypeId) {
+      // FALLBACK: Use card_type_id (legacy)
       query = query.eq("card_type_id", input.cardTypeId);
     } else {
-      query = query.is("card_type_id", null);
+      // Pooled balance: both are null
+      query = query.is("card_type_id", null).is("payment_method_id", null);
     }
 
     const { data: existing } = await query.maybeSingle();
@@ -241,7 +353,8 @@ export class PointsBalanceService {
     const balanceData = {
       user_id: user.id,
       reward_currency_id: input.rewardCurrencyId,
-      card_type_id: input.cardTypeId || null,
+      card_type_id: input.cardTypeId || null, // Keep for backward compatibility
+      payment_method_id: input.paymentMethodId || null, // NEW: Preferred FK
       starting_balance: input.startingBalance,
       current_balance: currentBalance,
       balance_date: input.balanceDate?.toISOString() ?? null,
@@ -298,24 +411,34 @@ export class PointsBalanceService {
 
   /**
    * Calculate balance breakdown for a currency (optionally for a specific card type)
+   *
+   * @param paymentMethodId - PREFERRED: UUID of payment method for card-specific balance
+   * @param cardTypeId - DEPRECATED: Legacy TEXT identifier for backward compatibility
    */
   async calculateBalanceBreakdown(
     userId: string,
     rewardCurrencyId: string,
-    cardTypeId?: string
+    cardTypeId?: string,
+    paymentMethodId?: string
   ): Promise<BalanceBreakdown> {
-    // Get existing balance for starting balance (pass cardTypeId to get correct balance)
-    const balance = await this.getBalance(userId, rewardCurrencyId, cardTypeId);
+    // Get existing balance for starting balance
+    const balance = await this.getBalance(
+      userId,
+      rewardCurrencyId,
+      cardTypeId,
+      paymentMethodId
+    );
     const startingBalance = balance?.startingBalance ?? 0;
 
     // Calculate earned from transactions (current statement period only)
     // This is used for both display AND current balance calculation
-    // If cardTypeId is provided, only count transactions from that card type
+    // Filter by paymentMethodId (preferred) or cardTypeId (legacy)
     const earnedFromTransactions =
       await this.getEarnedFromTransactionsCurrentPeriod(
         userId,
         rewardCurrencyId,
-        cardTypeId
+        cardTypeId,
+        paymentMethodId
       );
 
     // Calculate adjustments sum (only include adjustments dated today or earlier)
@@ -417,12 +540,15 @@ export class PointsBalanceService {
 
   /**
    * Get earned points from transactions for a currency (CURRENT STATEMENT PERIOD only - for display)
-   * If cardTypeId is provided, only count transactions from payment methods matching that card type
+   *
+   * @param paymentMethodId - PREFERRED: Filter to specific payment method by UUID
+   * @param cardTypeId - DEPRECATED: Filter by generated card_type_id (legacy)
    */
   private async getEarnedFromTransactionsCurrentPeriod(
     userId: string,
     rewardCurrencyId: string,
-    cardTypeId?: string
+    cardTypeId?: string,
+    paymentMethodId?: string
   ): Promise<number> {
     try {
       // Get payment methods that earn this currency (with statement day and card info)
@@ -436,16 +562,24 @@ export class PointsBalanceService {
         return 0;
       }
 
-      // Filter by card type if specified
-      const filteredPaymentMethods = cardTypeId
-        ? paymentMethods.filter((pm) => {
-            const pmCardTypeId = cardTypeIdService.generateCardTypeId(
-              pm.issuer || "",
-              pm.name
-            );
-            return pmCardTypeId === cardTypeId;
-          })
-        : paymentMethods;
+      // Filter payment methods based on provided identifier
+      let filteredPaymentMethods = paymentMethods;
+
+      // PREFERRED: Filter by payment_method_id directly
+      if (paymentMethodId) {
+        filteredPaymentMethods = paymentMethods.filter(
+          (pm) => pm.id === paymentMethodId
+        );
+      } else if (cardTypeId) {
+        // FALLBACK: Filter by generated card_type_id (legacy)
+        filteredPaymentMethods = paymentMethods.filter((pm) => {
+          const pmCardTypeId = cardTypeIdService.generateCardTypeId(
+            pm.issuer || "",
+            pm.name
+          );
+          return pmCardTypeId === cardTypeId;
+        });
+      }
 
       if (filteredPaymentMethods.length === 0) {
         return 0;
