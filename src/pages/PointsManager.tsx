@@ -104,10 +104,9 @@ function BalanceCardWithBreakdown({
   balance: PointsBalance;
   onEditStartingBalance: () => void;
 }) {
-  // Use paymentMethodId (new) with fallback to cardTypeId (legacy)
   const { data: breakdown } = useBalanceBreakdown(
     balance.rewardCurrencyId,
-    balance.cardTypeId,
+    undefined, // cardTypeId deprecated, no longer on PointsBalance
     balance.paymentMethodId
   );
 

@@ -135,58 +135,13 @@ export class PointsBalanceService {
         }
       }
 
-      // FALLBACK: Get card_type_ids for legacy lookup
-      const cardTypeIds = [
-        ...new Set(
-          (data as DbPointsBalance[])
-            .map((b) => b.card_type_id)
-            .filter((id): id is string => id !== null)
-        ),
-      ];
-
-      // Fetch card catalog entries for legacy card_type_id lookup
-      const cardCatalogMap = new Map<
-        string,
-        { issuer: string; name: string; imageUrl?: string }
-      >();
-      if (cardTypeIds.length > 0) {
-        try {
-          const { data: catalogData } = await supabase
-            .from("card_catalog")
-            .select("card_type_id, issuer, name, default_image_url")
-            .in("card_type_id", cardTypeIds);
-
-          if (catalogData) {
-            for (const c of catalogData) {
-              cardCatalogMap.set(c.card_type_id, {
-                issuer: c.issuer,
-                name: c.name,
-                imageUrl: c.default_image_url ?? undefined,
-              });
-            }
-          }
-        } catch (catalogError) {
-          console.error("Error fetching card catalog:", catalogError);
-        }
-      }
-
       // Map balances with card names and images
       return (data as DbPointsBalance[]).map((db) => {
         const balance = toPointsBalance(db);
 
-        // PREFERRED: Use payment_method_id for card info lookup
+        // Use payment_method_id for card info lookup
         if (db.payment_method_id) {
           const cardInfo = cardInfoByPaymentMethodId.get(db.payment_method_id);
-          if (cardInfo) {
-            balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
-            balance.cardImageUrl = cardInfo.imageUrl;
-            return balance;
-          }
-        }
-
-        // FALLBACK: Use card_type_id for legacy lookup
-        if (db.card_type_id) {
-          const cardInfo = cardCatalogMap.get(db.card_type_id);
           if (cardInfo) {
             balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
             balance.cardImageUrl = cardInfo.imageUrl;
@@ -226,15 +181,12 @@ export class PointsBalanceService {
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
 
-      // PREFERRED: Filter by payment_method_id
+      // Filter by payment_method_id if provided, otherwise get pooled balance
       if (paymentMethodId) {
         query = query.eq("payment_method_id", paymentMethodId);
-      } else if (cardTypeId) {
-        // FALLBACK: Filter by card_type_id (legacy)
-        query = query.eq("card_type_id", cardTypeId);
       } else {
-        // Pooled balance: both are null
-        query = query.is("card_type_id", null).is("payment_method_id", null);
+        // Pooled balance: payment_method_id is null
+        query = query.is("payment_method_id", null);
       }
 
       const { data, error } = await query.maybeSingle();
@@ -279,24 +231,6 @@ export class PointsBalanceService {
         }
       }
 
-      // FALLBACK: via card_type_id (legacy)
-      if (data.card_type_id) {
-        try {
-          const { data: catalogData } = await supabase
-            .from("card_catalog")
-            .select("issuer, name, default_image_url")
-            .eq("card_type_id", data.card_type_id)
-            .maybeSingle();
-
-          if (catalogData) {
-            balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
-            balance.cardImageUrl = catalogData.default_image_url ?? undefined;
-          }
-        } catch (catalogError) {
-          console.error("Error fetching card catalog:", catalogError);
-        }
-      }
-
       return balance;
     } catch (error) {
       console.error("Error in getBalance:", error);
@@ -337,15 +271,12 @@ export class PointsBalanceService {
       .eq("user_id", user.id)
       .eq("reward_currency_id", input.rewardCurrencyId);
 
-    // PREFERRED: Use payment_method_id
+    // Filter by payment_method_id if provided, otherwise get pooled balance
     if (input.paymentMethodId) {
       query = query.eq("payment_method_id", input.paymentMethodId);
-    } else if (input.cardTypeId) {
-      // FALLBACK: Use card_type_id (legacy)
-      query = query.eq("card_type_id", input.cardTypeId);
     } else {
-      // Pooled balance: both are null
-      query = query.is("card_type_id", null).is("payment_method_id", null);
+      // Pooled balance: payment_method_id is null
+      query = query.is("payment_method_id", null);
     }
 
     const { data: existing } = await query.maybeSingle();
@@ -353,8 +284,7 @@ export class PointsBalanceService {
     const balanceData = {
       user_id: user.id,
       reward_currency_id: input.rewardCurrencyId,
-      card_type_id: input.cardTypeId || null, // Keep for backward compatibility
-      payment_method_id: input.paymentMethodId || null, // NEW: Preferred FK
+      payment_method_id: input.paymentMethodId || null,
       starting_balance: input.startingBalance,
       current_balance: currentBalance,
       balance_date: input.balanceDate?.toISOString() ?? null,

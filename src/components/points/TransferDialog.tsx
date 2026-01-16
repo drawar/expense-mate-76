@@ -114,7 +114,8 @@ export function TransferDialog({
   // Get the calculated breakdown for the selected balance (correct current balance)
   const { data: selectedBreakdown } = useBalanceBreakdown(
     selectedBalance?.rewardCurrencyId || "",
-    selectedBalance?.cardTypeId
+    undefined, // cardTypeId deprecated
+    selectedBalance?.paymentMethodId
   );
 
   // Build source options from balances (includes card-specific balances as separate entries)
@@ -129,8 +130,8 @@ export function TransferDialog({
       return transferableBalances.map((b) => ({
         value: b.id,
         label: b.rewardCurrency?.displayName || "Unknown",
-        description: b.cardTypeId
-          ? `via ${b.cardTypeName || b.cardTypeId}`
+        description: b.paymentMethodId
+          ? `via ${b.cardTypeName || "card"}`
           : b.rewardCurrency?.issuer || undefined,
       }));
     }

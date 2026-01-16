@@ -36,7 +36,7 @@ export function usePointsAdjustments(rewardCurrencyId?: string) {
           (b) => !rewardCurrencyId || b.rewardCurrencyId === rewardCurrencyId
         )
         .map((balance) => ({
-          id: `starting-balance-${balance.rewardCurrencyId}-${balance.cardTypeId || "pooled"}`,
+          id: `starting-balance-${balance.rewardCurrencyId}-${balance.paymentMethodId || "pooled"}`,
           userId: user.id,
           rewardCurrencyId: balance.rewardCurrencyId,
           rewardCurrency: balance.rewardCurrency,

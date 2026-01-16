@@ -39,8 +39,8 @@ export function BalanceCard({
   const logoUrl = balance.rewardCurrency?.logoUrl;
   const bgColor = balance.rewardCurrency?.bgColor;
   const logoScale = balance.rewardCurrency?.logoScale;
-  // Card-specific balances have either paymentMethodId (new) or cardTypeId (legacy)
-  const isCardSpecific = !!balance.paymentMethodId || !!balance.cardTypeId;
+  // Card-specific balances have paymentMethodId
+  const isCardSpecific = !!balance.paymentMethodId;
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
