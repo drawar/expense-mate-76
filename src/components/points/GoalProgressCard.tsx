@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useBalanceBreakdown } from "@/hooks/points/usePointsBalances";
 import type { PointsGoal, BalanceBreakdown } from "@/core/points/types";
 
 interface GoalProgressCardProps {
@@ -34,17 +35,20 @@ interface GoalProgressCardProps {
 export function GoalProgressCard({
   goal,
   currentBalance = 0,
+  breakdown,
   onEdit,
   onComplete,
   onCancel,
   className,
 }: GoalProgressCardProps) {
+  // Prefer calculated breakdown over stored currentBalance
+  const effectiveBalance = breakdown?.currentBalance ?? currentBalance;
   const progressPercent = Math.min(
-    (currentBalance / goal.targetPoints) * 100,
+    (effectiveBalance / goal.targetPoints) * 100,
     100
   );
-  const pointsRemaining = Math.max(goal.targetPoints - currentBalance, 0);
-  const isAchieved = currentBalance >= goal.targetPoints;
+  const pointsRemaining = Math.max(goal.targetPoints - effectiveBalance, 0);
+  const isAchieved = effectiveBalance >= goal.targetPoints;
   const isOverdue = goal.targetDate && isPast(goal.targetDate);
 
   // Get icon based on goal type
@@ -159,7 +163,8 @@ export function GoalProgressCard({
           <Progress value={progressPercent} className="h-2" />
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">
-              {formatNumber(currentBalance)} / {formatNumber(goal.targetPoints)}
+              {formatNumber(effectiveBalance)} /{" "}
+              {formatNumber(goal.targetPoints)}
             </span>
             <span
               className={cn(
@@ -243,11 +248,46 @@ export function GoalProgressCard({
 }
 
 /**
+ * GoalProgressCardWithBreakdown - Wrapper that fetches calculated breakdown
+ */
+function GoalProgressCardWithBreakdown({
+  goal,
+  fallbackBalance,
+  onEdit,
+  onComplete,
+  onCancel,
+}: {
+  goal: PointsGoal;
+  fallbackBalance: number;
+  onEdit?: () => void;
+  onComplete?: () => void;
+  onCancel?: () => void;
+}) {
+  // Fetch calculated breakdown for this goal's currency (pooled balance only)
+  const { data: breakdown } = useBalanceBreakdown(
+    goal.rewardCurrencyId,
+    undefined, // cardTypeId deprecated
+    undefined // paymentMethodId - goals track pooled balances
+  );
+
+  return (
+    <GoalProgressCard
+      goal={goal}
+      currentBalance={fallbackBalance}
+      breakdown={breakdown ?? undefined}
+      onEdit={onEdit}
+      onComplete={onComplete}
+      onCancel={onCancel}
+    />
+  );
+}
+
+/**
  * GoalProgressList - List of goal cards
  */
 interface GoalProgressListProps {
   goals: PointsGoal[];
-  balances: Map<string, number>; // rewardCurrencyId -> currentBalance
+  balances: Map<string, number>; // rewardCurrencyId -> currentBalance (fallback only)
   onEditGoal?: (goal: PointsGoal) => void;
   onCompleteGoal?: (goal: PointsGoal) => void;
   onCancelGoal?: (goal: PointsGoal) => void;
@@ -271,6 +311,7 @@ export function GoalProgressList({
   }
 
   // Sort by priority (1 = high), then by closest to target
+  // Note: Sorting uses stored balances as approximation; display uses calculated breakdown
   const sortedGoals = [...goals].sort((a, b) => {
     // First by priority
     if (a.priority !== b.priority) {
@@ -287,10 +328,10 @@ export function GoalProgressList({
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {sortedGoals.map((goal) => (
-        <GoalProgressCard
+        <GoalProgressCardWithBreakdown
           key={goal.id}
           goal={goal}
-          currentBalance={balances.get(goal.rewardCurrencyId) || 0}
+          fallbackBalance={balances.get(goal.rewardCurrencyId) || 0}
           onEdit={onEditGoal ? () => onEditGoal(goal) : undefined}
           onComplete={onCompleteGoal ? () => onCompleteGoal(goal) : undefined}
           onCancel={onCancelGoal ? () => onCancelGoal(goal) : undefined}
