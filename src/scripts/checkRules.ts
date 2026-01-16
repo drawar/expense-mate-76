@@ -13,7 +13,7 @@ async function main() {
       "name, conditions, base_multiplier, bonus_multiplier, enabled, card_type_id"
     )
     .in("card_type_id", [
-      "american-express-platinum",
+      "american-express-platinum-canada",
       "american-express-cobalt",
     ]);
 
