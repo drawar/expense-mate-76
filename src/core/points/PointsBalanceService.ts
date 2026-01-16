@@ -78,7 +78,44 @@ export class PointsBalanceService {
         return [];
       }
 
-      return (data as DbPointsBalance[]).map(toPointsBalance);
+      // Get unique card_type_ids to fetch card names
+      const cardTypeIds = [
+        ...new Set(
+          (data as DbPointsBalance[])
+            .map((b) => b.card_type_id)
+            .filter((id): id is string => id !== null)
+        ),
+      ];
+
+      // Fetch card catalog entries for these card types
+      let cardCatalogMap = new Map<string, { issuer: string; name: string }>();
+      if (cardTypeIds.length > 0) {
+        const { data: catalogData } = await supabase
+          .from("card_catalog")
+          .select("card_type_id, issuer, name")
+          .in("card_type_id", cardTypeIds);
+
+        if (catalogData) {
+          cardCatalogMap = new Map(
+            catalogData.map((c) => [
+              c.card_type_id,
+              { issuer: c.issuer, name: c.name },
+            ])
+          );
+        }
+      }
+
+      // Map balances with card names
+      return (data as DbPointsBalance[]).map((db) => {
+        const balance = toPointsBalance(db);
+        if (db.card_type_id) {
+          const cardInfo = cardCatalogMap.get(db.card_type_id);
+          if (cardInfo) {
+            balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
+          }
+        }
+        return balance;
+      });
     } catch (error) {
       console.error("Error in getAllBalances:", error);
       return [];
@@ -123,7 +160,22 @@ export class PointsBalanceService {
 
       if (!data) return null;
 
-      return toPointsBalance(data as DbPointsBalance);
+      const balance = toPointsBalance(data as DbPointsBalance);
+
+      // Fetch card name from catalog if this is a card-specific balance
+      if (data.card_type_id) {
+        const { data: catalogData } = await supabase
+          .from("card_catalog")
+          .select("issuer, name")
+          .eq("card_type_id", data.card_type_id)
+          .maybeSingle();
+
+        if (catalogData) {
+          balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
+        }
+      }
+
+      return balance;
     } catch (error) {
       console.error("Error in getBalance:", error);
       return null;
