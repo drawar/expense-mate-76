@@ -9,7 +9,6 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 import {
   PointsBalance,
   PointsAdjustment,
@@ -351,7 +350,7 @@ export class PointsBalanceService {
     cardTypeId?: string,
     paymentMethodId?: string
   ): Promise<BalanceBreakdown> {
-    // Get existing balance for starting balance
+    // Get existing balance for starting balance and balance date
     const balance = await this.getBalance(
       userId,
       rewardCurrencyId,
@@ -359,15 +358,15 @@ export class PointsBalanceService {
       paymentMethodId
     );
     const startingBalance = balance?.startingBalance ?? 0;
+    const balanceDate = balance?.balanceDate;
 
-    // Calculate earned from transactions (current statement period only)
-    // This is used for both display AND current balance calculation
-    // Filter by paymentMethodId (preferred) or cardTypeId (legacy)
+    // Calculate earned from transactions since the balance date
+    // If no balance date, include all transactions (fallback behavior)
     const earnedFromTransactions =
-      await this.getEarnedFromTransactionsCurrentPeriod(
+      await this.getEarnedFromTransactionsSinceDate(
         userId,
         rewardCurrencyId,
-        cardTypeId,
+        balanceDate,
         paymentMethodId
       );
 
@@ -447,105 +446,64 @@ export class PointsBalanceService {
   }
 
   /**
-   * Calculate the current statement period start date for a given statement day
-   */
-  private calculateStatementPeriodStart(statementDay: number | null): Date {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // If no statement day set (or day 1), use calendar month (1st of current month)
-    if (!statementDay || statementDay === 1) {
-      return new Date(currentYear, currentMonth, 1);
-    }
-
-    // If we're past the statement day this month, period started this month
-    // Otherwise, period started last month
-    if (today.getDate() >= statementDay) {
-      return new Date(currentYear, currentMonth, statementDay);
-    } else {
-      return new Date(currentYear, currentMonth - 1, statementDay);
-    }
-  }
-
-  /**
-   * Get earned points from transactions for a currency (CURRENT STATEMENT PERIOD only - for display)
+   * Get earned points from transactions since a given date.
+   * Used for calculating current balance based on starting balance date.
    *
-   * @param paymentMethodId - PREFERRED: Filter to specific payment method by UUID
-   * @param cardTypeId - DEPRECATED: Filter by generated card_type_id (legacy)
+   * @param userId - User ID
+   * @param rewardCurrencyId - Reward currency ID
+   * @param sinceDate - Only include transactions AFTER this date. If undefined, include all.
+   * @param paymentMethodId - Optional: filter to specific payment method
    */
-  private async getEarnedFromTransactionsCurrentPeriod(
+  private async getEarnedFromTransactionsSinceDate(
     userId: string,
     rewardCurrencyId: string,
-    cardTypeId?: string,
+    sinceDate?: Date,
     paymentMethodId?: string
   ): Promise<number> {
     try {
-      // Get payment methods that earn this currency (with statement day and card info)
-      const { data: paymentMethods } = await supabase
+      // Get payment methods that earn this currency
+      let pmQuery = supabase
         .from("payment_methods")
-        .select("id, statement_start_day, issuer, name")
+        .select("id")
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
+
+      // Filter to specific payment method if provided
+      if (paymentMethodId) {
+        pmQuery = pmQuery.eq("id", paymentMethodId);
+      }
+
+      const { data: paymentMethods } = await pmQuery;
 
       if (!paymentMethods || paymentMethods.length === 0) {
         return 0;
       }
 
-      // Filter payment methods based on provided identifier
-      let filteredPaymentMethods = paymentMethods;
+      const paymentMethodIds = paymentMethods.map((pm) => pm.id);
 
-      // PREFERRED: Filter by payment_method_id directly
-      if (paymentMethodId) {
-        filteredPaymentMethods = paymentMethods.filter(
-          (pm) => pm.id === paymentMethodId
-        );
-      } else if (cardTypeId) {
-        // FALLBACK: Filter by generated card_type_id (legacy)
-        filteredPaymentMethods = paymentMethods.filter((pm) => {
-          const pmCardTypeId = cardTypeIdService.generateCardTypeId(
-            pm.issuer || "",
-            pm.name
-          );
-          return pmCardTypeId === cardTypeId;
-        });
+      // Build query for transactions
+      let txQuery = supabase
+        .from("transactions")
+        .select("total_points")
+        .eq("user_id", userId)
+        .in("payment_method_id", paymentMethodIds)
+        .or("is_deleted.is.null,is_deleted.eq.false");
+
+      // Filter by date if provided (transactions AFTER balance date)
+      if (sinceDate) {
+        const sinceDateStr = sinceDate.toISOString().split("T")[0];
+        txQuery = txQuery.gt("date", sinceDateStr);
       }
 
-      if (filteredPaymentMethods.length === 0) {
-        return 0;
-      }
+      const { data: transactions } = await txQuery;
 
-      let totalPoints = 0;
-
-      // For each payment method, get transactions from its current statement period
-      for (const pm of filteredPaymentMethods) {
-        const statementPeriodStart = this.calculateStatementPeriodStart(
-          pm.statement_start_day
-        );
-
-        // Format date as YYYY-MM-DD for comparison with transaction date field
-        const startDateStr = statementPeriodStart.toISOString().split("T")[0];
-
-        // Sum total_points from transactions for this payment method
-        // only from the current statement period
-        const { data: transactions } = await supabase
-          .from("transactions")
-          .select("total_points")
-          .eq("user_id", userId)
-          .eq("payment_method_id", pm.id)
-          .gte("date", startDateStr)
-          .or("is_deleted.is.null,is_deleted.eq.false");
-
-        totalPoints += (transactions ?? []).reduce(
-          (sum, t) => sum + (Number(t.total_points) || 0),
-          0
-        );
-      }
-
-      return totalPoints;
+      return (transactions ?? []).reduce(
+        (sum, t) => sum + (Number(t.total_points) || 0),
+        0
+      );
     } catch (error) {
       console.error(
-        "Error calculating earned from transactions (current period):",
+        "Error calculating earned from transactions since date:",
         error
       );
       return 0;
