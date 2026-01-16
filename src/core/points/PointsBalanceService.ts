@@ -9,6 +9,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
 import {
   PointsBalance,
   PointsAdjustment,
@@ -241,10 +242,12 @@ export class PointsBalanceService {
 
     // Calculate earned from transactions (current statement period only)
     // This is used for both display AND current balance calculation
+    // If cardTypeId is provided, only count transactions from that card type
     const earnedFromTransactions =
       await this.getEarnedFromTransactionsCurrentPeriod(
         userId,
-        rewardCurrencyId
+        rewardCurrencyId,
+        cardTypeId
       );
 
     // Calculate adjustments sum (only include adjustments dated today or earlier)
@@ -346,16 +349,18 @@ export class PointsBalanceService {
 
   /**
    * Get earned points from transactions for a currency (CURRENT STATEMENT PERIOD only - for display)
+   * If cardTypeId is provided, only count transactions from payment methods matching that card type
    */
   private async getEarnedFromTransactionsCurrentPeriod(
     userId: string,
-    rewardCurrencyId: string
+    rewardCurrencyId: string,
+    cardTypeId?: string
   ): Promise<number> {
     try {
-      // Get payment methods that earn this currency (with statement day)
+      // Get payment methods that earn this currency (with statement day and card info)
       const { data: paymentMethods } = await supabase
         .from("payment_methods")
-        .select("id, statement_start_day")
+        .select("id, statement_start_day, issuer, name")
         .eq("user_id", userId)
         .eq("reward_currency_id", rewardCurrencyId);
 
@@ -363,10 +368,25 @@ export class PointsBalanceService {
         return 0;
       }
 
+      // Filter by card type if specified
+      const filteredPaymentMethods = cardTypeId
+        ? paymentMethods.filter((pm) => {
+            const pmCardTypeId = cardTypeIdService.generateCardTypeId(
+              pm.issuer || "",
+              pm.name
+            );
+            return pmCardTypeId === cardTypeId;
+          })
+        : paymentMethods;
+
+      if (filteredPaymentMethods.length === 0) {
+        return 0;
+      }
+
       let totalPoints = 0;
 
       // For each payment method, get transactions from its current statement period
-      for (const pm of paymentMethods) {
+      for (const pm of filteredPaymentMethods) {
         const statementPeriodStart = this.calculateStatementPeriodStart(
           pm.statement_start_day
         );
