@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useBalanceBreakdown } from "@/hooks/points/usePointsBalances";
 import {
   Dialog,
   DialogContent,
@@ -108,6 +109,12 @@ export function TransferDialog({
   const selectedBalance = useMemo(
     () => balances.find((b) => b.id === sourceBalanceId),
     [balances, sourceBalanceId]
+  );
+
+  // Get the calculated breakdown for the selected balance (correct current balance)
+  const { data: selectedBreakdown } = useBalanceBreakdown(
+    selectedBalance?.rewardCurrencyId || "",
+    selectedBalance?.cardTypeId
   );
 
   // Build source options from balances (includes card-specific balances as separate entries)
@@ -403,13 +410,14 @@ export function TransferDialog({
                       />
                     </div>
                   )}
-                  {/* Source Balance */}
-                  {selectedBalance && (
+                  {/* Source Balance - use calculated breakdown for correct value */}
+                  {selectedBalance && selectedBreakdown && (
                     <p
                       className="mt-2 text-xs"
                       style={{ color: "var(--color-text-tertiary)" }}
                     >
-                      Balance: {selectedBalance.currentBalance.toLocaleString()}
+                      Balance:{" "}
+                      {selectedBreakdown.currentBalance.toLocaleString()}
                     </p>
                   )}
                 </div>
