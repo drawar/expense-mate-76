@@ -88,20 +88,28 @@ export class PointsBalanceService {
       ];
 
       // Fetch card catalog entries for these card types
-      let cardCatalogMap = new Map<string, { issuer: string; name: string }>();
+      const cardCatalogMap = new Map<
+        string,
+        { issuer: string; name: string }
+      >();
       if (cardTypeIds.length > 0) {
-        const { data: catalogData } = await supabase
-          .from("card_catalog")
-          .select("card_type_id, issuer, name")
-          .in("card_type_id", cardTypeIds);
+        try {
+          const { data: catalogData } = await supabase
+            .from("card_catalog")
+            .select("card_type_id, issuer, name")
+            .in("card_type_id", cardTypeIds);
 
-        if (catalogData) {
-          cardCatalogMap = new Map(
-            catalogData.map((c) => [
-              c.card_type_id,
-              { issuer: c.issuer, name: c.name },
-            ])
-          );
+          if (catalogData) {
+            for (const c of catalogData) {
+              cardCatalogMap.set(c.card_type_id, {
+                issuer: c.issuer,
+                name: c.name,
+              });
+            }
+          }
+        } catch (catalogError) {
+          console.error("Error fetching card catalog:", catalogError);
+          // Continue without card names
         }
       }
 
@@ -164,14 +172,19 @@ export class PointsBalanceService {
 
       // Fetch card name from catalog if this is a card-specific balance
       if (data.card_type_id) {
-        const { data: catalogData } = await supabase
-          .from("card_catalog")
-          .select("issuer, name")
-          .eq("card_type_id", data.card_type_id)
-          .maybeSingle();
+        try {
+          const { data: catalogData } = await supabase
+            .from("card_catalog")
+            .select("issuer, name")
+            .eq("card_type_id", data.card_type_id)
+            .maybeSingle();
 
-        if (catalogData) {
-          balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
+          if (catalogData) {
+            balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
+          }
+        } catch (catalogError) {
+          console.error("Error fetching card catalog:", catalogError);
+          // Continue without card name
         }
       }
 
