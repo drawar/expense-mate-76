@@ -23,6 +23,7 @@ interface BalanceCardProps {
   breakdown?: BalanceBreakdown;
   averageCpp?: number;
   onEditStartingBalance?: () => void;
+  cardImageUrl?: string; // Card face image for card-specific balances
   className?: string;
 }
 
@@ -31,12 +32,14 @@ export function BalanceCard({
   breakdown,
   averageCpp,
   onEditStartingBalance,
+  cardImageUrl,
   className,
 }: BalanceCardProps) {
   const currencyName = balance.rewardCurrency?.displayName ?? "Points";
   const logoUrl = balance.rewardCurrency?.logoUrl;
   const bgColor = balance.rewardCurrency?.bgColor;
   const logoScale = balance.rewardCurrency?.logoScale;
+  const isCardSpecific = !!balance.cardTypeId;
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -44,6 +47,19 @@ export function BalanceCard({
 
   return (
     <Card className={cn("relative overflow-hidden", className)}>
+      {/* Mini card image for card-specific balances - top left corner */}
+      {isCardSpecific && cardImageUrl && (
+        <div className="absolute top-3 left-3 z-10">
+          <div className="w-12 h-[30px] rounded shadow-md overflow-hidden border border-border/50 bg-background">
+            <img
+              src={cardImageUrl}
+              alt="Card"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Expiry Badge - positioned absolute top right */}
       {balance.expiryDate && (
         <Badge
@@ -55,7 +71,9 @@ export function BalanceCard({
         </Badge>
       )}
 
-      <CardContent className="pt-6">
+      <CardContent
+        className={cn("pt-6", isCardSpecific && cardImageUrl && "pt-12")}
+      >
         {/* Header with logo and currency name */}
         <div className="flex items-center gap-3 mb-4">
           {logoUrl ? (

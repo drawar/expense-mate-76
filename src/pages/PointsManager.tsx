@@ -63,6 +63,8 @@ import {
 } from "@/hooks/points/usePointsGoals";
 import { usePointsActivityFeed } from "@/hooks/points/usePointsActivityFeed";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { cardTypeIdService } from "@/core/rewards/CardTypeIdService";
+import type { PaymentMethod } from "@/types";
 
 // Components
 import {
@@ -100,20 +102,39 @@ type DialogType =
 function BalanceCardWithBreakdown({
   balance,
   onEditStartingBalance,
+  paymentMethods,
 }: {
   balance: PointsBalance;
   onEditStartingBalance: () => void;
+  paymentMethods: PaymentMethod[];
 }) {
   const { data: breakdown } = useBalanceBreakdown(
     balance.rewardCurrencyId,
     balance.cardTypeId
   );
 
+  // Find card image URL for card-specific balances
+  const cardImageUrl = useMemo(() => {
+    if (!balance.cardTypeId) return undefined;
+
+    // Find payment method matching this card type
+    const matchingPm = paymentMethods.find((pm) => {
+      const pmCardTypeId = cardTypeIdService.generateCardTypeId(
+        pm.issuer || "",
+        pm.name
+      );
+      return pmCardTypeId === balance.cardTypeId;
+    });
+
+    return matchingPm?.imageUrl;
+  }, [balance.cardTypeId, paymentMethods]);
+
   return (
     <BalanceCard
       balance={balance}
       breakdown={breakdown ?? undefined}
       onEditStartingBalance={onEditStartingBalance}
+      cardImageUrl={cardImageUrl}
     />
   );
 }
@@ -452,6 +473,7 @@ export default function PointsManager() {
                       onEditStartingBalance={() =>
                         handleOpenBalanceDialog(balance)
                       }
+                      paymentMethods={paymentMethods}
                     />
                   ))}
                 </div>
