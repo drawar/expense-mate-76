@@ -29,11 +29,9 @@ ALTER TABLE reward_rules DROP COLUMN IF EXISTS included_merchants;
 ALTER TABLE reward_rules DROP COLUMN IF EXISTS promo_start_date;
 
 -- ============================================================================
--- points_balances: Drop deprecated columns
+-- points_balances: No columns to drop
 -- ============================================================================
-
--- Drop card_type_id (replaced by payment_method_id UUID FK)
-ALTER TABLE points_balances DROP COLUMN IF EXISTS card_type_id;
+-- NOTE: card_type_id was never added to points_balances (replaced by payment_method_id from the start)
 
 -- ============================================================================
 -- Summary of dropped columns:
@@ -49,6 +47,3 @@ ALTER TABLE points_balances DROP COLUMN IF EXISTS card_type_id;
 --   - excluded_merchants -> use conditions JSON
 --   - included_merchants -> use conditions JSON
 --   - promo_start_date -> use valid_from for promotional periods
---
--- points_balances:
---   - card_type_id (TEXT) -> use payment_method_id (UUID)

@@ -36,28 +36,13 @@ CREATE INDEX IF NOT EXISTS idx_points_balances_payment_method_id
   WHERE payment_method_id IS NOT NULL;
 
 -- ============================================================================
--- PART 3: Backfill reward_rules.card_catalog_id from card_type_id
+-- PART 3: Backfill reward_rules.card_catalog_id
 -- ============================================================================
-
--- Match reward_rules to card_catalog via card_type_id
-UPDATE reward_rules r
-SET card_catalog_id = c.id
-FROM card_catalog c
-WHERE r.card_type_id = c.card_type_id
-  AND r.card_catalog_id IS NULL;
+-- NOTE: card_type_id column was already removed from reward_rules.
+-- card_catalog_id should already be populated via script.
 
 -- ============================================================================
--- PART 4: Backfill points_balances.payment_method_id from card_type_id
+-- PART 4: Backfill points_balances.payment_method_id
 -- ============================================================================
-
--- Match points_balances to payment_methods via card_type_id pattern
--- The card_type_id format is: {issuer}-{name} (lowercase, hyphenated)
-UPDATE points_balances pb
-SET payment_method_id = pm.id
-FROM payment_methods pm
-WHERE pb.card_type_id IS NOT NULL
-  AND pb.user_id = pm.user_id
-  AND pb.card_type_id = LOWER(REPLACE(REPLACE(pm.issuer, ' ', '-'), '.', ''))
-                     || '-'
-                     || LOWER(REPLACE(REPLACE(pm.name, ' ', '-'), '.', ''))
-  AND pb.payment_method_id IS NULL;
+-- NOTE: card_type_id was never added to points_balances, so no backfill needed.
+-- New balances should be created with payment_method_id directly.
