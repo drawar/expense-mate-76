@@ -60,11 +60,11 @@ export function BalanceCard({
         </div>
       )}
 
-      {/* Expiry Badge - positioned to not overlap with edit button */}
+      {/* Expiry Badge - positioned absolute top right */}
       {balance.expiryDate && (
         <Badge
           variant="outline"
-          className="absolute top-3 right-12 text-xs font-normal bg-background/80 backdrop-blur-sm"
+          className="absolute top-3 right-3 text-xs font-normal bg-background/80 backdrop-blur-sm"
         >
           <Clock className="h-3 w-3 mr-1" />
           Expires {format(balance.expiryDate, "MMM d, yyyy")}
