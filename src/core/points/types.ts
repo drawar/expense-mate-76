@@ -25,6 +25,7 @@ export interface PointsBalance {
   rewardCurrency?: RewardCurrency;
   cardTypeId?: string; // Card type for card-specific balances (e.g., 'citi-rewards-visa')
   cardTypeName?: string; // Display name of the card type (joined from card_catalog)
+  cardImageUrl?: string; // Card image URL from card_catalog
   startingBalance: number;
   currentBalance: number;
   balanceDate?: Date; // Date the balance was recorded as of

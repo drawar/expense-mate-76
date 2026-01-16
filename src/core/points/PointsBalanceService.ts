@@ -90,13 +90,13 @@ export class PointsBalanceService {
       // Fetch card catalog entries for these card types
       const cardCatalogMap = new Map<
         string,
-        { issuer: string; name: string }
+        { issuer: string; name: string; imageUrl?: string }
       >();
       if (cardTypeIds.length > 0) {
         try {
           const { data: catalogData } = await supabase
             .from("card_catalog")
-            .select("card_type_id, issuer, name")
+            .select("card_type_id, issuer, name, default_image_url")
             .in("card_type_id", cardTypeIds);
 
           if (catalogData) {
@@ -104,6 +104,7 @@ export class PointsBalanceService {
               cardCatalogMap.set(c.card_type_id, {
                 issuer: c.issuer,
                 name: c.name,
+                imageUrl: c.default_image_url ?? undefined,
               });
             }
           }
@@ -113,13 +114,14 @@ export class PointsBalanceService {
         }
       }
 
-      // Map balances with card names
+      // Map balances with card names and images
       return (data as DbPointsBalance[]).map((db) => {
         const balance = toPointsBalance(db);
         if (db.card_type_id) {
           const cardInfo = cardCatalogMap.get(db.card_type_id);
           if (cardInfo) {
             balance.cardTypeName = `${cardInfo.issuer} ${cardInfo.name}`;
+            balance.cardImageUrl = cardInfo.imageUrl;
           }
         }
         return balance;
@@ -170,17 +172,18 @@ export class PointsBalanceService {
 
       const balance = toPointsBalance(data as DbPointsBalance);
 
-      // Fetch card name from catalog if this is a card-specific balance
+      // Fetch card name and image from catalog if this is a card-specific balance
       if (data.card_type_id) {
         try {
           const { data: catalogData } = await supabase
             .from("card_catalog")
-            .select("issuer, name")
+            .select("issuer, name, default_image_url")
             .eq("card_type_id", data.card_type_id)
             .maybeSingle();
 
           if (catalogData) {
             balance.cardTypeName = `${catalogData.issuer} ${catalogData.name}`;
+            balance.cardImageUrl = catalogData.default_image_url ?? undefined;
           }
         } catch (catalogError) {
           console.error("Error fetching card catalog:", catalogError);
