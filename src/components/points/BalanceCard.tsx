@@ -64,9 +64,9 @@ export function BalanceCard({
       {balance.expiryDate && (
         <Badge
           variant="outline"
-          className="absolute top-3 right-3 text-xs font-normal bg-background/80 backdrop-blur-sm"
+          className="absolute top-1.5 right-1.5 text-[10px] font-normal bg-background/80 backdrop-blur-sm py-0.5 px-1.5"
         >
-          <Clock className="h-3 w-3 mr-1" />
+          <Clock className="h-2.5 w-2.5 mr-0.5" />
           Expires {format(balance.expiryDate, "MMM d, yyyy")}
         </Badge>
       )}
