@@ -86,8 +86,7 @@ export class RuleMapper {
 
     return {
       id: dbRule.id,
-      cardTypeId: dbRule.card_type_id,
-      cardCatalogId: dbRule.card_catalog_id ?? undefined,
+      cardCatalogId: dbRule.card_catalog_id ?? "",
       name: dbRule.name,
       description: dbRule.description || "",
       enabled: dbRule.enabled ?? true,
@@ -140,9 +139,6 @@ export class RuleMapper {
         // input.paymentMethod.pointsCurrency for the actual currency in calculations.
         pointsCurrency: "points",
         capGroupId: dbRule.cap_group_id || undefined,
-        promoStartDate: dbRule.promo_start_date
-          ? new Date(dbRule.promo_start_date)
-          : undefined,
         compoundBonusMultipliers:
           dbRule.compound_bonus_multipliers || undefined,
       },
@@ -171,7 +167,7 @@ export class RuleMapper {
    * ```typescript
    * const appRule = {
    *   id: '123',
-   *   cardTypeId: 'amex-gold',
+   *   cardCatalogId: 'uuid-of-card-catalog',
    *   name: 'Grocery Bonus',
    *   conditions: [{ type: 'mcc', operation: 'include', values: ['5411'] }],
    *   // ... other fields
@@ -187,7 +183,6 @@ export class RuleMapper {
   ): Omit<DbRewardRule, "created_at" | "updated_at"> {
     return {
       id: rule.id,
-      card_type_id: rule.cardTypeId,
       card_catalog_id: rule.cardCatalogId ?? null,
       name: rule.name,
       description: rule.description || null,
@@ -208,9 +203,6 @@ export class RuleMapper {
       cap_group_id: rule.reward.capGroupId ?? null,
       valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
       valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,
-      promo_start_date: rule.reward.promoStartDate
-        ? rule.reward.promoStartDate.toISOString().split("T")[0]
-        : null,
       compound_bonus_multipliers: rule.reward.compoundBonusMultipliers || null,
     };
   }

@@ -23,7 +23,6 @@ export interface PointsBalance {
   userId: string;
   rewardCurrencyId: string;
   rewardCurrency?: RewardCurrency;
-  cardTypeId?: string; // @deprecated - Use paymentMethodId instead
   /** UUID foreign key to payment_methods for card-specific balances */
   paymentMethodId?: string;
   cardTypeName?: string; // Display name of the card type (joined from card_catalog)
@@ -45,7 +44,6 @@ export interface DbPointsBalance {
   id: string;
   user_id: string;
   reward_currency_id: string;
-  card_type_id: string | null; // @deprecated - Use payment_method_id instead
   /** UUID foreign key to payment_methods for card-specific balances */
   payment_method_id: string | null;
   starting_balance: number;
@@ -74,7 +72,6 @@ export interface DbPointsBalance {
  */
 export interface PointsBalanceInput {
   rewardCurrencyId: string;
-  cardTypeId?: string; // @deprecated - Use paymentMethodId instead
   /** UUID foreign key to payment_methods for card-specific balances */
   paymentMethodId?: string;
   startingBalance: number;
@@ -508,7 +505,6 @@ export function toPointsBalance(db: DbPointsBalance): PointsBalance {
           logoScale: db.reward_currencies.logo_scale ?? undefined,
         }
       : undefined,
-    cardTypeId: db.card_type_id ?? undefined,
     paymentMethodId: db.payment_method_id ?? undefined,
     cardTypeName: undefined,
     startingBalance: Number(db.starting_balance),

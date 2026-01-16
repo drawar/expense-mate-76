@@ -1,9 +1,7 @@
 export interface RewardRule {
   id: string;
-  /** @deprecated Use cardCatalogId instead. Kept for backward compatibility with existing rules. */
-  cardTypeId: string;
-  /** UUID foreign key to card_catalog. Preferred over cardTypeId for rule matching. */
-  cardCatalogId?: string;
+  /** UUID foreign key to card_catalog for rule matching. */
+  cardCatalogId: string;
   name: string;
   description: string;
   enabled: boolean;
@@ -80,12 +78,6 @@ export interface RewardConfig {
   pointsCurrency?: string;
   /** Optional cap group ID for sharing monthly cap across multiple rules */
   capGroupId?: string;
-  /**
-   * For promotional caps: when the cap tracking period starts.
-   * All transactions from this date until validUntil accumulate toward the same cap.
-   * Distinct from RewardRule.validFrom which controls when the rule is active.
-   */
-  promoStartDate?: Date;
   /**
    * Compound bonus multipliers for rules that combine multiple bonus rates.
    * Each multiplier is calculated and rounded separately, then summed.
@@ -206,9 +198,7 @@ export interface CardType {
  */
 export interface DbRewardRule {
   id: string;
-  /** @deprecated Use card_catalog_id instead. Kept for backward compatibility with existing rules. */
-  card_type_id: string;
-  /** UUID foreign key to card_catalog. Preferred over card_type_id for rule matching. */
+  /** UUID foreign key to card_catalog for rule matching. */
   card_catalog_id: string | null;
   name: string;
   description: string | null;
@@ -231,19 +221,8 @@ export interface DbRewardRule {
   valid_from: string | null;
   /** Optional end date for time-limited/promotional rules (ISO string) */
   valid_until: string | null;
-  /** For promotional caps: when the cap tracking period starts (ISO date string) */
-  promo_start_date: string | null;
   /** Compound bonus multipliers as JSON array */
   compound_bonus_multipliers: number[] | null;
-  // Legacy fields (kept for backward compatibility)
-  monthly_bonus_cap?: number | null;
-  min_spend?: number | null;
-  max_bonus_per_transaction?: number | null;
-  qualifying_period_days?: number | null;
-  excluded_categories?: string[] | null;
-  included_categories?: string[] | null;
-  excluded_merchants?: string[] | null;
-  included_merchants?: string[] | null;
   created_at: string;
   updated_at: string | null;
 }

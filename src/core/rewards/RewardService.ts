@@ -405,8 +405,9 @@ export class RewardService {
               : input.date.toJSDate()
             : new Date();
 
-          // Get promo start date for promotional caps
-          const promoStartDate = rule.reward.promoStartDate;
+          // For promotional periods, use validFrom as the period start date
+          const promoStartDate =
+            periodType === "promotional" ? rule.validFrom : undefined;
 
           if (capType === "spend_amount") {
             // Cap is on spend amount - track how much has been spent

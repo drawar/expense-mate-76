@@ -891,6 +891,9 @@ export class StorageService {
               periodType
             );
 
+            // For promotional periods, use validFrom as the period start date
+            const promoStartDate =
+              periodType === "promotional" ? rule.validFrom : undefined;
             await bonusPointsTracker.trackBonusPointsUsage(
               result.appliedRuleId,
               transactionData.paymentMethod.id,
@@ -900,7 +903,7 @@ export class StorageService {
               statementDay,
               rule.reward.capGroupId,
               capType,
-              rule.reward.promoStartDate
+              promoStartDate
             );
           } else {
             console.log("🟡 Cap Tracking - Skipping because:", {
@@ -1193,12 +1196,12 @@ export class StorageService {
             const rules = paymentMethod.reward_rules as Array<{
               id: string;
               name: string;
+              valid_from?: string;
               reward: {
                 monthlyCap?: number;
                 monthlyCapType?: "bonus_points" | "spend_amount";
                 monthlySpendPeriodType?: string;
                 capGroupId?: string;
-                promoStartDate?: string;
               };
             }>;
 
@@ -1213,9 +1216,11 @@ export class StorageService {
                 | "statement_month"
                 | "promotional";
               const statementDay = paymentMethod.statement_start_day ?? 1;
-              const promoStartDate = rule.reward.promoStartDate
-                ? new Date(rule.reward.promoStartDate)
-                : undefined;
+              // For promotional periods, use valid_from as the period start date
+              const promoStartDate =
+                periodType === "promotional" && rule.valid_from
+                  ? new Date(rule.valid_from)
+                  : undefined;
 
               // Determine value to decrement based on cap type
               const valueToDecrement =
