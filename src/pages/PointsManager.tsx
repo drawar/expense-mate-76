@@ -713,6 +713,7 @@ export default function PointsManager() {
           conversionRates={conversionRates}
           defaultSourceCurrencyId={selectedCurrencyId}
           isLoading={addTransfer.isPending}
+          balances={balances}
           sourceBalances={balanceMap}
         />
 

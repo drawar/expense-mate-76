@@ -24,7 +24,7 @@ import { format } from "date-fns";
 import SelectionDialog, {
   SelectionOption,
 } from "@/components/payment-method/SelectionDialog";
-import type { PointsTransferInput } from "@/core/points/types";
+import type { PointsTransferInput, PointsBalance } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
 
 /**
@@ -55,7 +55,9 @@ interface TransferDialogProps {
   conversionRates?: ConversionRateData[];
   defaultSourceCurrencyId?: string;
   isLoading?: boolean;
-  /** Map of rewardCurrencyId -> current balance for displaying source balance */
+  /** Balance records for source program selection (includes card-specific balances) */
+  balances?: PointsBalance[];
+  /** Map of rewardCurrencyId -> current balance for displaying source balance (deprecated, use balances) */
   sourceBalances?: Map<string, number>;
 }
 
@@ -67,9 +69,11 @@ export function TransferDialog({
   conversionRates = [],
   defaultSourceCurrencyId,
   isLoading = false,
+  balances = [],
   sourceBalances,
 }: TransferDialogProps) {
-  // Form state
+  // Form state - sourceBalanceId tracks the selected balance (for card-specific balances)
+  const [sourceBalanceId, setSourceBalanceId] = useState("");
   const [sourceCurrencyId, setSourceCurrencyId] = useState(
     defaultSourceCurrencyId || ""
   );
@@ -100,12 +104,37 @@ export function TransferDialog({
     [rewardCurrencies]
   );
 
-  // Build options for selection dialogs
-  const sourceOptions: SelectionOption[] = transferableCurrencies.map((c) => ({
-    value: c.id,
-    label: c.displayName,
-    description: c.issuer || undefined,
-  }));
+  // Get the selected balance record
+  const selectedBalance = useMemo(
+    () => balances.find((b) => b.id === sourceBalanceId),
+    [balances, sourceBalanceId]
+  );
+
+  // Build source options from balances (includes card-specific balances as separate entries)
+  const sourceOptions: SelectionOption[] = useMemo(() => {
+    // Filter balances to only transferable currencies
+    const transferableBalances = balances.filter((b) =>
+      transferableCurrencies.some((c) => c.id === b.rewardCurrencyId)
+    );
+
+    if (transferableBalances.length > 0) {
+      // Use balances - shows card-specific balances separately
+      return transferableBalances.map((b) => ({
+        value: b.id,
+        label: b.rewardCurrency?.displayName || "Unknown",
+        description: b.cardTypeId
+          ? `via ${b.cardTypeName || b.cardTypeId}`
+          : b.rewardCurrency?.issuer || undefined,
+      }));
+    }
+
+    // Fallback to currencies if no balances
+    return transferableCurrencies.map((c) => ({
+      value: c.id,
+      label: c.displayName,
+      description: c.issuer || undefined,
+    }));
+  }, [balances, transferableCurrencies]);
 
   // Filter destination options to only show programs that have conversion rates
   // from the selected source program
@@ -139,6 +168,7 @@ export function TransferDialog({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
+      setSourceBalanceId("");
       setSourceCurrencyId(defaultSourceCurrencyId || "");
       setSourceAmount("");
       setDestinationCurrencyId("");
@@ -374,16 +404,14 @@ export function TransferDialog({
                     </div>
                   )}
                   {/* Source Balance */}
-                  {sourceCurrencyId &&
-                    sourceBalances?.has(sourceCurrencyId) && (
-                      <p
-                        className="mt-2 text-xs"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      >
-                        Balance:{" "}
-                        {sourceBalances.get(sourceCurrencyId)?.toLocaleString()}
-                      </p>
-                    )}
+                  {selectedBalance && (
+                    <p
+                      className="mt-2 text-xs"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
+                      Balance: {selectedBalance.currentBalance.toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
                 {/* Arrow */}
@@ -689,9 +717,18 @@ export function TransferDialog({
         onCloseAll={onClose}
         title="Source Program"
         options={sourceOptions}
-        selectedValue={sourceCurrencyId}
+        selectedValue={sourceBalanceId}
         onSelect={(value) => {
-          setSourceCurrencyId(value);
+          // Value is balance.id when using balances, or currency.id as fallback
+          const balance = balances.find((b) => b.id === value);
+          if (balance) {
+            setSourceBalanceId(balance.id);
+            setSourceCurrencyId(balance.rewardCurrencyId);
+          } else {
+            // Fallback: value is currency ID
+            setSourceBalanceId("");
+            setSourceCurrencyId(value);
+          }
           setShowSourceDialog(false);
         }}
       />
