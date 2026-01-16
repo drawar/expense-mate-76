@@ -97,7 +97,8 @@ export function BalanceCard({
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-foreground">{currencyName}</h3>
-            {balance.rewardCurrency?.issuer && (
+            {/* Only show issuer for pooled balances (no cardTypeName) */}
+            {balance.rewardCurrency?.issuer && !balance.cardTypeName && (
               <p className="text-xs text-muted-foreground">
                 {balance.rewardCurrency.issuer}
               </p>
