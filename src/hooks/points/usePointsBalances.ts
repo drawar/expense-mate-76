@@ -66,16 +66,20 @@ export function usePointsBalance(rewardCurrencyId: string) {
 /**
  * Hook to fetch balance breakdown
  */
-export function useBalanceBreakdown(rewardCurrencyId: string) {
+export function useBalanceBreakdown(
+  rewardCurrencyId: string,
+  cardTypeId?: string
+) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: pointsQueryKeys.breakdown(rewardCurrencyId),
+    queryKey: [...pointsQueryKeys.breakdown(rewardCurrencyId), cardTypeId],
     queryFn: async (): Promise<BalanceBreakdown | null> => {
       if (!user?.id) return null;
       return pointsBalanceService.calculateBalanceBreakdown(
         user.id,
-        rewardCurrencyId
+        rewardCurrencyId,
+        cardTypeId
       );
     },
     enabled: !!user?.id && !!rewardCurrencyId,

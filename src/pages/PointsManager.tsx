@@ -104,7 +104,10 @@ function BalanceCardWithBreakdown({
   balance: PointsBalance;
   onEditStartingBalance: () => void;
 }) {
-  const { data: breakdown } = useBalanceBreakdown(balance.rewardCurrencyId);
+  const { data: breakdown } = useBalanceBreakdown(
+    balance.rewardCurrencyId,
+    balance.cardTypeId
+  );
 
   return (
     <BalanceCard

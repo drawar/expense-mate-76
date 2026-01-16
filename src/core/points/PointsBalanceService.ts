@@ -228,14 +228,15 @@ export class PointsBalanceService {
   }
 
   /**
-   * Calculate balance breakdown for a currency
+   * Calculate balance breakdown for a currency (optionally for a specific card type)
    */
   async calculateBalanceBreakdown(
     userId: string,
-    rewardCurrencyId: string
+    rewardCurrencyId: string,
+    cardTypeId?: string
   ): Promise<BalanceBreakdown> {
-    // Get existing balance for starting balance
-    const balance = await this.getBalance(userId, rewardCurrencyId);
+    // Get existing balance for starting balance (pass cardTypeId to get correct balance)
+    const balance = await this.getBalance(userId, rewardCurrencyId, cardTypeId);
     const startingBalance = balance?.startingBalance ?? 0;
 
     // Calculate earned from transactions (current statement period only)
