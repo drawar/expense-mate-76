@@ -151,6 +151,47 @@ card properties (images, reward currency, etc.).
 | `reward_currency_id` | Associated reward currency                      |
 | `region`             | Geographic region (SG, CA, US, etc.)            |
 
+### card_type_id in card_catalog
+
+The `card_type_id` in `card_catalog` is **manually set seed data** - it's NOT
+dynamically generated. However, it should follow the same format that
+`CardTypeIdService.generateCardTypeId()` would produce from the `issuer` and
+`name` fields.
+
+**Example card_catalog entry:**
+
+```sql
+INSERT INTO card_catalog (card_type_id, issuer, name, ...)
+VALUES ('citi-rewards-visa-signature', 'Citi', 'Rewards Visa Signature', ...);
+```
+
+The `card_type_id` value `'citi-rewards-visa-signature'` matches what
+`generateCardTypeId('Citi', 'Rewards Visa Signature')` would produce.
+
+### The Lookup Chain
+
+When displaying a card-specific balance, the system looks up card info:
+
+```
+points_balances.card_type_id  →  card_catalog.card_type_id  →  card name & image
+```
+
+**Flow:**
+
+1. `points_balances` has `card_type_id = 'citi-rewards-visa-signature'`
+2. System queries
+   `card_catalog WHERE card_type_id = 'citi-rewards-visa-signature'`
+3. If found: displays `cardTypeName` and `cardImageUrl` from catalog
+4. If NOT found: card name and image won't display
+
+### Mismatch Scenarios
+
+| Scenario | points_balances.card_type_id      | card_catalog.card_type_id     | Result                            |
+| -------- | --------------------------------- | ----------------------------- | --------------------------------- |
+| Match    | `citi-rewards-visa-signature`     | `citi-rewards-visa-signature` | Card name & image display         |
+| Mismatch | `citibank-rewards-visa-signature` | `citi-rewards-visa-signature` | No card name/image (lookup fails) |
+| Missing  | `citi-rewards-visa-signature`     | (entry doesn't exist)         | No card name/image                |
+
 ### Fetching Card Info for Balances
 
 When displaying card-specific balances, the system fetches card name and image
