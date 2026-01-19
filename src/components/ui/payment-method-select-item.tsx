@@ -1,5 +1,6 @@
 // components/ui/payment-method-select-item.tsx
 import React from "react";
+import "flag-icons/css/flag-icons.min.css";
 import { PaymentMethod } from "@/types";
 import { CreditCardIcon, BanknoteIcon } from "lucide-react";
 import { getCardNetwork, formatCardShortName } from "@/utils/cardNetworkUtils";
@@ -9,6 +10,34 @@ import {
   AmericanExpressLogoIcon,
   DiscoverLogoIcon,
 } from "react-svg-credit-card-payment-icons";
+
+/**
+ * Currency to ISO 3166-1-alpha-2 country code mapping (lowercase)
+ * Used for flag-icons CSS classes
+ */
+const CURRENCY_TO_COUNTRY: Record<string, string> = {
+  USD: "us",
+  EUR: "eu",
+  GBP: "gb",
+  JPY: "jp",
+  AUD: "au",
+  CAD: "ca",
+  CNY: "cn",
+  INR: "in",
+  TWD: "tw",
+  SGD: "sg",
+  VND: "vn",
+  IDR: "id",
+  THB: "th",
+  MYR: "my",
+  QAR: "qa",
+  KRW: "kr",
+};
+
+function getCurrencyCountryCode(currency: string | undefined): string | null {
+  if (!currency) return null;
+  return CURRENCY_TO_COUNTRY[currency] || null;
+}
 
 interface PaymentMethodItemContentProps {
   method: PaymentMethod;
@@ -80,10 +109,21 @@ export const PaymentMethodItemContent: React.FC<
   PaymentMethodItemContentProps
 > = ({ method, size = "md" }) => {
   const displayName = formatCardShortName(method.issuer || "", method.name);
+  const countryCode = getCurrencyCountryCode(method.currency);
+  // Match the network logo size: sm=28px, md=36px -> use similar font size
+  const flagSize = size === "sm" ? "text-lg" : "text-xl";
 
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <PaymentMethodIcon method={method} size={size} />
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <PaymentMethodIcon method={method} size={size} />
+        {countryCode && (
+          <span
+            className={`fi fi-${countryCode} ${flagSize}`}
+            style={{ lineHeight: 1 }}
+          />
+        )}
+      </div>
       <span className="truncate">{displayName}</span>
     </div>
   );

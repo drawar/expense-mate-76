@@ -99,7 +99,7 @@ const CategoryDrilldownSheet: React.FC<CategoryDrilldownSheetProps> = ({
   const categoryTransactions = useMemo(() => {
     return transactions
       .filter((tx) => getEffectiveCategory(tx) === categoryName)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [transactions, categoryName]);
 
   // Calculate totals

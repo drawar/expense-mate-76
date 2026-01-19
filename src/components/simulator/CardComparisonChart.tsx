@@ -226,6 +226,10 @@ export function CardComparisonChart({
                   maxMiles={maxMiles}
                   isDarkMode={isDarkMode}
                   isInitialLoad={isInitialLoad}
+                  fxRate={result.fxRate}
+                  fxConvertedAmount={result.fxConvertedAmount}
+                  transactionCurrency={result.transactionCurrency}
+                  cardCurrency={result.cardCurrency}
                 />
               ))}
             </div>

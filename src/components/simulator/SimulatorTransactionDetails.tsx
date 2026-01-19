@@ -1,14 +1,13 @@
 import { useFormContext } from "react-hook-form";
 import { MossInput } from "@/components/ui/moss-input";
 import { MossCard } from "@/components/ui/moss-card";
-import { AlertCircle, Receipt } from "lucide-react";
+import { Receipt } from "lucide-react";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -17,24 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Import from our centralized currency service
 import { CurrencyService } from "@/core/currency/CurrencyService";
 
 export const SimulatorTransactionDetails: React.FC = () => {
   const form = useFormContext();
-  const currency = form.watch("currency");
-  const amount = form.watch("amount");
-  const convertedAmount = form.watch("convertedAmount");
 
   // Get currency options from our service
   const currencyOptions = CurrencyService.getCurrencyOptions();
-
-  // Determine if we're dealing with a foreign currency transaction
-  const isForeignCurrency = currency && currency !== "CAD";
-  const showConvertedAmountField = isForeignCurrency;
-  const showWarning = isForeignCurrency && amount && !convertedAmount;
 
   return (
     <MossCard>
@@ -82,18 +72,7 @@ export const SimulatorTransactionDetails: React.FC = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Currency</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    // Reset converted amount when currency changes
-                    form.setValue("convertedAmount", "");
-                    form.setValue(
-                      "convertedCurrency",
-                      CurrencyService.getDefaultCurrency()
-                    );
-                  }}
-                >
+                <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select currency" />
@@ -112,52 +91,6 @@ export const SimulatorTransactionDetails: React.FC = () => {
             )}
           />
         </div>
-
-        {/* Converted Amount Field - shown when foreign currency is selected */}
-        {showConvertedAmountField && (
-          <div className="space-y-2">
-            <FormField
-              control={form.control}
-              name="convertedAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Converted Amount (CAD)</FormLabel>
-                  <FormControl>
-                    <MossInput
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the amount in CAD that will be charged to your card
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-
-        {/* Warning when conversion not provided */}
-        {showWarning && (
-          <Alert
-            variant="default"
-            className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
-          >
-            <AlertCircle
-              className="h-4 w-4 text-yellow-600 dark:text-yellow-500"
-              style={{ strokeWidth: 2.5 }}
-            />
-            <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-              Foreign currency detected. Enter the converted amount in CAD for
-              accurate reward calculations. Without this, conversion rates may
-              affect actual rewards earned.
-            </AlertDescription>
-          </Alert>
-        )}
       </div>
     </MossCard>
   );

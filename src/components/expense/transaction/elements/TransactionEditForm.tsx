@@ -1,7 +1,7 @@
 import { Transaction, PaymentMethod } from "@/types";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExpenseForm } from "../../form/ExpenseForm";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 export interface TransactionEditFormProps {
   transaction: Transaction;
@@ -49,8 +49,8 @@ export const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             reimbursementAmount: reimbursementAmount
               ? reimbursementAmount.toString()
               : "0",
-            date: new Date(transaction.date),
-            time: format(new Date(transaction.date), "HH:mm"),
+            date: parseISO(transaction.date),
+            time: format(parseISO(transaction.date), "HH:mm"),
             notes: transaction.notes,
             mcc: transaction.merchant.mcc,
             rewardPoints: transaction.rewardPoints.toString(),

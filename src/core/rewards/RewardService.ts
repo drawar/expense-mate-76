@@ -8,10 +8,8 @@ import {
   BonusTier,
 } from "./types";
 import { RuleRepository } from "./RuleRepository";
-import { cardTypeIdService } from "./CardTypeIdService";
 import { bonusPointsTracker } from "./BonusPointsTracker";
 import { logger } from "./logger";
-import { cardCatalogService } from "@/core/catalog";
 
 export class RewardService {
   private ruleRepository: RuleRepository;
@@ -32,86 +30,46 @@ export class RewardService {
   private async getRulesForPaymentMethod(
     paymentMethod: PaymentMethod
   ): Promise<RewardRule[]> {
-    // PREFERRED: Use card_catalog_id for rule lookup (no mismatch possible)
-    if (paymentMethod.cardCatalogId) {
-      try {
-        const rules = await this.ruleRepository.getRulesForCardCatalogId(
-          paymentMethod.cardCatalogId
-        );
-        if (rules && rules.length > 0) {
-          logger.info(
-            "getRulesForPaymentMethod",
-            "Found rules via cardCatalogId",
-            {
-              paymentMethodId: paymentMethod.id,
-              cardCatalogId: paymentMethod.cardCatalogId,
-              rulesCount: rules.length,
-            }
-          );
-          return rules;
+    // Require card_catalog_id for rule lookup
+    if (!paymentMethod.cardCatalogId) {
+      logger.warn(
+        "getRulesForPaymentMethod",
+        "Payment method has no cardCatalogId - cannot fetch rules",
+        {
+          paymentMethodId: paymentMethod.id,
+          issuer: paymentMethod.issuer,
+          name: paymentMethod.name,
         }
-        logger.debug(
-          "getRulesForPaymentMethod",
-          "No rules via cardCatalogId, trying cardTypeId",
-          {
-            paymentMethodId: paymentMethod.id,
-            cardCatalogId: paymentMethod.cardCatalogId,
-          }
-        );
-      } catch (error) {
-        logger.warn(
-          "getRulesForPaymentMethod",
-          "Failed to fetch rules by cardCatalogId",
-          {
-            paymentMethodId: paymentMethod.id,
-            cardCatalogId: paymentMethod.cardCatalogId,
-            error: error instanceof Error ? error.message : String(error),
-          }
-        );
-        // Fall through to card_type_id lookup
-      }
+      );
+      return [];
     }
 
-    // FALLBACK: Use card_type_id for backward compatibility
-    const cardTypeId = await this.getCardTypeIdFallback(paymentMethod);
-    return this.ruleRepository.getRulesForCardType(cardTypeId);
-  }
-
-  /**
-   * @deprecated Use getRulesForPaymentMethod instead.
-   * Gets card_type_id for backward compatibility with legacy rules.
-   */
-  private async getCardTypeIdFallback(
-    paymentMethod: PaymentMethod
-  ): Promise<string> {
-    // If linked to a catalog entry, use the catalog's cardTypeId
-    if (paymentMethod.cardCatalogId) {
-      try {
-        const catalog = await cardCatalogService.getCardById(
-          paymentMethod.cardCatalogId
-        );
-        if (catalog?.cardTypeId) {
-          logger.debug("getCardTypeIdFallback", "Using catalog cardTypeId", {
-            paymentMethodId: paymentMethod.id,
-            cardCatalogId: paymentMethod.cardCatalogId,
-            catalogCardTypeId: catalog.cardTypeId,
-          });
-          return catalog.cardTypeId;
+    try {
+      const rules = await this.ruleRepository.getRulesForCardCatalogId(
+        paymentMethod.cardCatalogId
+      );
+      logger.info(
+        "getRulesForPaymentMethod",
+        "Fetched rules via cardCatalogId",
+        {
+          paymentMethodId: paymentMethod.id,
+          cardCatalogId: paymentMethod.cardCatalogId,
+          rulesCount: rules?.length ?? 0,
         }
-      } catch (error) {
-        logger.warn("getCardTypeIdFallback", "Failed to fetch catalog entry", {
+      );
+      return rules ?? [];
+    } catch (error) {
+      logger.error(
+        "getRulesForPaymentMethod",
+        "Failed to fetch rules by cardCatalogId",
+        {
           paymentMethodId: paymentMethod.id,
           cardCatalogId: paymentMethod.cardCatalogId,
           error: error instanceof Error ? error.message : String(error),
-        });
-      }
+        }
+      );
+      return [];
     }
-
-    // Fallback: generate from issuer + name
-    return cardTypeIdService.generateCardTypeIdFromPaymentMethod({
-      issuer: paymentMethod.issuer,
-      name: paymentMethod.name,
-    });
   }
 
   /**

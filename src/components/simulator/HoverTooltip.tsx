@@ -31,6 +31,26 @@ interface HoverTooltipProps {
    * Whether dark mode is active
    */
   isDarkMode?: boolean;
+
+  /**
+   * FX rate used for currency conversion (transaction → card currency)
+   */
+  fxRate?: number;
+
+  /**
+   * Amount after FX conversion to card currency
+   */
+  fxConvertedAmount?: number;
+
+  /**
+   * Transaction currency
+   */
+  transactionCurrency?: string;
+
+  /**
+   * Card's base currency
+   */
+  cardCurrency?: string;
 }
 
 /**
@@ -54,6 +74,10 @@ export function HoverTooltip({
   convertedMiles,
   conversionRate,
   isDarkMode = false,
+  fxRate,
+  fxConvertedAmount,
+  transactionCurrency,
+  cardCurrency,
 }: HoverTooltipProps) {
   const theme = getSimulatorTheme(isDarkMode);
 
@@ -144,6 +168,40 @@ export function HoverTooltip({
           >
             {card.name}
           </div>
+
+          {/* FX Rate section - shown when currency conversion occurred */}
+          {fxRate &&
+            fxConvertedAmount &&
+            transactionCurrency &&
+            cardCurrency && (
+              <div
+                className="mb-3 pb-3 border-b"
+                style={{
+                  borderColor: isDarkMode
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <div className="flex justify-between mb-1">
+                  <span style={{ color: theme.fadedText }}>FX rate:</span>
+                  <span className="font-medium">
+                    1 {transactionCurrency} = {fxRate.toFixed(4)} {cardCurrency}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: theme.fadedText }}>
+                    Statement amount:
+                  </span>
+                  <span className="font-medium">
+                    {fxConvertedAmount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    {cardCurrency}
+                  </span>
+                </div>
+              </div>
+            )}
 
           {/* Points breakdown (Requirement 5.2) */}
           <div className="space-y-2 mb-3">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, parseISO } from "date-fns";
 import { Currency } from "@/types";
 import { CurrencyService, ConversionService } from "@/core/currency";
 import { RewardCurrency } from "@/core/currency/types";
@@ -132,6 +132,9 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
   // Validation state
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Track if user has manually edited the gift card name
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
 
   // Selection dialog state
   const [showTypeDialog, setShowTypeDialog] = useState(false);
@@ -359,6 +362,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
       setPurchaseDate("");
       setErrors({});
       setTouched({});
+      setNameManuallyEdited(false);
     }
   }, [open]);
 
@@ -366,6 +370,28 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
   const isGiftCard = selectedType === "gift_card";
   const isCash = selectedType === "cash";
   const isCardType = isCreditCard || isGiftCard;
+
+  // Auto-generate name for gift cards: {issuer}-{loadedAmount}-{purchaseDateYYYYMMDD}
+  useEffect(() => {
+    if (
+      isGiftCard &&
+      !nameManuallyEdited &&
+      issuer &&
+      totalLoaded &&
+      purchaseDate
+    ) {
+      const dateFormatted = purchaseDate.replace(/-/g, ""); // Convert 2026-01-01 to 20260101
+      const generatedName = `${issuer}-${totalLoaded}-${dateFormatted}`;
+      setName(generatedName);
+    }
+  }, [isGiftCard, issuer, totalLoaded, purchaseDate, nameManuallyEdited]);
+
+  // Reset nameManuallyEdited when type changes
+  useEffect(() => {
+    if (!isGiftCard) {
+      setNameManuallyEdited(false);
+    }
+  }, [isGiftCard]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -546,7 +572,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                           >
                             <span>
                               {purchaseDate
-                                ? format(new Date(purchaseDate), "PPP")
+                                ? format(parseISO(purchaseDate), "PPP")
                                 : "Select date"}
                             </span>
                             <CalendarIcon
@@ -564,7 +590,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                           <Calendar
                             mode="single"
                             selected={
-                              purchaseDate ? new Date(purchaseDate) : undefined
+                              purchaseDate ? parseISO(purchaseDate) : undefined
                             }
                             onSelect={(date) => {
                               if (date) {
@@ -572,7 +598,7 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                               }
                             }}
                             defaultMonth={
-                              purchaseDate ? new Date(purchaseDate) : undefined
+                              purchaseDate ? parseISO(purchaseDate) : undefined
                             }
                             disabled={(date) => {
                               const today = startOfDay(new Date());
@@ -615,11 +641,17 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                         id="name"
                         placeholder={
                           isGiftCard || isCash
-                            ? "Optional"
+                            ? "Auto-generated"
                             : "e.g. Chase Sapphire"
                         }
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          // Mark as manually edited if user is typing in a gift card name
+                          if (isGiftCard) {
+                            setNameManuallyEdited(true);
+                          }
+                        }}
                         onBlur={() => handleFieldBlur("name")}
                         required={isCreditCard}
                         className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0"

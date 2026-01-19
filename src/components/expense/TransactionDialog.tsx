@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { parseISO } from "date-fns";
 import { Transaction, PaymentMethod } from "@/types";
 import {
   Dialog,
@@ -58,7 +59,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(transaction.date).toLocaleDateString()}
+                  {parseISO(transaction.date).toLocaleDateString()}
                 </p>
               </div>
 

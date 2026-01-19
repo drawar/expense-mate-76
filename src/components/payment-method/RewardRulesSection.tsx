@@ -92,8 +92,10 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
     });
   };
 
-  // Use resolved cardTypeId (from catalog) if provided, otherwise generate from issuer/name
-  const cardTypeId =
+  // Use cardCatalogId (UUID) for database operations
+  // Fall back to resolved cardTypeId for display/logging only
+  const cardCatalogId = paymentMethod.cardCatalogId;
+  const displayCardTypeId =
     resolvedCardTypeId ||
     (paymentMethod.issuer && paymentMethod.name
       ? cardTypeIdService.generateCardTypeId(
@@ -116,6 +118,12 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
 
   const handleSaveRule = async (rule: RewardRule) => {
     try {
+      if (!cardCatalogId) {
+        throw new Error(
+          "Cannot create rule: card is not linked to the catalog. Please select a card from the catalog."
+        );
+      }
+
       const repository = RuleRepository.getInstance();
 
       if (editingRule) {
@@ -124,7 +132,7 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
       } else {
         await repository.createRule({
           ...rule,
-          cardTypeId,
+          cardCatalogId,
         });
         toast.success("Rule created successfully");
       }
@@ -167,18 +175,26 @@ export const RewardRulesSection: React.FC<RewardRulesSectionProps> = ({
   const handleQuickSetup = async () => {
     if (!quickSetupConfig) return;
 
+    if (!cardCatalogId) {
+      toast.error("Cannot run quick setup", {
+        description:
+          "Card is not linked to the catalog. Please select a card from the catalog.",
+      });
+      return;
+    }
+
     setIsRunningSetup(true);
     setSetupLog([]);
     setShowSetupLog(true);
 
     try {
       addSetupLog(`Setting up ${quickSetupConfig.name}...`);
-      addSetupLog(`Card Type ID: ${cardTypeId}`);
+      addSetupLog(`Card: ${displayCardTypeId}`);
 
       const quickSetupService = getQuickSetupService();
       const result = await quickSetupService.runSetup(
         quickSetupConfig.type,
-        cardTypeId,
+        cardCatalogId,
         paymentMethod.id
       );
 

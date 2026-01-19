@@ -6,11 +6,26 @@ interface MossInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const MossInput = React.forwardRef<HTMLInputElement, MossInputProps>(
-  ({ className, disabled, ...props }, ref) => {
+  ({ className, disabled, type, onWheel, ...props }, ref) => {
+    // Prevent scroll wheel from changing number input values
+    const handleWheel = React.useCallback(
+      (e: React.WheelEvent<HTMLInputElement>) => {
+        if (type === "number") {
+          // Blur the input to prevent scroll from changing value
+          e.currentTarget.blur();
+        }
+        // Call any provided onWheel handler
+        onWheel?.(e);
+      },
+      [type, onWheel]
+    );
+
     return (
       <input
         ref={ref}
+        type={type}
         disabled={disabled}
+        onWheel={handleWheel}
         className={cn(
           "flex h-10 w-full rounded-md border border-input bg-background px-3 text-base md:text-sm",
           "placeholder:text-muted-foreground",

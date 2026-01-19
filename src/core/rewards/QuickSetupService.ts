@@ -167,19 +167,19 @@ export class QuickSetupService {
   /**
    * Run quick setup for a payment method if one is available
    * @param paymentMethod The payment method to set up rules for
-   * @param cardTypeId The card type ID to use for the rules
+   * @param cardCatalogId The card catalog UUID to use for the rules
    * @returns Result of the setup operation
    */
   async runSetupIfAvailable(
     paymentMethod: Pick<PaymentMethod, "id" | "issuer" | "name">,
-    cardTypeId: string
+    cardCatalogId: string
   ): Promise<QuickSetupResult> {
     const config = getQuickSetupConfig(paymentMethod);
     if (!config) {
       return { success: true, rulesCreated: 0 };
     }
 
-    return this.runSetup(config.type, cardTypeId, paymentMethod.id);
+    return this.runSetup(config.type, cardCatalogId, paymentMethod.id);
   }
 
   /**
@@ -187,38 +187,38 @@ export class QuickSetupService {
    */
   async runSetup(
     setupType: QuickSetupType,
-    cardTypeId: string,
+    cardCatalogId: string,
     paymentMethodId?: string
   ): Promise<QuickSetupResult> {
     try {
       // Delete existing rules first
-      await this.deleteExistingRules(cardTypeId);
+      await this.deleteExistingRules(cardCatalogId);
 
       // Run the appropriate setup
       switch (setupType) {
         case "amex-cobalt":
-          return await this.setupAmexCobalt(cardTypeId);
+          return await this.setupAmexCobalt(cardCatalogId);
         case "amex-platinum":
-          return await this.setupAmexPlatinum(cardTypeId);
+          return await this.setupAmexPlatinum(cardCatalogId);
         case "amex-green":
-          return await this.setupAmexGreen(cardTypeId);
+          return await this.setupAmexGreen(cardCatalogId);
         case "amex-aeroplan-reserve":
           return await this.setupAmexAeroplanReserve(
-            cardTypeId,
+            cardCatalogId,
             paymentMethodId
           );
         case "neo-cathay":
-          return await this.setupNeoCathay(cardTypeId, paymentMethodId);
+          return await this.setupNeoCathay(cardCatalogId, paymentMethodId);
         case "hsbc-revolution":
-          return await this.setupHSBCRevolution(cardTypeId);
+          return await this.setupHSBCRevolution(cardCatalogId);
         case "hsbc-travelone":
-          return await this.setupHSBCTravelOne(cardTypeId);
+          return await this.setupHSBCTravelOne(cardCatalogId);
         case "brim-afklm":
-          return await this.setupBrimAFKLM(cardTypeId);
+          return await this.setupBrimAFKLM(cardCatalogId);
         case "mbna-amazon":
-          return await this.setupMBNAAmazon(cardTypeId);
+          return await this.setupMBNAAmazon(cardCatalogId);
         case "dbs-wwmc":
-          return await this.setupDBSWWMC(cardTypeId);
+          return await this.setupDBSWWMC(cardCatalogId);
         default:
           return {
             success: false,
@@ -232,11 +232,11 @@ export class QuickSetupService {
     }
   }
 
-  private async deleteExistingRules(cardTypeId: string): Promise<void> {
+  private async deleteExistingRules(cardCatalogId: string): Promise<void> {
     const { data: existingRules } = await this.supabase
       .from("reward_rules")
       .select("id")
-      .eq("card_type_id", cardTypeId);
+      .eq("card_catalog_id", cardCatalogId);
 
     if (existingRules && existingRules.length > 0) {
       for (const rule of existingRules) {
@@ -245,7 +245,9 @@ export class QuickSetupService {
     }
   }
 
-  private async setupAmexCobalt(cardTypeId: string): Promise<QuickSetupResult> {
+  private async setupAmexCobalt(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
     const fiveXMCCs = [
       "5811",
       "5812",
@@ -289,7 +291,7 @@ export class QuickSetupService {
 
     // 5x on Food & Groceries (CAD only, $2,500 monthly spend cap)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "5x Points on Food & Groceries",
       description:
         "Earn 5 points per $1 CAD at restaurants, groceries, and food delivery (up to $2,500/month spend)",
@@ -316,7 +318,7 @@ export class QuickSetupService {
 
     // 3x on Streaming (CAD only)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Streaming",
       description:
         "Earn 3 points per $1 CAD on eligible streaming subscriptions (no cap)",
@@ -339,7 +341,7 @@ export class QuickSetupService {
 
     // 2x on Gas & Transit (any currency)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Points on Gas & Transit",
       description:
         "Earn 2 points per $1 at gas stations and local transit (no cap, any currency)",
@@ -359,7 +361,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Points on All Other Purchases",
       description: "Earn 1 point per $1 on all other purchases",
       enabled: true,
@@ -380,7 +382,7 @@ export class QuickSetupService {
   }
 
   private async setupAmexPlatinum(
-    cardTypeId: string
+    cardCatalogId: string
   ): Promise<QuickSetupResult> {
     const diningMCCs = ["5811", "5812", "5813", "5814", "5499"];
     const travelMCCs = [
@@ -410,7 +412,7 @@ export class QuickSetupService {
 
     // 2x on Dining in Canada (CAD only)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Points on Dining in Canada",
       description:
         "Earn 2 points per $1 CAD at restaurants, coffee shops, bars, and food delivery (excludes groceries)",
@@ -433,7 +435,7 @@ export class QuickSetupService {
 
     // 2x on Travel Worldwide
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Points on Travel",
       description:
         "Earn 2 points per $1 on travel services including airlines, hotels, rail, car rental, and tour operators (worldwide)",
@@ -453,7 +455,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Points on All Other Purchases",
       description: "Earn 1 point per $1 on all other eligible purchases",
       enabled: true,
@@ -473,7 +475,9 @@ export class QuickSetupService {
     return { success: true, rulesCreated: 3 };
   }
 
-  private async setupAmexGreen(cardTypeId: string): Promise<QuickSetupResult> {
+  private async setupAmexGreen(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
     const restaurantMCCs = ["5811", "5812", "5813", "5814"];
     const airlineMCCs = [
       ...Array.from({ length: 300 }, (_, i) => String(3000 + i)),
@@ -483,7 +487,7 @@ export class QuickSetupService {
 
     // 3x on Restaurants
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Restaurants",
       description: "Earn 3 points per $1 at restaurants worldwide",
       enabled: true,
@@ -504,7 +508,7 @@ export class QuickSetupService {
 
     // 3x on Flights
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Flights",
       description:
         "Earn 3 points per $1 on flights booked directly with airlines or amextravel.com",
@@ -524,7 +528,7 @@ export class QuickSetupService {
 
     // 3x on Transit
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Transit",
       description: "Earn 3 points per $1 on transit including rideshare",
       enabled: true,
@@ -543,7 +547,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Points on All Other Purchases",
       description: "Earn 1 point per $1 on all other purchases",
       enabled: true,
@@ -564,14 +568,14 @@ export class QuickSetupService {
   }
 
   private async setupAmexAeroplanReserve(
-    cardTypeId: string,
+    cardCatalogId: string,
     paymentMethodId?: string
   ): Promise<QuickSetupResult> {
     const diningMCCs = ["5811", "5812", "5813", "5814", "5499"];
 
     // 3x on Air Canada Direct Purchases
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Air Canada",
       description:
         "Earn 3 points per $1 on purchases made directly with Air Canada",
@@ -597,7 +601,7 @@ export class QuickSetupService {
 
     // 2x on Dining & Food Delivery (CAD only)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Points on Dining & Food Delivery",
       description:
         "Earn 2 points per $1 CAD at restaurants, coffee shops, bars, and food delivery (excludes groceries)",
@@ -620,7 +624,7 @@ export class QuickSetupService {
 
     // 1.25x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1.25x Points on All Other Purchases",
       description: "Earn 1.25 points per $1 on all other eligible purchases",
       enabled: true,
@@ -657,7 +661,7 @@ export class QuickSetupService {
   }
 
   private async setupNeoCathay(
-    cardTypeId: string,
+    cardCatalogId: string,
     paymentMethodId?: string
   ): Promise<QuickSetupResult> {
     const cathayPacificMCC = "3099";
@@ -670,7 +674,7 @@ export class QuickSetupService {
 
     // 4x on Cathay Pacific (MCC match)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "4x Asia Miles on Cathay Pacific (MCC)",
       description:
         "Earn 4 Asia Miles per $1 on Cathay Pacific flights (matched by MCC 3099)",
@@ -692,7 +696,7 @@ export class QuickSetupService {
 
     // 4x on Cathay Pacific (Merchant match)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "4x Asia Miles on Cathay Pacific (Merchant)",
       description:
         "Earn 4 Asia Miles per $1 on Cathay Pacific flights (matched by merchant name)",
@@ -718,7 +722,7 @@ export class QuickSetupService {
 
     // 2x on Foreign Currency
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Asia Miles on Foreign Currency",
       description: "Earn 2 Asia Miles per $1 on foreign currency transactions",
       enabled: true,
@@ -739,7 +743,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Asia Miles on All Other Purchases",
       description: "Earn 1 Asia Mile per $1 on all other purchases",
       enabled: true,
@@ -776,7 +780,7 @@ export class QuickSetupService {
   }
 
   private async setupHSBCRevolution(
-    cardTypeId: string
+    cardCatalogId: string
   ): Promise<QuickSetupResult> {
     const onlineContactlessMCCs = [
       // Online shopping
@@ -794,7 +798,7 @@ export class QuickSetupService {
 
     // 10x on Online Travel & Contactless (promotional until Feb 2026)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "10x Points on Online Travel & Contactless",
       description:
         "Earn 10 points per $1 on online travel bookings and contactless payments (promotional until Feb 2026)",
@@ -816,7 +820,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Points on All Other Purchases",
       description: "Earn 1 point per $1 on all other purchases",
       enabled: true,
@@ -837,11 +841,11 @@ export class QuickSetupService {
   }
 
   private async setupHSBCTravelOne(
-    cardTypeId: string
+    cardCatalogId: string
   ): Promise<QuickSetupResult> {
     // 6x on Foreign Currency spend
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "6x Points on Foreign Currency",
       description:
         "Earn 6 HSBC Rewards Points per S$1 on foreign currency transactions (= 2.4 mpd at best transfer ratio)",
@@ -863,7 +867,7 @@ export class QuickSetupService {
 
     // 3x on Local (SGD) spend
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "3x Points on Local Spend",
       description:
         "Earn 3 HSBC Rewards Points per S$1 on local SGD transactions (= 1.2 mpd at best transfer ratio)",
@@ -884,7 +888,9 @@ export class QuickSetupService {
     return { success: true, rulesCreated: 2 };
   }
 
-  private async setupBrimAFKLM(cardTypeId: string): Promise<QuickSetupResult> {
+  private async setupBrimAFKLM(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
     const afklmMerchants = [
       "Air France",
       "AIR FRANCE",
@@ -896,7 +902,7 @@ export class QuickSetupService {
 
     // 6x on Air France/KLM (EUR)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "6x Flying Blue Miles on AF/KLM (EUR)",
       description:
         "Earn 6 Flying Blue miles per €1 on Air France and KLM purchases in EUR",
@@ -919,7 +925,7 @@ export class QuickSetupService {
 
     // ~4.09x on Air France/KLM (CAD) - 6 miles per €1.47 CAD (1 EUR = 1.47 CAD approx)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "4x Flying Blue Miles on AF/KLM (CAD)",
       description:
         "Earn ~4 Flying Blue miles per $1 CAD on Air France and KLM purchases",
@@ -942,7 +948,7 @@ export class QuickSetupService {
 
     // 2x on Restaurants
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2x Flying Blue Miles on Restaurants",
       description: "Earn 2 Flying Blue miles per $1 at restaurants",
       enabled: true,
@@ -963,7 +969,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Flying Blue Miles on All Other Purchases",
       description: "Earn 1 Flying Blue mile per $1 on all other purchases",
       enabled: true,
@@ -983,7 +989,9 @@ export class QuickSetupService {
     return { success: true, rulesCreated: 4 };
   }
 
-  private async setupMBNAAmazon(cardTypeId: string): Promise<QuickSetupResult> {
+  private async setupMBNAAmazon(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
     const promoMCCs = [
       "5411",
       "5422",
@@ -998,7 +1006,7 @@ export class QuickSetupService {
 
     // 2.5x on Groceries, Dining, and Amazon (promotional until Apr 2026, $3K cap)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2.5x Points on Groceries, Dining & Amazon (Promo)",
       description:
         "Earn 2.5 points per $1 on groceries, dining, and Amazon.ca (up to $3,000/month, until Apr 2026)",
@@ -1022,7 +1030,7 @@ export class QuickSetupService {
 
     // 2.5x on Amazon (promotional - separate rule for merchant match)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "2.5x Points on Amazon.ca (Promo)",
       description:
         "Earn 2.5 points per $1 on Amazon.ca purchases (up to $3,000/month, until Apr 2026)",
@@ -1048,7 +1056,7 @@ export class QuickSetupService {
 
     // 1.5x on Amazon (permanent rate after promo ends)
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1.5x Points on Amazon.ca",
       description:
         "Earn 1.5 points per $1 on Amazon.ca purchases (permanent rate)",
@@ -1070,7 +1078,7 @@ export class QuickSetupService {
 
     // 1x on Everything Else
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x Points on All Other Purchases",
       description: "Earn 1 point per $1 on all other purchases",
       enabled: true,
@@ -1090,7 +1098,7 @@ export class QuickSetupService {
     return { success: true, rulesCreated: 4 };
   }
 
-  private async setupDBSWWMC(cardTypeId: string): Promise<QuickSetupResult> {
+  private async setupDBSWWMC(cardCatalogId: string): Promise<QuickSetupResult> {
     // DBS Woman's World Mastercard (Singapore)
     // 10x online (4 mpd) capped at S$1,000/month, 1x other (0.4 mpd)
     // Points expire 1 year after earning
@@ -1098,7 +1106,7 @@ export class QuickSetupService {
     // 10x on Online Spend (capped at S$1,000/month)
     // Uses transaction isOnline flag instead of MCC detection
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "10x DBS Points on Online Spend",
       description:
         "Earn 10 DBS Points per S$1 on online purchases (= 4 mpd). Capped at S$1,000 online spend per calendar month.",
@@ -1123,7 +1131,7 @@ export class QuickSetupService {
 
     // 1x on All Other Purchases
     await this.repository.createRule({
-      cardTypeId,
+      cardCatalogId,
       name: "1x DBS Points on All Other Purchases",
       description:
         "Earn 1 DBS Point per S$1 on all other purchases (= 0.4 mpd)",

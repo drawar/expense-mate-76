@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { parseISO } from "date-fns";
 import { Transaction } from "@/types";
 import { formatDate } from "@/utils/dates/formatters";
 import TransactionCard from "@/components/expense/TransactionCard";
@@ -31,8 +32,8 @@ const TransactionGroupView = ({
     // Sort the grouped transactions by date
     const dates = Object.keys(groups).sort((dateA, dateB) => {
       return sortOption.includes("desc")
-        ? new Date(dateB).getTime() - new Date(dateA).getTime()
-        : new Date(dateA).getTime() - new Date(dateB).getTime();
+        ? parseISO(dateB).getTime() - parseISO(dateA).getTime()
+        : parseISO(dateA).getTime() - parseISO(dateB).getTime();
     });
 
     return { groupedTransactions: groups, sortedDates: dates };

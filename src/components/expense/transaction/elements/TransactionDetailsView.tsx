@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Transaction, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import { PropertyResolver } from "@/core/catalog/PropertyResolver";
@@ -143,7 +143,7 @@ const TransactionDetailsView = ({
             {CurrencyService.format(transaction.amount, transaction.currency)}
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
-            <span>{format(new Date(transaction.date), "yyyy-MM-dd")}</span>
+            <span>{format(parseISO(transaction.date), "yyyy-MM-dd")}</span>
             {transaction.merchant.address && (
               <>
                 <span>·</span>

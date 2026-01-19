@@ -49,6 +49,26 @@ interface CardBarRowProps {
    * Whether this is the initial load (for animation)
    */
   isInitialLoad?: boolean;
+
+  /**
+   * FX rate used for currency conversion (transaction → card currency)
+   */
+  fxRate?: number;
+
+  /**
+   * Amount after FX conversion to card currency
+   */
+  fxConvertedAmount?: number;
+
+  /**
+   * Transaction currency
+   */
+  transactionCurrency?: string;
+
+  /**
+   * Card's base currency
+   */
+  cardCurrency?: string;
 }
 
 /**
@@ -77,6 +97,10 @@ export function CardBarRow({
   maxMiles,
   isDarkMode = false,
   isInitialLoad = false,
+  fxRate,
+  fxConvertedAmount,
+  transactionCurrency,
+  cardCurrency,
 }: CardBarRowProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -224,6 +248,10 @@ export function CardBarRow({
           convertedMiles={convertedMiles}
           conversionRate={conversionRate}
           isDarkMode={isDarkMode}
+          fxRate={fxRate}
+          fxConvertedAmount={fxConvertedAmount}
+          transactionCurrency={transactionCurrency}
+          cardCurrency={cardCurrency}
         />
       )}
     </div>

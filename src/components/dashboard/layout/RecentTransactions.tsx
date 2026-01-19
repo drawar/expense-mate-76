@@ -9,6 +9,7 @@ import {
   isToday,
   isYesterday,
   startOfDay,
+  parseISO,
 } from "date-fns";
 import { Transaction, Currency, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ interface GroupedTransaction {
  * Format date as "Today", "Yesterday", or "Dec 13"
  */
 function formatTransactionDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d = typeof date === "string" ? parseISO(date) : date;
   if (isToday(d)) return "Today";
   if (isYesterday(d)) return "Yesterday";
   return format(d, "MMM d");
@@ -53,7 +54,7 @@ function formatTransactionDate(date: Date | string): string {
  * Get date key for grouping (YYYY-MM-DD)
  */
 function getDateKey(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d = typeof date === "string" ? parseISO(date) : date;
   return format(startOfDay(d), "yyyy-MM-dd");
 }
 
@@ -215,7 +216,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
     // Sort by date descending (most recent first)
     return Array.from(groups.values()).sort(
-      (a, b) => new Date(b.dateKey).getTime() - new Date(a.dateKey).getTime()
+      (a, b) => parseISO(b.dateKey).getTime() - parseISO(a.dateKey).getTime()
     );
   }, [displayTransactions, displayCurrency]);
 
@@ -230,7 +231,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
     // Filter transactions for this week
     const thisWeekTransactions = txList.filter((tx) => {
-      const txDate = new Date(tx.date);
+      const txDate = parseISO(tx.date);
       return isWithinInterval(txDate, { start: weekStart, end: weekEnd });
     });
 

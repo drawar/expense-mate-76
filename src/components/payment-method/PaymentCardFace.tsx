@@ -1,4 +1,5 @@
 import React from "react";
+import { parseISO } from "date-fns";
 import { PaymentMethod } from "@/types";
 import { cn } from "@/lib/utils";
 import { CreditCardIcon, BanknoteIcon } from "lucide-react";
@@ -52,8 +53,8 @@ export const PaymentCardFace: React.FC<PaymentCardFaceProps> = ({
       (tx) =>
         tx.paymentMethod.id === paymentMethod.id &&
         tx.is_deleted !== true &&
-        new Date(tx.date).getMonth() === new Date().getMonth() &&
-        new Date(tx.date).getFullYear() === new Date().getFullYear()
+        parseISO(tx.date).getMonth() === new Date().getMonth() &&
+        parseISO(tx.date).getFullYear() === new Date().getFullYear()
     );
     return currentMonthTransactions.reduce(
       (total, tx) => total + tx.paymentAmount,

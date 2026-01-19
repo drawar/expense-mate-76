@@ -1,6 +1,7 @@
-import { PaymentMethod } from "@/types";
+import { PaymentMethod, Currency } from "@/types";
 import { RewardService } from "@/core/rewards/RewardService";
 import { ConversionService } from "./ConversionService";
+import { ExchangeRateService } from "./ExchangeRateService";
 import { CalculationInput, CalculationResult } from "@/core/rewards/types";
 import { MonthlySpendingTracker } from "@/core/rewards/MonthlySpendingTracker";
 import { DateTime } from "luxon";
@@ -31,6 +32,14 @@ export interface CardCalculationResult {
   conversionRate: number | null;
   rank: number;
   error?: string;
+  /** FX rate used for currency conversion (transaction → card currency) */
+  fxRate?: number;
+  /** Amount after FX conversion to card currency */
+  fxConvertedAmount?: number;
+  /** Transaction currency */
+  transactionCurrency?: string;
+  /** Card's base currency */
+  cardCurrency?: string;
 }
 
 /**
@@ -154,20 +163,52 @@ export class SimulatorService {
         }
       }
 
+      // Determine card's base currency
+      const cardCurrency = paymentMethod.currency || "CAD";
+      const transactionCurrency = input.currency;
+
+      // Auto-fetch FX rate if transaction currency differs from card currency
+      let fxRate: number | undefined;
+      let fxConvertedAmount: number | undefined;
+      let convertedAmount = input.convertedAmount;
+      let convertedCurrency = input.convertedCurrency || cardCurrency;
+
+      if (transactionCurrency !== cardCurrency) {
+        try {
+          const exchangeRateService = ExchangeRateService.getInstance();
+          fxRate = await exchangeRateService.getRate(
+            transactionCurrency as Currency,
+            cardCurrency as Currency
+          );
+          fxConvertedAmount = input.amount * fxRate;
+          convertedAmount = fxConvertedAmount;
+          convertedCurrency = cardCurrency;
+          console.log(
+            `[SimulatorService] FX conversion: ${input.amount} ${transactionCurrency} → ${fxConvertedAmount.toFixed(2)} ${cardCurrency} (rate: ${fxRate.toFixed(4)})`
+          );
+        } catch (error) {
+          console.warn(
+            `[SimulatorService] Failed to fetch FX rate for ${transactionCurrency} → ${cardCurrency}:`,
+            error
+          );
+        }
+      }
+
       // Build calculation input
       console.log(
-        `[SimulatorService] Payment method: ${paymentMethod.name}, rewardCurrencyId: "${rewardCurrencyId}"`
+        `[SimulatorService] Payment method: ${paymentMethod.name}, rewardCurrencyId: "${rewardCurrencyId}", cardCatalogId: "${paymentMethod.cardCatalogId}"`
       );
       const calculationInput: CalculationInput = {
         amount: input.amount,
         currency: input.currency,
-        convertedAmount: input.convertedAmount,
-        convertedCurrency: input.convertedCurrency,
+        convertedAmount,
+        convertedCurrency,
         paymentMethod: {
           id: paymentMethod.id,
           issuer: paymentMethod.issuer,
           name: paymentMethod.name,
           pointsCurrency: paymentMethod.pointsCurrency,
+          cardCatalogId: paymentMethod.cardCatalogId,
         },
         mcc: input.mcc,
         merchantName: input.merchantName,
@@ -207,6 +248,10 @@ export class SimulatorService {
         convertedMiles,
         conversionRate,
         rank: 0, // Will be set by rankResults
+        fxRate,
+        fxConvertedAmount,
+        transactionCurrency,
+        cardCurrency,
       };
     } catch (error) {
       // Handle individual card calculation error

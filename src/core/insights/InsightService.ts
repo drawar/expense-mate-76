@@ -1227,6 +1227,7 @@ export class InsightService {
               issuer: altCard.issuer,
               name: altCard.name,
               pointsCurrency: altCard.pointsCurrency,
+              cardCatalogId: altCard.cardCatalogId,
             },
             mcc: tx.mccCode || tx.merchant?.mcc?.code,
             merchantName: tx.merchant?.name || "",

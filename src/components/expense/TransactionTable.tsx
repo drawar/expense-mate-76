@@ -36,7 +36,7 @@ import {
   getCategoryColor,
 } from "@/utils/constants/categories";
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
-import { format, isToday, isYesterday } from "date-fns";
+import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -139,7 +139,7 @@ const TransactionTable = ({
     // Transactions are already sorted by date (desc), group them
     transactions.forEach((tx) => {
       // Parse the transaction date and get local date key
-      const txDateObj = new Date(tx.date);
+      const txDateObj = parseISO(tx.date);
       const txDate = getLocalDateKey(txDateObj);
 
       if (txDate !== currentDate) {

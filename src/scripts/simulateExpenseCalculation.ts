@@ -52,6 +52,7 @@ async function simulateExpenseCalculation() {
       name: paymentMethods.name,
       currency: paymentMethods.currency,
       pointsCurrency: paymentMethods.points_currency,
+      cardCatalogId: paymentMethods.card_catalog_id,
       type: paymentMethods.type,
       active: paymentMethods.active,
     },

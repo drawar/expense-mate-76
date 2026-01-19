@@ -1,5 +1,6 @@
 // components/dashboard/Dashboard.tsx
 import React from "react";
+import { parseISO } from "date-fns";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import {
   DashboardHeader,
@@ -50,7 +51,7 @@ export function Dashboard() {
 
     return transactions
       .slice()
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
       .slice(0, 5);
   }, [transactions]);
 

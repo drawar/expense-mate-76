@@ -11,7 +11,6 @@ import { MerchantDetailsSection } from "@/components/expense/form/sections/Merch
 import { SimulatorTransactionDetails } from "./SimulatorTransactionDetails";
 
 // Define form schema for simulator (similar to expense form but without payment method)
-// Includes optional fields that TransactionDetailsSection may render
 const simulatorFormSchema = z.object({
   merchantName: z.string().min(1, "Merchant name is required"),
   merchantAddress: z.string().optional(),
@@ -19,12 +18,9 @@ const simulatorFormSchema = z.object({
   isContactless: z.boolean().default(false),
   amount: z.string().min(1, "Amount is required"),
   currency: z.string().min(1, "Currency is required"),
-  convertedAmount: z.string().optional(),
-  convertedCurrency: z.string().optional(),
   date: z.date(),
   notes: z.string().optional(),
   mcc: z.custom<MerchantCategoryCode | null>().optional(),
-  reimbursementAmount: z.string().optional(), // Optional field from TransactionDetailsSection
 });
 
 type SimulatorFormValues = z.infer<typeof simulatorFormSchema>;
@@ -51,14 +47,9 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
       isContactless: initialValues?.isContactless ?? false,
       amount: initialValues?.amount?.toString() || "",
       currency: initialValues?.currency || CurrencyService.getDefaultCurrency(),
-      convertedAmount: initialValues?.convertedAmount?.toString() || "",
-      convertedCurrency:
-        initialValues?.convertedCurrency ||
-        CurrencyService.getDefaultCurrency(),
       date: initialValues?.date || new Date(),
       notes: "",
       mcc: null,
-      reimbursementAmount: "", // Optional field
     },
   });
 
@@ -74,10 +65,6 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
 
       // Only trigger calculation if form is valid and amount is positive
       if (isValid && amount > 0 && formValues.merchantName.trim()) {
-        const convertedAmount = formValues.convertedAmount
-          ? Number(formValues.convertedAmount)
-          : undefined;
-
         const simulationInput: SimulationInput = {
           merchantName: formValues.merchantName.trim(),
           merchantAddress: formValues.merchantAddress?.trim(),
@@ -85,8 +72,7 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
           isOnline: formValues.isOnline,
           amount: amount,
           currency: formValues.currency,
-          convertedAmount: convertedAmount,
-          convertedCurrency: formValues.convertedCurrency || "CAD",
+          // FX conversion is handled automatically by SimulatorService
           isContactless: !formValues.isOnline && formValues.isContactless,
           date: formValues.date,
         };
