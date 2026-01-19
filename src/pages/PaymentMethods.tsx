@@ -148,11 +148,17 @@ const PaymentMethods = () => {
 
     // For each payment method, fetch its rules from the reward_rules table
     for (const method of paymentMethods) {
+      let rules: RewardRule[] = [];
       let cardTypeId: string | null = null;
 
-      // For catalog-linked cards, use the catalog entry's cardTypeId
+      // For catalog-linked cards, use cardCatalogId to fetch rules directly
       if (method.cardCatalogId) {
         try {
+          rules = await ruleRepository.getRulesForCardCatalogId(
+            method.cardCatalogId
+          );
+
+          // Also try to get the cardTypeId for legacy purposes (e.g., resolvedCardTypeId)
           const catalogEntry = await cardCatalogService.getCardById(
             method.cardCatalogId
           );
@@ -161,14 +167,16 @@ const PaymentMethods = () => {
           }
         } catch (error) {
           console.warn(
-            "Failed to fetch catalog entry for rule lookup:",
+            "Failed to fetch rules for card catalog:",
             method.cardCatalogId,
             error
           );
+          rules = [];
         }
       }
 
-      // Fall back to generating cardTypeId from issuer/name for custom cards
+      // For custom cards without cardCatalogId, generate cardTypeId for display purposes
+      // but rules will be empty (rules are now stored by card_catalog_id only)
       if (!cardTypeId && method.issuer && method.name) {
         cardTypeId = cardTypeIdService.generateCardTypeId(
           method.issuer,
@@ -176,16 +184,13 @@ const PaymentMethods = () => {
         );
       }
 
-      // Last resort: use payment method ID
+      // Last resort: use payment method ID for cardTypeId
       if (!cardTypeId) {
         cardTypeId = method.id;
       }
 
-      // Store the resolved cardTypeId
+      // Store the resolved cardTypeId and rules
       cardTypeIdMap[method.id] = cardTypeId;
-
-      // Use RuleRepository to get rules from Supabase reward_rules table
-      const rules = await ruleRepository.getRulesForCardType(cardTypeId);
       rulesMap[method.id] = rules;
     }
 
