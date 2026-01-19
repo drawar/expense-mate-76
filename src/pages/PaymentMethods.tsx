@@ -150,17 +150,45 @@ const PaymentMethods = () => {
     for (const method of paymentMethods) {
       let rules: RewardRule[] = [];
       let cardTypeId: string | null = null;
+      let effectiveCardCatalogId = method.cardCatalogId;
+
+      // If no cardCatalogId, try to find a matching catalog entry and auto-link
+      if (!effectiveCardCatalogId && method.issuer && method.name) {
+        try {
+          const matchingEntry = await cardCatalogService.findByIssuerAndName(
+            method.issuer,
+            method.name
+          );
+          if (matchingEntry) {
+            console.log(
+              `🔗 Auto-linking ${method.issuer} ${method.name} to catalog: ${matchingEntry.id}`
+            );
+            // Update the payment method with the cardCatalogId
+            await storageService.updatePaymentMethod(method.id, {
+              cardCatalogId: matchingEntry.id,
+            });
+            effectiveCardCatalogId = matchingEntry.id;
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to auto-link payment method to catalog:",
+            method.issuer,
+            method.name,
+            error
+          );
+        }
+      }
 
       // For catalog-linked cards, use cardCatalogId to fetch rules directly
-      if (method.cardCatalogId) {
+      if (effectiveCardCatalogId) {
         try {
           rules = await ruleRepository.getRulesForCardCatalogId(
-            method.cardCatalogId
+            effectiveCardCatalogId
           );
 
           // Also try to get the cardTypeId for legacy purposes (e.g., resolvedCardTypeId)
           const catalogEntry = await cardCatalogService.getCardById(
-            method.cardCatalogId
+            effectiveCardCatalogId
           );
           if (catalogEntry?.cardTypeId) {
             cardTypeId = catalogEntry.cardTypeId;
@@ -168,7 +196,7 @@ const PaymentMethods = () => {
         } catch (error) {
           console.warn(
             "Failed to fetch rules for card catalog:",
-            method.cardCatalogId,
+            effectiveCardCatalogId,
             error
           );
           rules = [];

@@ -204,6 +204,64 @@ export class CardCatalogService {
   }
 
   /**
+   * Find a card by issuer and name using fuzzy matching
+   * Used for auto-linking payment methods to catalog entries
+   */
+  async findByIssuerAndName(
+    issuer: string,
+    name: string
+  ): Promise<CardCatalogEntry | null> {
+    const issuerLower = issuer.toLowerCase();
+    const nameLower = name.toLowerCase();
+
+    // Try to fetch all cards and find a match
+    // (Using in-memory matching because ILIKE with multiple patterns is complex)
+    const allCards = await this.getAllCards();
+
+    for (const card of allCards) {
+      const cardIssuerLower = card.issuer.toLowerCase();
+      const cardNameLower = card.name.toLowerCase();
+
+      // Check if issuer matches (contains or equals)
+      const issuerMatch =
+        cardIssuerLower.includes(issuerLower) ||
+        issuerLower.includes(cardIssuerLower);
+
+      if (!issuerMatch) continue;
+
+      // Check if name matches (contains key parts)
+      // Remove common words and compare key terms
+      const nameMatch =
+        cardNameLower.includes(nameLower) ||
+        nameLower.includes(cardNameLower) ||
+        // Special handling for cards with dashes/variations
+        this.normalizeCardName(cardNameLower) ===
+          this.normalizeCardName(nameLower);
+
+      if (nameMatch) {
+        return card;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Normalize card name for matching (remove common variations)
+   */
+  private normalizeCardName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(
+        /mastercard|visa|amex|world elite|world|elite|platinum|signature/g,
+        ""
+      )
+      .trim();
+  }
+
+  /**
    * Get unique issuers from the catalog for filtering
    * Results are cached for 30 minutes
    */
