@@ -100,13 +100,13 @@ export function RedemptionsTable({
                     <div className="flex items-center gap-3">
                       {logoUrl ? (
                         <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden"
+                          className="h-8 w-8 min-w-[2rem] rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
                           style={{ backgroundColor: bgColor || "#ffffff" }}
                         >
                           <img
                             src={logoUrl}
                             alt={currencyName}
-                            className="h-8 w-8 object-contain"
+                            className="w-full h-full object-contain"
                             style={
                               logoScale
                                 ? { transform: `scale(${logoScale})` }
@@ -115,16 +115,16 @@ export function RedemptionsTable({
                           />
                         </div>
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <div className="h-8 w-8 min-w-[2rem] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                           <CoinsIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <span className="font-medium block">
+                        <span className="font-medium block truncate">
                           {currencyName}
                         </span>
                         {redemption.flightRoute && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground truncate block">
                             {redemption.flightRoute}
                           </span>
                         )}

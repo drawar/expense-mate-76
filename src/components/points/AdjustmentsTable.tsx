@@ -89,13 +89,13 @@ export function AdjustmentsTable({
                     <div className="flex items-center gap-3">
                       {logoUrl ? (
                         <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden"
+                          className="h-8 w-8 min-w-[2rem] rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
                           style={{ backgroundColor: bgColor || "#ffffff" }}
                         >
                           <img
                             src={logoUrl}
                             alt={currencyName}
-                            className="h-8 w-8 object-contain"
+                            className="w-full h-full object-contain"
                             style={
                               logoScale
                                 ? { transform: `scale(${logoScale})` }
@@ -104,11 +104,13 @@ export function AdjustmentsTable({
                           />
                         </div>
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <div className="h-8 w-8 min-w-[2rem] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                           <CoinsIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
-                      <span className="font-medium">{currencyName}</span>
+                      <span className="font-medium truncate">
+                        {currencyName}
+                      </span>
                     </div>
                   </TableCell>
 

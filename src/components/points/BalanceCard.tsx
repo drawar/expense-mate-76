@@ -79,20 +79,20 @@ export function BalanceCard({
         <div className="flex items-center gap-3 mb-4">
           {logoUrl ? (
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
+              className="w-10 h-10 min-w-[2.5rem] rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
               style={{ backgroundColor: bgColor || "#ffffff" }}
             >
               <img
                 src={logoUrl}
                 alt={currencyName}
-                className="w-10 h-10 object-contain"
+                className="w-full h-full object-contain"
                 style={
                   logoScale ? { transform: `scale(${logoScale})` } : undefined
                 }
               />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 min-w-[2.5rem] rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <CoinsIcon className="w-5 h-5 text-primary" />
             </div>
           )}

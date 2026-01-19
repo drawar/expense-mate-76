@@ -194,13 +194,13 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                   {/* Loyalty Program Logo */}
                   {logoUrl ? (
                     <div
-                      className="h-[37px] w-[37px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                      className="h-[37px] w-[37px] min-w-[37px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
                       style={{ backgroundColor: bgColor || "#ffffff" }}
                     >
                       <img
                         src={logoUrl}
                         alt={item.currency}
-                        className="h-[37px] w-[37px] object-contain"
+                        className="w-full h-full object-contain"
                         style={
                           item.logoScale
                             ? { transform: `scale(${item.logoScale})` }
@@ -209,7 +209,7 @@ const PointsEarnedCard: React.FC<PointsEarnedCardProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="h-[37px] w-[37px] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <div className="h-[37px] w-[37px] min-w-[37px] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                       <CoinsIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
