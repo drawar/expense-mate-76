@@ -390,22 +390,11 @@ const PaymentMethods = () => {
 
         if (setupConfig) {
           try {
-            // Get the cardTypeId from the catalog entry
-            const catalogEntry = await cardCatalogService.getCardById(
-              method.cardCatalogId
-            );
-            const cardTypeId =
-              catalogEntry?.cardTypeId ||
-              cardTypeIdService.generateCardTypeId(
-                method.issuer || "",
-                method.name
-              );
-
-            // Run quick setup
+            // Run quick setup using the cardCatalogId (UUID)
             const quickSetupService = getQuickSetupService();
             const result = await quickSetupService.runSetupIfAvailable(
               { id: method.id, issuer: method.issuer, name: method.name },
-              cardTypeId
+              method.cardCatalogId
             );
 
             if (result.success && result.rulesCreated > 0) {
