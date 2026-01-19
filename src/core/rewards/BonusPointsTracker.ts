@@ -604,6 +604,138 @@ export class BonusPointsTracker {
       return { startDate, endDate };
     }
   }
+
+  /**
+   * Recalculate and fix tracking for a payment method from transaction data.
+   * This is useful when tracking data has become out of sync with actual transactions.
+   *
+   * @param paymentMethodId - The payment method ID
+   * @param rules - The reward rules for this payment method
+   * @param statementDay - The statement start day (1-31)
+   * @param transactionBonusPoints - Total bonus points from transactions in the current period
+   * @param transactionSpendAmount - Optional: Total eligible spend from transactions (for spend_amount caps)
+   */
+  public async recalculateTracking(
+    paymentMethodId: string,
+    rules: RewardRule[],
+    statementDay: number,
+    transactionBonusPoints: number,
+    transactionSpendAmount?: number
+  ): Promise<void> {
+    console.log(
+      "🔄 Recalculating tracking for payment method:",
+      paymentMethodId
+    );
+
+    const processedCapGroups = new Set<string>();
+
+    for (const rule of rules) {
+      if (!rule.reward.monthlyCap) continue;
+
+      const capGroupId = rule.reward.capGroupId;
+      const capType = rule.reward.monthlyCapType || "bonus_points";
+      const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+      const promoStartDate =
+        periodType === "promotional" ? rule.validFrom : undefined;
+
+      // For shared caps, only update once per capGroupId
+      const identifier = capGroupId || rule.id;
+      if (processedCapGroups.has(identifier)) continue;
+      processedCapGroups.add(identifier);
+
+      // Determine the value to set
+      const valueToSet =
+        capType === "spend_amount"
+          ? (transactionSpendAmount ?? 0)
+          : transactionBonusPoints;
+
+      // Use capGroupId if provided, otherwise use ruleId
+      const baseTrackingId = capGroupId || rule.id;
+      const trackingId =
+        capType === "spend_amount" ? `${baseTrackingId}:spend` : baseTrackingId;
+
+      // For calendar and promotional periods, always use statementDay=1
+      const effectiveStatementDay =
+        periodType === "calendar" || periodType === "promotional"
+          ? 1
+          : statementDay;
+
+      // For promotional periods, use the promo start date for period identification
+      const periodDate =
+        periodType === "promotional" && promoStartDate
+          ? promoStartDate
+          : new Date();
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.user) {
+          console.warn("Cannot recalculate tracking: user not authenticated");
+          return;
+        }
+
+        // Calculate which period the date belongs to
+        const { year, month } = this.getPeriodYearMonth(
+          periodDate,
+          periodType,
+          effectiveStatementDay
+        );
+
+        console.log("🔄 Updating tracking:", {
+          trackingId,
+          paymentMethodId,
+          periodType,
+          year,
+          month,
+          effectiveStatementDay,
+          valueToSet,
+        });
+
+        // Upsert to database
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase as any)
+          .from("bonus_points_tracking")
+          .upsert(
+            {
+              user_id: session.user.id,
+              rule_id: trackingId,
+              payment_method_id: paymentMethodId,
+              period_type: periodType,
+              period_year: year,
+              period_month: month,
+              statement_day: effectiveStatementDay,
+              used_bonus_points: valueToSet,
+            },
+            {
+              onConflict:
+                "user_id,rule_id,payment_method_id,period_type,period_year,period_month,statement_day",
+            }
+          );
+
+        if (error) {
+          console.error("Error recalculating tracking:", error);
+          continue;
+        }
+
+        // Update cache
+        const cacheKey = this.createCacheKey(
+          trackingId,
+          paymentMethodId,
+          periodType,
+          periodDate,
+          effectiveStatementDay
+        );
+        this.usageCache.set(cacheKey, valueToSet);
+
+        console.log(
+          `✅ Recalculated tracking for ${capGroupId ? `cap group ${capGroupId}` : `rule ${rule.id}`}. Set to: ${valueToSet}`
+        );
+      } catch (error) {
+        console.error("Error in recalculateTracking:", error);
+      }
+    }
+  }
 }
 
 // Export a singleton instance

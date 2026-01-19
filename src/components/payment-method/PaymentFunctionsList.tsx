@@ -338,6 +338,7 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
             rewardRules={rewardRules}
             statementDay={paymentMethod.statementStartDay || 1}
             transactionCount={paymentMethodTransactionCount}
+            transactions={paymentMethodTransactions}
           />
         )}
 

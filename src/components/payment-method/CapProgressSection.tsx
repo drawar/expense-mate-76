@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { RewardRule, SpendingPeriodType } from "@/core/rewards/types";
 import { bonusPointsTracker } from "@/core/rewards/BonusPointsTracker";
+import { Transaction } from "@/types";
+import { getStatementPeriodYearMonth } from "@/utils/dates/formatters";
+import { parseISO } from "date-fns";
 
 interface CapProgressSectionProps {
   paymentMethodId: string;
@@ -9,6 +12,8 @@ interface CapProgressSectionProps {
   statementDay?: number;
   /** Optional transaction count that triggers a refresh when changed */
   transactionCount?: number;
+  /** Optional transactions for recalculation - if provided, will auto-fix tracking */
+  transactions?: Transaction[];
 }
 
 interface CapUsageInfo {
@@ -31,6 +36,7 @@ export function CapProgressSection({
   rewardRules,
   statementDay = 1,
   transactionCount,
+  transactions,
 }: CapProgressSectionProps) {
   const [capUsages, setCapUsages] = useState<CapUsageInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +48,75 @@ export function CapProgressSection({
         // Clear cache for this payment method to ensure fresh data from database
         // This is important because cap usage may have been updated by a recent transaction
         bonusPointsTracker.clearCacheForPaymentMethod(paymentMethodId);
+
+        // If transactions are provided, calculate expected bonus points and recalculate if needed
+        if (transactions && transactions.length > 0 && rewardRules.length > 0) {
+          // Find the period type from the first capped rule
+          const cappedRule = rewardRules.find((r) => r.reward.monthlyCap);
+          const periodType =
+            cappedRule?.reward.monthlySpendPeriodType || "calendar";
+
+          // Calculate bonus points from transactions in the current period
+          const now = new Date();
+          const { year: currentYear, month: currentMonth } =
+            periodType === "calendar"
+              ? { year: now.getFullYear(), month: now.getMonth() + 1 }
+              : getStatementPeriodYearMonth(now, statementDay);
+
+          const periodBonusPoints = transactions.reduce((sum, tx) => {
+            const txDate = parseISO(tx.date);
+            const { year: txYear, month: txMonth } =
+              periodType === "calendar"
+                ? { year: txDate.getFullYear(), month: txDate.getMonth() + 1 }
+                : getStatementPeriodYearMonth(txDate, statementDay);
+
+            // Only count transactions in the current period
+            if (txYear === currentYear && txMonth === currentMonth) {
+              return sum + (tx.bonusPoints || 0);
+            }
+            return sum;
+          }, 0);
+
+          // Get current tracked value
+          const usageMap = await bonusPointsTracker.getCapUsageForRules(
+            rewardRules,
+            paymentMethodId,
+            statementDay
+          );
+
+          // Check if tracking seems out of sync (difference > 10%)
+          let trackedTotal = 0;
+          usageMap.forEach((usage) => {
+            if (usage.capType === "bonus_points") {
+              trackedTotal += usage.used;
+            }
+          });
+
+          const difference = Math.abs(periodBonusPoints - trackedTotal);
+          const threshold = Math.max(periodBonusPoints, trackedTotal) * 0.1;
+
+          // Recalculate if:
+          // 1. Difference is more than 10% threshold, OR
+          // 2. Tracked shows usage but transactions show 0 (stale data from previous period)
+          const needsRecalculation =
+            (difference > threshold &&
+              (periodBonusPoints > 0 || trackedTotal > 0)) ||
+            (trackedTotal > 0 && periodBonusPoints === 0);
+
+          if (needsRecalculation) {
+            console.log(
+              `🔄 Cap tracking out of sync. Tracked: ${trackedTotal}, From transactions: ${periodBonusPoints}. Recalculating...`
+            );
+            await bonusPointsTracker.recalculateTracking(
+              paymentMethodId,
+              rewardRules,
+              statementDay,
+              periodBonusPoints
+            );
+            // Clear cache again after recalculation
+            bonusPointsTracker.clearCacheForPaymentMethod(paymentMethodId);
+          }
+        }
 
         const usageMap = await bonusPointsTracker.getCapUsageForRules(
           rewardRules,
