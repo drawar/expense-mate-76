@@ -156,8 +156,8 @@ export class StorageService {
           currency: row.currency as Currency,
           icon: row.icon || undefined,
           color: row.color || undefined,
-          // Use payment method's image_url first, then fall back to catalog's default_image_url
-          imageUrl: row.image_url || catalogImageUrl || undefined,
+          // Use catalog's default_image_url first (canonical), fall back to payment method's custom image_url
+          imageUrl: catalogImageUrl || row.image_url || undefined,
           // Use reward_currencies.display_name as source of truth, fall back to stored points_currency
           pointsCurrency:
             rewardCurrency?.display_name || row.points_currency || undefined,
@@ -572,8 +572,9 @@ export class StorageService {
             currency: (row.payment_methods?.currency || "USD") as Currency,
             icon: row.payment_methods?.icon || undefined,
             color: row.payment_methods?.color || undefined,
+            // Use catalog's default_image_url first (canonical), fall back to payment method's custom image_url
             imageUrl:
-              row.payment_methods?.image_url || catalogImageUrl || undefined,
+              catalogImageUrl || row.payment_methods?.image_url || undefined,
             // Use reward_currencies as source of truth, fall back to stored values
             pointsCurrency:
               rewardCurrency?.display_name ||
