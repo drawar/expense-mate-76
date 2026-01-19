@@ -237,16 +237,45 @@ export class InsightService {
       }
     };
 
-    // Calculate totals with currency conversion
-    const totalSpent = currentMonthTransactions.reduce(
+    // Helper to convert reimbursement amount to display currency
+    const getConvertedReimbursement = (tx: Transaction): number => {
+      if (!tx.reimbursementAmount || tx.reimbursementAmount <= 0) return 0;
+      try {
+        return CurrencyService.convert(
+          tx.reimbursementAmount,
+          tx.currency as Currency,
+          currency,
+          tx.paymentMethod
+        );
+      } catch {
+        return tx.reimbursementAmount;
+      }
+    };
+
+    // Calculate totals with currency conversion (accounting for reimbursements)
+    const grossSpent = currentMonthTransactions.reduce(
       (sum, tx) => sum + getConvertedAmount(tx),
       0
     );
 
-    const previousMonthTotal = previousMonthTransactions.reduce(
+    const totalReimbursed = currentMonthTransactions.reduce(
+      (sum, tx) => sum + getConvertedReimbursement(tx),
+      0
+    );
+
+    // Net spending = gross - reimbursements (this is what budget should compare against)
+    const totalSpent = grossSpent - totalReimbursed;
+
+    // Previous month also accounts for reimbursements
+    const previousMonthGross = previousMonthTransactions.reduce(
       (sum, tx) => sum + getConvertedAmount(tx),
       0
     );
+    const previousMonthReimbursed = previousMonthTransactions.reduce(
+      (sum, tx) => sum + getConvertedReimbursement(tx),
+      0
+    );
+    const previousMonthTotal = previousMonthGross - previousMonthReimbursed;
 
     // Category totals
     const categoryTotals: Record<string, number> = {};

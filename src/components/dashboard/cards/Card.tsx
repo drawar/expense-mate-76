@@ -1,7 +1,12 @@
 // components/dashboard/cards/Card.tsx
-import React from 'react';
-import { Card as UICard, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import React from "react";
+import {
+  Card as UICard,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface DashboardCardProps {
   title: string;
@@ -25,7 +30,7 @@ export interface DashboardCardProps {
 const Card: React.FC<DashboardCardProps> = ({
   title,
   icon,
-  className = '',
+  className = "",
   children,
   actions,
   loading = false,
@@ -87,9 +92,15 @@ const Card: React.FC<DashboardCardProps> = ({
         <CardContent>
           <div className="flex flex-col items-center justify-center h-48 text-center">
             {emptyState.icon}
-            <p className="text-muted-foreground font-medium mb-1">{emptyState.title}</p>
-            <p className="text-xs text-muted-foreground">{emptyState.description}</p>
-            {emptyState.action && <div className="mt-4">{emptyState.action}</div>}
+            <p className="text-muted-foreground font-medium mb-1">
+              {emptyState.title}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {emptyState.description}
+            </p>
+            {emptyState.action && (
+              <div className="mt-4">{emptyState.action}</div>
+            )}
           </div>
         </CardContent>
       </UICard>
@@ -100,12 +111,12 @@ const Card: React.FC<DashboardCardProps> = ({
   return (
     <UICard className={className}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-xl flex items-center gap-2 min-w-0">
             {icon}
-            {title}
+            <span className="truncate">{title}</span>
           </CardTitle>
-          {actions}
+          <div className="flex-shrink-0">{actions}</div>
         </div>
       </CardHeader>
       <CardContent>{children}</CardContent>
