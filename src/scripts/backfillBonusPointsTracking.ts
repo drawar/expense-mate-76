@@ -66,7 +66,7 @@ interface RewardRuleRow {
   conditions: unknown;
   monthly_cap: number | null;
   monthly_cap_type: string | null;
-  monthly_spend_period_type: string | null;
+  cap_periodicity: string | null;
   cap_group_id: string | null;
   promo_start_date: string | null;
   enabled: boolean;
@@ -92,7 +92,7 @@ function getPeriodKey(
   promoStartDate?: Date
 ): { year: number; month: number; statementDay: number } {
   // For promotional periods, use promoStartDate for period identification
-  if (periodType === "promotional" && promoStartDate) {
+  if (periodType === "promotional_period" && promoStartDate) {
     return {
       year: promoStartDate.getFullYear(),
       month: promoStartDate.getMonth() + 1,
@@ -101,7 +101,7 @@ function getPeriodKey(
   }
 
   // For calendar periods, use statementDay=1 (resets on 1st of month)
-  if (periodType === "calendar") {
+  if (periodType === "calendar_month") {
     return {
       year: date.getFullYear(),
       month: date.getMonth() + 1,
@@ -391,7 +391,7 @@ async function backfillBonusPointsTracking() {
     // Take highest priority rule (already sorted by priority desc)
     const rule = matchingRules[0];
     const capType = rule.monthly_cap_type || "bonus_points";
-    const periodType = rule.monthly_spend_period_type || "calendar";
+    const periodType = rule.cap_periodicity || "calendar_month";
     const statementDay = paymentMethod.statement_start_day ?? 1;
     const promoStartDate = rule.promo_start_date
       ? new Date(rule.promo_start_date)

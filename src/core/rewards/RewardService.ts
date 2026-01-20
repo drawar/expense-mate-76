@@ -356,7 +356,7 @@ export class RewardService {
           const capType = rule.reward.monthlyCapType || "bonus_points";
           const capGroupId = rule.reward.capGroupId;
 
-          const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+          const periodType = rule.reward.capPeriodicity || "calendar_month";
           const date = input.date
             ? input.date instanceof Date
               ? input.date
@@ -365,7 +365,7 @@ export class RewardService {
 
           // For promotional periods, use validFrom as the period start date
           const promoStartDate =
-            periodType === "promotional" ? rule.validFrom : undefined;
+            periodType === "promotional_period" ? rule.validFrom : undefined;
 
           if (capType === "spend_amount") {
             // Cap is on spend amount - track how much has been spent
@@ -1065,7 +1065,7 @@ export class RewardService {
       const tracker = MonthlySpendingTracker.getInstance();
       monthlySpend = await tracker.getMonthlySpending(
         paymentMethod.id,
-        "calendar",
+        "calendar_month",
         new Date(),
         1
       );

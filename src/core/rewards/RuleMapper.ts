@@ -124,14 +124,14 @@ export class RuleMapper {
           dbRule.monthly_min_spend !== undefined
             ? parseNumeric(dbRule.monthly_min_spend, 0)
             : undefined,
-        monthlySpendPeriodType:
-          dbRule.monthly_spend_period_type !== null &&
-          dbRule.monthly_spend_period_type !== undefined
-            ? (dbRule.monthly_spend_period_type as
-                | "calendar"
+        capPeriodicity:
+          dbRule.cap_periodicity !== null &&
+          dbRule.cap_periodicity !== undefined
+            ? (dbRule.cap_periodicity as
+                | "calendar_month"
                 | "statement"
                 | "statement_month"
-                | "promotional")
+                | "promotional_period")
             : undefined,
         // pointsCurrency is not stored in reward_rules table (removed in migration 20251219100000).
         // The actual points currency comes from the payment method's pointsCurrency field.
@@ -199,7 +199,7 @@ export class RuleMapper {
       monthly_cap: rule.reward.monthlyCap ?? null,
       monthly_cap_type: rule.reward.monthlyCapType ?? null,
       monthly_min_spend: rule.reward.monthlyMinSpend ?? null,
-      monthly_spend_period_type: rule.reward.monthlySpendPeriodType ?? null,
+      cap_periodicity: rule.reward.capPeriodicity ?? null,
       cap_group_id: rule.reward.capGroupId ?? null,
       valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
       valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,

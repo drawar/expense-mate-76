@@ -211,7 +211,7 @@ async function setupHSBCRevolutionCard() {
         blockSize: 1,
         monthlyCap: 13500, // 13,500 bonus points cap
         monthlyCapType: "bonus_points",
-        monthlySpendPeriodType: "calendar",
+        capPeriodicity: "calendar_month",
         capGroupId: sharedCapGroupId, // Shared cap with contactless
         bonusTiers: [],
       },
@@ -252,7 +252,7 @@ async function setupHSBCRevolutionCard() {
         blockSize: 1,
         monthlyCap: 13500, // 13,500 bonus points cap
         monthlyCapType: "bonus_points",
-        monthlySpendPeriodType: "calendar",
+        capPeriodicity: "calendar_month",
         capGroupId: sharedCapGroupId, // Shared cap with online travel
         bonusTiers: [],
       },

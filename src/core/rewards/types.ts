@@ -65,11 +65,11 @@ export interface RewardConfig {
   /** What the monthly cap refers to: "bonus_points" (default) or "spend_amount" */
   monthlyCapType?: "bonus_points" | "spend_amount";
   monthlyMinSpend?: number;
-  monthlySpendPeriodType?:
-    | "calendar"
+  capPeriodicity?:
+    | "calendar_month"
     | "statement"
     | "statement_month"
-    | "promotional";
+    | "promotional_period";
   /**
    * @deprecated Points currency is no longer stored per rule.
    * Use PaymentMethod.pointsCurrency instead.
@@ -215,7 +215,7 @@ export interface DbRewardRule {
   monthly_cap: number | null;
   monthly_cap_type: string | null;
   monthly_min_spend: number | null;
-  monthly_spend_period_type: string | null;
+  cap_periodicity: string | null;
   cap_group_id: string | null;
   /** Optional start date for time-limited/promotional rules (ISO string) */
   valid_from: string | null;
@@ -228,10 +228,10 @@ export interface DbRewardRule {
 }
 
 export type SpendingPeriodType =
-  | "calendar"
+  | "calendar_month"
   | "statement"
   | "statement_month"
-  | "promotional";
+  | "promotional_period";
 
 // Add missing CalculationMethod type alias
 export type CalculationMethod =

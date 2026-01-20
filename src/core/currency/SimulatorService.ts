@@ -343,7 +343,7 @@ export class SimulatorService {
       // In a real implementation, this could be configurable per payment method
       const spending = await this.monthlySpendingTracker.getMonthlySpending(
         paymentMethodId,
-        "calendar",
+        "calendar_month",
         date,
         1 // Default statement day
       );

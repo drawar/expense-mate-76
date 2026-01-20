@@ -49,7 +49,7 @@ export class BonusPointsTracker {
   public async getUsedBonusPoints(
     ruleId: string,
     paymentMethodId: string,
-    periodType: SpendingPeriodType = "calendar",
+    periodType: SpendingPeriodType = "calendar_month",
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
@@ -65,7 +65,9 @@ export class BonusPointsTracker {
     // For promotional periods, use the promo start date for period identification
     // This ensures all transactions in the promo period accumulate to the same record
     const periodDate =
-      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+      periodType === "promotional_period" && promoStartDate
+        ? promoStartDate
+        : date;
 
     const cacheKey = this.createCacheKey(
       trackingId,
@@ -157,7 +159,7 @@ export class BonusPointsTracker {
     ruleId: string,
     paymentMethodId: string,
     value: number,
-    periodType: SpendingPeriodType = "calendar",
+    periodType: SpendingPeriodType = "calendar_month",
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
@@ -176,7 +178,9 @@ export class BonusPointsTracker {
 
     // For promotional periods, use the promo start date for period identification
     const periodDate =
-      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+      periodType === "promotional_period" && promoStartDate
+        ? promoStartDate
+        : date;
 
     try {
       const {
@@ -263,7 +267,7 @@ export class BonusPointsTracker {
     ruleId: string,
     paymentMethodId: string,
     value: number,
-    periodType: SpendingPeriodType = "calendar",
+    periodType: SpendingPeriodType = "calendar_month",
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
@@ -281,7 +285,9 @@ export class BonusPointsTracker {
 
     // For promotional periods, use the promo start date for period identification
     const periodDate =
-      periodType === "promotional" && promoStartDate ? promoStartDate : date;
+      periodType === "promotional_period" && promoStartDate
+        ? promoStartDate
+        : date;
 
     try {
       const {
@@ -368,7 +374,7 @@ export class BonusPointsTracker {
     ruleId: string,
     paymentMethodId: string,
     monthlyCap: number,
-    periodType: SpendingPeriodType = "calendar",
+    periodType: SpendingPeriodType = "calendar_month",
     date: Date = new Date(),
     statementDay: number = 1,
     capGroupId?: string,
@@ -430,10 +436,10 @@ export class BonusPointsTracker {
 
       const capGroupId = rule.reward.capGroupId;
       const capType = rule.reward.monthlyCapType || "bonus_points";
-      const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+      const periodType = rule.reward.capPeriodicity || "calendar_month";
       // For promotional periods, use validFrom as the period start date
       const promoStartDate =
-        periodType === "promotional" ? rule.validFrom : undefined;
+        periodType === "promotional_period" ? rule.validFrom : undefined;
 
       console.log("🔵 Processing rule:", {
         id: rule.id,
@@ -455,7 +461,7 @@ export class BonusPointsTracker {
       // - Promotional caps track from promo start to promo end
       // Only statement_month period type should use the actual statementDay.
       const effectiveStatementDay =
-        periodType === "calendar" || periodType === "promotional"
+        periodType === "calendar_month" || periodType === "promotional_period"
           ? 1
           : statementDay;
 
@@ -547,7 +553,10 @@ export class BonusPointsTracker {
     statementDay: number
   ): { year: number; month: number } {
     // For calendar and promotional periods, use the date's actual year/month
-    if (periodType === "calendar" || periodType === "promotional") {
+    if (
+      periodType === "calendar_month" ||
+      periodType === "promotional_period"
+    ) {
       return {
         year: date.getFullYear(),
         month: date.getMonth() + 1,
@@ -569,7 +578,7 @@ export class BonusPointsTracker {
     const year = date.getFullYear();
     const month = date.getMonth();
 
-    if (periodType === "calendar") {
+    if (periodType === "calendar_month") {
       // Calendar month: 1st day of month to last day of month
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 1);
@@ -634,9 +643,9 @@ export class BonusPointsTracker {
 
       const capGroupId = rule.reward.capGroupId;
       const capType = rule.reward.monthlyCapType || "bonus_points";
-      const periodType = rule.reward.monthlySpendPeriodType || "calendar";
+      const periodType = rule.reward.capPeriodicity || "calendar_month";
       const promoStartDate =
-        periodType === "promotional" ? rule.validFrom : undefined;
+        periodType === "promotional_period" ? rule.validFrom : undefined;
 
       // For shared caps, only update once per capGroupId
       const identifier = capGroupId || rule.id;
@@ -656,13 +665,13 @@ export class BonusPointsTracker {
 
       // For calendar and promotional periods, always use statementDay=1
       const effectiveStatementDay =
-        periodType === "calendar" || periodType === "promotional"
+        periodType === "calendar_month" || periodType === "promotional_period"
           ? 1
           : statementDay;
 
       // For promotional periods, use the promo start date for period identification
       const periodDate =
-        periodType === "promotional" && promoStartDate
+        periodType === "promotional_period" && promoStartDate
           ? promoStartDate
           : new Date();
 

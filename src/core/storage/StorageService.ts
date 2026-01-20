@@ -873,7 +873,7 @@ export class StorageService {
             // Get the payment method's statement day for statement_month period tracking
             // For calendar and promotional periods, use statementDay=1 since they don't
             // follow statement cycles (calendar resets on 1st, promotional has fixed dates)
-            const periodType = result.periodType || "calendar";
+            const periodType = result.periodType || "calendar_month";
             let statementDay = 1;
             if (
               periodType === "statement" ||
@@ -894,7 +894,7 @@ export class StorageService {
 
             // For promotional periods, use validFrom as the period start date
             const promoStartDate =
-              periodType === "promotional" ? rule.validFrom : undefined;
+              periodType === "promotional_period" ? rule.validFrom : undefined;
             await bonusPointsTracker.trackBonusPointsUsage(
               result.appliedRuleId,
               transactionData.paymentMethod.id,
@@ -1201,7 +1201,7 @@ export class StorageService {
               reward: {
                 monthlyCap?: number;
                 monthlyCapType?: "bonus_points" | "spend_amount";
-                monthlySpendPeriodType?: string;
+                capPeriodicity?: string;
                 capGroupId?: string;
               };
             }>;
@@ -1210,16 +1210,16 @@ export class StorageService {
               if (!rule.reward?.monthlyCap) continue;
 
               const capType = rule.reward.monthlyCapType || "bonus_points";
-              const periodType = (rule.reward.monthlySpendPeriodType ||
-                "calendar") as
-                | "calendar"
+              const periodType = (rule.reward.capPeriodicity ||
+                "calendar_month") as
+                | "calendar_month"
                 | "statement"
                 | "statement_month"
-                | "promotional";
+                | "promotional_period";
               const statementDay = paymentMethod.statement_start_day ?? 1;
               // For promotional periods, use valid_from as the period start date
               const promoStartDate =
-                periodType === "promotional" && rule.valid_from
+                periodType === "promotional_period" && rule.valid_from
                   ? new Date(rule.valid_from)
                   : undefined;
 

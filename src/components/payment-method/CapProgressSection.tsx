@@ -54,19 +54,19 @@ export function CapProgressSection({
           // Find the period type from the first capped rule
           const cappedRule = rewardRules.find((r) => r.reward.monthlyCap);
           const periodType =
-            cappedRule?.reward.monthlySpendPeriodType || "calendar";
+            cappedRule?.reward.capPeriodicity || "calendar_month";
 
           // Calculate bonus points from transactions in the current period
           const now = new Date();
           const { year: currentYear, month: currentMonth } =
-            periodType === "calendar"
+            periodType === "calendar_month"
               ? { year: now.getFullYear(), month: now.getMonth() + 1 }
               : getStatementPeriodYearMonth(now, statementDay);
 
           const periodBonusPoints = transactions.reduce((sum, tx) => {
             const txDate = parseISO(tx.date);
             const { year: txYear, month: txMonth } =
-              periodType === "calendar"
+              periodType === "calendar_month"
                 ? { year: txDate.getFullYear(), month: txDate.getMonth() + 1 }
                 : getStatementPeriodYearMonth(txDate, statementDay);
 
@@ -145,7 +145,7 @@ export function CapProgressSection({
 
           // Skip expired promotional trackers
           if (
-            usage.periodType === "promotional" &&
+            usage.periodType === "promotional_period" &&
             usage.validUntil &&
             usage.validUntil < now
           ) {
@@ -162,7 +162,7 @@ export function CapProgressSection({
             );
             if (sharedRules.length > 1) {
               // Use a shortened combined name or just "Promotional Cap"
-              const isPromo = usage.periodType === "promotional";
+              const isPromo = usage.periodType === "promotional_period";
               name = isPromo
                 ? "Promotional Bonus Cap"
                 : `${sharedRules.length} Rules Shared Cap`;
@@ -233,12 +233,12 @@ export function CapProgressSection({
   // Get period label
   const getPeriodLabel = (periodType: SpendingPeriodType): string => {
     switch (periodType) {
-      case "calendar":
+      case "calendar_month":
         return "Resets monthly";
       case "statement":
       case "statement_month":
         return "Resets each statement";
-      case "promotional":
+      case "promotional_period":
         return "Promotional period";
       default:
         return "";
@@ -272,7 +272,7 @@ export function CapProgressSection({
           />
           <div className="flex justify-between text-[10px] text-[var(--color-text-tertiary)]">
             <span>{getPeriodLabel(usage.periodType)}</span>
-            {usage.periodType === "promotional" && usage.validUntil && (
+            {usage.periodType === "promotional_period" && usage.validUntil && (
               <span>Valid until {formatDate(usage.validUntil)}</span>
             )}
             {usage.periodType !== "promotional" && (
