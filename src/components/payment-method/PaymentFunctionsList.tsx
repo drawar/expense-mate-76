@@ -58,11 +58,6 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
 }) => {
   const { data: allTransactions = [] } = useTransactionsQuery();
 
-  // Count transactions for this payment method (used to trigger cap progress refresh)
-  const paymentMethodTransactionCount = allTransactions.filter(
-    (t) => t.paymentMethod?.id === paymentMethod.id
-  ).length;
-
   // Deactivation confirmation state
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
@@ -330,15 +325,14 @@ export const PaymentFunctionsList: React.FC<PaymentFunctionsListProps> = ({
         style={{ backgroundColor: "var(--color-divider)", opacity: 0.4 }}
       />
 
-      {/* Cap Progress Section - only for credit cards with capped rules */}
+      {/* Cap Progress Section - only for credit cards with capped rules that have cap_duration set */}
       {paymentMethod.type === "credit_card" &&
-        rewardRules.some((r) => r.reward.monthlyCap) && (
+        rewardRules.some(
+          (r) => r.reward.monthlyCap && r.reward.capDuration
+        ) && (
           <CapProgressSection
-            paymentMethodId={paymentMethod.id}
+            paymentMethod={paymentMethod}
             rewardRules={rewardRules}
-            statementDay={paymentMethod.statementStartDay || 1}
-            transactionCount={paymentMethodTransactionCount}
-            transactions={paymentMethodTransactions}
           />
         )}
 

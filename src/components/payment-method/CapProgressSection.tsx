@@ -1,203 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Progress } from "@/components/ui/progress";
 import { RewardRule, SpendingPeriodType } from "@/core/rewards/types";
-import { bonusPointsTracker } from "@/core/rewards/BonusPointsTracker";
-import { Transaction } from "@/types";
-import { getStatementPeriodYearMonth } from "@/utils/dates/formatters";
-import { parseISO } from "date-fns";
+import { PaymentMethod } from "@/types";
+import { useCapUsage } from "@/hooks/useCapUsage";
 
 interface CapProgressSectionProps {
-  paymentMethodId: string;
+  paymentMethod: PaymentMethod;
   rewardRules: RewardRule[];
-  statementDay?: number;
-  /** Optional transaction count that triggers a refresh when changed */
-  transactionCount?: number;
-  /** Optional transactions for recalculation - if provided, will auto-fix tracking */
-  transactions?: Transaction[];
-}
-
-interface CapUsageInfo {
-  identifier: string;
-  name: string;
-  used: number;
-  cap: number;
-  capType: "bonus_points" | "spend_amount";
-  periodType: SpendingPeriodType;
-  validUntil?: Date;
-  percentage: number;
 }
 
 /**
- * CapProgressSection displays progress bars for reward rules with caps
- * Shows current usage vs cap limit with color-coded indicators
+ * CapProgressSection displays progress bars for reward rules with caps.
+ *
+ * Computes cap usage directly from transactions - no separate tracking table.
+ * Automatically updates when transactions change via React Query.
+ *
+ * Only shows progress bars for rules with non-null cap_duration.
  */
 export function CapProgressSection({
-  paymentMethodId,
+  paymentMethod,
   rewardRules,
-  statementDay = 1,
-  transactionCount,
-  transactions,
 }: CapProgressSectionProps) {
-  const [capUsages, setCapUsages] = useState<CapUsageInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCapUsage = async () => {
-      setLoading(true);
-      try {
-        // Clear cache for this payment method to ensure fresh data from database
-        // This is important because cap usage may have been updated by a recent transaction
-        bonusPointsTracker.clearCacheForPaymentMethod(paymentMethodId);
-
-        // If transactions are provided, calculate expected bonus points and recalculate if needed
-        if (transactions && transactions.length > 0 && rewardRules.length > 0) {
-          // Find the period type from the first capped rule
-          const cappedRule = rewardRules.find((r) => r.reward.monthlyCap);
-          const periodType = cappedRule?.reward.capDuration || "calendar_month";
-
-          // Calculate bonus points from transactions in the current period
-          const now = new Date();
-          const { year: currentYear, month: currentMonth } =
-            periodType === "calendar_month"
-              ? { year: now.getFullYear(), month: now.getMonth() + 1 }
-              : getStatementPeriodYearMonth(now, statementDay);
-
-          const periodBonusPoints = transactions.reduce((sum, tx) => {
-            const txDate = parseISO(tx.date);
-            const { year: txYear, month: txMonth } =
-              periodType === "calendar_month"
-                ? { year: txDate.getFullYear(), month: txDate.getMonth() + 1 }
-                : getStatementPeriodYearMonth(txDate, statementDay);
-
-            // Only count transactions in the current period
-            if (txYear === currentYear && txMonth === currentMonth) {
-              return sum + (tx.bonusPoints || 0);
-            }
-            return sum;
-          }, 0);
-
-          // Get current tracked value
-          const usageMap = await bonusPointsTracker.getCapUsageForRules(
-            rewardRules,
-            paymentMethodId,
-            statementDay
-          );
-
-          // Check if tracking seems out of sync (difference > 10%)
-          let trackedTotal = 0;
-          usageMap.forEach((usage) => {
-            if (usage.capType === "bonus_points") {
-              trackedTotal += usage.used;
-            }
-          });
-
-          const difference = Math.abs(periodBonusPoints - trackedTotal);
-          const threshold = Math.max(periodBonusPoints, trackedTotal) * 0.1;
-
-          // Recalculate if:
-          // 1. Difference is more than 10% threshold, OR
-          // 2. Tracked shows usage but transactions show 0 (stale data from previous period)
-          const needsRecalculation =
-            (difference > threshold &&
-              (periodBonusPoints > 0 || trackedTotal > 0)) ||
-            (trackedTotal > 0 && periodBonusPoints === 0);
-
-          if (needsRecalculation) {
-            console.log(
-              `🔄 Cap tracking out of sync. Tracked: ${trackedTotal}, From transactions: ${periodBonusPoints}. Recalculating...`
-            );
-            await bonusPointsTracker.recalculateTracking(
-              paymentMethodId,
-              rewardRules,
-              statementDay,
-              periodBonusPoints
-            );
-            // Clear cache again after recalculation
-            bonusPointsTracker.clearCacheForPaymentMethod(paymentMethodId);
-          }
-        }
-
-        const usageMap = await bonusPointsTracker.getCapUsageForRules(
-          rewardRules,
-          paymentMethodId,
-          statementDay
-        );
-
-        // Build the cap usages array, grouping rules by capGroupId
-        const processedCapGroups = new Set<string>();
-        const usages: CapUsageInfo[] = [];
-
-        const now = new Date();
-
-        for (const rule of rewardRules) {
-          if (!rule.reward.monthlyCap) continue;
-
-          const capGroupId = rule.reward.capGroupId;
-          const identifier = capGroupId || rule.id;
-
-          // Skip if we already processed this cap group
-          if (processedCapGroups.has(identifier)) continue;
-          processedCapGroups.add(identifier);
-
-          const usage = usageMap.get(identifier);
-          if (!usage) continue;
-
-          // Skip expired promotional trackers
-          if (
-            usage.periodType === "promotional_period" &&
-            usage.validUntil &&
-            usage.validUntil < now
-          ) {
-            continue;
-          }
-
-          const percentage = Math.min(100, (usage.used / usage.cap) * 100);
-
-          // For shared caps, find all rules that share this cap and create a combined name
-          let name = rule.name;
-          if (capGroupId) {
-            const sharedRules = rewardRules.filter(
-              (r) => r.reward.capGroupId === capGroupId
-            );
-            if (sharedRules.length > 1) {
-              // Use a shortened combined name or just "Promotional Cap"
-              const isPromo = usage.periodType === "promotional_period";
-              name = isPromo
-                ? "Promotional Bonus Cap"
-                : `${sharedRules.length} Rules Shared Cap`;
-            }
-          }
-
-          usages.push({
-            identifier,
-            name,
-            used: usage.used,
-            cap: usage.cap,
-            capType: usage.capType,
-            periodType: usage.periodType,
-            validUntil: usage.validUntil,
-            percentage,
-          });
-        }
-
-        setCapUsages(usages);
-      } catch (error) {
-        console.error("Error fetching cap usage:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (rewardRules.length > 0) {
-      fetchCapUsage();
-    } else {
-      setCapUsages([]);
-      setLoading(false);
-    }
-  }, [paymentMethodId, rewardRules, statementDay, transactionCount]);
+  const { data: capUsages, isLoading } = useCapUsage(
+    paymentMethod,
+    rewardRules
+  );
 
   // Don't render if no capped rules
-  if (capUsages.length === 0 && !loading) {
+  if (capUsages.length === 0 && !isLoading) {
     return null;
   }
 
@@ -244,7 +74,7 @@ export function CapProgressSection({
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-3 px-1 py-2">
         <div className="h-1.5 w-full bg-[var(--color-surface)] rounded-full animate-pulse" />
@@ -258,7 +88,7 @@ export function CapProgressSection({
         <div key={usage.identifier} className="space-y-1.5">
           <div className="flex justify-between items-center text-xs">
             <span className="text-[var(--color-text-secondary)] font-medium truncate mr-2">
-              {usage.name}
+              {usage.ruleName}
             </span>
             <span className="text-[var(--color-text-tertiary)] whitespace-nowrap">
               {formatUsage(usage.used, usage.cap, usage.capType)}
@@ -274,7 +104,7 @@ export function CapProgressSection({
             {usage.periodType === "promotional_period" && usage.validUntil && (
               <span>Valid until {formatDate(usage.validUntil)}</span>
             )}
-            {usage.periodType !== "promotional" && (
+            {usage.periodType !== "promotional_period" && (
               <span>{usage.percentage.toFixed(0)}% used</span>
             )}
           </div>
