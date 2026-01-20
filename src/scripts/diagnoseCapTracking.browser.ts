@@ -107,7 +107,7 @@ export async function diagnoseCapTracking() {
     console.log(
       `    monthly_cap: ${rule.monthly_cap} (${rule.monthly_cap_type || "bonus_points"})`
     );
-    console.log(`    period_type: ${rule.cap_periodicity || "calendar_month"}`);
+    console.log(`    period_type: ${rule.cap_duration || "calendar_month"}`);
     console.log(`    cap_group_id: ${rule.cap_group_id || "none"}`);
     console.log(`    priority: ${rule.priority}`);
     console.log(`    conditions: ${JSON.stringify(rule.conditions)}\n`);
@@ -140,7 +140,7 @@ export async function diagnoseCapTracking() {
 
   // Check if rules have consistent period types
   const periodTypes = new Set(
-    rules?.map((r) => r.cap_periodicity || "calendar_month")
+    rules?.map((r) => r.cap_duration || "calendar_month")
   );
   if (periodTypes.size > 1) {
     console.log(

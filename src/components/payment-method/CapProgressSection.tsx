@@ -53,8 +53,7 @@ export function CapProgressSection({
         if (transactions && transactions.length > 0 && rewardRules.length > 0) {
           // Find the period type from the first capped rule
           const cappedRule = rewardRules.find((r) => r.reward.monthlyCap);
-          const periodType =
-            cappedRule?.reward.capPeriodicity || "calendar_month";
+          const periodType = cappedRule?.reward.capDuration || "calendar_month";
 
           // Calculate bonus points from transactions in the current period
           const now = new Date();

@@ -633,7 +633,7 @@ export class CardRegistry {
         bonusTiers: [],
         monthlyCap: 3600, // Cap at 3,600 bonus points per month
         monthlyMinSpend: 1000, // Min $1,000 foreign currency spend to qualify
-        capPeriodicity: "statement_month",
+        capDuration: "statement_month",
         pointsCurrency: "UNI$",
       },
       createdAt: new Date(),

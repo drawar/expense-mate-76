@@ -124,10 +124,9 @@ export class RuleMapper {
           dbRule.monthly_min_spend !== undefined
             ? parseNumeric(dbRule.monthly_min_spend, 0)
             : undefined,
-        capPeriodicity:
-          dbRule.cap_periodicity !== null &&
-          dbRule.cap_periodicity !== undefined
-            ? (dbRule.cap_periodicity as
+        capDuration:
+          dbRule.cap_duration !== null && dbRule.cap_duration !== undefined
+            ? (dbRule.cap_duration as
                 | "calendar_month"
                 | "statement"
                 | "statement_month"
@@ -199,7 +198,7 @@ export class RuleMapper {
       monthly_cap: rule.reward.monthlyCap ?? null,
       monthly_cap_type: rule.reward.monthlyCapType ?? null,
       monthly_min_spend: rule.reward.monthlyMinSpend ?? null,
-      cap_periodicity: rule.reward.capPeriodicity ?? null,
+      cap_duration: rule.reward.capDuration ?? null,
       cap_group_id: rule.reward.capGroupId ?? null,
       valid_from: rule.validFrom ? rule.validFrom.toISOString() : null,
       valid_until: rule.validUntil ? rule.validUntil.toISOString() : null,

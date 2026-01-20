@@ -132,7 +132,7 @@ async function setupOCBCRewardsWorldCard() {
         blockSize: 5,
         monthlyCap: 10000, // 10,000 bonus points cap
         monthlyCapType: "bonus_points",
-        capPeriodicity: "calendar_month",
+        capDuration: "calendar_month",
         capGroupId: sharedCapGroupId,
         bonusTiers: [],
       },
@@ -167,7 +167,7 @@ async function setupOCBCRewardsWorldCard() {
         blockSize: 5,
         monthlyCap: 10000, // 10,000 bonus points cap
         monthlyCapType: "bonus_points",
-        capPeriodicity: "calendar_month",
+        capDuration: "calendar_month",
         capGroupId: sharedCapGroupId,
         bonusTiers: [],
       },

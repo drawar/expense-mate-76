@@ -356,7 +356,7 @@ export class RewardService {
           const capType = rule.reward.monthlyCapType || "bonus_points";
           const capGroupId = rule.reward.capGroupId;
 
-          const periodType = rule.reward.capPeriodicity || "calendar_month";
+          const periodType = rule.reward.capDuration || "calendar_month";
           const date = input.date
             ? input.date instanceof Date
               ? input.date

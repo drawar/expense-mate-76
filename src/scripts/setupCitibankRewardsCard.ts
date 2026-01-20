@@ -1130,7 +1130,7 @@ async function setupCitibankRewardsCard() {
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
         monthlyCap: 9000, // 9,000 bonus points per statement month
-        capPeriodicity: "statement_month",
+        capDuration: "statement_month",
         bonusTiers: [],
       },
     });
@@ -1304,7 +1304,7 @@ async function setupCitibankRewardsCard() {
         pointsRoundingStrategy: "floor",
         amountRoundingStrategy: "floor",
         monthlyCap: 9000, // 9,000 bonus points per statement month (shared cap)
-        capPeriodicity: "statement_month",
+        capDuration: "statement_month",
         bonusTiers: [],
       },
     });

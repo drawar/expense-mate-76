@@ -1201,7 +1201,7 @@ export class StorageService {
               reward: {
                 monthlyCap?: number;
                 monthlyCapType?: "bonus_points" | "spend_amount";
-                capPeriodicity?: string;
+                capDuration?: string;
                 capGroupId?: string;
               };
             }>;
@@ -1210,7 +1210,7 @@ export class StorageService {
               if (!rule.reward?.monthlyCap) continue;
 
               const capType = rule.reward.monthlyCapType || "bonus_points";
-              const periodType = (rule.reward.capPeriodicity ||
+              const periodType = (rule.reward.capDuration ||
                 "calendar_month") as
                 | "calendar_month"
                 | "statement"

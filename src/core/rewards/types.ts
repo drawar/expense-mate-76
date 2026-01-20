@@ -65,7 +65,7 @@ export interface RewardConfig {
   /** What the monthly cap refers to: "bonus_points" (default) or "spend_amount" */
   monthlyCapType?: "bonus_points" | "spend_amount";
   monthlyMinSpend?: number;
-  capPeriodicity?:
+  capDuration?:
     | "calendar_month"
     | "statement"
     | "statement_month"
@@ -215,7 +215,7 @@ export interface DbRewardRule {
   monthly_cap: number | null;
   monthly_cap_type: string | null;
   monthly_min_spend: number | null;
-  cap_periodicity: string | null;
+  cap_duration: string | null;
   cap_group_id: string | null;
   /** Optional start date for time-limited/promotional rules (ISO string) */
   valid_from: string | null;

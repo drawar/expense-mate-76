@@ -436,7 +436,7 @@ export class BonusPointsTracker {
 
       const capGroupId = rule.reward.capGroupId;
       const capType = rule.reward.monthlyCapType || "bonus_points";
-      const periodType = rule.reward.capPeriodicity || "calendar_month";
+      const periodType = rule.reward.capDuration || "calendar_month";
       // For promotional periods, use validFrom as the period start date
       const promoStartDate =
         periodType === "promotional_period" ? rule.validFrom : undefined;
@@ -643,7 +643,7 @@ export class BonusPointsTracker {
 
       const capGroupId = rule.reward.capGroupId;
       const capType = rule.reward.monthlyCapType || "bonus_points";
-      const periodType = rule.reward.capPeriodicity || "calendar_month";
+      const periodType = rule.reward.capDuration || "calendar_month";
       const promoStartDate =
         periodType === "promotional_period" ? rule.validFrom : undefined;
 
