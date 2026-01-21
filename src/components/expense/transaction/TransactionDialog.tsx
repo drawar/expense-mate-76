@@ -8,6 +8,7 @@ import { getMccCategory } from "@/utils/categoryMapping";
 import TransactionDialogHeader from "./elements/TransactionDialogHeader";
 import TransactionDetailsView from "./elements/TransactionDetailsView";
 import TransactionEditForm from "./elements/TransactionEditForm";
+import SplitTransactionEditForm from "./elements/SplitTransactionEditForm";
 
 interface TransactionDialogProps {
   transaction: Transaction | null;
@@ -92,6 +93,21 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
               isLoading={isLoading}
             />
           </>
+        ) : transaction.splitGroupId ? (
+          <SplitTransactionEditForm
+            transaction={transaction}
+            paymentMethods={paymentMethods}
+            onSubmit={(transactions) => {
+              // Use the first transaction as the updated reference
+              if (transactions.length > 0 && onTransactionUpdated) {
+                onTransactionUpdated(transactions[0]);
+              }
+              setDialogMode("view");
+              onClose();
+            }}
+            onCancel={() => setDialogMode("view")}
+            isLoading={isLoading}
+          />
         ) : (
           <TransactionEditForm
             transaction={transaction}

@@ -7,6 +7,8 @@ import {
   DbMerchant,
   Currency,
   MerchantCategoryCode,
+  SplitGroup,
+  SplitPaymentPortion,
 } from "@/types";
 import { initializeRewardSystem, calculateRewardPoints } from "@/core/rewards";
 import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
@@ -618,6 +620,8 @@ export class StorageService {
         autoCategoryConfidence: row.auto_category_confidence ?? undefined,
         needsReview: row.needs_review ?? false,
         categorySuggestionReason: row.category_suggestion_reason || undefined,
+        // Split payment
+        splitGroupId: row.split_group_id || undefined,
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -1086,6 +1090,530 @@ export class StorageService {
     const filteredTransactions = transactions.filter((t) => t.id !== id);
     this.saveTransactionsToLocalStorage(filteredTransactions);
     return true;
+  }
+
+  /**
+   * Add a split transaction - creates multiple linked transactions for a single purchase
+   * @param input - The split transaction data including portions for each payment method
+   * @returns Array of created transactions
+   */
+  async addSplitTransaction(input: {
+    totalAmount: number;
+    currency: Currency;
+    merchant: Merchant;
+    date: string;
+    portions: Array<{
+      paymentMethodId: string;
+      amount: number;
+      paymentAmount?: number;
+      paymentCurrency?: Currency;
+      rewardPoints: number;
+      basePoints: number;
+      bonusPoints: number;
+    }>;
+    isContactless: boolean;
+    notes?: string;
+    userCategory?: string;
+  }): Promise<Transaction[]> {
+    console.log("StorageService.addSplitTransaction called with:", input);
+
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.error("Cannot create split transaction without authentication");
+      throw new Error("User must be logged in to create split transactions");
+    }
+
+    try {
+      // 1. Generate merchant ID if needed
+      const merchantId = input.merchant.id || crypto.randomUUID();
+
+      // 2. Upsert the merchant
+      const mccCode = input.merchant.mcc?.code || null;
+      const merchantData = {
+        id: merchantId,
+        name: input.merchant.name,
+        address: input.merchant.address,
+        mcc: input.merchant.mcc
+          ? JSON.parse(JSON.stringify(input.merchant.mcc))
+          : null,
+        mcc_code: mccCode,
+        is_online: input.merchant.isOnline,
+        coordinates: input.merchant.coordinates
+          ? JSON.parse(JSON.stringify(input.merchant.coordinates))
+          : null,
+      };
+
+      const merchantResult = await supabase
+        .from("merchants")
+        .upsert([merchantData], { onConflict: "id" })
+        .select()
+        .single();
+
+      if (merchantResult.error) {
+        console.error("Error upserting merchant:", merchantResult.error);
+        throw merchantResult.error;
+      }
+
+      // 3. Create the split_group record
+      const { data: splitGroupData, error: splitGroupError } = await supabase
+        .from("split_groups")
+        .insert({
+          total_amount: input.totalAmount,
+          total_currency: input.currency,
+          merchant_id: merchantId,
+          date: input.date,
+          notes: input.notes,
+          user_id: session.user.id,
+        })
+        .select()
+        .single();
+
+      if (splitGroupError) {
+        console.error("Error creating split group:", splitGroupError);
+        throw splitGroupError;
+      }
+
+      console.log("Split group created:", splitGroupData);
+
+      // 4. Get all payment methods for lookup
+      const paymentMethods = await this.getPaymentMethods({
+        includeInactive: true,
+      });
+
+      // 5. Create transactions for each portion
+      const createdTransactions: Transaction[] = [];
+
+      for (const portion of input.portions) {
+        const paymentMethod = paymentMethods.find(
+          (pm) => pm.id === portion.paymentMethodId
+        );
+
+        if (!paymentMethod) {
+          console.error(`Payment method not found: ${portion.paymentMethodId}`);
+          continue;
+        }
+
+        // Determine user category
+        const userCategory =
+          input.userCategory ||
+          input.merchant.mcc?.description ||
+          "Uncategorized";
+
+        // Insert the transaction
+        // Note: notes are stored in split_groups.notes, not in individual transactions
+        const transactionInsertData = {
+          date: input.date,
+          merchant_id: merchantId,
+          amount: portion.amount,
+          currency: input.currency,
+          payment_method_id: portion.paymentMethodId,
+          payment_amount: portion.paymentAmount ?? portion.amount,
+          payment_currency: portion.paymentCurrency ?? paymentMethod.currency,
+          total_points: portion.rewardPoints,
+          base_points: portion.basePoints,
+          bonus_points: portion.bonusPoints,
+          is_contactless: input.isContactless,
+          mcc_code: mccCode,
+          user_category: userCategory,
+          category: userCategory,
+          split_group_id: splitGroupData.id,
+          user_id: session.user.id,
+        };
+
+        const { data: txData, error: txError } = await supabase
+          .from("transactions")
+          .insert([transactionInsertData])
+          .select()
+          .single();
+
+        if (txError) {
+          console.error("Error creating split transaction portion:", txError);
+          continue;
+        }
+
+        console.log("Split transaction portion created:", txData);
+
+        // Build the Transaction object
+        const newTransaction: Transaction = {
+          id: txData.id,
+          date: txData.date,
+          merchant: {
+            ...input.merchant,
+            id: merchantId,
+          },
+          amount: parseFloat(txData.amount.toString()),
+          currency: txData.currency as Currency,
+          paymentMethod: paymentMethod,
+          paymentAmount: parseFloat(txData.payment_amount.toString()),
+          paymentCurrency: txData.payment_currency as Currency,
+          rewardPoints: txData.total_points || 0,
+          basePoints: txData.base_points || 0,
+          bonusPoints: txData.bonus_points || 0,
+          isContactless: txData.is_contactless || false,
+          notes: txData.notes || undefined,
+          mccCode: txData.mcc_code || undefined,
+          userCategory: txData.user_category || undefined,
+          category: txData.category || undefined,
+          splitGroupId: splitGroupData.id,
+        };
+
+        createdTransactions.push(newTransaction);
+
+        // Check prepaid card balance for each portion
+        await this.checkPrepaidBalanceAndNotify(portion.paymentMethodId, {
+          merchantName: input.merchant.name,
+          amount: portion.paymentAmount ?? portion.amount,
+          currency: (portion.paymentCurrency ??
+            paymentMethod.currency) as Currency,
+        });
+      }
+
+      console.log(
+        `Split transaction complete: ${createdTransactions.length} portions created`
+      );
+      return createdTransactions;
+    } catch (error) {
+      console.error("Error in addSplitTransaction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete all transactions in a split group
+   * @param splitGroupId - The ID of the split group to delete
+   * @returns true if successful
+   */
+  async deleteSplitGroup(splitGroupId: string): Promise<boolean> {
+    try {
+      // Soft delete all transactions in this split group
+      const { error: txError } = await supabase
+        .from("transactions")
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+        })
+        .eq("split_group_id", splitGroupId);
+
+      if (txError) {
+        console.error("Error deleting split transactions:", txError);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error in deleteSplitGroup:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all transactions belonging to a split group
+   * @param splitGroupId - The split group ID
+   * @returns Array of transactions in the group
+   */
+  async getTransactionsBySplitGroup(
+    splitGroupId: string
+  ): Promise<Transaction[]> {
+    const allTransactions = await this.getTransactions();
+    return allTransactions.filter((t) => t.splitGroupId === splitGroupId);
+  }
+
+  /**
+   * Get split group details by ID
+   * @param splitGroupId - The split group ID
+   * @returns Split group data including notes
+   */
+  async getSplitGroup(splitGroupId: string): Promise<{
+    id: string;
+    totalAmount: number;
+    totalCurrency: string;
+    merchantId: string | null;
+    date: string;
+    notes: string | null;
+  } | null> {
+    try {
+      const { data, error } = await supabase
+        .from("split_groups")
+        .select("id, total_amount, total_currency, merchant_id, date, notes")
+        .eq("id", splitGroupId)
+        .single();
+
+      if (error || !data) {
+        console.error("Error fetching split group:", error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        totalAmount: parseFloat(data.total_amount),
+        totalCurrency: data.total_currency,
+        merchantId: data.merchant_id,
+        date: data.date,
+        notes: data.notes,
+      };
+    } catch (error) {
+      console.error("Error in getSplitGroup:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update an existing split transaction group
+   * @param input - The updated split transaction data
+   * @returns Array of updated transactions
+   */
+  async updateSplitTransaction(input: {
+    splitGroupId: string;
+    totalAmount: number;
+    currency: Currency;
+    merchant: Merchant;
+    date: string;
+    portions: Array<{
+      transactionId?: string; // Existing transaction ID to update
+      paymentMethodId: string;
+      amount: number;
+      paymentAmount?: number;
+      paymentCurrency?: Currency;
+      rewardPoints: number;
+      basePoints: number;
+      bonusPoints: number;
+    }>;
+    isContactless: boolean;
+    notes?: string;
+    userCategory?: string;
+  }): Promise<Transaction[]> {
+    console.log("StorageService.updateSplitTransaction called with:", input);
+
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.error("Cannot update split transaction without authentication");
+      throw new Error("User must be logged in to update split transactions");
+    }
+
+    try {
+      // 1. Update the merchant
+      const merchantId = input.merchant.id || crypto.randomUUID();
+      const mccCode = input.merchant.mcc?.code || null;
+      const merchantData = {
+        id: merchantId,
+        name: input.merchant.name,
+        address: input.merchant.address,
+        mcc: input.merchant.mcc
+          ? JSON.parse(JSON.stringify(input.merchant.mcc))
+          : null,
+        mcc_code: mccCode,
+        is_online: input.merchant.isOnline,
+        coordinates: input.merchant.coordinates
+          ? JSON.parse(JSON.stringify(input.merchant.coordinates))
+          : null,
+      };
+
+      await supabase
+        .from("merchants")
+        .upsert([merchantData], { onConflict: "id" });
+
+      // 2. Update the split_group record
+      const { error: splitGroupError } = await supabase
+        .from("split_groups")
+        .update({
+          total_amount: input.totalAmount,
+          total_currency: input.currency,
+          merchant_id: merchantId,
+          date: input.date,
+          notes: input.notes || null,
+        })
+        .eq("id", input.splitGroupId);
+
+      if (splitGroupError) {
+        console.error("Error updating split group:", splitGroupError);
+        throw splitGroupError;
+      }
+
+      // 3. Get existing transactions in this split group
+      const existingTransactions = await this.getTransactionsBySplitGroup(
+        input.splitGroupId
+      );
+      const existingTxIds = new Set(existingTransactions.map((t) => t.id));
+
+      // 4. Get all payment methods for lookup
+      const paymentMethods = await this.getPaymentMethods({
+        includeInactive: true,
+      });
+
+      // 5. Track which existing transactions are being updated
+      const updatedTxIds = new Set<string>();
+      const updatedTransactions: Transaction[] = [];
+
+      // Determine user category
+      const userCategory =
+        input.userCategory ||
+        input.merchant.mcc?.description ||
+        "Uncategorized";
+
+      // 6. Process each portion
+      for (let i = 0; i < input.portions.length; i++) {
+        const portion = input.portions[i];
+        const paymentMethod = paymentMethods.find(
+          (pm) => pm.id === portion.paymentMethodId
+        );
+
+        if (!paymentMethod) {
+          console.error(`Payment method not found: ${portion.paymentMethodId}`);
+          continue;
+        }
+
+        // Try to match with existing transaction (by index for simplicity)
+        const existingTx = existingTransactions[i];
+
+        if (existingTx) {
+          // Update existing transaction
+          updatedTxIds.add(existingTx.id);
+
+          const updateData = {
+            date: input.date,
+            merchant_id: merchantId,
+            amount: portion.amount,
+            currency: input.currency,
+            payment_method_id: portion.paymentMethodId,
+            payment_amount: portion.paymentAmount ?? portion.amount,
+            payment_currency: portion.paymentCurrency ?? paymentMethod.currency,
+            total_points: portion.rewardPoints,
+            base_points: portion.basePoints,
+            bonus_points: portion.bonusPoints,
+            is_contactless: input.isContactless,
+            mcc_code: mccCode,
+            user_category: userCategory,
+            category: userCategory,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { data: txData, error: txError } = await supabase
+            .from("transactions")
+            .update(updateData)
+            .eq("id", existingTx.id)
+            .select()
+            .single();
+
+          if (txError) {
+            console.error("Error updating split transaction portion:", txError);
+            continue;
+          }
+
+          console.log("Split transaction portion updated:", txData);
+
+          updatedTransactions.push({
+            id: txData.id,
+            date: txData.date,
+            merchant: {
+              ...input.merchant,
+              id: merchantId,
+            },
+            amount: parseFloat(txData.amount.toString()),
+            currency: txData.currency as Currency,
+            paymentMethod: paymentMethod,
+            paymentAmount: parseFloat(txData.payment_amount.toString()),
+            paymentCurrency: txData.payment_currency as Currency,
+            rewardPoints: txData.total_points || 0,
+            basePoints: txData.base_points || 0,
+            bonusPoints: txData.bonus_points || 0,
+            isContactless: txData.is_contactless || false,
+            mccCode: txData.mcc_code || undefined,
+            userCategory: txData.user_category || undefined,
+            category: txData.category || undefined,
+            splitGroupId: input.splitGroupId,
+          });
+        } else {
+          // Create new transaction for additional portion
+          const transactionInsertData = {
+            date: input.date,
+            merchant_id: merchantId,
+            amount: portion.amount,
+            currency: input.currency,
+            payment_method_id: portion.paymentMethodId,
+            payment_amount: portion.paymentAmount ?? portion.amount,
+            payment_currency: portion.paymentCurrency ?? paymentMethod.currency,
+            total_points: portion.rewardPoints,
+            base_points: portion.basePoints,
+            bonus_points: portion.bonusPoints,
+            is_contactless: input.isContactless,
+            mcc_code: mccCode,
+            user_category: userCategory,
+            category: userCategory,
+            split_group_id: input.splitGroupId,
+            user_id: session.user.id,
+          };
+
+          const { data: txData, error: txError } = await supabase
+            .from("transactions")
+            .insert([transactionInsertData])
+            .select()
+            .single();
+
+          if (txError) {
+            console.error(
+              "Error creating new split transaction portion:",
+              txError
+            );
+            continue;
+          }
+
+          console.log("New split transaction portion created:", txData);
+
+          updatedTransactions.push({
+            id: txData.id,
+            date: txData.date,
+            merchant: {
+              ...input.merchant,
+              id: merchantId,
+            },
+            amount: parseFloat(txData.amount.toString()),
+            currency: txData.currency as Currency,
+            paymentMethod: paymentMethod,
+            paymentAmount: parseFloat(txData.payment_amount.toString()),
+            paymentCurrency: txData.payment_currency as Currency,
+            rewardPoints: txData.total_points || 0,
+            basePoints: txData.base_points || 0,
+            bonusPoints: txData.bonus_points || 0,
+            isContactless: txData.is_contactless || false,
+            mccCode: txData.mcc_code || undefined,
+            userCategory: txData.user_category || undefined,
+            category: txData.category || undefined,
+            splitGroupId: input.splitGroupId,
+          });
+        }
+      }
+
+      // 7. Soft delete any transactions that are no longer part of the split
+      const txsToDelete = existingTransactions.filter(
+        (t) => !updatedTxIds.has(t.id)
+      );
+      if (txsToDelete.length > 0) {
+        const idsToDelete = txsToDelete.map((t) => t.id);
+        await supabase
+          .from("transactions")
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+          })
+          .in("id", idsToDelete);
+
+        console.log(`Soft deleted ${txsToDelete.length} removed portions`);
+      }
+
+      console.log(
+        `Split transaction update complete: ${updatedTransactions.length} portions`
+      );
+      return updatedTransactions;
+    } catch (error) {
+      console.error("Error in updateSplitTransaction:", error);
+      throw error;
+    }
   }
 
   async exportTransactionsToCSV(transactions: Transaction[]): Promise<string> {

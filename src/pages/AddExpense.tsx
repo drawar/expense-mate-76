@@ -24,6 +24,7 @@ const AddExpense = () => {
   const { paymentMethods, isLoading } = usePaymentMethods();
   const {
     handleSubmit,
+    handleSplitSubmit,
     isLoading: isSaving,
     saveError,
   } = useTransactionSubmit(useLocalStorage);
@@ -218,6 +219,7 @@ const AddExpense = () => {
                 key={scannedData?.receiptImageId || "manual"}
                 paymentMethods={paymentMethods}
                 onSubmit={handleSubmit}
+                onSplitSubmit={handleSplitSubmit}
                 defaultValues={defaultValues}
                 useLocalStorage={useLocalStorage}
                 isSaving={isSaving}

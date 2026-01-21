@@ -37,6 +37,7 @@ const CREDIT_CARD_ISSUERS = [
   "RBC",
   "Scotiabank",
   "TD",
+  "Trip.com",
   "UOB",
 ] as const;
 

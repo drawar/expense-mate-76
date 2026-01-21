@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns";
 import { Transaction, PaymentMethod } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import { PropertyResolver } from "@/core/catalog/PropertyResolver";
+import { storageService } from "@/core/storage";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -64,6 +65,7 @@ import {
   TrashIcon,
   EditIcon,
   CoinsIcon,
+  SplitIcon,
 } from "lucide-react";
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
 
@@ -87,6 +89,39 @@ const TransactionDetailsView = ({
   const [cardImageUrl, setCardImageUrl] = useState<string | undefined>(
     transaction.paymentMethod.imageUrl
   );
+  const [splitGroupTransactions, setSplitGroupTransactions] = useState<
+    Transaction[]
+  >([]);
+  const [splitGroupNotes, setSplitGroupNotes] = useState<string | null>(null);
+  const [isSplitSectionOpen, setIsSplitSectionOpen] = useState(true);
+
+  // Fetch other transactions in the same split group and split group details
+  useEffect(() => {
+    const fetchSplitGroupData = async () => {
+      if (!transaction.splitGroupId) {
+        setSplitGroupTransactions([]);
+        setSplitGroupNotes(null);
+        return;
+      }
+
+      try {
+        // Fetch transactions and split group details in parallel
+        const [transactions, splitGroup] = await Promise.all([
+          storageService.getTransactionsBySplitGroup(transaction.splitGroupId),
+          storageService.getSplitGroup(transaction.splitGroupId),
+        ]);
+
+        setSplitGroupTransactions(transactions);
+        setSplitGroupNotes(splitGroup?.notes || null);
+      } catch (error) {
+        console.error("Error fetching split group data:", error);
+        setSplitGroupTransactions([]);
+        setSplitGroupNotes(null);
+      }
+    };
+
+    fetchSplitGroupData();
+  }, [transaction.splitGroupId]);
 
   // Resolve card image from catalog or fallback
   useEffect(() => {
@@ -222,6 +257,93 @@ const TransactionDetailsView = ({
           </div>
         </div>
 
+        {/* Section 5.5: Split Payment Info */}
+        {transaction.splitGroupId && splitGroupTransactions.length > 1 && (
+          <Collapsible
+            open={isSplitSectionOpen}
+            onOpenChange={setIsSplitSectionOpen}
+          >
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-2 text-sm w-full">
+                <SplitIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Split Payment ({splitGroupTransactions.length} parts)
+                </span>
+                {isSplitSectionOpen ? (
+                  <ChevronUpIcon className="h-4 w-4 text-muted-foreground ml-auto" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-4 text-muted-foreground ml-auto" />
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <div className="space-y-3">
+                {/* Total amount */}
+                <div className="flex justify-between text-sm pb-2 border-b">
+                  <span className="text-muted-foreground">Total Purchase</span>
+                  <span className="font-medium">
+                    {CurrencyService.format(
+                      splitGroupTransactions.reduce(
+                        (sum, tx) => sum + tx.amount,
+                        0
+                      ),
+                      transaction.currency
+                    )}
+                  </span>
+                </div>
+
+                {/* Individual portions */}
+                {splitGroupTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className={`flex items-center justify-between p-2 rounded-lg ${
+                      tx.id === transaction.id
+                        ? "bg-accent/10 border border-accent/30"
+                        : "bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CreditCardIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <p
+                          className={`text-sm truncate ${tx.id === transaction.id ? "font-medium" : ""}`}
+                        >
+                          {tx.paymentMethod.name}
+                          {tx.id === transaction.id && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (this)
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {tx.rewardPoints > 0
+                            ? `+${tx.rewardPoints.toLocaleString()} ${tx.paymentMethod.pointsCurrency || "pts"}`
+                            : "No points"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {CurrencyService.format(tx.amount, tx.currency)}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Total points */}
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">Total Points</span>
+                  <span className="font-medium text-primary">
+                    +
+                    {splitGroupTransactions
+                      .reduce((sum, tx) => sum + tx.rewardPoints, 0)
+                      .toLocaleString()}{" "}
+                    pts
+                  </span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
         {/* Section 6: Rewards (linked to payment) */}
         {transaction.rewardPoints !== 0 && (
           <div>
@@ -304,7 +426,8 @@ const TransactionDetailsView = ({
                   </span>
                 </div>
               )}
-              {transaction.notes && (
+              {/* Show notes: split group notes for split transactions, otherwise transaction notes */}
+              {(transaction.notes || splitGroupNotes) && (
                 <div className="pt-2 border-t">
                   <span className="block mb-1">Notes</span>
                   <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:my-1 prose-table:text-sm">
@@ -312,7 +435,7 @@ const TransactionDetailsView = ({
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                     >
-                      {transaction.notes}
+                      {splitGroupNotes || transaction.notes || ""}
                     </ReactMarkdown>
                   </div>
                 </div>

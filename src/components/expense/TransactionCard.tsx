@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CurrencyService } from "@/core/currency";
 import { formatDate } from "@/utils/dates/formatters";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { SplitIcon } from "lucide-react";
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -37,9 +38,26 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
         <div className="space-y-2">
           {/* Header: merchant name and amount */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-medium text-foreground truncate flex-1">
-              {transaction.merchant.name}
-            </h3>
+            <div className="flex items-center gap-1.5 truncate flex-1">
+              <h3 className="font-medium text-foreground truncate">
+                {transaction.merchant.name}
+              </h3>
+              {transaction.splitGroupId && (
+                <span
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0"
+                  style={{
+                    backgroundColor:
+                      "var(--color-surface-secondary, hsl(var(--muted)))",
+                    color:
+                      "var(--color-text-secondary, hsl(var(--muted-foreground)))",
+                  }}
+                  title="Split payment"
+                >
+                  <SplitIcon className="h-3 w-3 mr-0.5" />
+                  Split
+                </span>
+              )}
+            </div>
             <p className="text-base font-medium text-foreground whitespace-nowrap">
               {CurrencyService.format(transaction.amount, transaction.currency)}
             </p>

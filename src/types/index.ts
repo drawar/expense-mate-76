@@ -32,9 +32,39 @@ export type Transaction = {
   // Legacy field (synced with userCategory for backwards compatibility)
   category?: string;
 
+  // Split payment support
+  splitGroupId?: string;
+
   is_deleted?: boolean;
   deleted_at?: string;
 };
+
+// =============================================================================
+// Split Payment Types
+// =============================================================================
+
+/**
+ * Metadata for a group of split payment transactions
+ */
+export interface SplitGroup {
+  id: string;
+  totalAmount: number;
+  totalCurrency: Currency;
+  merchantId?: string;
+  date: string;
+  notes?: string;
+  userId: string;
+  createdAt: string;
+}
+
+/**
+ * A single portion of a split payment
+ */
+export interface SplitPaymentPortion {
+  paymentMethodId: string;
+  amount: number; // Amount in transaction currency
+  paymentAmount?: number; // Amount in payment method currency (for FX)
+}
 
 export type PaymentMethodType =
   | "credit_card"
