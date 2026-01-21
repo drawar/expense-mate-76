@@ -45,6 +45,8 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
         prevIndexRef.current = newIndex;
       }
       setCurrent(newIndex);
+      // Update count on reInit (when items change)
+      setCount(api.scrollSnapList().length);
       if (paymentMethods[newIndex]) {
         onSelectMethod(paymentMethods[newIndex]);
       }
@@ -62,6 +64,13 @@ export const PaymentCarousel: React.FC<PaymentCarouselProps> = ({
       api.off("reInit", onSelect);
     };
   }, [api, paymentMethods, onSelectMethod]);
+
+  // Update count when paymentMethods array changes
+  useEffect(() => {
+    if (api) {
+      setCount(api.scrollSnapList().length);
+    }
+  }, [api, paymentMethods.length]);
 
   // When selectedMethod changes externally, update the carousel position
   useEffect(() => {
