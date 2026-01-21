@@ -1356,19 +1356,13 @@ export class StorageService {
         return sum + (t.paymentAmount || t.amount);
       }, 0);
 
-      // Balance as shown in DB (may or may not include current transaction)
-      const balanceFromDb = paymentMethod.totalLoaded - totalSpentFromDb;
-
-      // For deactivation: use the lower of the two possible balances
-      // This handles the race condition where DB might not have the transaction yet
-      const newBalance = Math.min(
-        balanceFromDb,
-        balanceFromDb - transaction.amount
-      );
+      // totalSpentFromDb already includes the current transaction (saved before this function is called)
+      // So balanceFromDb is already the NEW balance after the transaction
+      const newBalance = paymentMethod.totalLoaded - totalSpentFromDb;
       const previousBalance = newBalance + transaction.amount;
 
       console.log(
-        `[GiftCardBalance] balanceFromDb=${balanceFromDb}, txAmount=${transaction.amount}, newBalance=${newBalance}`
+        `[GiftCardBalance] totalSpent=${totalSpentFromDb}, txAmount=${transaction.amount}, previousBalance=${previousBalance}, newBalance=${newBalance}`
       );
 
       // Send notification
@@ -1380,12 +1374,10 @@ export class StorageService {
       );
 
       // Check if balance is depleted and deactivate
-      // Deactivate if either balance scenario results in 0 or less
-      const shouldDeactivate =
-        balanceFromDb <= 0 || balanceFromDb - transaction.amount <= 0;
+      const shouldDeactivate = newBalance <= 0;
       if (shouldDeactivate) {
         console.log(
-          `[GiftCardBalance] Deactivating ${paymentMethod.name} - balance depleted (balanceFromDb=${balanceFromDb})`
+          `[GiftCardBalance] Deactivating ${paymentMethod.name} - balance depleted (newBalance=${newBalance})`
         );
 
         const updatedMethods = paymentMethods.map((pm) =>
