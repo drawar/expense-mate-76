@@ -153,7 +153,13 @@ const PaymentMethods = () => {
       let effectiveCardCatalogId = method.cardCatalogId;
 
       // If no cardCatalogId, try to find a matching catalog entry and auto-link
-      if (!effectiveCardCatalogId && method.issuer && method.name) {
+      // Only attempt for credit cards - skip gift cards, debit cards, etc.
+      if (
+        !effectiveCardCatalogId &&
+        method.issuer &&
+        method.name &&
+        method.type === "credit_card"
+      ) {
         try {
           const matchingEntry = await cardCatalogService.findByIssuerAndName(
             method.issuer,
