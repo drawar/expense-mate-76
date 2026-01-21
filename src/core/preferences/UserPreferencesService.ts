@@ -47,14 +47,15 @@ class UserPreferencesServiceClass {
         .from("user_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          // No row found - user has no preferences yet
-          return null;
-        }
         throw error;
+      }
+
+      if (!data) {
+        // No row found - user has no preferences yet
+        return null;
       }
 
       return {
