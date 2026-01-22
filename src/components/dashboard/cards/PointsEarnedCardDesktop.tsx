@@ -4,8 +4,8 @@
  * Horizontal layout with hero total and compact program badges
  */
 
-import React from "react";
-import { CoinsIcon } from "lucide-react";
+import React, { useState } from "react";
+import { CoinsIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Transaction, Currency } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,11 +14,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 interface PointsEarnedCardDesktopProps {
   transactions: Transaction[];
   displayCurrency?: Currency;
   className?: string;
+  /** Enable collapsible behavior */
+  collapsible?: boolean;
+  /** Start collapsed */
+  defaultCollapsed?: boolean;
+  /** Max items to show when collapsed */
+  maxItems?: number;
 }
 
 interface PointsByCurrency {
@@ -129,7 +136,11 @@ const PointsEarnedCardDesktop: React.FC<PointsEarnedCardDesktopProps> = ({
   transactions,
   displayCurrency = "CAD",
   className = "",
+  collapsible = false,
+  defaultCollapsed = false,
+  maxItems = 5,
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   // Aggregate points and spending by currency
   const pointsByCurrency = React.useMemo(() => {
     const currencyMap = new Map<
@@ -201,6 +212,14 @@ const PointsEarnedCardDesktop: React.FC<PointsEarnedCardDesktopProps> = ({
   // Calculate max points for relative bar widths
   const maxPoints = Math.max(...pointsByCurrency.map((p) => p.points));
 
+  // Determine which items to display based on collapsed state
+  const displayItems =
+    collapsible && isCollapsed
+      ? pointsByCurrency.slice(0, maxItems)
+      : pointsByCurrency;
+  const hiddenCount = pointsByCurrency.length - maxItems;
+  const hasMore = collapsible && hiddenCount > 0;
+
   return (
     <Card className={`overflow-hidden ${className}`}>
       <CardHeader className="pb-2">
@@ -208,12 +227,33 @@ const PointsEarnedCardDesktop: React.FC<PointsEarnedCardDesktopProps> = ({
           <CardTitle className="text-xl flex items-center gap-2">
             <CoinsIcon className="h-5 w-5 text-primary" />
             Points Earned
+            {collapsible && (
+              <span className="text-sm font-normal text-muted-foreground">
+                ({pointsByCurrency.length} programs)
+              </span>
+            )}
           </CardTitle>
-          <div className="text-right">
-            <span className="text-2xl font-semibold text-primary">
-              +{totalPoints.toLocaleString()}
-            </span>
-            <span className="text-sm text-muted-foreground ml-1">total</span>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="text-2xl font-semibold text-primary">
+                +{totalPoints.toLocaleString()}
+              </span>
+              <span className="text-sm text-muted-foreground ml-1">total</span>
+            </div>
+            {collapsible && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="h-8 w-8 p-0"
+              >
+                {isCollapsed ? (
+                  <ChevronDownIcon className="h-4 w-4" />
+                ) : (
+                  <ChevronUpIcon className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -221,7 +261,7 @@ const PointsEarnedCardDesktop: React.FC<PointsEarnedCardDesktopProps> = ({
       <CardContent className="pt-2">
         {/* Horizontal bar chart style */}
         <div className="space-y-2">
-          {pointsByCurrency.map((item) => {
+          {displayItems.map((item) => {
             const barWidth = (item.points / maxPoints) * 100;
             const currencySymbol =
               item.paymentCurrency === "SGD"

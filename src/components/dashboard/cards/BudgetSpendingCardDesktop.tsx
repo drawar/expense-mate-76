@@ -8,7 +8,6 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TargetIcon, PencilIcon, CheckIcon, XIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -202,173 +201,237 @@ const BudgetSpendingCardDesktop: React.FC<BudgetSpendingCardDesktopProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Budget Section */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-pulse text-muted-foreground">
-              Loading budget...
-            </div>
-          </div>
-        ) : isEditing ? (
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter budget amount"
-                className="h-9 flex-1"
-                autoFocus
-              />
-              <Select
-                value={editPeriodType}
-                onValueChange={(value) =>
-                  setEditPeriodType(value as BudgetPeriodType)
-                }
-              >
-                <SelectTrigger className="w-28 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleSaveEdit} className="flex-1">
-                <CheckIcon className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ) : scaledBudget === 0 ? (
-          <div className="mb-4">
-            <div className="flex items-end justify-between mb-3">
+        {/* Two-column layout: Budget on left, Categories on right */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left: Budget Summary (5 cols) */}
+          <div className="col-span-5 border-r border-border/50 pr-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-pulse text-muted-foreground">
+                  Loading budget...
+                </div>
+              </div>
+            ) : isEditing ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Enter budget amount"
+                    className="h-9 flex-1"
+                    autoFocus
+                  />
+                  <Select
+                    value={editPeriodType}
+                    onValueChange={(value) =>
+                      setEditPeriodType(value as BudgetPeriodType)
+                    }
+                  >
+                    <SelectTrigger className="w-28 h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} className="flex-1">
+                    <CheckIcon className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : scaledBudget === 0 ? (
               <div>
-                <p className="text-3xl font-medium tracking-tight">
-                  {formatCurrency(netExpenses)}
-                </p>
-                <p className="text-sm text-muted-foreground">total spent</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">
-                  {daysRemaining} days left
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleStartEdit}
-              className="w-full"
-            >
-              Set Budget
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3 mb-4">
-            {/* Main progress display */}
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-3xl font-medium tracking-tight">
-                  {formatCurrency(netExpenses)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  of {formatCurrency(scaledBudget)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-medium ${getStatusColor()}`}>
-                  {getStatusText()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {daysRemaining} days left
-                </p>
-              </div>
-            </div>
-
-            {/* Progress bar with tooltip */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="relative cursor-default">
-                    <Progress
-                      value={Math.min(progress, 100)}
-                      className="h-2"
-                      indicatorClassName={getProgressColor()}
-                    />
-                    <div
-                      className="absolute top-0 h-2 w-0.5 bg-gray-400 dark:bg-gray-500"
-                      style={{ left: `${Math.min(expectedProgress, 100)}%` }}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {isOverBudget
-                      ? `${formatCurrency(Math.abs(remaining))} over budget`
-                      : `${formatCurrency(remaining)} remaining${daysRemaining > 0 ? ` (${formatCurrency(remaining / daysRemaining)}/day)` : ""}`}
+                <div className="mb-4">
+                  <p className="text-4xl font-semibold tracking-tight">
+                    {formatCurrency(netExpenses)}
                   </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
-
-        {/* Divider */}
-        <div className="border-t border-border/50 my-4" />
-
-        {/* Top Categories Section - Horizontal Layout */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Top Categories
-          </p>
-
-          {displayCategories.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">
-              No spending data
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {displayCategories.map((category: ParentCategorySpending) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryClick(category)}
-                  className="flex flex-col p-3 rounded-lg hover:bg-muted/50 active:bg-muted/70 transition-colors text-left border border-border/30"
+                  <p className="text-sm text-muted-foreground mt-1">
+                    total spent
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
+                  <span>{daysRemaining} days left this month</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartEdit}
+                  className="w-full"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <CategoryIcon
-                      iconName={category.icon as CategoryIconName}
-                      size={16}
-                    />
-                    <span className="text-sm font-medium truncate">
-                      {category.name}
+                  Set Budget
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-6">
+                {/* Circular progress gauge */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="relative w-28 h-28 flex-shrink-0 cursor-default">
+                        <svg
+                          className="w-full h-full -rotate-90"
+                          viewBox="0 0 100 100"
+                        >
+                          {/* Background circle */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            className="text-muted/30"
+                          />
+                          {/* Progress circle */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            className={getProgressColor().replace(
+                              "bg-",
+                              "text-"
+                            )}
+                            style={{
+                              strokeDasharray: `${Math.min(progress, 100) * 2.64} 264`,
+                              transition: "stroke-dasharray 0.5s ease",
+                            }}
+                            stroke="currentColor"
+                          />
+                          {/* Expected progress marker */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            strokeWidth="2"
+                            strokeDasharray="2 262"
+                            className="text-foreground/40"
+                            stroke="currentColor"
+                            style={{
+                              transform: `rotate(${expectedProgress * 3.6}deg)`,
+                              transformOrigin: "center",
+                            }}
+                          />
+                        </svg>
+                        {/* Center text */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl font-semibold">
+                            {Math.round(progress)}%
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            used
+                          </span>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {isOverBudget
+                          ? `${formatCurrency(Math.abs(remaining))} over budget`
+                          : `${formatCurrency(remaining)} remaining${daysRemaining > 0 ? ` (${formatCurrency(remaining / daysRemaining)}/day)` : ""}`}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Budget details */}
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <p className="text-3xl font-semibold tracking-tight">
+                      {formatCurrency(netExpenses)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      of {formatCurrency(scaledBudget)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                    <span className={`text-sm font-medium ${getStatusColor()}`}>
+                      {getStatusText()}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {daysRemaining} days left
                     </span>
                   </div>
-                  <p className="text-lg font-semibold">
-                    {formatCurrency(category.amount)}
-                  </p>
-                  <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(100, category.percentage)}%`,
-                        backgroundColor: category.color,
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {category.percentage.toFixed(0)}%
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Top Categories - Horizontal Bar Chart (7 cols) */}
+          <div className="col-span-7">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Top Categories
+            </p>
+
+            {displayCategories.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">
+                No spending data
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {displayCategories.map((category: ParentCategorySpending) => (
+                  <TooltipProvider key={category.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleCategoryClick(category)}
+                          className="w-full flex items-center gap-3 py-1.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+                        >
+                          {/* Icon + Name */}
+                          <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                            <CategoryIcon
+                              iconName={category.icon as CategoryIconName}
+                              size={16}
+                              className="text-muted-foreground group-hover:text-foreground transition-colors"
+                            />
+                            <span className="text-sm truncate">
+                              {category.name}
+                            </span>
+                          </div>
+
+                          {/* Bar */}
+                          <div className="flex-1 h-6 bg-muted/30 rounded overflow-hidden">
+                            <div
+                              className="h-full rounded transition-all duration-300"
+                              style={{
+                                width: `${category.percentage}%`,
+                                backgroundColor: category.color,
+                                opacity: 0.8,
+                              }}
+                            />
+                          </div>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="font-medium">
+                          {formatCurrency(category.amount)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {category.percentage.toFixed(0)}% of spending
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

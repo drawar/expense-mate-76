@@ -27,6 +27,8 @@ interface FinancialSummaryRowProps {
   hasIncomeSources: boolean;
   hasReimbursements: boolean;
   className?: string;
+  /** Compact vertical layout for sidebar placement */
+  compact?: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ const FinancialSummaryRow: React.FC<FinancialSummaryRowProps> = ({
   hasIncomeSources,
   hasReimbursements,
   className = "",
+  compact = false,
 }) => {
   const navigate = useNavigate();
   const { activeTab } = useDashboardContext();
@@ -61,10 +64,100 @@ const FinancialSummaryRow: React.FC<FinancialSummaryRowProps> = ({
     navigate(`/transactions?${params.toString()}`);
   };
 
-  // Calculate grid columns based on what's visible
+  // Calculate grid columns based on what's visible (for horizontal layout)
   const gridCols =
     hasIncomeSources && hasReimbursements ? 3 : hasIncomeSources ? 2 : 1;
 
+  // Compact vertical layout
+  if (compact) {
+    return (
+      <Card className={className}>
+        <CardContent className="py-4">
+          <div className="space-y-4">
+            {/* Income Section */}
+            {hasIncomeSources && (
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 p-2 rounded-full bg-[var(--color-success)]/10">
+                  <TrendingUpIcon className="h-4 w-4 text-[var(--color-success)]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Income
+                  </p>
+                  <p className="text-lg font-semibold text-[var(--color-success)] truncate">
+                    {formatCurrency(totalIncome)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Net Cash Flow Section */}
+            {hasIncomeSources && (
+              <div className="flex items-center gap-3 pt-3 border-t border-border/50">
+                <div
+                  className={`flex-shrink-0 p-2 rounded-full ${
+                    isPositive
+                      ? "bg-[var(--color-success)]/10"
+                      : "bg-destructive/10"
+                  }`}
+                >
+                  {isPositive ? (
+                    <TrendingUpIcon className="h-4 w-4 text-[var(--color-success)]" />
+                  ) : (
+                    <TrendingDownIcon className="h-4 w-4 text-destructive" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Net Flow
+                  </p>
+                  <p
+                    className={`text-lg font-semibold truncate ${
+                      isPositive
+                        ? "text-[var(--color-success)]"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {isPositive ? "+" : ""}
+                    {formatCurrency(netFlow)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Reimbursements Section */}
+            {hasReimbursements && (
+              <div
+                className={`flex items-center gap-3 ${
+                  hasIncomeSources ? "pt-3 border-t border-border/50" : ""
+                }`}
+              >
+                <div className="flex-shrink-0 p-2 rounded-full bg-primary/10">
+                  <ArrowDownLeftIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Reimbursed
+                  </p>
+                  <p className="text-lg font-semibold text-[var(--color-success)] truncate">
+                    {formatCurrency(totalReimbursed)}
+                  </p>
+                  <button
+                    onClick={handleReimbursedClick}
+                    className="text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+                  >
+                    {reimbursedCount} txn{reimbursedCount !== 1 ? "s" : ""}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Horizontal layout (default)
   return (
     <Card className={className}>
       <CardContent className="py-4">
