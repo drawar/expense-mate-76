@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PaymentMethod } from "@/types";
 import { storageService } from "@/core/storage";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Custom hook to fetch payment methods using React Query
@@ -11,9 +12,10 @@ export function usePaymentMethodsQuery(options?: {
   includeInactive?: boolean;
 }) {
   const includeInactive = options?.includeInactive ?? false;
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["paymentMethods", { includeInactive }],
+    queryKey: ["paymentMethods", user?.id, { includeInactive }],
     queryFn: async () => {
       try {
         return await storageService.getPaymentMethods({ includeInactive });
@@ -24,5 +26,6 @@ export function usePaymentMethodsQuery(options?: {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user, // Only fetch when user is authenticated
   });
 }
