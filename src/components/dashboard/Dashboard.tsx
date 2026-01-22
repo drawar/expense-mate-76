@@ -9,6 +9,7 @@ import {
   RecentTransactions,
   EmptyState,
   LoadingDashboard,
+  DashboardDesktopLayout,
 } from "./layout";
 import { FilterBar } from "./filters";
 import { PieChartIcon } from "lucide-react";
@@ -18,11 +19,15 @@ import PullToRefresh from "@/components/common/PullToRefresh";
 import { TimeframeTab } from "@/utils/dashboard";
 import { Currency } from "@/types";
 import { useBudget } from "@/hooks/useBudget";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 /**
  * Main dashboard component - the entry point for the dashboard UI
  */
 export function Dashboard() {
+  // Check for desktop viewport (1024px+)
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
   // Get all dashboard data from context
   const {
     transactions,
@@ -119,27 +124,35 @@ export function Dashboard() {
         <FilterBar filters={filterState} className="mb-6" />
 
         <ErrorBoundary>
-          {/* Summary Section */}
-          <SummarySection />
+          {isDesktop ? (
+            /* Desktop Layout - Bento grid optimized for wider screens */
+            <DashboardDesktopLayout />
+          ) : (
+            /* Mobile Layout - Original vertical stack */
+            <>
+              {/* Summary Section */}
+              <SummarySection />
 
-          {/* Insights Grid - 24px margin top for section spacing */}
-          <InsightsGrid
-            dashboardData={dashboardData}
-            paymentMethods={paymentMethods}
-            currency={displayCurrency}
-            scaledBudget={scaledBudget}
-            timeframe={activeTab}
-            previousPeriodTransactions={previousPeriodTransactions}
-            allTransactions={transactions}
-          />
+              {/* Insights Grid - 24px margin top for section spacing */}
+              <InsightsGrid
+                dashboardData={dashboardData}
+                paymentMethods={paymentMethods}
+                currency={displayCurrency}
+                scaledBudget={scaledBudget}
+                timeframe={activeTab}
+                previousPeriodTransactions={previousPeriodTransactions}
+                allTransactions={transactions}
+              />
 
-          {/* Recent Transactions */}
-          <RecentTransactions
-            transactions={recentTransactions}
-            allTransactions={transactions}
-            displayCurrency={displayCurrency}
-            paymentMethods={paymentMethods}
-          />
+              {/* Recent Transactions */}
+              <RecentTransactions
+                transactions={recentTransactions}
+                allTransactions={transactions}
+                displayCurrency={displayCurrency}
+                paymentMethods={paymentMethods}
+              />
+            </>
+          )}
         </ErrorBoundary>
 
         {/* Floating Action Button */}

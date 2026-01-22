@@ -107,10 +107,14 @@ const Card: React.FC<DashboardCardProps> = ({
     );
   }
 
+  // Check if flex layout is requested
+  const isFlexLayout =
+    className.includes("flex-col") || className.includes("flex ");
+
   // Normal state
   return (
     <UICard className={className}>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle className="text-xl flex items-center gap-2 min-w-0">
             {icon}
@@ -119,7 +123,9 @@ const Card: React.FC<DashboardCardProps> = ({
           <div className="flex-shrink-0">{actions}</div>
         </div>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className={isFlexLayout ? "flex-1 flex flex-col" : ""}>
+        {children}
+      </CardContent>
     </UICard>
   );
 };
