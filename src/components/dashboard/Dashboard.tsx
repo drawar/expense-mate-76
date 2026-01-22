@@ -115,9 +115,14 @@ export function Dashboard() {
     );
   }
 
+  // Container classes: full width on desktop, constrained on mobile
+  const containerClass = isDesktop
+    ? "w-full px-8 pb-16"
+    : "container max-w-7xl mx-auto pb-8 px-4";
+
   return (
     <PullToRefresh onRefresh={refreshData} className="min-h-screen">
-      <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
+      <div className={containerClass}>
         <DashboardHeader />
 
         {/* Global Filter Bar */}
