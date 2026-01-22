@@ -569,7 +569,7 @@ export class StorageService {
             reward_currencies(display_name, logo_url, bg_color, logo_scale)
           ),
           merchants:merchant_id(
-            id, name, address, mcc, mcc_code, is_online, coordinates, is_deleted
+            id, name, address, mcc, mcc_code, is_online, coordinates, is_deleted, display_location, google_maps_url
           )
         `
         )
@@ -602,6 +602,8 @@ export class StorageService {
           id: row.merchants?.id || "",
           name: row.merchants?.name || "Unknown Merchant",
           address: row.merchants?.address || undefined,
+          display_location: row.merchants?.display_location || undefined,
+          google_maps_url: row.merchants?.google_maps_url || undefined,
           mcc: row.merchants?.mcc
             ? this.parseMCC(row.merchants.mcc)
             : undefined,
