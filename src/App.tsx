@@ -68,26 +68,32 @@ function App() {
         });
       }
 
-      // Detect user locale (must complete before app renders)
-      try {
-        const locale = await LocaleService.detectLocale();
-        console.log(`Locale detected: ${locale.country} → ${locale.currency}`);
-      } catch (error) {
-        console.warn("Failed to detect locale:", error);
-      }
-
-      // Load saved currency preference from database (if user is logged in)
-      try {
-        const savedCurrency = await UserPreferencesService.getDefaultCurrency();
-        if (savedCurrency) {
-          LocaleService.setDefaultCurrency(savedCurrency);
-          console.log(`Loaded saved currency preference: ${savedCurrency}`);
-        }
-      } catch (error) {
-        console.warn("Failed to load currency preference:", error);
-      }
-
+      // Mark as initialized immediately - locale detection happens in background
       setIsInitialized(true);
+
+      // Detect user locale in background (non-blocking)
+      // LocaleService already loads from localStorage cache synchronously in constructor
+      LocaleService.detectLocale()
+        .then((locale) => {
+          console.log(
+            `Locale detected: ${locale.country} → ${locale.currency}`
+          );
+        })
+        .catch((error) => {
+          console.warn("Failed to detect locale:", error);
+        });
+
+      // Load saved currency preference in background (non-blocking)
+      UserPreferencesService.getDefaultCurrency()
+        .then((savedCurrency) => {
+          if (savedCurrency) {
+            LocaleService.setDefaultCurrency(savedCurrency);
+            console.log(`Loaded saved currency preference: ${savedCurrency}`);
+          }
+        })
+        .catch((error) => {
+          console.warn("Failed to load currency preference:", error);
+        });
     };
 
     initialize();
