@@ -127,6 +127,10 @@ export interface Merchant {
   id: string;
   name: string;
   address?: string;
+  /** Short location name for UI display (e.g., "Metrotown, Burnaby", "Latin Quarter, Paris") */
+  display_location?: string;
+  /** Google Maps URL for the merchant location */
+  google_maps_url?: string;
   mcc?: MerchantCategoryCode;
   isOnline: boolean;
   coordinates?: {
@@ -182,6 +186,8 @@ export interface DbMerchant {
   id: string;
   name: string;
   address: string | null;
+  display_location: string | null;
+  google_maps_url: string | null;
   mcc: { code: string; description: string } | null; // Legacy JSONB column
   mcc_code: string | null; // New normalized column (references mcc table)
   is_online: boolean | null;

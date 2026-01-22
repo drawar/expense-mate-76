@@ -417,6 +417,8 @@ export class StorageService {
         id: m.id,
         name: m.name,
         address: m.address || "",
+        display_location: m.display_location || undefined,
+        google_maps_url: m.google_maps_url || undefined,
         mcc: m.mcc ? this.parseMCC(m.mcc) : undefined,
         isOnline: m.is_online || false,
         coordinates: m.coordinates
