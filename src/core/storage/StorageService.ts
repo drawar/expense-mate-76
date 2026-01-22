@@ -86,14 +86,20 @@ export class StorageService {
     try {
       console.log(
         "StorageService.getPaymentMethods: Querying Supabase for payment methods...",
-        { includeInactive }
+        { includeInactive, userId: session.user.id }
       );
       // Join with card_catalog for default_image_url and reward_currencies for display_name, logo_url, bg_color, and logo_scale
       let query = supabase
         .from("payment_methods")
         .select(
           "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url, bg_color, logo_scale)"
-        );
+        )
+        .eq("user_id", session.user.id); // Filter by current user
+
+      console.log(
+        "StorageService.getPaymentMethods: Filtering by user_id =",
+        session.user.id
+      );
 
       // Only filter by active status if not including inactive
       if (!includeInactive) {
@@ -312,17 +318,39 @@ export class StorageService {
 
   async saveTransactions(transactions: Transaction[]): Promise<void> {
     try {
+      // Build a map of merchant name -> ID by looking up existing merchants first
+      const merchantIdMap = new Map<string, string>();
+      for (const t of transactions) {
+        const normalizedName = t.merchant.name.toLowerCase().trim();
+        if (!merchantIdMap.has(normalizedName)) {
+          if (t.merchant.id && t.merchant.id.trim() !== "") {
+            merchantIdMap.set(normalizedName, t.merchant.id);
+          } else {
+            const existingId = await this.findMerchantByName(t.merchant.name);
+            merchantIdMap.set(
+              normalizedName,
+              existingId || crypto.randomUUID()
+            );
+          }
+        }
+      }
+
       // First, ensure all merchants exist
-      const merchantData = transactions.map((t) => ({
-        id: t.merchant.id || crypto.randomUUID(),
-        name: t.merchant.name,
-        address: t.merchant.address,
-        mcc: t.merchant.mcc ? JSON.parse(JSON.stringify(t.merchant.mcc)) : null,
-        is_online: t.merchant.isOnline,
-        coordinates: t.merchant.coordinates
-          ? JSON.parse(JSON.stringify(t.merchant.coordinates))
-          : null,
-      }));
+      const merchantData = transactions.map((t) => {
+        const normalizedName = t.merchant.name.toLowerCase().trim();
+        return {
+          id: merchantIdMap.get(normalizedName) || crypto.randomUUID(),
+          name: t.merchant.name,
+          address: t.merchant.address,
+          mcc: t.merchant.mcc
+            ? JSON.parse(JSON.stringify(t.merchant.mcc))
+            : null,
+          is_online: t.merchant.isOnline,
+          coordinates: t.merchant.coordinates
+            ? JSON.parse(JSON.stringify(t.merchant.coordinates))
+            : null,
+        };
+      });
 
       if (merchantData.length > 0) {
         await supabase
@@ -331,25 +359,28 @@ export class StorageService {
       }
 
       // Transform Transaction objects to database format
-      const dbTransactions = transactions.map((transaction) => ({
-        id: transaction.id,
-        date: transaction.date,
-        merchant_id: transaction.merchant.id || crypto.randomUUID(),
-        amount: transaction.amount,
-        currency: transaction.currency,
-        payment_method_id: transaction.paymentMethod.id,
-        payment_amount: transaction.paymentAmount,
-        payment_currency: transaction.paymentCurrency,
-        total_points: transaction.rewardPoints,
-        base_points: transaction.basePoints,
-        bonus_points: transaction.bonusPoints,
-        promo_bonus_points: transaction.promoBonusPoints || 0,
-        is_contactless: transaction.isContactless,
-        notes: transaction.notes,
-        reimbursement_amount: transaction.reimbursementAmount,
-        category: transaction.category,
-        user_id: this.DEFAULT_USER_ID,
-      }));
+      const dbTransactions = transactions.map((transaction) => {
+        const normalizedName = transaction.merchant.name.toLowerCase().trim();
+        return {
+          id: transaction.id,
+          date: transaction.date,
+          merchant_id: merchantIdMap.get(normalizedName) || crypto.randomUUID(),
+          amount: transaction.amount,
+          currency: transaction.currency,
+          payment_method_id: transaction.paymentMethod.id,
+          payment_amount: transaction.paymentAmount,
+          payment_currency: transaction.paymentCurrency,
+          total_points: transaction.rewardPoints,
+          base_points: transaction.basePoints,
+          bonus_points: transaction.bonusPoints,
+          promo_bonus_points: transaction.promoBonusPoints || 0,
+          is_contactless: transaction.isContactless,
+          notes: transaction.notes,
+          reimbursement_amount: transaction.reimbursementAmount,
+          category: transaction.category,
+          user_id: this.DEFAULT_USER_ID,
+        };
+      });
 
       // Clear existing transactions and insert new ones
       await supabase
@@ -395,6 +426,33 @@ export class StorageService {
     } catch (error) {
       console.error("Error fetching merchants:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Find an existing merchant by name (case-insensitive).
+   * Returns the merchant ID if found, undefined otherwise.
+   */
+  async findMerchantByName(name: string): Promise<string | undefined> {
+    if (!name || name.trim() === "") return undefined;
+
+    try {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select("id, name")
+        .ilike("name", name.trim())
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error finding merchant by name:", error);
+        return undefined;
+      }
+
+      return data?.id;
+    } catch (error) {
+      console.error("Error finding merchant by name:", error);
+      return undefined;
     }
   }
 
@@ -682,9 +740,21 @@ export class StorageService {
     );
 
     try {
-      // Generate a proper merchant ID if it's empty
-      const merchantId = transactionData.merchant.id || crypto.randomUUID();
-      console.log("Generated merchant ID:", merchantId);
+      // Look up existing merchant by name first to avoid duplicates
+      let merchantId = transactionData.merchant.id;
+      if (!merchantId || merchantId.trim() === "") {
+        const existingMerchantId = await this.findMerchantByName(
+          transactionData.merchant.name
+        );
+        merchantId = existingMerchantId || crypto.randomUUID();
+        console.log(
+          existingMerchantId
+            ? `Found existing merchant with ID: ${merchantId}`
+            : `Creating new merchant with ID: ${merchantId}`
+        );
+      } else {
+        console.log("Using provided merchant ID:", merchantId);
+      }
 
       // Use the reward points from transactionData (which may be user-edited)
       // Don't recalculate as that would override manual edits
@@ -914,10 +984,15 @@ export class StorageService {
 
       // If merchant data is being updated, upsert the merchant first
       if (updates.merchant) {
-        merchantId =
-          updates.merchant.id && updates.merchant.id.trim() !== ""
-            ? updates.merchant.id
-            : crypto.randomUUID();
+        // Look up existing merchant by name to avoid duplicates
+        if (updates.merchant.id && updates.merchant.id.trim() !== "") {
+          merchantId = updates.merchant.id;
+        } else {
+          const existingMerchantId = await this.findMerchantByName(
+            updates.merchant.name
+          );
+          merchantId = existingMerchantId || crypto.randomUUID();
+        }
         mccCode = updates.merchant.mcc?.code || null;
         const merchantData = {
           id: merchantId,
@@ -1127,8 +1202,14 @@ export class StorageService {
     }
 
     try {
-      // 1. Generate merchant ID if needed
-      const merchantId = input.merchant.id || crypto.randomUUID();
+      // 1. Look up existing merchant by name to avoid duplicates
+      let merchantId = input.merchant.id;
+      if (!merchantId || merchantId.trim() === "") {
+        const existingMerchantId = await this.findMerchantByName(
+          input.merchant.name
+        );
+        merchantId = existingMerchantId || crypto.randomUUID();
+      }
 
       // 2. Upsert the merchant
       const mccCode = input.merchant.mcc?.code || null;
@@ -1397,8 +1478,14 @@ export class StorageService {
     }
 
     try {
-      // 1. Update the merchant
-      const merchantId = input.merchant.id || crypto.randomUUID();
+      // 1. Update the merchant - look up existing by name to avoid duplicates
+      let merchantId = input.merchant.id;
+      if (!merchantId || merchantId.trim() === "") {
+        const existingMerchantId = await this.findMerchantByName(
+          input.merchant.name
+        );
+        merchantId = existingMerchantId || crypto.randomUUID();
+      }
       const mccCode = input.merchant.mcc?.code || null;
       const merchantData = {
         id: merchantId,
