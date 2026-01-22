@@ -97,6 +97,7 @@ function getLocationDisplay(merchant: Merchant): string | null {
   return null;
 }
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
+import { getEffectiveCategory } from "@/utils/categoryMapping";
 
 interface TransactionDetailsViewProps {
   transaction: Transaction;
@@ -247,7 +248,7 @@ const TransactionDetailsView = ({
               </>
             )}
             <span>·</span>
-            <span>{transaction.category || "Uncategorized"}</span>
+            <span>{getEffectiveCategory(transaction)}</span>
             {onCategoryChange && (
               <Button
                 variant="ghost"
