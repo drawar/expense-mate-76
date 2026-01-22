@@ -200,8 +200,15 @@ const TransactionDetailsView = ({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0 overscroll-contain">
         {/* Section 3: Amount (Hero) */}
         <div className="py-2 text-center">
+          {/* Show net amount if there's reimbursement, otherwise show full amount */}
           <p className="text-4xl font-semibold">
-            {CurrencyService.format(transaction.amount, transaction.currency)}
+            {CurrencyService.format(
+              transaction.reimbursementAmount &&
+                transaction.reimbursementAmount > 0
+                ? transaction.amount - transaction.reimbursementAmount
+                : transaction.amount,
+              transaction.currency
+            )}
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
             <span>{format(parseISO(transaction.date), "yyyy-MM-dd")}</span>
@@ -233,28 +240,41 @@ const TransactionDetailsView = ({
               )}
             </p>
           )}
-          {/* Reimbursement and Net Spend */}
+          {/* Reimbursement Breakdown Card */}
           {transaction.reimbursementAmount != null &&
             transaction.reimbursementAmount > 0 && (
-              <div className="mt-2 space-y-0.5">
-                <p className="text-sm text-green-600">
-                  Reimbursement:{" "}
-                  <span className="font-semibold">
+              <div className="mt-4 mx-auto max-w-xs rounded-lg bg-muted/50 p-4 text-left">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">You paid</span>
+                  <span>
                     {CurrencyService.format(
-                      -transaction.reimbursementAmount,
+                      transaction.amount,
                       transaction.currency
                     )}
                   </span>
-                </p>
-                <p className="text-sm">
-                  Net spend:{" "}
-                  <span className="font-semibold">
+                </div>
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="text-muted-foreground">
+                    Reimbursed by friend
+                  </span>
+                  <span className="text-green-600">
+                    −
+                    {CurrencyService.format(
+                      transaction.reimbursementAmount,
+                      transaction.currency
+                    )}
+                  </span>
+                </div>
+                <div className="border-t border-border my-2" />
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Final cost</span>
+                  <span>
                     {CurrencyService.format(
                       transaction.amount - transaction.reimbursementAmount,
                       transaction.currency
                     )}
                   </span>
-                </p>
+                </div>
               </div>
             )}
         </div>
@@ -529,27 +549,27 @@ const TransactionDetailsView = ({
 
       {/* Section 8: Actions (Footer) */}
       <div
-        className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
+        className="px-4 py-4 border-t flex flex-col gap-2 flex-shrink-0"
         style={{ borderColor: "var(--color-border)" }}
       >
         {onEdit && (
           <Button
             variant="outline"
-            className="flex-1"
+            className="w-full"
             onClick={onEdit}
             disabled={isLoading}
           >
-            Edit
+            Edit transaction
           </Button>
         )}
         {onDelete && (
           <Button
-            variant="outline"
-            className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
+            variant="ghost"
+            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={onDelete}
             disabled={isLoading}
           >
-            Delete
+            Delete transaction
           </Button>
         )}
       </div>
