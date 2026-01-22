@@ -243,7 +243,7 @@ const TransactionDetailsView = ({
           {/* Reimbursement Breakdown Card */}
           {transaction.reimbursementAmount != null &&
             transaction.reimbursementAmount > 0 && (
-              <div className="mt-4 mx-auto max-w-xs rounded-lg bg-muted/50 p-4 text-left">
+              <div className="mt-4 rounded-lg bg-muted/50 p-4 text-left">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">You paid</span>
                   <span>
@@ -254,9 +254,7 @@ const TransactionDetailsView = ({
                   </span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">
-                    Reimbursed by friend
-                  </span>
+                  <span className="text-muted-foreground">You got back</span>
                   <span className="text-green-600">
                     −
                     {CurrencyService.format(
