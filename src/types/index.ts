@@ -35,6 +35,9 @@ export type Transaction = {
   // Split payment support
   splitGroupId?: string;
 
+  // Tags for grouping transactions (comma-separated slugs)
+  tags?: string;
+
   is_deleted?: boolean;
   deleted_at?: string;
 };
@@ -64,6 +67,21 @@ export interface SplitPaymentPortion {
   paymentMethodId: string;
   amount: number; // Amount in transaction currency
   paymentAmount?: number; // Amount in payment method currency (for FX)
+}
+
+// =============================================================================
+// Tag Types
+// =============================================================================
+
+/**
+ * User-defined tag for grouping transactions
+ */
+export interface Tag {
+  id: string;
+  slug: string; // URL-friendly identifier (e.g., "paris-2025")
+  displayName: string; // Human-readable name (e.g., "Paris Trip 2025")
+  userId: string;
+  createdAt?: string;
 }
 
 export type PaymentMethodType =

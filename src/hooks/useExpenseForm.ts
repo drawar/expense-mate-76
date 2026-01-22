@@ -107,6 +107,7 @@ export const useExpenseForm = ({
       basePoints: defaultValues?.basePoints || "",
       bonusPoints: defaultValues?.bonusPoints || "",
       reimbursementAmount: defaultValues?.reimbursementAmount || "",
+      tags: defaultValues?.tags || "",
     },
   });
 

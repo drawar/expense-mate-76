@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Transaction, PaymentMethod } from "@/types";
+import { Transaction, PaymentMethod, Tag } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import {
   DownloadIcon,
@@ -27,6 +27,7 @@ import {
   Trash2,
   Globe,
   Wifi,
+  TagIcon,
 } from "lucide-react";
 import { exportTransactionsToCSV } from "@/core/storage";
 import { withResolvedStringPromise } from "@/utils/files/fileUtils";
@@ -71,6 +72,7 @@ function formatDateGroupHeader(date: Date): string {
 interface TransactionTableProps {
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
+  tags: Tag[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
@@ -80,11 +82,17 @@ interface TransactionTableProps {
 const TransactionTable = ({
   transactions,
   paymentMethods,
+  tags,
   onEdit,
   onDelete,
   onView,
   onCategoryEdit,
 }: TransactionTableProps) => {
+  // Helper to get tag display name from slug
+  const getTagDisplayName = (slug: string): string => {
+    const tag = tags.find((t) => t.slug === slug);
+    return tag?.displayName || slug;
+  };
   // Memoize CSV export to prevent recalculation on every render
   const handleExportCSV = useMemo(
     () => async () => {
@@ -303,13 +311,28 @@ const TransactionTable = ({
                                   Review
                                 </Badge>
                               )}
-                              {transaction.isRecategorized && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-blue-600 border-blue-300 bg-blue-50 text-[10px] px-1 py-0 h-4"
-                                >
-                                  Edited
-                                </Badge>
+                              {/* Tags */}
+                              {transaction.tags && (
+                                <>
+                                  {transaction.tags
+                                    .split(",")
+                                    .slice(0, 2)
+                                    .map((slug) => (
+                                      <Badge
+                                        key={slug}
+                                        variant="outline"
+                                        className="text-violet-600 border-violet-300 bg-violet-50 text-[10px] px-1 py-0 h-4"
+                                      >
+                                        <TagIcon className="h-2.5 w-2.5 mr-0.5" />
+                                        {getTagDisplayName(slug.trim())}
+                                      </Badge>
+                                    ))}
+                                  {transaction.tags.split(",").length > 2 && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      +{transaction.tags.split(",").length - 2}
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

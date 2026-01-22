@@ -81,7 +81,10 @@ import {
   CoinsIcon,
   SplitIcon,
   MapPinIcon,
+  TagIcon,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tag } from "@/types";
 
 /**
  * Get the display location for a merchant
@@ -120,6 +123,7 @@ const TransactionDetailsView = ({
   >([]);
   const [splitGroupNotes, setSplitGroupNotes] = useState<string | null>(null);
   const [isSplitSectionOpen, setIsSplitSectionOpen] = useState(true);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
 
   // Fetch other transactions in the same split group and split group details
   useEffect(() => {
@@ -148,6 +152,19 @@ const TransactionDetailsView = ({
 
     fetchSplitGroupData();
   }, [transaction.splitGroupId]);
+
+  // Load all tags for display name lookup
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tags = await storageService.getTags();
+        setAllTags(tags);
+      } catch (error) {
+        console.error("Error loading tags:", error);
+      }
+    };
+    loadTags();
+  }, []);
 
   // Resolve card image from catalog or fallback
   useEffect(() => {
@@ -179,6 +196,17 @@ const TransactionDetailsView = ({
   ) => {
     onCategoryChange?.(category);
   };
+
+  // Get display name for a tag slug
+  const getTagDisplayName = (slug: string): string => {
+    const tag = allTags.find((t) => t.slug === slug);
+    return tag?.displayName || slug;
+  };
+
+  // Parse transaction tags
+  const transactionTags = transaction.tags
+    ? transaction.tags.split(",").filter(Boolean)
+    : [];
 
   // Determine if there's additional details to show
   const hasExchangeRate =
@@ -536,6 +564,24 @@ const TransactionDetailsView = ({
                     >
                       {splitGroupNotes || transaction.notes || ""}
                     </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+              {/* Tags */}
+              {transactionTags.length > 0 && (
+                <div className="pt-2 border-t">
+                  <span className="block mb-2">Tags</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {transactionTags.map((slug) => (
+                      <Badge
+                        key={slug}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        <TagIcon className="h-3 w-3" />
+                        <span>{getTagDisplayName(slug)}</span>
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               )}

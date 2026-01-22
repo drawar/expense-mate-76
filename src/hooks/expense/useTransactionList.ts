@@ -18,6 +18,7 @@ export interface FilterOptions {
   merchants: string[];
   categories: string[];
   currencies: string[];
+  tags: string[]; // Tag slugs for filtering
   hasReimbursement?: boolean;
   // Add these to match what TransactionFilters is expecting
   merchantName?: string;
@@ -48,6 +49,7 @@ export function useTransactionList() {
     merchants: [],
     categories: [],
     currencies: [],
+    tags: [],
   });
 
   // Load transactions
@@ -117,6 +119,7 @@ export function useTransactionList() {
       activeFiltersList.push("categories");
     if (filterOptions.currencies.length > 0)
       activeFiltersList.push("currencies");
+    if (filterOptions.tags.length > 0) activeFiltersList.push("tags");
     if (filterOptions.dateRange.from || filterOptions.dateRange.to)
       activeFiltersList.push("dateRange");
     if (filterOptions.hasReimbursement)
@@ -197,6 +200,18 @@ export function useTransactionList() {
       );
     }
 
+    // Apply tags filter
+    if (filterOptions.tags.length > 0) {
+      filtered = filtered.filter((tx) => {
+        if (!tx.tags) return false;
+        const txTagSlugs = tx.tags.split(",").map((s) => s.trim());
+        // Transaction must have at least one of the selected tags
+        return filterOptions.tags.some((tagSlug) =>
+          txTagSlugs.includes(tagSlug)
+        );
+      });
+    }
+
     // Apply sorting
     return [...filtered].sort((a, b) => {
       switch (sortOption) {
@@ -233,6 +248,7 @@ export function useTransactionList() {
       merchants: [],
       categories: [],
       currencies: [],
+      tags: [],
       hasReimbursement: undefined,
     });
     setSearchQuery("");

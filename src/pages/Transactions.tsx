@@ -13,7 +13,7 @@ import { CategoryReviewQueue } from "@/components/expense/transaction/CategoryRe
 import { categorizationService } from "@/core/categorization";
 import { storageService } from "@/core/storage/StorageService";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
-import { Transaction } from "@/types";
+import { Transaction, Tag } from "@/types";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
@@ -102,6 +102,9 @@ const Transactions = () => {
   const [showReviewQueue, setShowReviewQueue] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
 
+  // Tags state
+  const [tags, setTags] = useState<Tag[]>([]);
+
   // Check for transactions needing review on load
   useEffect(() => {
     const checkReviewCount = async () => {
@@ -115,6 +118,19 @@ const Transactions = () => {
     };
     checkReviewCount();
   }, [transactions]);
+
+  // Load tags on mount
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const loadedTags = await storageService.getTags();
+        setTags(loadedTags);
+      } catch (error) {
+        console.error("Error loading tags:", error);
+      }
+    };
+    loadTags();
+  }, []);
 
   // Handle opening category picker
   const handleCategoryEdit = (transaction: Transaction) => {
@@ -239,6 +255,7 @@ const Transactions = () => {
           onFiltersChange={handleFilterChange}
           paymentMethods={paymentMethods}
           categories={categories}
+          tags={tags}
           onClearFilters={resetFilters}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -247,6 +264,7 @@ const Transactions = () => {
         <TransactionContent
           transactions={filteredTransactions}
           paymentMethods={paymentMethods}
+          tags={tags}
           onView={handleViewTransaction}
           onEdit={handleEditTransaction}
           onDelete={(transaction) => handleDeleteTransaction(transaction.id)}

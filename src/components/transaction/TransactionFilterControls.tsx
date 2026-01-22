@@ -19,6 +19,7 @@ import {
   XIcon,
   SearchIcon,
   Check,
+  TagIcon,
 } from "lucide-react";
 import {
   Popover,
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/popover";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { PaymentMethod } from "@/types";
+import { PaymentMethod, Tag } from "@/types";
 import { FilterOptions } from "@/hooks/expense/useTransactionList";
 import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
 
@@ -39,6 +40,7 @@ interface TransactionFilterControlsProps {
   ) => void;
   paymentMethods: PaymentMethod[];
   categories: string[];
+  tags: Tag[];
   onClearFilters: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -51,6 +53,7 @@ export const TransactionFilterControls: React.FC<
   onFiltersChange,
   paymentMethods,
   categories,
+  tags,
   onClearFilters,
   searchQuery = "",
   onSearchChange,
@@ -58,6 +61,10 @@ export const TransactionFilterControls: React.FC<
   // Category search state
   const [categorySearchOpen, setCategorySearchOpen] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
+
+  // Tags search state
+  const [tagsSearchOpen, setTagsSearchOpen] = useState(false);
+  const [tagsSearchQuery, setTagsSearchQuery] = useState("");
 
   // Payment method search state
   const [paymentMethodSearchOpen, setPaymentMethodSearchOpen] = useState(false);
@@ -86,6 +93,20 @@ export const TransactionFilterControls: React.FC<
     );
   }, [paymentMethods, paymentMethodSearchQuery]);
 
+  // Filter tags based on search query
+  const filteredTags = useMemo(() => {
+    const sorted = [...tags].sort((a, b) =>
+      a.displayName.localeCompare(b.displayName)
+    );
+    if (!tagsSearchQuery.trim()) return sorted;
+    const query = tagsSearchQuery.toLowerCase();
+    return sorted.filter(
+      (tag) =>
+        tag.displayName.toLowerCase().includes(query) ||
+        tag.slug.toLowerCase().includes(query)
+    );
+  }, [tags, tagsSearchQuery]);
+
   // Ensure filters is never null/undefined
   const safeFilters = filters || {
     paymentMethods: [],
@@ -93,6 +114,7 @@ export const TransactionFilterControls: React.FC<
     merchants: [],
     categories: [],
     currencies: [],
+    tags: [],
   };
 
   // Safe check for active filters
@@ -139,6 +161,15 @@ export const TransactionFilterControls: React.FC<
       ? current.filter((c) => c !== category)
       : [...current, category];
     updateFilter("categories", newSelection);
+  };
+
+  // Toggle tag selection
+  const toggleTag = (tagSlug: string) => {
+    const current = safeFilters.tags || [];
+    const newSelection = current.includes(tagSlug)
+      ? current.filter((t) => t !== tagSlug)
+      : [...current, tagSlug];
+    updateFilter("tags", newSelection);
   };
 
   return (
@@ -358,6 +389,94 @@ export const TransactionFilterControls: React.FC<
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Tags Filter */}
+            {tags.length > 0 && (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Tags</label>
+                <Popover open={tagsSearchOpen} onOpenChange={setTagsSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tagsSearchOpen}
+                      className="w-full justify-between h-10 px-3 text-base md:text-sm font-normal"
+                    >
+                      <span
+                        className={`truncate flex items-center gap-1.5 ${
+                          !safeFilters.tags?.length
+                            ? "text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        <TagIcon className="h-4 w-4 shrink-0" />
+                        {safeFilters.tags?.length === 1
+                          ? tags.find((t) => t.slug === safeFilters.tags[0])
+                              ?.displayName || "All tags"
+                          : safeFilters.tags?.length > 1
+                            ? `${safeFilters.tags.length} tags`
+                            : "All tags"}
+                      </span>
+                      <SearchIcon
+                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                        style={{ strokeWidth: 2.5 }}
+                      />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search tags..."
+                        value={tagsSearchQuery}
+                        onValueChange={setTagsSearchQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No tags found.</CommandEmpty>
+                        <CommandGroup>
+                          {safeFilters.tags?.length > 0 && (
+                            <CommandItem
+                              value="__clear_tags__"
+                              onSelect={() => {
+                                updateFilter("tags", []);
+                              }}
+                              className="cursor-pointer text-muted-foreground"
+                            >
+                              <XIcon className="mr-2 h-4 w-4" />
+                              Clear selection
+                            </CommandItem>
+                          )}
+                          {filteredTags.map((tag) => {
+                            const isSelected = safeFilters.tags?.includes(
+                              tag.slug
+                            );
+                            return (
+                              <CommandItem
+                                key={tag.id}
+                                value={tag.slug}
+                                onSelect={() => toggleTag(tag.slug)}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div
+                                    className={`flex h-4 w-4 shrink-0 items-center justify-center border ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/50"}`}
+                                  >
+                                    {isSelected && (
+                                      <Check className="h-3 w-3 text-primary-foreground" />
+                                    )}
+                                  </div>
+                                  <TagIcon className="h-4 w-4 opacity-70" />
+                                  <span>{tag.displayName}</span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
           </div>
 
           {/* Date Range */}

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import "flag-icons/css/flag-icons.min.css";
-import { Transaction, PaymentMethod, Currency } from "@/types";
+import { Transaction, PaymentMethod, Currency, Tag } from "@/types";
 import TransactionTable from "@/components/expense/TransactionTable";
 import TransactionGroupView from "./TransactionGroupView";
 import { CurrencyService } from "@/core/currency";
@@ -33,6 +33,7 @@ const currencyToCountry: Record<string, string> = {
 interface TransactionContentProps {
   transactions: Transaction[];
   paymentMethods: PaymentMethod[];
+  tags: Tag[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
@@ -60,8 +61,8 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   selectedCurrencies = [],
   onCurrencyFilterChange,
 }) => {
-  // Use allTransactions for summary if provided, otherwise use filtered transactions
-  const transactionsForSummary = allTransactions || transactions;
+  // Always use filtered transactions for summary totals
+  const transactionsForSummary = transactions;
 
   const summaryByCurrency = useMemo(() => {
     const totals = new Map<Currency, { total: number; count: number }>();
@@ -156,6 +157,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
 export const TransactionContent: React.FC<TransactionContentProps> = ({
   transactions,
   paymentMethods,
+  tags,
   onEdit,
   onDelete,
   onView,
@@ -195,6 +197,7 @@ export const TransactionContent: React.FC<TransactionContentProps> = ({
       <TransactionTable
         transactions={transactions}
         paymentMethods={paymentMethods}
+        tags={tags}
         onEdit={onEdit}
         onDelete={onDelete}
         onView={onView}

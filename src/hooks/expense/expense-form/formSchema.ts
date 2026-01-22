@@ -82,6 +82,8 @@ export const formSchema = z
         },
         { message: "Please enter a valid non-negative number" }
       ),
+    // Tags for grouping transactions (comma-separated slugs)
+    tags: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Validate amount field - allow negative for refunds, but not zero

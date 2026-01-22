@@ -63,6 +63,7 @@ export const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             promoBonusPoints: transaction.promoBonusPoints
               ? transaction.promoBonusPoints.toString()
               : "",
+            tags: transaction.tags || "",
           }}
         />
       </div>

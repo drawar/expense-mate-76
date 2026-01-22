@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MossCard } from "@/components/ui/moss-card";
 import { MossInput } from "@/components/ui/moss-input";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import TagInput from "../elements/TagInput";
 
 // Import from our centralized currency service
 import { CurrencyService } from "@/core/currency/CurrencyService";
@@ -304,6 +305,32 @@ export const TransactionDetailsSection: React.FC<
                 </FormItem>
               )}
             />
+
+            {/* Tags Field */}
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel
+                    style={{
+                      fontSize: "var(--font-size-label)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
+                    Tags (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <TagInput
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="Add tags to group transactions..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </CollapsibleSection>
       )}
@@ -365,6 +392,32 @@ export const TransactionDetailsSection: React.FC<
                     placeholder="Add any notes about this transaction"
                     className="resize-none"
                     {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Tags Field */}
+          <FormField
+            control={form.control}
+            name="tags"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  Tags (Optional)
+                </FormLabel>
+                <FormControl>
+                  <TagInput
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Add tags to group transactions..."
                   />
                 </FormControl>
                 <FormMessage />

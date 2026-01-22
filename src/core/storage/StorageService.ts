@@ -9,6 +9,7 @@ import {
   MerchantCategoryCode,
   SplitGroup,
   SplitPaymentPortion,
+  Tag,
 } from "@/types";
 import { initializeRewardSystem, calculateRewardPoints } from "@/core/rewards";
 import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
@@ -684,6 +685,8 @@ export class StorageService {
         categorySuggestionReason: row.category_suggestion_reason || undefined,
         // Split payment
         splitGroupId: row.split_group_id || undefined,
+        // Tags
+        tags: row.tags || undefined,
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -871,6 +874,8 @@ export class StorageService {
           autoCategoryResult?.reason ??
           null,
         user_id: session.user.id,
+        // Tags
+        tags: transactionData.tags || null,
       };
 
       console.log("Inserting transaction:", transactionInsertData);
@@ -922,6 +927,8 @@ export class StorageService {
         autoCategoryConfidence: data.auto_category_confidence ?? undefined,
         needsReview: data.needs_review ?? false,
         categorySuggestionReason: data.category_suggestion_reason || undefined,
+        // Tags
+        tags: data.tags || undefined,
       };
 
       // Check prepaid card balance and send notification
@@ -1081,6 +1088,9 @@ export class StorageService {
       if (updates.categorySuggestionReason !== undefined)
         updateData.category_suggestion_reason =
           updates.categorySuggestionReason;
+
+      // Tags
+      if (updates.tags !== undefined) updateData.tags = updates.tags;
 
       const { data, error } = await supabase
         .from("transactions")
@@ -2066,6 +2076,191 @@ export class StorageService {
     } catch (error) {
       console.error("Error checking prepaid card balance:", error);
       // Don't fail the transaction if this check fails
+    }
+  }
+
+  // =============================================================================
+  // Tag Methods
+  // =============================================================================
+
+  /**
+   * Get all tags for the current user
+   */
+  async getTags(): Promise<Tag[]> {
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.log("Not authenticated, returning empty tags");
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("tags")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("display_name");
+
+      if (error) {
+        console.error("Error fetching tags:", error);
+        return [];
+      }
+
+      return (data || []).map((row) => ({
+        id: row.id,
+        slug: row.slug,
+        displayName: row.display_name,
+        userId: row.user_id,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Add a new tag or return existing tag with the same slug
+   * @param slug - URL-friendly identifier (e.g., "paris-2025")
+   * @param displayName - Human-readable name (e.g., "Paris Trip 2025")
+   */
+  async addTag(slug: string, displayName: string): Promise<Tag | null> {
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.error("Cannot create tag without authentication");
+      return null;
+    }
+
+    try {
+      // Normalize slug to lowercase with hyphens
+      const normalizedSlug = slug
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      // Check if tag already exists for this user
+      const { data: existing } = await supabase
+        .from("tags")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("slug", normalizedSlug)
+        .maybeSingle();
+
+      if (existing) {
+        return {
+          id: existing.id,
+          slug: existing.slug,
+          displayName: existing.display_name,
+          userId: existing.user_id,
+          createdAt: existing.created_at,
+        };
+      }
+
+      // Create new tag
+      const { data, error } = await supabase
+        .from("tags")
+        .insert({
+          slug: normalizedSlug,
+          display_name: displayName.trim(),
+          user_id: session.user.id,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating tag:", error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        slug: data.slug,
+        displayName: data.display_name,
+        userId: data.user_id,
+        createdAt: data.created_at,
+      };
+    } catch (error) {
+      console.error("Error adding tag:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a tag by ID
+   */
+  async deleteTag(id: string): Promise<boolean> {
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.error("Cannot delete tag without authentication");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("tags")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", session.user.id);
+
+      if (error) {
+        console.error("Error deleting tag:", error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Update a tag's display name
+   */
+  async updateTag(id: string, displayName: string): Promise<Tag | null> {
+    // Check if user is authenticated
+    const { data: authData } = await supabase.auth.getSession();
+    const session = authData?.session;
+
+    if (!session?.user) {
+      console.error("Cannot update tag without authentication");
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("tags")
+        .update({ display_name: displayName.trim() })
+        .eq("id", id)
+        .eq("user_id", session.user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating tag:", error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        slug: data.slug,
+        displayName: data.display_name,
+        userId: data.user_id,
+        createdAt: data.created_at,
+      };
+    } catch (error) {
+      console.error("Error updating tag:", error);
+      return null;
     }
   }
 }
