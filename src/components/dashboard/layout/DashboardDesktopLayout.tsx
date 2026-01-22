@@ -16,7 +16,7 @@ import {
   InsightsCard,
   PointsEarnedCardDesktop,
   MoneyFlowSankey,
-  RewardsVisualizationOptions,
+  BudgetSpendingCardDesktop,
 } from "@/components/dashboard/cards";
 import ActivitySection from "./ActivitySection";
 import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
@@ -56,6 +56,14 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       <MoneyFlowSankey
         transactions={filteredTransactions}
         className={`${cardClass} shadow-sm`}
+      />
+
+      {/* ============================================
+          BUDGET ZONE - Budget Progress + Category Waffle
+          ============================================ */}
+      <BudgetSpendingCardDesktop
+        transactions={filteredTransactions}
+        className={cardClassHover}
       />
 
       {/* ============================================
@@ -105,15 +113,6 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
         collapsible
         defaultCollapsed
         maxItems={5}
-      />
-
-      {/* ============================================
-          REWARDS FLOW - Card Spend → Programs
-          ============================================ */}
-      <RewardsVisualizationOptions
-        transactions={filteredTransactions}
-        paymentMethods={paymentMethods}
-        className={cardClassHover}
       />
 
       {/* Category Drill-down Sheet */}

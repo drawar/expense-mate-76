@@ -7,20 +7,26 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
-import Index from "./pages/Index";
-import Transactions from "./pages/Transactions";
-import AddExpense from "./pages/AddExpense";
-import PaymentMethods from "./pages/PaymentMethods";
-import RewardPoints from "./pages/RewardPoints";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
-import DiagnoseRewards from "./pages/DiagnoseRewards";
-import CardOptimizerSimulator from "./pages/CardOptimizerSimulator";
-import DeleteMembershipRewards from "./pages/DeleteMembershipRewards";
-import Settings from "./pages/Settings";
-import PointsManager from "./pages/PointsManager";
-import Income from "./pages/Income";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
+
+// Lazy load pages for better initial load performance
+const Index = lazy(() => import("./pages/Index"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const AddExpense = lazy(() => import("./pages/AddExpense"));
+const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
+const RewardPoints = lazy(() => import("./pages/RewardPoints"));
+const DiagnoseRewards = lazy(() => import("./pages/DiagnoseRewards"));
+const CardOptimizerSimulator = lazy(
+  () => import("./pages/CardOptimizerSimulator")
+);
+const DeleteMembershipRewards = lazy(
+  () => import("./pages/DeleteMembershipRewards")
+);
+const Settings = lazy(() => import("./pages/Settings"));
+const PointsManager = lazy(() => import("./pages/PointsManager"));
+const Income = lazy(() => import("./pages/Income"));
 import { supabase } from "@/integrations/supabase/client";
 import { initializeRuleRepository } from "@/core/rewards/RuleRepository";
 import { LocaleService } from "@/core/locale";
@@ -29,6 +35,13 @@ import { toast } from "sonner";
 
 // Export queryClient so it can be cleared on logout
 export const queryClient = new QueryClient();
+
+// Page loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -107,7 +120,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <Index />
+                          <Suspense fallback={<PageLoader />}>
+                            <Index />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -117,7 +132,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <Transactions />
+                          <Suspense fallback={<PageLoader />}>
+                            <Transactions />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -127,7 +144,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <AddExpense />
+                          <Suspense fallback={<PageLoader />}>
+                            <AddExpense />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -137,7 +156,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <PaymentMethods />
+                          <Suspense fallback={<PageLoader />}>
+                            <PaymentMethods />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -147,7 +168,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <RewardPoints />
+                          <Suspense fallback={<PageLoader />}>
+                            <RewardPoints />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -157,7 +180,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <DiagnoseRewards />
+                          <Suspense fallback={<PageLoader />}>
+                            <DiagnoseRewards />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -167,7 +192,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <CardOptimizerSimulator />
+                          <Suspense fallback={<PageLoader />}>
+                            <CardOptimizerSimulator />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -177,7 +204,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <DeleteMembershipRewards />
+                          <Suspense fallback={<PageLoader />}>
+                            <DeleteMembershipRewards />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -187,7 +216,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <Settings />
+                          <Suspense fallback={<PageLoader />}>
+                            <Settings />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -197,7 +228,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <PointsManager />
+                          <Suspense fallback={<PageLoader />}>
+                            <PointsManager />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }
@@ -207,7 +240,9 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MainLayout>
-                          <Income />
+                          <Suspense fallback={<PageLoader />}>
+                            <Income />
+                          </Suspense>
                         </MainLayout>
                       </ProtectedRoute>
                     }

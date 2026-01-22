@@ -233,7 +233,7 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
               from: "color",
               modifiers: [["darker", 1]],
             }}
-            label={(node) => `${node.id}`}
+            label={(node) => `${node.id} ${formatCurrency(node.value)}`}
             nodeTooltip={({ node }) => (
               <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-md border text-sm">
                 <strong>{node.id}</strong>

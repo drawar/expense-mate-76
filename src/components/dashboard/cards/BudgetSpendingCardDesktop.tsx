@@ -1,12 +1,13 @@
 // components/dashboard/cards/BudgetSpendingCardDesktop.tsx
 /**
  * Desktop-optimized Budget + Spending Card
- * Features horizontal category layout to maximize space usage
+ * Features waffle chart for category breakdown
  */
 
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TargetIcon, PencilIcon, CheckIcon, XIcon } from "lucide-react";
+import { ResponsiveWaffle } from "@nivo/waffle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -373,10 +374,10 @@ const BudgetSpendingCardDesktop: React.FC<BudgetSpendingCardDesktopProps> = ({
             )}
           </div>
 
-          {/* Right: Top Categories - Horizontal Bar Chart (7 cols) */}
+          {/* Right: Top Categories - Waffle Chart (7 cols) */}
           <div className="col-span-7">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-              Top Categories
+              Spending by Category
             </p>
 
             {displayCategories.length === 0 ? (
@@ -384,51 +385,49 @@ const BudgetSpendingCardDesktop: React.FC<BudgetSpendingCardDesktopProps> = ({
                 No spending data
               </p>
             ) : (
-              <div className="space-y-2">
-                {displayCategories.map((category: ParentCategorySpending) => (
-                  <TooltipProvider key={category.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleCategoryClick(category)}
-                          className="w-full flex items-center gap-3 py-1.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-                        >
-                          {/* Icon + Name */}
-                          <div className="flex items-center gap-2 w-32 flex-shrink-0">
-                            <CategoryIcon
-                              iconName={category.icon as CategoryIconName}
-                              size={16}
-                              className="text-muted-foreground group-hover:text-foreground transition-colors"
-                            />
-                            <span className="text-sm truncate">
-                              {category.name}
-                            </span>
-                          </div>
+              <div className="flex gap-4">
+                {/* Waffle Chart */}
+                <div className="h-36 flex-1">
+                  <ResponsiveWaffle
+                    data={displayCategories.map((cat) => ({
+                      id: cat.name,
+                      label: cat.name,
+                      value: Math.round(cat.percentage),
+                      color: cat.color,
+                    }))}
+                    total={100}
+                    rows={6}
+                    columns={10}
+                    padding={2}
+                    colors={{ datum: "color" }}
+                    borderRadius={2}
+                    borderWidth={0}
+                    animate={true}
+                    motionStagger={2}
+                  />
+                </div>
 
-                          {/* Bar */}
-                          <div className="flex-1 h-6 bg-muted/30 rounded overflow-hidden">
-                            <div
-                              className="h-full rounded transition-all duration-300"
-                              style={{
-                                width: `${category.percentage}%`,
-                                backgroundColor: category.color,
-                                opacity: 0.8,
-                              }}
-                            />
-                          </div>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="font-medium">
-                          {formatCurrency(category.amount)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {category.percentage.toFixed(0)}% of spending
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
+                {/* Legend */}
+                <div className="flex flex-col gap-1.5 min-w-32">
+                  {displayCategories.map((category: ParentCategorySpending) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategoryClick(category)}
+                      className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <div
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span className="text-xs truncate flex-1">
+                        {category.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {category.percentage.toFixed(0)}%
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
