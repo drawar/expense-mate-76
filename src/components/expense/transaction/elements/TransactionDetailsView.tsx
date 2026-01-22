@@ -1,12 +1,28 @@
 import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
-import { Transaction, PaymentMethod } from "@/types";
+import { Transaction, PaymentMethod, Merchant } from "@/types";
 import { CurrencyService } from "@/core/currency";
 import { PropertyResolver } from "@/core/catalog/PropertyResolver";
 import { storageService } from "@/core/storage";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for default marker icon in Leaflet with bundlers
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
+  ._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 // Fallback card images for cards without defaultImageUrl (same as CardCatalogPicker)
 const CARD_IMAGE_FALLBACKS: Record<string, string> = {
@@ -62,11 +78,22 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   PencilIcon,
-  TrashIcon,
-  EditIcon,
   CoinsIcon,
   SplitIcon,
+  MapPinIcon,
 } from "lucide-react";
+
+/**
+ * Get the display location for a merchant
+ * Priority: display_location > address > null
+ * For online merchants, returns "Online"
+ */
+function getLocationDisplay(merchant: Merchant): string | null {
+  if (merchant.isOnline) return "Online";
+  if (merchant.display_location) return merchant.display_location;
+  if (merchant.address) return merchant.address;
+  return null;
+}
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
 
 interface TransactionDetailsViewProps {
@@ -179,10 +206,10 @@ const TransactionDetailsView = ({
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
             <span>{format(parseISO(transaction.date), "yyyy-MM-dd")}</span>
-            {transaction.merchant.address && (
+            {getLocationDisplay(transaction.merchant) && (
               <>
                 <span>·</span>
-                <span>{transaction.merchant.address}</span>
+                <span>{getLocationDisplay(transaction.merchant)}</span>
               </>
             )}
             <span>·</span>
@@ -395,7 +422,53 @@ const TransactionDetailsView = ({
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-3 text-sm text-muted-foreground">
+              {/* Map for physical merchants with coordinates */}
+              {!transaction.merchant.isOnline &&
+                transaction.merchant.coordinates && (
+                  <div
+                    className="relative rounded-lg overflow-hidden cursor-pointer"
+                    style={{ height: "150px" }}
+                    onClick={() => {
+                      if (transaction.merchant.google_maps_url) {
+                        window.open(
+                          transaction.merchant.google_maps_url,
+                          "_blank"
+                        );
+                      }
+                    }}
+                  >
+                    <MapContainer
+                      center={[
+                        transaction.merchant.coordinates.lat,
+                        transaction.merchant.coordinates.lng,
+                      ]}
+                      zoom={15}
+                      scrollWheelZoom={false}
+                      dragging={false}
+                      zoomControl={false}
+                      style={{ height: "100%", width: "100%" }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker
+                        position={[
+                          transaction.merchant.coordinates.lat,
+                          transaction.merchant.coordinates.lng,
+                        ]}
+                      />
+                    </MapContainer>
+                    {transaction.merchant.google_maps_url && (
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded text-xs flex items-center gap-1">
+                        <MapPinIcon className="h-3 w-3" />
+                        Tap to open in Google Maps
+                      </div>
+                    )}
+                  </div>
+                )}
+
               {transaction.id && (
                 <div className="flex justify-between">
                   <span>Transaction ID</span>
