@@ -26,8 +26,11 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Only allow pull when scrolled to top
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
+    // Only allow pull when scrolled to top (check both window and container scroll)
+    const isAtTop =
+      window.scrollY === 0 ||
+      (containerRef.current && containerRef.current.scrollTop === 0);
+    if (isAtTop) {
       startY.current = e.touches[0].clientY;
       setIsPulling(true);
     }
@@ -77,7 +80,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-auto ${className}`}
+      className={`relative ${className}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

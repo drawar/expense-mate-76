@@ -85,13 +85,12 @@ import {
 
 /**
  * Get the display location for a merchant
- * Priority: display_location > address > null
+ * Only returns display_location or "Online" - does NOT fall back to address
  * For online merchants, returns "Online"
  */
 function getLocationDisplay(merchant: Merchant): string | null {
   if (merchant.isOnline) return "Online";
   if (merchant.display_location) return merchant.display_location;
-  if (merchant.address) return merchant.address;
   return null;
 }
 import { CategoryPicker } from "@/components/expense/transaction/CategoryPicker";
@@ -427,16 +426,8 @@ const TransactionDetailsView = ({
               {!transaction.merchant.isOnline &&
                 transaction.merchant.coordinates && (
                   <div
-                    className="relative rounded-lg overflow-hidden cursor-pointer"
+                    className="relative rounded-lg overflow-hidden"
                     style={{ height: "150px" }}
-                    onClick={() => {
-                      if (transaction.merchant.google_maps_url) {
-                        window.open(
-                          transaction.merchant.google_maps_url,
-                          "_blank"
-                        );
-                      }
-                    }}
                   >
                     <MapContainer
                       center={[
@@ -447,7 +438,14 @@ const TransactionDetailsView = ({
                       scrollWheelZoom={false}
                       dragging={false}
                       zoomControl={false}
-                      style={{ height: "100%", width: "100%" }}
+                      doubleClickZoom={false}
+                      touchZoom={false}
+                      keyboard={false}
+                      boxZoom={false}
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                      }}
                     >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -460,10 +458,21 @@ const TransactionDetailsView = ({
                         ]}
                       />
                     </MapContainer>
+                    {/* Transparent overlay to capture clicks */}
                     {transaction.merchant.google_maps_url && (
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded text-xs flex items-center gap-1">
-                        <MapPinIcon className="h-3 w-3" />
-                        Tap to open in Google Maps
+                      <div
+                        className="absolute inset-0 cursor-pointer z-[1000]"
+                        onClick={() => {
+                          window.open(
+                            transaction.merchant.google_maps_url,
+                            "_blank"
+                          );
+                        }}
+                      >
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded text-xs flex items-center gap-1">
+                          <MapPinIcon className="h-3 w-3" />
+                          Tap to open in Google Maps
+                        </div>
                       </div>
                     )}
                   </div>
