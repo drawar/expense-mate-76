@@ -550,7 +550,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
         previousPeriodTransactions.length > 0) && <TrendAndAverage />}
 
       {displayChartData.length > 0 && (
-        <div className="flex-1 min-h-44 w-full">
+        <div className="w-full" style={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartDataWithAvg}

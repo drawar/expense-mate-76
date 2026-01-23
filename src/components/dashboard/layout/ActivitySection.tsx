@@ -1,8 +1,7 @@
 // components/dashboard/layout/ActivitySection.tsx
 /**
  * Combined Activity Section for Desktop
- * Merges Recent Transactions, Frequent Merchants, and Spend by Card
- * into a two-column layout
+ * Tabbed interface: Transactions | Merchants | Cards
  */
 
 import React, { useCallback, useState, useMemo } from "react";
@@ -10,12 +9,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { parseISO, format, isToday, isYesterday, startOfDay } from "date-fns";
 import { Transaction, Currency, PaymentMethod } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ClockIcon,
   StoreIcon,
   CreditCardIcon,
   ChevronRightIcon,
   Plus,
+  CoinsIcon,
 } from "lucide-react";
 import {
   Tooltip,
@@ -122,6 +123,51 @@ interface SpendByCard {
   currency: Currency;
 }
 
+interface PointsByCurrency {
+  currency: string;
+  points: number;
+  spending: number;
+  earnRate: number;
+  logoUrl?: string;
+  bgColor?: string;
+  logoScale?: number;
+  paymentCurrency?: string;
+}
+
+/**
+ * Get short name for loyalty program display
+ */
+function getShortName(currency: string): string {
+  const lower = currency.toLowerCase();
+
+  const shortNames: Record<string, string> = {
+    "asia miles": "Asia Miles",
+    "citi thankyou points (sg)": "Citi TY",
+    "citi thankyou points": "Citi TY",
+    "aeroplan points": "Aeroplan",
+    "membership rewards points (ca)": "MR (CA)",
+    "membership rewards points": "MR",
+    "membership rewards (ca)": "MR (CA)",
+    "dbs points": "DBS",
+    "hsbc rewards points": "HSBC",
+    ocbc$: "OCBC$",
+    "amazon rewards points": "Amazon",
+    "flying blue miles": "Flying Blue",
+    "flying blue": "Flying Blue",
+  };
+
+  for (const [key, name] of Object.entries(shortNames)) {
+    if (lower.includes(key) || lower === key) {
+      return name;
+    }
+  }
+
+  if (currency.length > 15) {
+    return currency.slice(0, 12) + "...";
+  }
+  return currency;
+}
+
 const ActivitySection: React.FC<ActivitySectionProps> = ({
   transactions,
   allTransactions = [],
@@ -139,11 +185,11 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
 
   const { handleDelete, handleUpdate } = useTransactionActions();
 
-  // Get recent transactions (last 5)
+  // Get recent transactions (last 8 for better tab content)
   const recentTransactions = useMemo(() => {
     return [...transactions]
       .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
-      .slice(0, 5);
+      .slice(0, 8);
   }, [transactions]);
 
   // Group transactions by date
@@ -170,7 +216,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     return Array.from(groups.values());
   }, [recentTransactions]);
 
-  // Aggregate frequent merchants
+  // Aggregate frequent merchants (show more in tab view)
   const merchantStats = useMemo(() => {
     const statsMap = new Map<string, MerchantStats>();
 
@@ -204,10 +250,10 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
 
     return Array.from(statsMap.values())
       .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
+      .slice(0, 6);
   }, [transactions]);
 
-  // Aggregate spend by card
+  // Aggregate spend by card (show more in tab view)
   const spendByCard = useMemo(() => {
     const cardMap = new Map<
       string,
@@ -248,9 +294,75 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
           ...data,
         })
       )
-      .sort((a, b) => b.spending - a.spending)
-      .slice(0, 4);
+      .sort((a, b) => b.spending - a.spending);
   }, [transactions]);
+
+  // Aggregate points by loyalty program
+  const pointsByCurrency = useMemo(() => {
+    const currencyMap = new Map<
+      string,
+      {
+        points: number;
+        spending: number;
+        logoUrl?: string;
+        bgColor?: string;
+        logoScale?: number;
+        paymentCurrency?: string;
+      }
+    >();
+
+    transactions.forEach((tx) => {
+      if (tx.rewardPoints <= 0) return;
+
+      const pointsCurrency = tx.paymentMethod?.pointsCurrency || "Points";
+      const existing = currencyMap.get(pointsCurrency) || {
+        points: 0,
+        spending: 0,
+        logoUrl: undefined,
+        bgColor: undefined,
+        logoScale: undefined,
+        paymentCurrency: undefined,
+      };
+
+      const spending = tx.paymentAmount ?? tx.amount;
+      const paymentCurrency = tx.paymentCurrency ?? tx.currency;
+
+      currencyMap.set(pointsCurrency, {
+        points: existing.points + tx.rewardPoints,
+        spending: existing.spending + spending,
+        logoUrl: existing.logoUrl || tx.paymentMethod?.rewardCurrencyLogoUrl,
+        bgColor: existing.bgColor || tx.paymentMethod?.rewardCurrencyBgColor,
+        logoScale:
+          existing.logoScale || tx.paymentMethod?.rewardCurrencyLogoScale,
+        paymentCurrency: existing.paymentCurrency || paymentCurrency,
+      });
+    });
+
+    return Array.from(currencyMap.entries())
+      .map(
+        ([currency, data]): PointsByCurrency => ({
+          currency,
+          points: data.points,
+          spending: data.spending,
+          earnRate: data.spending > 0 ? data.points / data.spending : 0,
+          logoUrl: data.logoUrl,
+          bgColor: data.bgColor,
+          logoScale: data.logoScale,
+          paymentCurrency: data.paymentCurrency,
+        })
+      )
+      .sort((a, b) => b.points - a.points);
+  }, [transactions]);
+
+  // Calculate total points and max for bar chart
+  const totalPoints = useMemo(
+    () => pointsByCurrency.reduce((sum, item) => sum + item.points, 0),
+    [pointsByCurrency]
+  );
+  const maxPoints = useMemo(
+    () => Math.max(...pointsByCurrency.map((p) => p.points), 1),
+    [pointsByCurrency]
+  );
 
   // Build URL for quick add
   const buildAddExpenseUrl = (merchant: MerchantStats): string => {
@@ -286,15 +398,28 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
   }, [transactionToDelete, allTransactions, handleDelete]);
 
   return (
-    <div className={`grid grid-cols-12 gap-4 ${className}`}>
-      {/* Left: Recent Transactions (8 cols) */}
-      <Card className="col-span-8 rounded-xl border border-border/50 bg-card">
+    <Card className={`rounded-xl border border-border/50 bg-card ${className}`}>
+      <Tabs defaultValue="transactions" className="w-full">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <ClockIcon className="h-5 w-5 text-primary" />
-              Recent Transactions
-            </CardTitle>
+            <TabsList className="bg-muted/50">
+              <TabsTrigger value="transactions" className="gap-1.5">
+                <ClockIcon className="h-4 w-4" />
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger value="merchants" className="gap-1.5">
+                <StoreIcon className="h-4 w-4" />
+                Merchants
+              </TabsTrigger>
+              <TabsTrigger value="cards" className="gap-1.5">
+                <CreditCardIcon className="h-4 w-4" />
+                Cards
+              </TabsTrigger>
+              <TabsTrigger value="loyalty" className="gap-1.5">
+                <CoinsIcon className="h-4 w-4" />
+                Loyalty Programs
+              </TabsTrigger>
+            </TabsList>
             <Link
               to="/transactions"
               className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -304,85 +429,80 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
             </Link>
           </div>
         </CardHeader>
-        <CardContent>
-          {groupedTransactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No recent transactions
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {groupedTransactions.map((group) => (
-                <div key={group.dateLabel}>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                    {group.dateLabel}
-                  </p>
-                  <div className="space-y-1">
-                    {group.transactions.map((tx) => (
-                      <button
-                        key={tx.id}
-                        onClick={() => handleTransactionClick(tx)}
-                        className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {formatMerchantName(tx.merchant)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {getEffectiveCategory(tx)}
-                          </p>
-                        </div>
-                        <div className="text-right ml-4">
-                          <p className="font-medium">
-                            {CurrencyService.format(tx.amount, tx.currency)}
-                          </p>
-                          {tx.rewardPoints > 0 && (
-                            <p className="text-xs text-primary">
-                              +{tx.rewardPoints}{" "}
-                              {abbreviatePointsCurrency(
-                                tx.paymentMethod?.pointsCurrency
-                              )}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRightIcon className="h-4 w-4 text-muted-foreground ml-2" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Right: Frequent Merchants + Spend by Card (4 cols) */}
-      <div className="col-span-4 space-y-4">
-        {/* Frequent Merchants */}
-        {merchantStats.length > 0 && (
-          <Card className="rounded-xl border border-border/50 bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <StoreIcon className="h-4 w-4 text-primary" />
-                Frequent Merchants
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+        <CardContent>
+          {/* Transactions Tab */}
+          <TabsContent value="transactions" className="mt-0">
+            {groupedTransactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No recent transactions
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {groupedTransactions.map((group) => (
+                  <div key={group.dateLabel}>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      {group.dateLabel}
+                    </p>
+                    <div className="space-y-1">
+                      {group.transactions.map((tx) => (
+                        <button
+                          key={tx.id}
+                          onClick={() => handleTransactionClick(tx)}
+                          className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">
+                              {formatMerchantName(tx.merchant)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {getEffectiveCategory(tx)}
+                            </p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-medium">
+                              {CurrencyService.format(tx.amount, tx.currency)}
+                            </p>
+                            {tx.rewardPoints > 0 && (
+                              <p className="text-xs text-primary">
+                                +{tx.rewardPoints}{" "}
+                                {abbreviatePointsCurrency(
+                                  tx.paymentMethod?.pointsCurrency
+                                )}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRightIcon className="h-4 w-4 text-muted-foreground ml-2" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Merchants Tab */}
+          <TabsContent value="merchants" className="mt-0">
+            {merchantStats.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No merchant data available
+              </p>
+            ) : (
               <div className="space-y-2">
                 {merchantStats.map((merchant) => (
                   <div
                     key={merchant.name}
-                    className="flex items-center justify-between py-1.5"
+                    className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1 min-w-0 mr-2">
-                      <p className="text-sm font-medium truncate">
-                        {merchant.name}
-                      </p>
+                      <p className="font-medium truncate">{merchant.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {merchant.count} txns
+                        {merchant.count} transactions
                       </p>
                     </div>
-                    <div className="text-right mr-2">
-                      <p className="text-sm font-medium">
+                    <div className="text-right mr-3">
+                      <p className="font-medium">
                         {CurrencyService.format(
                           merchant.totalSpent,
                           merchant.currency
@@ -394,9 +514,9 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                         <TooltipTrigger asChild>
                           <Link
                             to={buildAddExpenseUrl(merchant)}
-                            className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+                            className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
                           >
-                            <Plus className="h-3.5 w-3.5" />
+                            <Plus className="h-4 w-4" />
                           </Link>
                         </TooltipTrigger>
                         <TooltipContent side="left">
@@ -407,54 +527,168 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </TabsContent>
 
-        {/* Spend by Card */}
-        {spendByCard.length > 0 && (
-          <Card className="rounded-xl border border-border/50 bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CreditCardIcon className="h-4 w-4 text-primary" />
-                Spend by Card
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          {/* Cards Tab */}
+          <TabsContent value="cards" className="mt-0">
+            {spendByCard.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No card spending data available
+              </p>
+            ) : (
               <div className="space-y-2">
                 {spendByCard.map((card) => (
                   <div
                     key={card.cardId}
-                    className="flex items-center justify-between py-1.5"
+                    className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
                       {card.imageUrl ? (
                         <img
                           src={card.imageUrl}
                           alt={card.cardName}
-                          className="h-6 w-10 object-contain flex-shrink-0 rounded-sm"
+                          className="h-8 w-12 object-contain flex-shrink-0 rounded-sm"
                         />
                       ) : (
-                        <div className="h-6 w-10 bg-muted flex items-center justify-center flex-shrink-0 rounded-sm">
-                          <CreditCardIcon className="h-3 w-3 text-muted-foreground" />
+                        <div className="h-8 w-12 bg-muted flex items-center justify-center flex-shrink-0 rounded-sm">
+                          <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {card.cardName}
+                        <p className="font-medium truncate">{card.cardName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {card.issuer}
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm font-medium text-[var(--color-error)]">
-                      -{CurrencyService.format(card.spending, card.currency)}
+                    <p className="font-medium text-foreground">
+                      {CurrencyService.format(card.spending, card.currency)}
                     </p>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            )}
+          </TabsContent>
+
+          {/* Loyalty Tab */}
+          <TabsContent value="loyalty" className="mt-0">
+            {pointsByCurrency.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No points earned this period
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {/* Total points header */}
+                <div className="flex items-center justify-between pb-2 border-b">
+                  <span className="text-sm text-muted-foreground">
+                    {pointsByCurrency.length} programs
+                  </span>
+                  <div className="text-right">
+                    <span className="text-xl font-semibold text-primary">
+                      +{totalPoints.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      total
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bar chart */}
+                <div className="space-y-2">
+                  {pointsByCurrency.map((item) => {
+                    const barWidth = (item.points / maxPoints) * 100;
+                    const currencySymbol =
+                      item.paymentCurrency === "SGD"
+                        ? "S$"
+                        : item.paymentCurrency === "CAD"
+                          ? "C$"
+                          : item.paymentCurrency === "USD"
+                            ? "$"
+                            : item.paymentCurrency || "$";
+
+                    return (
+                      <TooltipProvider key={item.currency}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3 group cursor-default">
+                              {/* Logo */}
+                              {item.logoUrl ? (
+                                <div
+                                  className="h-8 w-8 min-w-[32px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                                  style={{
+                                    backgroundColor: item.bgColor || "#ffffff",
+                                  }}
+                                >
+                                  <img
+                                    src={item.logoUrl}
+                                    alt={item.currency}
+                                    className="w-full h-full object-contain"
+                                    style={
+                                      item.logoScale
+                                        ? {
+                                            transform: `scale(${item.logoScale})`,
+                                          }
+                                        : undefined
+                                    }
+                                  />
+                                </div>
+                              ) : (
+                                <div className="h-8 w-8 min-w-[32px] rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                  <CoinsIcon className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+
+                              {/* Name */}
+                              <span className="text-sm w-20 truncate flex-shrink-0">
+                                {getShortName(item.currency)}
+                              </span>
+
+                              {/* Bar */}
+                              <div className="flex-1 h-6 bg-muted/50 rounded overflow-hidden relative">
+                                <div
+                                  className="h-full bg-primary/20 group-hover:bg-primary/30 transition-colors rounded"
+                                  style={{ width: `${barWidth}%` }}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-medium">
+                                  +{item.points.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {/* Earn rate badge */}
+                              <span className="text-xs text-muted-foreground w-14 text-right flex-shrink-0">
+                                {item.earnRate.toFixed(1)}/{currencySymbol}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-sm">
+                              <p className="font-medium">{item.currency}</p>
+                              <p>
+                                {item.points.toLocaleString()} points from{" "}
+                                {currencySymbol}
+                                {item.spending.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                spent
+                              </p>
+                              <p className="text-muted-foreground">
+                                Earn rate: {item.earnRate.toFixed(2)} pts/
+                                {currencySymbol}
+                              </p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </CardContent>
+      </Tabs>
 
       {/* Transaction Dialog */}
       <TransactionDialog
@@ -471,7 +705,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
         onOpenChange={setDeleteConfirmOpen}
         onConfirmDelete={confirmDelete}
       />
-    </div>
+    </Card>
   );
 };
 

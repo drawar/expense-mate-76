@@ -6,3 +6,5 @@ export * from "./constants";
 export * from "./categoryHierarchy";
 export * from "./forecastChartUtils";
 export * from "@/utils/dashboard/types";
+export * from "./categoryBudgets";
+export * from "./insightGenerator";

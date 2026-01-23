@@ -4,7 +4,7 @@
  * Consolidates budget, spending, income, and reimbursements into one visualization
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { ResponsiveSankey } from "@nivo/sankey";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Currency, Transaction } from "@/types";
@@ -34,7 +34,7 @@ interface SankeyLink {
   value: number;
 }
 
-// Category colors from the hierarchy
+// Category colors from the hierarchy - light mode
 const CATEGORY_COLORS: Record<string, string> = {
   Lifestyle: "#E5A84B",
   Essentials: "#9B8BB8",
@@ -45,11 +45,47 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Food & Dining": "#E8B89D",
 };
 
+// Japandi-inspired muted colors for dark mode
+const CATEGORY_COLORS_DARK: Record<string, string> = {
+  Lifestyle: "#D4A574", // warm tan
+  Essentials: "#B8A9C9", // muted lavender
+  "Home & Living": "#8FA9A3", // sage green
+  "Financial & Other": "#C9B8A8", // warm beige
+  Transportation: "#8FA9A3",
+  Shopping: "#D4A574",
+  "Food & Dining": "#C9B8A8",
+};
+
+// Japandi node colors for dark mode
+const NODE_COLORS_DARK: Record<string, string> = {
+  Income: "#9BB596", // muted sage
+  Reimbursed: "#7BA3A0", // dusty teal
+  "Total Inflows": "#A8C4A2", // soft green
+  Spending: "#C4836A", // terracotta
+  Savings: "#8AABBF", // dusty blue
+  Other: "#A8A8A8",
+};
+
 const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
   transactions,
   className = "",
 }) => {
   const { displayCurrency, activeTab, dashboardData } = useDashboardContext();
+
+  // Detect dark mode for label colors
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
   const { totalIncome, incomeSources } = useRecurringIncome(
     displayCurrency,
@@ -89,13 +125,31 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
     const savings =
       totalIncome > 0 ? Math.max(0, totalIncome - netExpenses) : 0;
 
+    // Helper to get node color based on dark mode
+    const getNodeColor = (id: string, defaultLight: string) => {
+      if (isDarkMode && NODE_COLORS_DARK[id]) {
+        return NODE_COLORS_DARK[id];
+      }
+      return defaultLight;
+    };
+
+    const getCategoryColor = (name: string, fallbackColor?: string) => {
+      if (isDarkMode) {
+        return CATEGORY_COLORS_DARK[name] || fallbackColor || "#BDBDBD";
+      }
+      return CATEGORY_COLORS[name] || fallbackColor || "#9E9E9E";
+    };
+
     // === LEFT SIDE: Inflows ===
 
     // Add income source(s)
     if (totalIncome > 0) {
       if (incomeSources.length <= 3 && incomeSources.length > 0) {
         incomeSources.forEach((source) => {
-          nodes.push({ id: source.name, nodeColor: "#4CAF50" });
+          nodes.push({
+            id: source.name,
+            nodeColor: getNodeColor("Income", "#4CAF50"),
+          });
           links.push({
             source: source.name,
             target: "Total Inflows",
@@ -103,7 +157,10 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
           });
         });
       } else if (totalIncome > 0) {
-        nodes.push({ id: "Income", nodeColor: "#4CAF50" });
+        nodes.push({
+          id: "Income",
+          nodeColor: getNodeColor("Income", "#4CAF50"),
+        });
         links.push({
           source: "Income",
           target: "Total Inflows",
@@ -114,7 +171,10 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
 
     // Add reimbursements as inflow
     if (totalReimbursed > 0) {
-      nodes.push({ id: "Reimbursed", nodeColor: "#26A69A" });
+      nodes.push({
+        id: "Reimbursed",
+        nodeColor: getNodeColor("Reimbursed", "#26A69A"),
+      });
       links.push({
         source: "Reimbursed",
         target: "Total Inflows",
@@ -124,14 +184,20 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
 
     // === MIDDLE: Total Inflows hub ===
     if (totalInflows > 0) {
-      nodes.push({ id: "Total Inflows", nodeColor: "#66BB6A" });
+      nodes.push({
+        id: "Total Inflows",
+        nodeColor: getNodeColor("Total Inflows", "#66BB6A"),
+      });
     }
 
     // === MIDDLE-RIGHT: Spending and Savings ===
 
     // Add gross spending node (spending before reimbursements)
     if (grossExpenses > 0) {
-      nodes.push({ id: "Spending", nodeColor: "#FF7043" });
+      nodes.push({
+        id: "Spending",
+        nodeColor: getNodeColor("Spending", "#FF7043"),
+      });
 
       // Link inflows to spending
       if (totalInflows > 0) {
@@ -148,8 +214,7 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
         if (category.amount > 0) {
           nodes.push({
             id: category.name,
-            nodeColor:
-              category.color || CATEGORY_COLORS[category.name] || "#9E9E9E",
+            nodeColor: getCategoryColor(category.name, category.color),
           });
           links.push({
             source: "Spending",
@@ -167,7 +232,10 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
           0
         );
       if (otherAmount > 0) {
-        nodes.push({ id: "Other", nodeColor: "#9E9E9E" });
+        nodes.push({
+          id: "Other",
+          nodeColor: getNodeColor("Other", "#9E9E9E"),
+        });
         links.push({
           source: "Spending",
           target: "Other",
@@ -178,7 +246,10 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
 
     // Link inflows to savings if positive
     if (savings > 0 && totalInflows > 0) {
-      nodes.push({ id: "Savings", nodeColor: "#29B6F6" });
+      nodes.push({
+        id: "Savings",
+        nodeColor: getNodeColor("Savings", "#29B6F6"),
+      });
       links.push({
         source: "Total Inflows",
         target: "Savings",
@@ -194,6 +265,7 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
     netExpenses,
     totalReimbursed,
     hierarchyData,
+    isDarkMode,
   ]);
 
   // Don't render if no data
@@ -213,7 +285,7 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
         <div className="h-72">
           <ResponsiveSankey
             data={sankeyData}
-            margin={{ top: 10, right: 140, bottom: 10, left: 10 }}
+            margin={{ top: 10, right: 220, bottom: 10, left: 200 }}
             align="justify"
             colors={(node) => node.nodeColor || "#888"}
             nodeOpacity={1}
@@ -222,16 +294,22 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
             nodeSpacing={16}
             nodeBorderWidth={0}
             nodeBorderRadius={3}
-            linkOpacity={0.3}
-            linkHoverOpacity={0.6}
+            linkOpacity={isDarkMode ? 0.5 : 0.3}
+            linkHoverOpacity={isDarkMode ? 0.7 : 0.6}
             linkContract={3}
+            linkBlendMode={isDarkMode ? "screen" : "normal"}
             enableLinkGradient={true}
             labelPosition="outside"
             labelOrientation="horizontal"
             labelPadding={12}
-            labelTextColor={{
-              from: "color",
-              modifiers: [["darker", 1]],
+            labelTextColor={isDarkMode ? "#e5e5e5" : "#374151"}
+            theme={{
+              labels: {
+                text: {
+                  fontSize: 13,
+                  fontWeight: 500,
+                },
+              },
             }}
             label={(node) => `${node.id} ${formatCurrency(node.value)}`}
             nodeTooltip={({ node }) => (
@@ -249,48 +327,6 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
               </div>
             )}
           />
-        </div>
-
-        {/* Hero metrics row */}
-        <div className="flex items-center justify-around pt-6 border-t border-border/50 mt-4">
-          {totalIncome > 0 && (
-            <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Income
-              </p>
-              <p className="text-3xl font-bold text-[var(--color-success)]">
-                {formatCurrency(totalIncome)}
-              </p>
-            </div>
-          )}
-          {totalReimbursed > 0 && (
-            <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Reimbursed
-              </p>
-              <p className="text-3xl font-bold text-[var(--color-success)]">
-                {formatCurrency(totalReimbursed)}
-              </p>
-            </div>
-          )}
-          <div className="text-center">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              Gross Spent
-            </p>
-            <p className="text-3xl font-bold text-[var(--color-error)]">
-              {formatCurrency(grossExpenses)}
-            </p>
-          </div>
-          {totalIncome > netExpenses && totalIncome > 0 && (
-            <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Saved
-              </p>
-              <p className="text-3xl font-bold text-primary">
-                {formatCurrency(totalIncome - netExpenses)}
-              </p>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

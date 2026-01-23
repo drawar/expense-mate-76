@@ -17,10 +17,15 @@ export { default as UnusualSpendingCard } from "./UnusualSpendingCard";
 export { default as PointsEarnedCard } from "./PointsEarnedCard";
 export { default as SpendByCardCard } from "./SpendByCardCard";
 export { IncomeSummaryCard } from "./IncomeSummaryCard";
-export { default as BudgetSpendingCardDesktop } from "./BudgetSpendingCardDesktop";
+export { default as DailySpendingCard } from "./DailySpendingCard";
 export { default as PointsEarnedCardDesktop } from "./PointsEarnedCardDesktop";
 export { default as MoneyFlowSankey } from "./MoneyFlowSankey";
 export { default as RewardsVisualizationOptions } from "./RewardsVisualizationOptions";
+
+// Actionable dashboard cards
+export { default as BudgetStatusCard } from "./BudgetStatusCard";
+export { default as CategoryVarianceCard } from "./CategoryVarianceCard";
+export { default as CollapsibleCard } from "./CollapsibleCard";
 
 // Also export types
 export type { DashboardCardProps } from "./Card";

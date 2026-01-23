@@ -1,25 +1,25 @@
 // components/dashboard/layout/DashboardDesktopLayout.tsx
 /**
- * Desktop-optimized dashboard layout with clear visual hierarchy:
- * 1. Hero Zone - Money Flow Sankey (primary focus)
- * 2. Context Zone - Spending Trends
- * 3. Alerts Zone - Smart Insights (only if alerts exist)
- * 4. Activity Zone - Recent Transactions + Frequent Merchants
- * 5. Reference Zone - Points Earned (collapsible)
+ * Desktop-optimized dashboard layout with actionable hierarchy:
+ * 1. Hero Zone - Budget Status (with period comparison)
+ * 2. Category Zone - Spending by Category Treemap
+ * 3. Collapsible Zone - Trend, Money Flow
+ * 4. Alerts Zone - Smart Insights
+ * 5. Activity Zone - Transactions, Merchants, Cards, Loyalty (tabbed)
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useBudget } from "@/hooks/useBudget";
 import {
   SpendingTrendCard,
   InsightsCard,
-  PointsEarnedCardDesktop,
   MoneyFlowSankey,
-  BudgetSpendingCardDesktop,
+  BudgetStatusCard,
+  CategoryVarianceCard,
+  CollapsibleCard,
 } from "@/components/dashboard/cards";
 import ActivitySection from "./ActivitySection";
-import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
 
 interface DashboardDesktopLayoutProps {
   className?: string;
@@ -39,10 +39,6 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
 
   const { scaledBudget } = useBudget(displayCurrency, activeTab);
 
-  // Category drilldown state
-  const [drilldownOpen, setDrilldownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-
   // Card styling
   const cardClass = "rounded-xl border border-border/50 bg-card";
   const cardClassHover = `${cardClass} hover:shadow-md transition-all`;
@@ -50,37 +46,51 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* ============================================
-          HERO ZONE - Money Flow Sankey (Primary Focus)
-          Shows income → spending → categories flow
+          HERO ZONE - Budget Status (Primary Focus)
+          Shows spend vs budget, projection, days left
+          Now includes period comparison (vs last month)
           ============================================ */}
-      <MoneyFlowSankey
-        transactions={filteredTransactions}
-        className={`${cardClass} shadow-sm`}
-      />
+      <BudgetStatusCard className={`${cardClass} shadow-sm`} />
 
       {/* ============================================
-          BUDGET ZONE - Budget Progress + Category Waffle
+          CATEGORY ZONE - Spending by Category Treemap
           ============================================ */}
-      <BudgetSpendingCardDesktop
-        transactions={filteredTransactions}
-        className={cardClassHover}
-      />
+      <CategoryVarianceCard className={cardClassHover} />
 
       {/* ============================================
-          CONTEXT ZONE - Trends
+          COLLAPSIBLE ZONE - Detailed Visualizations
+          Hidden by default, expandable for power users
           ============================================ */}
-      <SpendingTrendCard
-        transactions={filteredTransactions}
-        allTransactions={transactions}
-        previousPeriodTransactions={previousPeriodTransactions}
-        currency={displayCurrency}
-        className={`${cardClassHover} flex flex-col h-80`}
-        timeframe={activeTab}
-      />
+      <CollapsibleCard
+        title="Spending Trend"
+        defaultCollapsed
+        className={cardClass}
+      >
+        <SpendingTrendCard
+          transactions={filteredTransactions}
+          allTransactions={transactions}
+          previousPeriodTransactions={previousPeriodTransactions}
+          currency={displayCurrency}
+          className="border-0 shadow-none"
+          timeframe={activeTab}
+        />
+      </CollapsibleCard>
+
+      <CollapsibleCard
+        title="Money Flow Details"
+        defaultCollapsed
+        className={cardClass}
+      >
+        <MoneyFlowSankey
+          transactions={filteredTransactions}
+          className="border-0 shadow-none"
+        />
+      </CollapsibleCard>
 
       {/* ============================================
           ALERTS ZONE - Smart Insights
-          Only shows when there are actionable insights
+          Card optimization, unusual spending, etc.
+          (Budget status is in Hero Zone)
           ============================================ */}
       <InsightsCard
         transactions={filteredTransactions}
@@ -93,35 +103,14 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       />
 
       {/* ============================================
-          ACTIVITY ZONE - Recent Transactions + Merchants
+          ACTIVITY ZONE - Tabbed Activity Hub
+          Transactions | Merchants | Cards | Loyalty
           ============================================ */}
       <ActivitySection
         transactions={filteredTransactions}
         allTransactions={transactions}
         displayCurrency={displayCurrency}
         paymentMethods={paymentMethods}
-      />
-
-      {/* ============================================
-          REFERENCE ZONE - Points Earned (Collapsible)
-          Secondary info, expandable for details
-          ============================================ */}
-      <PointsEarnedCardDesktop
-        transactions={filteredTransactions}
-        displayCurrency={displayCurrency}
-        className={cardClassHover}
-        collapsible
-        defaultCollapsed
-        maxItems={5}
-      />
-
-      {/* Category Drill-down Sheet */}
-      <CategoryDrilldownSheet
-        open={drilldownOpen}
-        onOpenChange={setDrilldownOpen}
-        categoryName={selectedCategory}
-        transactions={filteredTransactions}
-        currency={displayCurrency}
       />
     </div>
   );
