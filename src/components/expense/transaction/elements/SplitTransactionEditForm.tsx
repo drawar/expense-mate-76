@@ -121,11 +121,11 @@ export const SplitTransactionEditForm: React.FC<
 
         setSplitGroupTransactions(transactions);
 
-        // Calculate total amount from all portions
-        const totalAmount = transactions.reduce(
-          (sum, tx) => sum + tx.amount,
-          0
-        );
+        // Calculate total amount from all portions (round to 2 decimal places to avoid floating point errors)
+        const totalAmount =
+          Math.round(
+            transactions.reduce((sum, tx) => sum + tx.amount, 0) * 100
+          ) / 100;
         form.setValue("amount", totalAmount.toString());
         form.setValue("notes", splitGroup?.notes || "");
       } catch (error) {
