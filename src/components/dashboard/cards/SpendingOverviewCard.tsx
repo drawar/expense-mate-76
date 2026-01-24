@@ -552,8 +552,8 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                       key={spike.date}
                       className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative"
                     >
-                      {/* Numbered badge - top left corner */}
-                      <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                      {/* Numbered badge - top left corner inside */}
+                      <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
                         {spikeNumber}
                       </span>
                       {/* Amount - centered */}
