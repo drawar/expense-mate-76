@@ -128,6 +128,19 @@ export const SplitTransactionEditForm: React.FC<
           ) / 100;
         form.setValue("amount", totalAmount.toString());
         form.setValue("notes", splitGroup?.notes || "");
+
+        // Calculate total reimbursement from all portions
+        const totalReimbursement =
+          Math.round(
+            transactions.reduce(
+              (sum, tx) => sum + (tx.reimbursementAmount || 0),
+              0
+            ) * 100
+          ) / 100;
+        form.setValue(
+          "reimbursementAmount",
+          totalReimbursement > 0 ? totalReimbursement.toString() : "0"
+        );
       } catch (error) {
         console.error("Error fetching split group data:", error);
       }
@@ -209,6 +222,24 @@ export const SplitTransactionEditForm: React.FC<
         mcc: selectedMCC,
       };
 
+      // Calculate proportional reimbursement for each portion
+      const totalReimbursement = parseFloat(values.reimbursementAmount || "0");
+      const totalAmount = watchedAmount;
+
+      // Distribute reimbursement proportionally to each portion
+      const getPortionReimbursement = (portionAmount: number): number => {
+        if (totalReimbursement <= 0 || totalAmount <= 0) return 0;
+        // If fully reimbursed, each portion is fully reimbursed
+        if (Math.abs(totalReimbursement - totalAmount) < 0.01) {
+          return portionAmount;
+        }
+        // Otherwise, distribute proportionally
+        return (
+          Math.round(totalReimbursement * (portionAmount / totalAmount) * 100) /
+          100
+        );
+      };
+
       // Update existing split transactions (preserves transaction IDs)
       const updatedTransactions = await storageService.updateSplitTransaction({
         splitGroupId: transaction.splitGroupId,
@@ -224,6 +255,7 @@ export const SplitTransactionEditForm: React.FC<
           rewardPoints: p.rewardPoints,
           basePoints: p.basePoints,
           bonusPoints: p.bonusPoints,
+          reimbursementAmount: getPortionReimbursement(p.amount),
         })),
         isContactless: !values.isOnline && values.isContactless,
         notes: values.notes || undefined,

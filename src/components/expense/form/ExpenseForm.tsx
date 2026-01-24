@@ -34,6 +34,7 @@ export interface SplitTransactionInput {
     rewardPoints: number;
     basePoints: number;
     bonusPoints: number;
+    reimbursementAmount?: number;
   }>;
   isContactless: boolean;
   notes?: string;
@@ -183,8 +184,28 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           mcc: selectedMCC,
         };
 
+        // Calculate proportional reimbursement for each portion
+        const totalReimbursement = parseFloat(
+          (values.reimbursementAmount as string) || "0"
+        );
+        const totalAmount = Number(values.amount);
+
+        const getPortionReimbursement = (portionAmount: number): number => {
+          if (totalReimbursement <= 0 || totalAmount <= 0) return 0;
+          // If fully reimbursed, each portion is fully reimbursed
+          if (Math.abs(totalReimbursement - totalAmount) < 0.01) {
+            return portionAmount;
+          }
+          // Otherwise, distribute proportionally
+          return (
+            Math.round(
+              totalReimbursement * (portionAmount / totalAmount) * 100
+            ) / 100
+          );
+        };
+
         const splitInput: SplitTransactionInput = {
-          totalAmount: Number(values.amount),
+          totalAmount: totalAmount,
           currency: values.currency as Currency,
           merchant: merchantData,
           date: selectedDate.toISOString(),
@@ -196,6 +217,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
             rewardPoints: p.rewardPoints,
             basePoints: p.basePoints,
             bonusPoints: p.bonusPoints,
+            reimbursementAmount: getPortionReimbursement(p.amount),
           })),
           isContactless:
             !(values.isOnline as boolean) && (values.isContactless as boolean),
