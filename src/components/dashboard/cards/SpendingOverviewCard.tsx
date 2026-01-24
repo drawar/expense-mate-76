@@ -499,13 +499,49 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
             {topSpendingDays.length > 0 && (
               <div className="mt-3 space-y-2">
                 {topSpendingDays.slice(0, 3).map((spike) => {
-                  // Get the largest transaction (already sorted by amount desc)
-                  const topTx = spike.transactions[0];
-                  if (!topTx) return null;
+                  if (!spike.transactions.length) return null;
 
-                  // Calculate net amount in original currency
-                  const netAmount =
-                    topTx.amount - (topTx.reimbursementAmount ?? 0);
+                  // Aggregate transactions by merchant + currency
+                  const merchantTotals = new Map<
+                    string,
+                    {
+                      merchantName: string;
+                      currency: Currency;
+                      totalOriginal: number;
+                      totalConverted: number;
+                    }
+                  >();
+
+                  spike.transactions.forEach((tx) => {
+                    const key = `${tx.merchant.id}-${tx.currency}`;
+                    const netOriginal =
+                      tx.amount - (tx.reimbursementAmount ?? 0);
+                    const netConverted = CurrencyService.convert(
+                      netOriginal,
+                      tx.currency,
+                      displayCurrency
+                    );
+
+                    const existing = merchantTotals.get(key);
+                    if (existing) {
+                      existing.totalOriginal += netOriginal;
+                      existing.totalConverted += netConverted;
+                    } else {
+                      merchantTotals.set(key, {
+                        merchantName: tx.merchant.name,
+                        currency: tx.currency,
+                        totalOriginal: netOriginal,
+                        totalConverted: netConverted,
+                      });
+                    }
+                  });
+
+                  // Find merchant with largest total (by converted amount)
+                  const topMerchant = Array.from(merchantTotals.values()).sort(
+                    (a, b) => b.totalConverted - a.totalConverted
+                  )[0];
+
+                  if (!topMerchant) return null;
 
                   return (
                     <div
@@ -518,11 +554,15 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                           {format(parseISO(spike.date), "MMM d")}
                         </span>
                         <span>
-                          +{CurrencyService.format(netAmount, topTx.currency)}
+                          +
+                          {CurrencyService.format(
+                            topMerchant.totalOriginal,
+                            topMerchant.currency
+                          )}
                         </span>
                       </div>
                       <div className="text-[11px] truncate max-w-[180px] ml-auto">
-                        {topTx.merchant.name}
+                        {topMerchant.merchantName}
                       </div>
                     </div>
                   );
