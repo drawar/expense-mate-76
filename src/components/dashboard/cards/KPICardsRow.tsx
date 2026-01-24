@@ -123,7 +123,7 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
           </p>
           <Link
             to="/income"
-            className="group flex items-center gap-1 text-sm text-primary mt-2"
+            className="group flex items-center justify-center gap-1 text-sm text-primary mt-2"
           >
             <span className="relative">
               View payslips
@@ -859,6 +859,8 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
       {
         id: string;
         name: string;
+        issuer?: string;
+        imageUrl?: string;
         positiveCount: number;
         totalSpend: number;
         categoryCounts: Map<string, number>;
@@ -913,6 +915,8 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
         cardData.set(cardId, {
           id: cardId,
           name: cardName,
+          issuer: tx.paymentMethod.issuer,
+          imageUrl: tx.paymentMethod.imageUrl,
           positiveCount: isPositive ? 1 : 0,
           totalSpend: netAmount,
           categoryCounts,
@@ -923,6 +927,8 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
     let mostUsed: {
       id: string;
       name: string;
+      issuer?: string;
+      imageUrl?: string;
       count: number;
       totalSpend: number;
       averageSpend: number;
@@ -944,6 +950,8 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
         mostUsed = {
           id: value.id,
           name: value.name,
+          issuer: value.issuer,
+          imageUrl: value.imageUrl,
           count: value.positiveCount,
           totalSpend: value.totalSpend,
           averageSpend:
@@ -973,16 +981,27 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
         <p className="text-sm text-muted-foreground text-center">
           You used the most
         </p>
-        <p
-          className="text-3xl font-semibold tracking-tight mt-1 text-center"
-          style={{
-            color: mostFavoriteCard
-              ? CATEGORY_COLORS[mostFavoriteCard.parentCategoryId] || undefined
-              : undefined,
-          }}
-        >
-          {mostFavoriteCard?.name || "-"}
-        </p>
+        {mostFavoriteCard?.imageUrl ? (
+          <div className="flex justify-center mt-2">
+            <img
+              src={mostFavoriteCard.imageUrl}
+              alt={mostFavoriteCard.name}
+              className="h-[60px] w-auto object-contain rounded"
+            />
+          </div>
+        ) : (
+          <p
+            className="text-3xl font-semibold tracking-tight mt-1 text-center"
+            style={{
+              color: mostFavoriteCard
+                ? CATEGORY_COLORS[mostFavoriteCard.parentCategoryId] ||
+                  undefined
+                : undefined,
+            }}
+          >
+            {mostFavoriteCard?.name || "-"}
+          </p>
+        )}
         <p className="text-4xl font-bold tracking-tight text-center mt-1">
           <NumberFlow value={useCount} transformTiming={{ duration: 500 }} />
           <span className="text-sm font-normal text-muted-foreground ml-1">
@@ -1014,7 +1033,7 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
             className="group flex items-center justify-center gap-1 text-sm text-primary mt-3"
           >
             <span className="relative">
-              View {mostFavoriteCard.name}
+              View {mostFavoriteCard.issuer} {mostFavoriteCard.name}
               <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
             </span>
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />

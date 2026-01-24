@@ -100,7 +100,7 @@ const TopCardsCard: React.FC<TopCardsCardProps> = ({
     };
   }, [activeTab]);
 
-  // Aggregate spending by card (exclude gift cards)
+  // Aggregate spending by card using card's native currency (exclude gift cards)
   const topCards = useMemo((): CardSpend[] => {
     const cardMap = new Map<string, CardSpend>();
 
@@ -111,20 +111,14 @@ const TopCardsCard: React.FC<TopCardsCardProps> = ({
       if (tx.paymentMethod.type === "gift_card") return;
 
       const cardId = tx.paymentMethod.id;
+      const cardCurrency = (tx.paymentCurrency ??
+        tx.paymentMethod.currency ??
+        tx.currency) as Currency;
       const existing = cardMap.get(cardId);
 
-      const grossAmount = CurrencyService.convert(
-        tx.paymentAmount ?? tx.amount,
-        tx.paymentCurrency ?? tx.currency,
-        displayCurrency
-      );
-      const reimbursed = tx.reimbursementAmount
-        ? CurrencyService.convert(
-            tx.reimbursementAmount,
-            tx.paymentCurrency ?? tx.currency,
-            displayCurrency
-          )
-        : 0;
+      // Use payment amount in card's currency
+      const grossAmount = tx.paymentAmount ?? tx.amount;
+      const reimbursed = tx.reimbursementAmount || 0;
       const amount = grossAmount - reimbursed;
 
       if (existing) {
@@ -141,13 +135,26 @@ const TopCardsCard: React.FC<TopCardsCardProps> = ({
           imageUrl: tx.paymentMethod.imageUrl || null,
           totalSpend: amount,
           transactionCount: 1,
-          currency: displayCurrency,
+          currency: cardCurrency,
         });
       }
     });
 
     return Array.from(cardMap.values())
-      .sort((a, b) => b.totalSpend - a.totalSpend)
+      .sort((a, b) => {
+        // Convert to displayCurrency for sorting comparison
+        const aConverted = CurrencyService.convert(
+          a.totalSpend,
+          a.currency,
+          displayCurrency
+        );
+        const bConverted = CurrencyService.convert(
+          b.totalSpend,
+          b.currency,
+          displayCurrency
+        );
+        return bConverted - aConverted;
+      })
       .slice(0, maxItems);
   }, [transactions, displayCurrency, maxItems]);
 

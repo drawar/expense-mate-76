@@ -137,46 +137,73 @@ const TopMerchantsCard: React.FC<TopMerchantsCardProps> = ({
     };
   }, [activeTab]);
 
-  // Aggregate spending by merchant
+  // Aggregate spending by merchant using original transaction currency
   const topMerchants = useMemo((): MerchantSpend[] => {
-    const merchantMap = new Map<string, MerchantSpend>();
+    const merchantMap = new Map<
+      string,
+      MerchantSpend & { currencyCount: Map<Currency, number> }
+    >();
 
     transactions.forEach((tx) => {
       const merchantName = tx.merchant?.name?.trim() || "Unknown";
       if (merchantName.toLowerCase() === "unknown") return;
 
-      const existing = merchantMap.get(merchantName);
-      const grossAmount = CurrencyService.convert(
-        tx.paymentAmount ?? tx.amount,
-        tx.paymentCurrency ?? tx.currency,
-        displayCurrency
-      );
-      const reimbursed = tx.reimbursementAmount
-        ? CurrencyService.convert(
-            tx.reimbursementAmount,
-            tx.paymentCurrency ?? tx.currency,
-            displayCurrency
-          )
-        : 0;
+      const txCurrency = tx.currency;
+      const grossAmount = tx.amount;
+      const reimbursed = tx.reimbursementAmount || 0;
       const amount = grossAmount - reimbursed;
 
+      const existing = merchantMap.get(merchantName);
+
       if (existing) {
-        existing.totalSpend += amount;
+        // If same currency, add directly; otherwise convert for comparison
+        if (existing.currency === txCurrency) {
+          existing.totalSpend += amount;
+        } else {
+          // Convert to the merchant's primary currency for aggregation
+          const converted = CurrencyService.convert(
+            amount,
+            txCurrency,
+            existing.currency
+          );
+          existing.totalSpend += converted;
+        }
         existing.transactionCount++;
+        existing.currencyCount.set(
+          txCurrency,
+          (existing.currencyCount.get(txCurrency) || 0) + 1
+        );
       } else {
+        const currencyCount = new Map<Currency, number>();
+        currencyCount.set(txCurrency, 1);
         merchantMap.set(merchantName, {
           name: merchantName,
           category: getEffectiveCategory(tx) || "Other",
           totalSpend: amount,
           transactionCount: 1,
-          currency: displayCurrency,
+          currency: txCurrency,
           sampleTransaction: tx,
+          currencyCount,
         });
       }
     });
 
     return Array.from(merchantMap.values())
-      .sort((a, b) => b.totalSpend - a.totalSpend)
+      .map(({ currencyCount, ...rest }) => rest)
+      .sort((a, b) => {
+        // Convert to displayCurrency for sorting comparison
+        const aConverted = CurrencyService.convert(
+          a.totalSpend,
+          a.currency,
+          displayCurrency
+        );
+        const bConverted = CurrencyService.convert(
+          b.totalSpend,
+          b.currency,
+          displayCurrency
+        );
+        return bConverted - aConverted;
+      })
       .slice(0, maxItems);
   }, [transactions, displayCurrency, maxItems]);
 
