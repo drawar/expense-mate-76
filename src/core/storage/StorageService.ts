@@ -1555,11 +1555,9 @@ export class StorageService {
       const updatedTxIds = new Set<string>();
       const updatedTransactions: Transaction[] = [];
 
-      // Determine user category
-      const userCategory =
-        input.userCategory ||
-        input.merchant.mcc?.description ||
-        "Uncategorized";
+      // Determine user category - only use input if explicitly provided
+      const defaultCategory =
+        input.merchant.mcc?.description || "Uncategorized";
 
       // 6. Process each portion
       for (let i = 0; i < input.portions.length; i++) {
@@ -1579,6 +1577,10 @@ export class StorageService {
         if (existingTx) {
           // Update existing transaction
           updatedTxIds.add(existingTx.id);
+
+          // Preserve existing category unless explicitly provided in input
+          const userCategory =
+            input.userCategory || existingTx.userCategory || defaultCategory;
 
           const updateData = {
             date: input.date,
@@ -1637,6 +1639,7 @@ export class StorageService {
           });
         } else {
           // Create new transaction for additional portion
+          const newTxCategory = input.userCategory || defaultCategory;
           const transactionInsertData = {
             date: input.date,
             merchant_id: merchantId,
@@ -1650,8 +1653,8 @@ export class StorageService {
             bonus_points: portion.bonusPoints,
             is_contactless: input.isContactless,
             mcc_code: mccCode,
-            user_category: userCategory,
-            category: userCategory,
+            user_category: newTxCategory,
+            category: newTxCategory,
             split_group_id: input.splitGroupId,
             user_id: session.user.id,
             reimbursement_amount: portion.reimbursementAmount,

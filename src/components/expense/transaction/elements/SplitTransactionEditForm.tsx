@@ -226,6 +226,16 @@ export const SplitTransactionEditForm: React.FC<
       const totalReimbursement = parseFloat(values.reimbursementAmount || "0");
       const totalAmount = watchedAmount;
 
+      console.log("[SplitEdit] Reimbursement distribution:", {
+        totalReimbursement,
+        totalAmount,
+        portions: portions.map((p) => ({
+          id: p.id,
+          amount: p.amount,
+          paymentMethodId: p.paymentMethodId,
+        })),
+      });
+
       // Distribute reimbursement proportionally to each portion
       const getPortionReimbursement = (portionAmount: number): number => {
         if (totalReimbursement <= 0 || totalAmount <= 0) return 0;
@@ -240,6 +250,23 @@ export const SplitTransactionEditForm: React.FC<
         );
       };
 
+      // Map portions with reimbursement
+      const portionsWithReimbursement = portions.map((p) => ({
+        paymentMethodId: p.paymentMethodId,
+        amount: p.amount,
+        paymentAmount: p.paymentAmount,
+        paymentCurrency: p.paymentCurrency,
+        rewardPoints: p.rewardPoints,
+        basePoints: p.basePoints,
+        bonusPoints: p.bonusPoints,
+        reimbursementAmount: getPortionReimbursement(p.amount),
+      }));
+
+      console.log(
+        "[SplitEdit] Portions with reimbursement:",
+        portionsWithReimbursement
+      );
+
       // Update existing split transactions (preserves transaction IDs)
       const updatedTransactions = await storageService.updateSplitTransaction({
         splitGroupId: transaction.splitGroupId,
@@ -247,16 +274,7 @@ export const SplitTransactionEditForm: React.FC<
         currency: watchedCurrency,
         merchant: merchantData,
         date: selectedDate.toISOString(),
-        portions: portions.map((p) => ({
-          paymentMethodId: p.paymentMethodId,
-          amount: p.amount,
-          paymentAmount: p.paymentAmount,
-          paymentCurrency: p.paymentCurrency,
-          rewardPoints: p.rewardPoints,
-          basePoints: p.basePoints,
-          bonusPoints: p.bonusPoints,
-          reimbursementAmount: getPortionReimbursement(p.amount),
-        })),
+        portions: portionsWithReimbursement,
         isContactless: !values.isOnline && values.isContactless,
         notes: values.notes || undefined,
       });
