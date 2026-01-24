@@ -365,9 +365,9 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return sortedDays;
   }, [filteredTransactions, displayCurrency]);
 
-  // Get days that should have spike markers
-  const spikeDays = useMemo(() => {
-    return new Set(topSpendingDays.map((d) => d.day));
+  // Get date strings that should have spike markers (use date string for accurate matching)
+  const spikeDates = useMemo(() => {
+    return new Set(topSpendingDays.map((d) => d.date));
   }, [topSpendingDays]);
 
   // Custom tooltip
@@ -577,14 +577,20 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                   dot={(props: {
                     cx?: number;
                     cy?: number;
-                    payload?: { day: number; actual: number | null };
+                    payload?: {
+                      day: number;
+                      actual: number | null;
+                      originalKey: string;
+                    };
                   }) => {
                     if (!props.payload || props.payload.actual === null)
                       return <></>;
 
                     const isLastActual =
                       props.payload.day === lastActualPoint?.day;
-                    const isSpikeDay = spikeDays.has(props.payload.day);
+                    const isSpikeDay = spikeDates.has(
+                      props.payload.originalKey
+                    );
 
                     // Show dot for spike days (amber) or last actual (line color)
                     if (isSpikeDay && !isLastActual) {
