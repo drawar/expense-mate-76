@@ -228,9 +228,21 @@ export function RedemptionDialog({
     );
   };
 
+  // Check if any selection dialog is open
+  const isAnySelectionDialogOpen =
+    showCurrencyDialog ||
+    showTypeDialog ||
+    showCabinDialog ||
+    showCashCurrencyDialog ||
+    showRedemptionDatePicker ||
+    showTravelDatePicker;
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => !open && !isAnySelectionDialogOpen && onClose()}
+      >
         <DialogContent
           className="sm:max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden"
           hideCloseButton
@@ -715,50 +727,50 @@ export function RedemptionDialog({
 
       {/* Selection Dialogs */}
       <SelectionDialog
-        isOpen={showCurrencyDialog}
-        onClose={() => setShowCurrencyDialog(false)}
+        open={showCurrencyDialog}
+        onOpenChange={setShowCurrencyDialog}
+        onCloseAll={onClose}
         title="Reward Currency"
         options={currencyOptions}
         selectedValue={rewardCurrencyId}
         onSelect={(value) => {
           setRewardCurrencyId(value);
-          setShowCurrencyDialog(false);
         }}
       />
 
       <SelectionDialog
-        isOpen={showTypeDialog}
-        onClose={() => setShowTypeDialog(false)}
+        open={showTypeDialog}
+        onOpenChange={setShowTypeDialog}
+        onCloseAll={onClose}
         title="Redemption Type"
         options={REDEMPTION_TYPE_OPTIONS}
         selectedValue={redemptionType}
         onSelect={(value) => {
           setRedemptionType(value as RedemptionType);
-          setShowTypeDialog(false);
         }}
       />
 
       <SelectionDialog
-        isOpen={showCabinDialog}
-        onClose={() => setShowCabinDialog(false)}
+        open={showCabinDialog}
+        onOpenChange={setShowCabinDialog}
+        onCloseAll={onClose}
         title="Cabin Class"
         options={CABIN_CLASS_OPTIONS}
         selectedValue={cabinClass}
         onSelect={(value) => {
           setCabinClass(value as CabinClass);
-          setShowCabinDialog(false);
         }}
       />
 
       <SelectionDialog
-        isOpen={showCashCurrencyDialog}
-        onClose={() => setShowCashCurrencyDialog(false)}
+        open={showCashCurrencyDialog}
+        onOpenChange={setShowCashCurrencyDialog}
+        onCloseAll={onClose}
         title="Cash Currency"
         options={CASH_CURRENCY_OPTIONS}
         selectedValue={cashValueCurrency}
         onSelect={(value) => {
           setCashValueCurrency(value);
-          setShowCashCurrencyDialog(false);
         }}
       />
     </>
