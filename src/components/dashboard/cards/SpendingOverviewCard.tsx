@@ -18,7 +18,7 @@ import {
   parseISO,
 } from "date-fns";
 import { Link } from "react-router-dom";
-import { ArrowRightIcon, TrendingUp } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { Transaction } from "@/types";
 import NumberFlow from "@number-flow/react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -369,9 +369,11 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return sortedDays;
   }, [filteredTransactions, displayCurrency]);
 
-  // Get date strings that should have spike markers (use date string for accurate matching)
-  const spikeDates = useMemo(() => {
-    return new Set(topSpendingDays.map((d) => d.date));
+  // Map date strings to spike index (1, 2, 3) for numbered markers
+  const spikeDateToIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    topSpendingDays.forEach((d, i) => map.set(d.date, i + 1));
+    return map;
   }, [topSpendingDays]);
 
   // Custom tooltip
@@ -498,7 +500,7 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
             {/* Top spending days callout */}
             {topSpendingDays.length > 0 && (
               <div className="mt-3 space-y-2">
-                {topSpendingDays.slice(0, 3).map((spike) => {
+                {topSpendingDays.slice(0, 3).map((spike, index) => {
                   if (!spike.transactions.length) return null;
 
                   // Aggregate transactions by merchant + currency
@@ -543,26 +545,33 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
 
                   if (!topMerchant) return null;
 
+                  const spikeNumber = index + 1;
+
                   return (
                     <div
                       key={spike.date}
-                      className="text-xs text-muted-foreground"
+                      className="text-xs text-muted-foreground flex items-start gap-2 justify-end"
                     >
-                      <div className="flex items-center gap-1 justify-end">
-                        <TrendingUp className="h-3 w-3 text-amber-500" />
-                        <span className="font-medium text-foreground">
-                          {format(parseISO(spike.date), "MMM d")}
-                        </span>
-                        <span>
-                          +
-                          {CurrencyService.format(
-                            topMerchant.totalOriginal,
-                            topMerchant.currency
-                          )}
-                        </span>
-                      </div>
-                      <div className="text-[11px] truncate max-w-[180px] ml-auto">
-                        {topMerchant.merchantName}
+                      {/* Numbered badge matching chart dot */}
+                      <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                        {spikeNumber}
+                      </span>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 justify-end">
+                          <span className="font-medium text-foreground">
+                            {format(parseISO(spike.date), "MMM d")}
+                          </span>
+                          <span>
+                            +
+                            {CurrencyService.format(
+                              topMerchant.totalOriginal,
+                              topMerchant.currency
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-[11px] truncate max-w-[160px]">
+                          {topMerchant.merchantName}
+                        </div>
                       </div>
                     </div>
                   );
@@ -638,21 +647,34 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
 
                     const isLastActual =
                       props.payload.day === lastActualPoint?.day;
-                    const isSpikeDay = spikeDates.has(
+                    const spikeIndex = spikeDateToIndex.get(
                       props.payload.originalKey
                     );
 
-                    // Show dot for spike days (amber) or last actual (line color)
-                    if (isSpikeDay && !isLastActual) {
+                    // Show numbered marker for spike days
+                    if (spikeIndex && !isLastActual) {
                       return (
-                        <circle
-                          cx={props.cx}
-                          cy={props.cy}
-                          r={5}
-                          fill="#f59e0b"
-                          stroke="#fff"
-                          strokeWidth={2}
-                        />
+                        <g>
+                          <circle
+                            cx={props.cx}
+                            cy={props.cy}
+                            r={8}
+                            fill="#f59e0b"
+                            stroke="#fff"
+                            strokeWidth={2}
+                          />
+                          <text
+                            x={props.cx}
+                            y={props.cy}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fill="#fff"
+                            fontSize={10}
+                            fontWeight={600}
+                          >
+                            {spikeIndex}
+                          </text>
+                        </g>
                       );
                     }
 
