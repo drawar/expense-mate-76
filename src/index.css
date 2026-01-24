@@ -32,15 +32,15 @@
     --muted: 30 10% 96%; /* #FAFAF8 */
     --muted-foreground: 30 4% 54%; /* #8E8A85 - tertiary text */
 
-    --accent: 144 19% 38%; /* #5D7567 - sage green */
+    --accent: 130 29% 31%; /* #386641 - forest green */
     --accent-foreground: 0 0% 100%; /* white */
 
-    --destructive: 10 26% 44%; /* #8B5B52 - muted terracotta */
+    --destructive: 359 45% 51%; /* #bc4749 - red */
     --destructive-foreground: 0 0% 100%;
 
     --border: 30 10% 88%; /* #E5E2DD - subtle dividers */
     --input: 30 12% 82%; /* #D4D0CA - input border */
-    --ring: 144 19% 38%; /* #5D7567 - focus ring */
+    --ring: 130 29% 31%; /* #386641 - focus ring */
 
     --radius: 0.75rem;
   }
@@ -68,15 +68,15 @@
     --muted: 200 5% 18%; /* #2C2F31 */
     --muted-foreground: 30 3% 41%; /* #6B6863 - tertiary */
 
-    --accent: 144 19% 51%; /* #7C9885 - sage green */
+    --accent: 130 29% 31%; /* #386641 - forest green */
     --accent-foreground: 200 8% 11%; /* #1A1D1F */
 
-    --destructive: 10 26% 52%; /* #A86F64 - muted terracotta */
+    --destructive: 359 45% 51%; /* #bc4749 - red */
     --destructive-foreground: 30 6% 91%;
 
     --border: 200 4% 24%; /* #3A3D3F - subtle dividers */
     --input: 200 4% 24%; /* #3A3D3F */
-    --ring: 144 19% 51%; /* #7C9885 - focus ring */
+    --ring: 130 29% 31%; /* #386641 - focus ring */
   }
 }
 

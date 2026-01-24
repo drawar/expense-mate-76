@@ -107,8 +107,11 @@ Set timezone based on card region for accurate transaction dates:
 ### Date Handling
 
 - Statement dates are in the card's local timezone
-- Convert to ISO 8601 format: `YYYY-MM-DD`
-- For transactions with time, include timezone: `YYYY-MM-DDTHH:MM:SS+08:00`
+- **CRITICAL**: Always store dates with noon UTC time (`T12:00:00+00:00`) to prevent timezone display issues
+  - ❌ WRONG: `2025-09-05` or `2025-09-05T00:00:00+00:00` (midnight UTC)
+  - ✅ CORRECT: `2025-09-05T12:00:00+00:00` (noon UTC)
+  - **Why**: Midnight UTC displays as the previous day in Pacific timezone (e.g., Sep 5 00:00 UTC = Sep 4 5pm PDT)
+- For transactions with specific time, include timezone: `YYYY-MM-DDTHH:MM:SS+08:00`
 
 ---
 
@@ -520,6 +523,15 @@ VALUES (
   '00000000-0000-0000-0000-000000000000'
 );
 ```
+
+**IMPORTANT**: After creating new merchants, ALWAYS fill in these fields:
+- `address` - Full address (e.g., "737 Dunsmuir St, Vancouver, BC V7Y 1E4, Canada")
+- `display_location` - Short friendly location (e.g., "CF Pacific Centre, Vancouver")
+- `google_maps_url` - Google Maps link (e.g., "https://maps.google.com/?q=Holt+Renfrew,+737+Dunsmuir+St,+Vancouver,+BC")
+- `mcc` - JSON object with code and description (e.g., `{"code": "5311", "description": "Department Stores"}`)
+- `coordinates` - JSON object with lat/lng (e.g., `{"lat": 49.284011, "lng": -123.116602}`)
+
+Use web search to find accurate addresses and coordinates for physical merchants.
 
 ### Transaction INSERT Template
 

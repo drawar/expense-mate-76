@@ -4,30 +4,30 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
 
 :root {
-  /* Japandi color palette - muted, natural tones */
-  --primary-lighter: #a8c4af;
-  --primary-light: #8b9a8f;
-  --primary: #7c9885;
-  --primary-dark: #6a8574;
-  --primary-darker: #5d7567;
+  /* Forest Green color palette */
+  --primary-lighter: #6a9b6d;
+  --primary-light: #4a7a4d;
+  --primary: #386641;
+  --primary-dark: #2d5235;
+  --primary-darker: #244229;
 
-  --accent-lighter: #d4c9b8;
-  --accent-light: #c4a57b;
-  --accent: #7c9885;
-  --accent-dark: #6a8574;
-  --accent-darker: #5d7567;
+  --accent-lighter: #6a9b6d;
+  --accent-light: #4a7a4d;
+  --accent: #386641;
+  --accent-dark: #2d5235;
+  --accent-darker: #244229;
 
-  --success-light: #8b9a8f;
-  --success: #7c9885;
-  --success-dark: #6a8574;
+  --success-light: #4a7a4d;
+  --success: #386641;
+  --success-dark: #2d5235;
 
   --warning-light: #d4c9b8;
   --warning: #c4a57b;
   --warning-dark: #a67c52;
 
-  --danger-light: #c49a93;
-  --danger: #a86f64;
-  --danger-dark: #8b5b52;
+  --danger-light: #d4696b;
+  --danger: #bc4749;
+  --danger-dark: #a33d3f;
 
   /* Typography scale with better differentiation */
   --font-size-xs: 0.75rem;

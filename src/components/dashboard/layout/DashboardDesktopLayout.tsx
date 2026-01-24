@@ -10,18 +10,10 @@
 
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { useBudget } from "@/hooks/useBudget";
 import {
-  SpendingTrendCard,
-  InsightsCard,
-  MoneyFlowSankey,
-  BudgetStatusCard,
-  CategoryVarianceCard,
-  CollapsibleCard,
   SpendingOverviewCard,
   CategoryPeriodComparisonCard,
   IncomeSavingsStack,
-  SecondaryKPICards,
   CategoryInsightCards,
   MostFrequentMerchantCard,
   MostFavoriteCardCard,
@@ -30,7 +22,6 @@ import {
   TopCardsCard,
   TopLoyaltyProgramsCard,
 } from "@/components/dashboard/cards";
-import ActivitySection from "./ActivitySection";
 
 interface DashboardDesktopLayoutProps {
   className?: string;
@@ -42,13 +33,9 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
   const {
     transactions,
     filteredTransactions,
-    previousPeriodTransactions,
     paymentMethods,
-    activeTab,
     displayCurrency,
   } = useDashboardContext();
-
-  const { scaledBudget } = useBudget(displayCurrency, activeTab);
 
   // Card styling
   const cardClass = "rounded-xl border border-border/50 bg-card";
@@ -112,81 +99,6 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
         />
       </div>
 
-      {/* ============================================
-          COLLAPSIBLE ZONE - Detailed Visualizations
-          Hidden by default, expandable for power users
-          ============================================ */}
-      <CollapsibleCard
-        title="Money Flow Details"
-        defaultCollapsed
-        className={cardClass}
-      >
-        <MoneyFlowSankey
-          transactions={filteredTransactions}
-          className="border-0 shadow-none"
-        />
-      </CollapsibleCard>
-
-      {/* ============================================
-          ALERTS ZONE - Smart Insights
-          Card optimization, unusual spending, etc.
-          (Budget status is in Hero Zone)
-          ============================================ */}
-      <InsightsCard
-        transactions={filteredTransactions}
-        monthlyBudget={scaledBudget}
-        currency={displayCurrency}
-        paymentMethods={paymentMethods}
-        className={cardClassHover}
-        maxInsights={3}
-        timeframe={activeTab}
-      />
-
-      {/* ============================================
-          ACTIVITY ZONE - Tabbed Activity Hub
-          Transactions | Cards | Loyalty Programs
-          ============================================ */}
-      <ActivitySection
-        transactions={filteredTransactions}
-        allTransactions={transactions}
-        displayCurrency={displayCurrency}
-        paymentMethods={paymentMethods}
-      />
-
-      {/* ============================================
-          BUDGET ZONE - Budget Status
-          Shows spend vs budget, projection, days left
-          Period comparison (vs last month)
-          ============================================ */}
-      <BudgetStatusCard className={`${cardClass} shadow-sm`} />
-
-      {/* ============================================
-          SPENDING TREND - Detailed daily/weekly view
-          ============================================ */}
-      <CollapsibleCard
-        title="Spending Trend"
-        defaultCollapsed
-        className={cardClass}
-      >
-        <SpendingTrendCard
-          transactions={filteredTransactions}
-          allTransactions={transactions}
-          previousPeriodTransactions={previousPeriodTransactions}
-          currency={displayCurrency}
-          className="border-0 shadow-none"
-          timeframe={activeTab}
-        />
-      </CollapsibleCard>
-
-      {/* ============================================
-          CATEGORY ZONE - Spending by Category Treemap
-          ============================================ */}
-      <CategoryVarianceCard className={cardClassHover} />
-
-      {/* ============================================
-          KPI CARDS - Largest Expense & Most Used Card
-          ============================================ */}
-      <SecondaryKPICards />
     </div>
   );
 };

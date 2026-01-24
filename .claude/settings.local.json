@@ -62,7 +62,19 @@
       "Bash(xargs kill:*)",
       "Bash(git check-ignore:*)",
       "Bash(xargs ls:*)",
-      "Bash(yes:*)"
+      "Bash(yes:*)",
+      "WebFetch(domain:nominatim.openstreetmap.org)",
+      "Bash(VITE_SUPABASE_URL=\"$VITE_SUPABASE_URL\" VITE_SUPABASE_PUBLISHABLE_KEY=\"$VITE_SUPABASE_PUBLISHABLE_KEY\" SUPABASE_SERVICE_ROLE_KEY=\"$SUPABASE_SERVICE_ROLE_KEY\" npx tsx:*)",
+      "Bash(src/components/dashboard/Dashboard.tsx )",
+      "Bash(src/components/dashboard/cards/Card.tsx )",
+      "Bash(src/components/dashboard/cards/SpendingTrendCard.tsx )",
+      "Bash(src/components/dashboard/cards/index.ts )",
+      "Bash(src/components/dashboard/layout/index.ts )",
+      "Bash(src/components/dashboard/cards/BudgetSpendingCardDesktop.tsx )",
+      "Bash(src/components/dashboard/cards/PointsEarnedCardDesktop.tsx )",
+      "Bash(src/components/dashboard/layout/ActivitySection.tsx )",
+      "Bash(src/components/dashboard/layout/DashboardDesktopLayout.tsx )",
+      "Bash(src/components/dashboard/layout/FinancialSummaryRow.tsx)"
     ]
   }
 }

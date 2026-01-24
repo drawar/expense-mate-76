@@ -36,46 +36,46 @@
   --color-icon-primary: #e8e6e3;
   --color-icon-secondary: #a8a5a0;
 
-  /* Accent Colors - Sage Green (Japandi) */
-  --color-accent: #7c9885;
-  --color-accent-hover: #6a8574;
-  --color-accent-pressed: #5d7567;
-  --color-accent-soft: #7c9885;
-  --color-accent-glow: rgba(124, 152, 133, 0.25);
-  --color-accent-subtle: rgba(124, 152, 133, 0.12);
-  --color-accent-text: #a8c4af;
+  /* Accent Colors - Forest Green */
+  --color-accent: #386641;
+  --color-accent-hover: #2d5235;
+  --color-accent-pressed: #244229;
+  --color-accent-soft: #386641;
+  --color-accent-glow: rgba(56, 102, 65, 0.25);
+  --color-accent-subtle: rgba(56, 102, 65, 0.12);
+  --color-accent-text: #6a9b6d;
 
   /* Semantic Colors */
   --color-success: #808f3a; /* Olive green - healthy/under budget */
   --color-warning: #c4a57b;
-  --color-danger: #d64a23; /* Burnt orange-red - unhealthy/over budget */
-  --color-error: #d64a23;
+  --color-danger: #bc4749; /* Red - unhealthy/over budget */
+  --color-error: #bc4749;
 
   /* Badge Colors */
   --color-badge-bg: rgba(124, 152, 133, 0.15);
   --color-badge-text: #a8c4af;
   --color-badge-border: rgba(124, 152, 133, 0.3);
 
-  /* Category Colors (Parent Categories) */
-  --color-category-essentials: #c09bbc;
-  --color-category-lifestyle: #f0c764;
-  --color-category-home: #9dbbca;
-  --color-category-personal: #7a442d;
-  --color-category-work: #2b50ca;
-  --color-category-financial: #f4bba4;
+  /* Category Colors (Parent Categories) - Vibrant Palette */
+  --color-category-essentials: #073B4C; /* Dark Teal */
+  --color-category-lifestyle: #FFD166; /* Golden Pollen */
+  --color-category-home: #118AB2; /* Ocean Blue */
+  --color-category-personal: #EF476F; /* Bubblegum Pink */
+  --color-category-work: #06D6A0; /* Emerald */
+  --color-category-financial: #F78C6B; /* Coral Glow */
   --color-category-other: #6b7280;
 
   /* Chart Palette (10 colors for data visualization) */
-  --color-chart-1: #7c9885;
-  --color-chart-2: #c09bbc;
-  --color-chart-3: #f0c764;
-  --color-chart-4: #9dbbca;
-  --color-chart-5: #7a442d;
-  --color-chart-6: #2b50ca;
-  --color-chart-7: #f4bba4;
-  --color-chart-8: #d64a23;
-  --color-chart-9: #808f3a;
-  --color-chart-10: #c4a57b;
+  --color-chart-1: #073B4C; /* Dark Teal */
+  --color-chart-2: #FFD166; /* Golden Pollen */
+  --color-chart-3: #118AB2; /* Ocean Blue */
+  --color-chart-4: #EF476F; /* Bubblegum Pink */
+  --color-chart-5: #06D6A0; /* Emerald */
+  --color-chart-6: #F78C6B; /* Coral Glow */
+  --color-chart-7: #386641; /* Forest Green */
+  --color-chart-8: #c4a57b; /* Warm Tan */
+  --color-chart-9: #9ca3af; /* Cool Gray */
+  --color-chart-10: #6b7280; /* Medium Gray */
 
   /* Payment Method Colors */
   --color-payment-cash: #22c55e;
@@ -173,7 +173,7 @@
 
   /* Focus Ring - Accessibility */
   --focus-ring-width: 3px;
-  --focus-ring-color: #7c9885;
+  --focus-ring-color: #386641;
   --focus-ring-offset: 2px;
 
   /* ============================================
@@ -214,19 +214,19 @@
   --color-icon-primary: #2b2926;
   --color-icon-secondary: #5c5854;
 
-  /* Accent Colors - Deeper sage for light mode */
-  --color-accent: #5d7567;
-  --color-accent-hover: #4e6356;
-  --color-accent-pressed: #3e5247;
-  --color-accent-soft: #5d7567;
-  --color-accent-glow: rgba(93, 117, 103, 0.25);
-  --color-accent-subtle: rgba(124, 152, 133, 0.15);
-  --color-accent-text: #4e6356;
+  /* Accent Colors - Forest Green for light mode */
+  --color-accent: #386641;
+  --color-accent-hover: #2d5235;
+  --color-accent-pressed: #244229;
+  --color-accent-soft: #386641;
+  --color-accent-glow: rgba(56, 102, 65, 0.25);
+  --color-accent-subtle: rgba(56, 102, 65, 0.15);
+  --color-accent-text: #2d5235;
 
   /* Semantic Colors */
   --color-success: #6b7a32; /* Darker olive green for light mode */
   --color-warning: #a67c52;
-  --color-danger: #c4421f; /* Darker burnt orange for light mode */
+  --color-danger: #a33d3f; /* Darker red for light mode */
   --color-error: #c4421f;
 
   /* Badge Colors */
