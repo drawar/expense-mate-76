@@ -91,7 +91,12 @@ const TransactionTable = ({
   // Helper to get tag display name from slug
   const getTagDisplayName = (slug: string): string => {
     const tag = tags.find((t) => t.slug === slug);
-    return tag?.displayName || slug;
+    if (tag?.displayName) return tag.displayName;
+    // Prettify slug as fallback: "seoul-2026" -> "Seoul 2026"
+    return slug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
   // Memoize CSV export to prevent recalculation on every render
   const handleExportCSV = useMemo(
