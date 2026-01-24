@@ -57,6 +57,7 @@ export class CurrencyService {
     MYR: "RM",
     QAR: "QR",
     KRW: "₩",
+    HKD: "HK$",
   };
 
   /**
@@ -83,6 +84,7 @@ export class CurrencyService {
       MYR: 4.72,
       QAR: 3.64,
       KRW: 1450,
+      HKD: 7.8,
     },
     EUR: {
       USD: 1.08,
@@ -101,6 +103,7 @@ export class CurrencyService {
       MYR: 5.09,
       QAR: 3.93,
       KRW: 1562,
+      HKD: 8.4,
     },
     GBP: {
       USD: 1.27,
@@ -119,6 +122,7 @@ export class CurrencyService {
       MYR: 6.0,
       QAR: 4.62,
       KRW: 1840,
+      HKD: 9.9,
     },
     JPY: {
       USD: 0.0066,
@@ -137,6 +141,7 @@ export class CurrencyService {
       MYR: 0.031,
       QAR: 0.024,
       KRW: 9.55,
+      HKD: 0.051,
     },
     AUD: {
       USD: 0.65,
@@ -155,6 +160,7 @@ export class CurrencyService {
       MYR: 3.08,
       QAR: 2.37,
       KRW: 948,
+      HKD: 5.1,
     },
     CAD: {
       USD: 0.73,
@@ -173,6 +179,7 @@ export class CurrencyService {
       MYR: 3.46,
       QAR: 2.66,
       KRW: 1058,
+      HKD: 5.7,
     },
     CNY: {
       USD: 0.14,
@@ -191,6 +198,7 @@ export class CurrencyService {
       MYR: 0.65,
       QAR: 0.51,
       KRW: 200,
+      HKD: 1.07,
     },
     INR: {
       USD: 0.012,
@@ -209,6 +217,7 @@ export class CurrencyService {
       MYR: 0.057,
       QAR: 0.044,
       KRW: 17.4,
+      HKD: 0.094,
     },
     TWD: {
       USD: 0.031,
@@ -227,6 +236,7 @@ export class CurrencyService {
       MYR: 0.15,
       QAR: 0.11,
       KRW: 44.9,
+      HKD: 0.24,
     },
     SGD: {
       USD: 0.74,
@@ -245,6 +255,7 @@ export class CurrencyService {
       MYR: 3.51,
       QAR: 2.69,
       KRW: 1074,
+      HKD: 5.78,
     },
     VND: {
       USD: 0.00004,
@@ -263,6 +274,7 @@ export class CurrencyService {
       MYR: 0.00019,
       QAR: 0.00015,
       KRW: 0.057,
+      HKD: 0.00031,
     },
     IDR: {
       USD: 0.000062,
@@ -281,6 +293,7 @@ export class CurrencyService {
       MYR: 0.00029,
       QAR: 0.00023,
       KRW: 0.09,
+      HKD: 0.00048,
     },
     THB: {
       USD: 0.028,
@@ -299,6 +312,7 @@ export class CurrencyService {
       MYR: 0.13,
       QAR: 0.1,
       KRW: 40.1,
+      HKD: 0.22,
     },
     MYR: {
       USD: 0.21,
@@ -317,6 +331,7 @@ export class CurrencyService {
       MYR: 1,
       QAR: 0.77,
       KRW: 307,
+      HKD: 1.65,
     },
     QAR: {
       USD: 0.27,
@@ -335,6 +350,7 @@ export class CurrencyService {
       MYR: 1.3,
       QAR: 1,
       KRW: 399,
+      HKD: 2.14,
     },
     KRW: {
       USD: 0.00069,
@@ -353,6 +369,26 @@ export class CurrencyService {
       MYR: 0.0033,
       QAR: 0.0025,
       KRW: 1,
+      HKD: 0.0054,
+    },
+    HKD: {
+      USD: 0.128,
+      EUR: 0.119,
+      GBP: 0.101,
+      JPY: 19.46,
+      AUD: 0.196,
+      CAD: 0.175,
+      CNY: 0.93,
+      INR: 10.7,
+      TWD: 4.14,
+      SGD: 0.173,
+      VND: 3244,
+      IDR: 2071,
+      THB: 4.64,
+      MYR: 0.61,
+      QAR: 0.47,
+      KRW: 186,
+      HKD: 1,
     },
   };
 
@@ -370,6 +406,7 @@ export class CurrencyService {
     { value: "AUD", label: "AUD - Australian Dollar (A$)" },
     { value: "CAD", label: "CAD - Canadian Dollar (C$)" },
     { value: "CNY", label: "CNY - Chinese Yuan (¥)" },
+    { value: "HKD", label: "HKD - Hong Kong Dollar (HK$)" },
     { value: "INR", label: "INR - Indian Rupee (₹)" },
     { value: "TWD", label: "TWD - New Taiwan Dollar (NT$)" },
     { value: "SGD", label: "SGD - Singapore Dollar (S$)" },

@@ -36,6 +36,7 @@ import type {
   CabinClass,
 } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
+import { CurrencyService } from "@/core/currency";
 
 const REDEMPTION_TYPES: { value: RedemptionType; label: string }[] = [
   { value: "flight", label: "Flight Award" },
@@ -66,18 +67,12 @@ const CABIN_CLASS_OPTIONS: SelectionOption[] = CABIN_CLASSES.map((c) => ({
   label: c.label,
 }));
 
-const CASH_CURRENCY_OPTIONS: SelectionOption[] = [
-  { value: "USD", label: "USD" },
-  { value: "SGD", label: "SGD" },
-  { value: "CAD", label: "CAD" },
-  { value: "EUR", label: "EUR" },
-  { value: "GBP", label: "GBP" },
-  { value: "HKD", label: "HKD" },
-  { value: "JPY", label: "JPY" },
-  { value: "AUD", label: "AUD" },
-  { value: "NZD", label: "NZD" },
-  { value: "CHF", label: "CHF" },
-];
+// Use centralized currency options from CurrencyService
+const CASH_CURRENCY_OPTIONS: SelectionOption[] =
+  CurrencyService.getCurrencyOptions().map((c) => ({
+    value: c.value,
+    label: c.value, // Just show the code for compact display
+  }));
 
 interface RedemptionDialogProps {
   isOpen: boolean;
