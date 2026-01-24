@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,6 +122,8 @@ function BalanceCardWithBreakdown({
 }
 
 export default function PointsManager() {
+  const navigate = useNavigate();
+
   // Fetch reward currencies and conversion rates
   const [rewardCurrencies, setRewardCurrencies] = useState<RewardCurrency[]>(
     []
@@ -321,6 +324,23 @@ export default function PointsManager() {
   const handleSubmitRedemption = async (input: PointsRedemptionInput) => {
     await addRedemption.mutateAsync(input);
     handleCloseDialog();
+
+    // Navigate to add-expense with prefilled taxes/fees if provided
+    if (input.cashValue && input.cashValue > 0) {
+      const currency = rewardCurrencies.find(
+        (c) => c.id === input.rewardCurrencyId
+      );
+      const params = new URLSearchParams();
+      params.set("merchantName", currency?.displayName || "Points Redemption");
+      params.set("amount", String(input.cashValue));
+      if (input.cashValueCurrency) {
+        params.set("currency", input.cashValueCurrency);
+      }
+      if (input.redemptionDate) {
+        params.set("date", format(input.redemptionDate, "yyyy-MM-dd"));
+      }
+      navigate(`/add-expense?${params.toString()}`);
+    }
   };
 
   const handleSubmitTransfer = async (input: PointsTransferInput) => {

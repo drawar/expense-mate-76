@@ -621,13 +621,13 @@ export function RedemptionDialog({
                 </Collapsible>
               )}
 
-              {/* Cash Value Section */}
+              {/* Taxes and Fees Section */}
               <div className="pt-4">
                 <p
                   className="text-xs font-medium uppercase tracking-wide pb-2"
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
-                  Value (for CPP)
+                  Taxes and Fees
                 </p>
 
                 {/* Cash Currency */}

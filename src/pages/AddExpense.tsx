@@ -89,8 +89,11 @@ const AddExpense = () => {
     // Fall back to URL params
     const merchantName = searchParams.get("merchantName");
     const mccCode = searchParams.get("mccCode");
+    const amount = searchParams.get("amount");
+    const currency = searchParams.get("currency");
+    const date = searchParams.get("date");
 
-    if (!merchantName && !mccCode) {
+    if (!merchantName && !mccCode && !amount && !currency && !date) {
       return undefined;
     }
 
@@ -105,6 +108,25 @@ const AddExpense = () => {
       const mcc = MCC_CODES.find((m) => m.code === mccCode);
       if (mcc) {
         values.mcc = mcc;
+      }
+    }
+
+    if (amount) {
+      const numAmount = parseFloat(amount);
+      if (!isNaN(numAmount)) {
+        values.amount = numAmount;
+      }
+    }
+
+    if (currency) {
+      values.currency = currency;
+    }
+
+    if (date) {
+      // Parse as local date (format: YYYY-MM-DD)
+      const [year, month, day] = date.split("-").map(Number);
+      if (year && month && day) {
+        values.date = new Date(year, month - 1, day);
       }
     }
 
