@@ -9,6 +9,7 @@ export interface UserPreferences {
   id: string;
   userId: string;
   defaultCurrency: Currency;
+  displayCurrency: Currency;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,6 +63,9 @@ class UserPreferencesServiceClass {
         id: data.id,
         userId: data.user_id,
         defaultCurrency: data.default_currency as Currency,
+        displayCurrency:
+          (data.display_currency as Currency) ||
+          (data.default_currency as Currency),
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -112,6 +116,50 @@ class UserPreferencesServiceClass {
   async getDefaultCurrency(): Promise<Currency | null> {
     const prefs = await this.getPreferences();
     return prefs?.defaultCurrency || null;
+  }
+
+  /**
+   * Save display currency preference to database
+   * This is the currency used for viewing dashboard data
+   */
+  async setDisplayCurrency(currency: Currency): Promise<boolean> {
+    const userId = await this.getCurrentUserId();
+    if (!userId) {
+      console.warn("No user logged in, cannot save preference to database");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.from("user_preferences").upsert(
+        {
+          user_id: userId,
+          display_currency: currency,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id",
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(`Saved display currency ${currency} for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error("Failed to save user preference:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get display currency for current user
+   * Returns null if no user or no preference set
+   */
+  async getDisplayCurrency(): Promise<Currency | null> {
+    const prefs = await this.getPreferences();
+    return prefs?.displayCurrency || null;
   }
 }
 

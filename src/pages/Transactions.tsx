@@ -37,12 +37,13 @@ const Transactions = () => {
     isLoading,
   } = useTransactionList();
 
-  // Apply URL filters on mount (date range, category, merchant, hasReimbursement)
+  // Apply URL filters on mount (date range, category, merchant, card, hasReimbursement)
   useEffect(() => {
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
     const categoryParam = searchParams.get("category");
     const merchantParam = searchParams.get("merchant");
+    const cardParam = searchParams.get("card");
     const hasReimbursementParam = searchParams.get("hasReimbursement");
 
     let hasFilters = false;
@@ -63,6 +64,11 @@ const Transactions = () => {
 
     if (merchantParam) {
       handleFilterChange("merchants", [merchantParam]);
+      hasFilters = true;
+    }
+
+    if (cardParam) {
+      handleFilterChange("paymentMethods", [cardParam]);
       hasFilters = true;
     }
 

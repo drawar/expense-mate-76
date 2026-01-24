@@ -11,13 +11,10 @@ import {
   LoadingDashboard,
   DashboardDesktopLayout,
 } from "./layout";
-import { FilterBar } from "./filters";
 import { PieChartIcon } from "lucide-react";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import FAB from "@/components/common/FAB";
 import PullToRefresh from "@/components/common/PullToRefresh";
-import { TimeframeTab } from "@/utils/dashboard";
-import { Currency } from "@/types";
 import { useBudget } from "@/hooks/useBudget";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
@@ -39,8 +36,6 @@ export function Dashboard() {
     error,
     activeTab,
     displayCurrency,
-    setActiveTab,
-    setDisplayCurrency,
     refreshData,
   } = useDashboardContext();
 
@@ -59,15 +54,6 @@ export function Dashboard() {
       .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
       .slice(0, 5);
   }, [transactions]);
-
-  // Combine filter state for FilterBar
-  const filterState = {
-    activeTab,
-    displayCurrency,
-    handleTimeframeChange: (value: string) =>
-      setActiveTab(value as TimeframeTab),
-    handleCurrencyChange: (currency: Currency) => setDisplayCurrency(currency),
-  };
 
   // Error state
   if (error) {
@@ -100,7 +86,6 @@ export function Dashboard() {
       <div className="min-h-screen">
         <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
           <DashboardHeader />
-          <FilterBar filters={filterState} className="mb-6" />
           <div className="border border-dashed rounded-xl">
             <EmptyState
               title="No Transactions Found"
@@ -119,9 +104,6 @@ export function Dashboard() {
     <PullToRefresh onRefresh={refreshData} className="min-h-screen">
       <div className="container max-w-7xl mx-auto pb-8 md:pb-16 px-4 md:px-6">
         <DashboardHeader />
-
-        {/* Global Filter Bar */}
-        <FilterBar filters={filterState} className="mb-6" />
 
         <ErrorBoundary>
           {isDesktop ? (

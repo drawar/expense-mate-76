@@ -26,6 +26,20 @@ export { default as RewardsVisualizationOptions } from "./RewardsVisualizationOp
 export { default as BudgetStatusCard } from "./BudgetStatusCard";
 export { default as CategoryVarianceCard } from "./CategoryVarianceCard";
 export { default as CollapsibleCard } from "./CollapsibleCard";
+export { default as SpendingOverviewCard } from "./SpendingOverviewCard";
+export { default as CategoryPeriodComparisonCard } from "./CategoryPeriodComparisonCard";
+export {
+  default as KPICardsRow,
+  IncomeSavingsStack,
+  SecondaryKPICards,
+  CategoryInsightCards,
+  MostFrequentMerchantCard,
+  MostFavoriteCardCard,
+} from "./KPICardsRow";
+export { default as RecentTransactionsCard } from "./RecentTransactionsCard";
+export { default as TopMerchantsCard } from "./TopMerchantsCard";
+export { default as TopCardsCard } from "./TopCardsCard";
+export { default as TopLoyaltyProgramsCard } from "./TopLoyaltyProgramsCard";
 
 // Also export types
 export type { DashboardCardProps } from "./Card";

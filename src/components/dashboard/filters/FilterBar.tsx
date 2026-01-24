@@ -1,8 +1,6 @@
 // components/dashboard/filters/FilterBar.tsx
 import React from "react";
 import { TimeframeTab } from "@/utils/dashboard";
-import { Currency } from "@/types";
-import DisplayCurrencySelect from "./DisplayCurrencySelect";
 import TimeframeSelect from "./TimeframeSelect";
 import "@/components/dashboard/styles/dashboard-filters.css";
 
@@ -12,35 +10,24 @@ import "@/components/dashboard/styles/dashboard-filters.css";
 interface FilterBarProps {
   filters: {
     activeTab: TimeframeTab;
-    displayCurrency: Currency;
     handleTimeframeChange: (value: TimeframeTab) => void;
-    handleCurrencyChange: (currency: Currency) => void;
   };
   className?: string;
 }
 
 /**
- * Compact filter bar - single row with currency and timeframe selectors
+ * Compact filter bar - timeframe selector only
+ * (Currency is now configured in Settings)
  */
 const FilterBar: React.FC<FilterBarProps> = ({ filters, className = "" }) => {
-  const {
-    activeTab,
-    displayCurrency,
-    handleTimeframeChange,
-    handleCurrencyChange,
-  } = filters;
+  const { activeTab, handleTimeframeChange } = filters;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <DisplayCurrencySelect
-        value={displayCurrency}
-        onChange={handleCurrencyChange}
-        className="flex-1"
-      />
+    <div className={className}>
       <TimeframeSelect
         value={activeTab}
         onChange={handleTimeframeChange}
-        className="flex-1"
+        className="w-full"
       />
     </div>
   );

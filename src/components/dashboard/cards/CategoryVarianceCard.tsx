@@ -182,11 +182,14 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
           subcategoryName: nodeName,
         });
       } else if (drillState.level === "merchant") {
-        // At merchant level, navigate to transactions filtered by merchant
+        // At merchant level, navigate to transactions filtered by merchant and category
         const dateRange = getDateRange();
         const params = new URLSearchParams();
         if (nodeName !== "Other") {
           params.set("merchant", nodeName);
+        }
+        if (drillState.subcategoryName) {
+          params.set("category", drillState.subcategoryName);
         }
         if (dateRange) {
           params.set("from", formatDate(dateRange.from));
@@ -321,24 +324,25 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
             No spending data available for this period.
           </p>
         ) : (
-          <div className="h-48">
+          <div className="h-56">
             <ResponsiveTreeMap
               data={treemapData}
               identity="name"
               value="value"
               valueFormat={(value) => formatCurrency(value)}
               leavesOnly={true}
-              innerPadding={3}
-              outerPadding={0}
+              innerPadding={4}
+              outerPadding={2}
+              enableParentLabel={false}
               label={(node) => node.id as string}
-              labelSkipSize={60}
+              labelSkipSize={40}
               orientLabel={false}
               labelTextColor={isDarkMode ? "white" : "black"}
               theme={{
                 labels: {
                   text: {
-                    fontSize: 13,
-                    fontWeight: 400,
+                    fontSize: 15,
+                    fontWeight: 500,
                   },
                 },
               }}

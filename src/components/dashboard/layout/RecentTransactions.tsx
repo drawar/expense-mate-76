@@ -31,6 +31,7 @@ interface RecentTransactionsProps {
   displayCurrency?: Currency;
   maxItems?: number;
   paymentMethods?: PaymentMethod[];
+  className?: string;
 }
 
 interface GroupedTransaction {
@@ -150,6 +151,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   displayCurrency = "CAD",
   maxItems = 5,
   paymentMethods = [],
+  className = "",
 }) => {
   // Use the media query hook for responsive design
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -298,7 +300,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   }, [isMobile]);
 
   return (
-    <div className="mt-6">
+    <div className={className || "mt-6"}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-medium tracking-tight text-primary">
           Recent Transactions

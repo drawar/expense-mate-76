@@ -582,7 +582,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                 dataKey="period"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 14 }}
                 interval="preserveStartEnd"
               />
 
@@ -601,7 +601,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                       value: "Budget",
                       position: "right",
                       fill: FORECAST_CHART_COLORS.budget,
-                      fontSize: 10,
+                      fontSize: 14,
                     }}
                   />
                 )}
@@ -616,7 +616,7 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
                     value: "Today",
                     position: "insideTop",
                     fill: "#9ca3af",
-                    fontSize: 9,
+                    fontSize: 13,
                     dx: 18,
                   }}
                 />
@@ -677,11 +677,11 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
               <Line
                 type="monotone"
                 dataKey="amount"
-                stroke="#7c9885"
+                stroke="#386641"
                 strokeWidth={2}
-                dot={{ fill: "#7c9885", strokeWidth: 0, r: 3 }}
+                dot={{ fill: "#386641", strokeWidth: 0, r: 3 }}
                 activeDot={{
-                  fill: "#7c9885",
+                  fill: "#386641",
                   strokeWidth: 2,
                   stroke: "#fff",
                   r: 5,
@@ -706,9 +706,9 @@ const SpendingTrendCard: React.FC<SpendingTrendCardProps> = ({
 
       {/* Legend for forecast view */}
       {shouldShowForecast && (
-        <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-4 mt-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
-            <div className="w-4 h-0.5 bg-[#7c9885]" />
+            <div className="w-4 h-0.5 bg-[#386641]" />
             <span>Actual</span>
           </div>
           <div className="flex items-center gap-1">

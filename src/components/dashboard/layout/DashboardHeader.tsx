@@ -2,6 +2,7 @@
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { TimeframeTab } from "@/utils/dashboard";
+import TimeframeSelect from "@/components/dashboard/filters/TimeframeSelect";
 
 /**
  * Get human-readable period label for the current timeframe
@@ -79,19 +80,22 @@ function getPeriodLabel(timeframe: TimeframeTab): string {
 }
 
 /**
- * Component that displays the contextual dashboard header with period
+ * Component that displays the contextual dashboard header with period and timeframe tabs
  */
 const DashboardHeader: React.FC = () => {
-  const { activeTab } = useDashboardContext();
+  const { activeTab, setActiveTab } = useDashboardContext();
   const periodLabel = getPeriodLabel(activeTab);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
-      <div>
-        <h1 className="text-2xl font-medium tracking-tight text-gradient">
-          {periodLabel}
-        </h1>
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-[25%_1fr] gap-4 items-center mb-6 mt-4">
+      <h1 className="text-2xl font-medium tracking-tight text-gradient">
+        {periodLabel}
+      </h1>
+      <TimeframeSelect
+        value={activeTab}
+        onChange={setActiveTab}
+        className="w-full"
+      />
     </div>
   );
 };

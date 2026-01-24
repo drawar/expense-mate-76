@@ -4,35 +4,19 @@
  * Simplified: one key metric (projection) with visual context
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   TargetIcon,
-  PencilIcon,
-  CheckIcon,
-  XIcon,
   TrendingUpIcon,
   TrendingDownIcon,
   MinusIcon,
+  SettingsIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
-import { useBudget, BudgetPeriodType } from "@/hooks/useBudget";
+import { useBudget } from "@/hooks/useBudget";
 import { calculateProjectedSpend } from "@/utils/dashboard/insightGenerator";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 
@@ -52,14 +36,7 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
   // Budget from Supabase with timeframe scaling
-  const { scaledBudget, rawBudget, periodType, isLoading, setBudget } =
-    useBudget(displayCurrency, activeTab);
-
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState("");
-  const [editPeriodType, setEditPeriodType] =
-    useState<BudgetPeriodType>("monthly");
+  const { scaledBudget, isLoading } = useBudget(displayCurrency, activeTab);
 
   // Calculate metrics
   const metrics = dashboardData?.metrics || {
@@ -159,43 +136,6 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
   const spendPercent = maxScale > 0 ? (netExpenses / maxScale) * 100 : 0;
   const expectedPercent = maxScale > 0 ? (expectedSpend / maxScale) * 100 : 0;
 
-  // Save budget to Supabase
-  const saveBudget = async (
-    amount: number,
-    budgetPeriodType: BudgetPeriodType
-  ) => {
-    try {
-      await setBudget(amount, displayCurrency, budgetPeriodType);
-    } catch (error) {
-      console.error("Failed to save budget:", error);
-    }
-  };
-
-  // Handle edit
-  const handleStartEdit = () => {
-    setEditValue(rawBudget > 0 ? rawBudget.toString() : "");
-    setEditPeriodType(periodType);
-    setIsEditing(true);
-  };
-
-  const handleSaveEdit = async () => {
-    const amount = parseFloat(editValue);
-    if (!isNaN(amount) && amount >= 0) {
-      await saveBudget(amount, editPeriodType);
-    }
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditValue("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSaveEdit();
-    else if (e.key === "Escape") handleCancelEdit();
-  };
-
   // Status text color
   const getStatusColor = () => {
     if (isOverBudget) return "text-red-600 dark:text-red-400";
@@ -217,31 +157,9 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
             <TargetIcon className="h-5 w-5 text-primary" />
             Budget Status
           </CardTitle>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
-              {daysRemaining} days left
-            </span>
-            {!isEditing && scaledBudget > 0 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={handleStartEdit}
-                      aria-label="Edit budget"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Edit budget</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {daysRemaining} days left
+          </span>
         </div>
       </CardHeader>
       <CardContent>
@@ -249,43 +167,6 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="animate-pulse text-muted-foreground">
               Loading budget...
-            </div>
-          </div>
-        ) : isEditing ? (
-          <div className="space-y-3 max-w-md">
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter budget amount"
-                className="h-9 flex-1"
-                autoFocus
-              />
-              <Select
-                value={editPeriodType}
-                onValueChange={(value) =>
-                  setEditPeriodType(value as BudgetPeriodType)
-                }
-              >
-                <SelectTrigger className="w-28 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleSaveEdit} className="flex-1">
-                <CheckIcon className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                <XIcon className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         ) : scaledBudget === 0 ? (
@@ -298,14 +179,13 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
                 spent this period
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleStartEdit}
-              className="w-full max-w-xs"
+            <Link
+              to="/settings"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
             >
-              Set Budget
-            </Button>
+              <SettingsIcon className="h-4 w-4" />
+              Set budget in Settings
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">

@@ -34,26 +34,32 @@ interface SankeyLink {
   value: number;
 }
 
-// Category colors from the hierarchy - light mode
+// Category colors - Vibrant Palette
 const CATEGORY_COLORS: Record<string, string> = {
-  Lifestyle: "#E5A84B",
-  Essentials: "#9B8BB8",
-  "Home & Living": "#7BA3A8",
-  "Financial & Other": "#E8B89D",
-  Transportation: "#7BA3A8",
-  Shopping: "#E5A84B",
-  "Food & Dining": "#E8B89D",
+  Essentials: "#073B4C", // Dark Teal
+  Lifestyle: "#FFD166", // Golden Pollen
+  "Home & Living": "#118AB2", // Ocean Blue
+  "Personal Care": "#EF476F", // Bubblegum Pink
+  "Work & Education": "#06D6A0", // Emerald
+  "Financial & Other": "#F78C6B", // Coral Glow
+  // Legacy mappings
+  Transportation: "#073B4C",
+  Shopping: "#FFD166",
+  "Food & Dining": "#FFD166",
 };
 
-// Japandi-inspired muted colors for dark mode
+// Same colors for dark mode (vibrant palette works in both)
 const CATEGORY_COLORS_DARK: Record<string, string> = {
-  Lifestyle: "#D4A574", // warm tan
-  Essentials: "#B8A9C9", // muted lavender
-  "Home & Living": "#8FA9A3", // sage green
-  "Financial & Other": "#C9B8A8", // warm beige
-  Transportation: "#8FA9A3",
-  Shopping: "#D4A574",
-  "Food & Dining": "#C9B8A8",
+  Essentials: "#073B4C", // Dark Teal
+  Lifestyle: "#FFD166", // Golden Pollen
+  "Home & Living": "#118AB2", // Ocean Blue
+  "Personal Care": "#EF476F", // Bubblegum Pink
+  "Work & Education": "#06D6A0", // Emerald
+  "Financial & Other": "#F78C6B", // Coral Glow
+  // Legacy mappings
+  Transportation: "#073B4C",
+  Shopping: "#FFD166",
+  "Food & Dining": "#FFD166",
 };
 
 // Japandi node colors for dark mode

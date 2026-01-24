@@ -1,7 +1,7 @@
 // components/dashboard/layout/ActivitySection.tsx
 /**
  * Combined Activity Section for Desktop
- * Tabbed interface: Transactions | Merchants | Cards
+ * Tabbed interface: Transactions | Cards | Loyalty Programs
  */
 
 import React, { useCallback, useState, useMemo } from "react";
@@ -12,10 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ClockIcon,
-  StoreIcon,
   CreditCardIcon,
   ChevronRightIcon,
-  Plus,
   CoinsIcon,
 } from "lucide-react";
 import {
@@ -25,8 +23,33 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
-import { getCategoryIcon } from "@/utils/constants/categories";
+import {
+  getCategoryIcon,
+  getParentCategory,
+} from "@/utils/constants/categories";
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
+
+// Category colors for icon backgrounds (40% opacity)
+const CATEGORY_HEX_COLORS: Record<string, string> = {
+  essentials: "#073B4C",
+  lifestyle: "#FFD166",
+  home_living: "#118AB2",
+  personal_care: "#EF476F",
+  work_education: "#06D6A0",
+  financial_other: "#F78C6B",
+};
+
+function getCategoryBgColor(categoryName: string): string {
+  const parent = getParentCategory(categoryName);
+  const hex = parent ? CATEGORY_HEX_COLORS[parent.id] : "#6b7280";
+  if (!hex) return "rgba(107, 114, 128, 0.5)";
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return "rgba(107, 114, 128, 0.5)";
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return `rgba(${r}, ${g}, ${b}, 0.5)`;
+}
 import { CurrencyService } from "@/core/currency";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
 import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
@@ -106,14 +129,6 @@ function abbreviatePointsCurrency(currency: string | undefined): string {
   return currency.length <= 3
     ? currency.toUpperCase()
     : currency.slice(0, 3).toUpperCase();
-}
-
-interface MerchantStats {
-  name: string;
-  count: number;
-  totalSpent: number;
-  mccCode?: string;
-  currency: Currency;
 }
 
 interface SpendByCard {
@@ -218,44 +233,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     return Array.from(groups.values());
   }, [recentTransactions]);
 
-  // Aggregate frequent merchants (show more in tab view)
-  const merchantStats = useMemo(() => {
-    const statsMap = new Map<string, MerchantStats>();
-
-    transactions.forEach((tx) => {
-      const merchantName = tx.merchant?.name?.trim();
-      if (!merchantName) return;
-
-      const key = merchantName.toLowerCase();
-      const existing = statsMap.get(key);
-
-      if (existing) {
-        if (existing.currency === tx.currency) {
-          existing.totalSpent += tx.amount;
-        } else {
-          existing.totalSpent += tx.convertedAmount ?? tx.amount;
-        }
-        existing.count += 1;
-        if (tx.merchant?.mcc?.code) {
-          existing.mccCode = tx.merchant.mcc.code;
-        }
-      } else {
-        statsMap.set(key, {
-          name: merchantName,
-          count: 1,
-          totalSpent: tx.amount,
-          mccCode: tx.merchant?.mcc?.code,
-          currency: tx.currency,
-        });
-      }
-    });
-
-    return Array.from(statsMap.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  }, [transactions]);
-
-  // Aggregate spend by card (show more in tab view)
+  // Aggregate spend by card
   const spendByCard = useMemo(() => {
     const cardMap = new Map<
       string,
@@ -366,16 +344,6 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     [pointsByCurrency]
   );
 
-  // Build URL for quick add
-  const buildAddExpenseUrl = (merchant: MerchantStats): string => {
-    const params = new URLSearchParams();
-    params.set("merchantName", merchant.name);
-    if (merchant.mccCode) {
-      params.set("mccCode", merchant.mccCode);
-    }
-    return `/add-expense?${params.toString()}`;
-  };
-
   // Handle transaction click
   const handleTransactionClick = useCallback((tx: Transaction) => {
     setSelectedTransaction(tx);
@@ -408,10 +376,6 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
               <TabsTrigger value="transactions" className="gap-1.5">
                 <ClockIcon className="h-4 w-4" />
                 Transactions
-              </TabsTrigger>
-              <TabsTrigger value="merchants" className="gap-1.5">
-                <StoreIcon className="h-4 w-4" />
-                Merchants
               </TabsTrigger>
               <TabsTrigger value="cards" className="gap-1.5">
                 <CreditCardIcon className="h-4 w-4" />
@@ -453,16 +417,25 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                           onClick={() => handleTransactionClick(tx)}
                           className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
                         >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <CategoryIcon
-                              iconName={
-                                getCategoryIcon(
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{
+                                backgroundColor: getCategoryBgColor(
                                   getEffectiveCategory(tx) || "Other"
-                                ) as CategoryIconName
-                              }
-                              size={16}
-                              className="text-muted-foreground flex-shrink-0"
-                            />
+                                ),
+                              }}
+                            >
+                              <CategoryIcon
+                                iconName={
+                                  getCategoryIcon(
+                                    getEffectiveCategory(tx) || "Other"
+                                  ) as CategoryIconName
+                                }
+                                size={16}
+                                className="text-foreground"
+                              />
+                            </div>
                             <div className="min-w-0">
                               <p className="font-medium truncate">
                                 {formatMerchantName(tx.merchant)}
@@ -489,54 +462,6 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                         </button>
                       ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Merchants Tab */}
-          <TabsContent value="merchants" className="mt-0">
-            {merchantStats.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No merchant data available
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {merchantStats.map((merchant) => (
-                  <div
-                    key={merchant.name}
-                    className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0 mr-2">
-                      <p className="font-medium truncate">{merchant.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {merchant.count} transactions
-                      </p>
-                    </div>
-                    <div className="text-right mr-3">
-                      <p className="font-medium">
-                        {CurrencyService.format(
-                          merchant.totalSpent,
-                          merchant.currency
-                        )}
-                      </p>
-                    </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link
-                            to={buildAddExpenseUrl(merchant)}
-                            className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                          <p>Add {merchant.name} expense</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </div>
                 ))}
               </div>

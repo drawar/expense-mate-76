@@ -9,6 +9,7 @@ import { useDashboardMetrics } from "./useDashboardMetrics";
 import { supabase } from "@/integrations/supabase/client";
 import { TimeframeTab } from "@/utils/dashboard";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserPreferencesService } from "@/core/preferences";
 
 // Valid timeframe values for URL validation
 const VALID_TIMEFRAMES: TimeframeTab[] = [
@@ -51,19 +52,26 @@ export function useDashboard(options: {
     return defaultTimeframe;
   };
 
-  const getInitialCurrency = (): Currency => {
-    const param = searchParams.get("currency");
-    if (param && VALID_CURRENCIES.includes(param as Currency)) {
-      return param as Currency;
-    }
-    return defaultCurrency;
-  };
-
-  // State for filters - initialized from URL params
+  // State for filters - initialized from URL params (timeframe) and settings (currency)
   const [activeTab, setActiveTabState] =
     useState<TimeframeTab>(getInitialTimeframe);
   const [displayCurrency, setDisplayCurrencyState] =
-    useState<Currency>(getInitialCurrency);
+    useState<Currency>(defaultCurrency);
+
+  // Load display currency from user preferences on mount
+  useEffect(() => {
+    const loadDisplayCurrency = async () => {
+      try {
+        const savedCurrency = await UserPreferencesService.getDisplayCurrency();
+        if (savedCurrency && VALID_CURRENCIES.includes(savedCurrency)) {
+          setDisplayCurrencyState(savedCurrency);
+        }
+      } catch (error) {
+        console.error("Failed to load display currency preference:", error);
+      }
+    };
+    loadDisplayCurrency();
+  }, []);
   const [useStatementMonth, setUseStatementMonth] = useState<boolean>(
     defaultUseStatementMonth
   );
@@ -88,34 +96,20 @@ export function useDashboard(options: {
     [setSearchParams]
   );
 
-  const setDisplayCurrency = useCallback(
-    (currency: Currency) => {
-      setDisplayCurrencyState(currency);
-      setSearchParams(
-        (prev) => {
-          const newParams = new URLSearchParams(prev);
-          newParams.set("currency", currency);
-          return newParams;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
+  // Display currency is now managed through Settings, not URL params
+  const setDisplayCurrency = useCallback((currency: Currency) => {
+    setDisplayCurrencyState(currency);
+  }, []);
 
   // Sync URL to state on initial load (handles browser back/forward)
   useEffect(() => {
     const urlTimeframe = searchParams.get("timeframe");
-    const urlCurrency = searchParams.get("currency");
 
     if (
       urlTimeframe &&
       VALID_TIMEFRAMES.includes(urlTimeframe as TimeframeTab)
     ) {
       setActiveTabState(urlTimeframe as TimeframeTab);
-    }
-    if (urlCurrency && VALID_CURRENCIES.includes(urlCurrency as Currency)) {
-      setDisplayCurrencyState(urlCurrency as Currency);
     }
   }, [searchParams]);
 
