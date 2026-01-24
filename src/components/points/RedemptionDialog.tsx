@@ -73,6 +73,11 @@ const CASH_CURRENCY_OPTIONS: SelectionOption[] = [
   { value: "CAD", label: "CAD" },
   { value: "EUR", label: "EUR" },
   { value: "GBP", label: "GBP" },
+  { value: "HKD", label: "HKD" },
+  { value: "JPY", label: "JPY" },
+  { value: "AUD", label: "AUD" },
+  { value: "NZD", label: "NZD" },
+  { value: "CHF", label: "CHF" },
 ];
 
 interface RedemptionDialogProps {
