@@ -498,29 +498,35 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
             {/* Top spending days callout */}
             {topSpendingDays.length > 0 && (
               <div className="mt-3 space-y-2">
-                {topSpendingDays.slice(0, 3).map((spike, index) => (
-                  <div
-                    key={spike.date}
-                    className="text-xs text-muted-foreground"
-                  >
-                    <div className="flex items-center gap-1 justify-end">
-                      <TrendingUp className="h-3 w-3 text-amber-500" />
-                      <span className="font-medium text-foreground">
-                        {format(parseISO(spike.date), "MMM d")}
-                      </span>
-                      <span>+{formatCurrency(spike.amount)}</span>
+                {topSpendingDays.slice(0, 3).map((spike) => {
+                  // Get the largest transaction (already sorted by amount desc)
+                  const topTx = spike.transactions[0];
+                  if (!topTx) return null;
+
+                  // Calculate net amount in original currency
+                  const netAmount =
+                    topTx.amount - (topTx.reimbursementAmount ?? 0);
+
+                  return (
+                    <div
+                      key={spike.date}
+                      className="text-xs text-muted-foreground"
+                    >
+                      <div className="flex items-center gap-1 justify-end">
+                        <TrendingUp className="h-3 w-3 text-amber-500" />
+                        <span className="font-medium text-foreground">
+                          {format(parseISO(spike.date), "MMM d")}
+                        </span>
+                        <span>
+                          +{CurrencyService.format(netAmount, topTx.currency)}
+                        </span>
+                      </div>
+                      <div className="text-[11px] truncate max-w-[180px] ml-auto">
+                        {topTx.merchant.name}
+                      </div>
                     </div>
-                    <div className="text-[11px] truncate max-w-[180px] ml-auto">
-                      {spike.transactions
-                        .slice(0, 2)
-                        .map((tx) => tx.merchant.name)
-                        .join(", ")}
-                      {spike.transactions.length > 2 && (
-                        <span> +{spike.transactions.length - 2} more</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
