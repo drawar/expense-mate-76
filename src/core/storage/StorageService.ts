@@ -1199,6 +1199,7 @@ export class StorageService {
       rewardPoints: number;
       basePoints: number;
       bonusPoints: number;
+      reimbursementAmount?: number;
     }>;
     isContactless: boolean;
     notes?: string;
@@ -1316,6 +1317,7 @@ export class StorageService {
           category: userCategory,
           split_group_id: splitGroupData.id,
           user_id: session.user.id,
+          reimbursement_amount: portion.reimbursementAmount,
         };
 
         const { data: txData, error: txError } = await supabase
@@ -1353,6 +1355,7 @@ export class StorageService {
           userCategory: txData.user_category || undefined,
           category: txData.category || undefined,
           splitGroupId: splitGroupData.id,
+          reimbursementAmount: txData.reimbursement_amount ?? undefined,
         };
 
         createdTransactions.push(newTransaction);
@@ -1475,6 +1478,7 @@ export class StorageService {
       rewardPoints: number;
       basePoints: number;
       bonusPoints: number;
+      reimbursementAmount?: number;
     }>;
     isContactless: boolean;
     notes?: string;
@@ -1591,6 +1595,7 @@ export class StorageService {
             mcc_code: mccCode,
             user_category: userCategory,
             category: userCategory,
+            reimbursement_amount: portion.reimbursementAmount,
             updated_at: new Date().toISOString(),
           };
 
@@ -1628,6 +1633,7 @@ export class StorageService {
             userCategory: txData.user_category || undefined,
             category: txData.category || undefined,
             splitGroupId: input.splitGroupId,
+            reimbursementAmount: txData.reimbursement_amount ?? undefined,
           });
         } else {
           // Create new transaction for additional portion
@@ -1648,6 +1654,7 @@ export class StorageService {
             category: userCategory,
             split_group_id: input.splitGroupId,
             user_id: session.user.id,
+            reimbursement_amount: portion.reimbursementAmount,
           };
 
           const { data: txData, error: txError } = await supabase
@@ -1686,6 +1693,7 @@ export class StorageService {
             userCategory: txData.user_category || undefined,
             category: txData.category || undefined,
             splitGroupId: input.splitGroupId,
+            reimbursementAmount: txData.reimbursement_amount ?? undefined,
           });
         }
       }
