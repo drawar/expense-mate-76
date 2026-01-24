@@ -497,9 +497,9 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
 
-            {/* Top spending days callout - horizontal badges (half container width) */}
+            {/* Top spending days callout - horizontal badges */}
             {topSpendingDays.length > 0 && (
-              <div className="mt-3 flex gap-1.5 w-1/2 ml-auto">
+              <div className="mt-3 flex gap-1.5 w-full">
                 {topSpendingDays.slice(0, 3).map((spike, index) => {
                   if (!spike.transactions.length) return null;
 
