@@ -37,11 +37,12 @@ const Transactions = () => {
     isLoading,
   } = useTransactionList();
 
-  // Apply URL filters on mount (date range, category, hasReimbursement)
+  // Apply URL filters on mount (date range, category, merchant, hasReimbursement)
   useEffect(() => {
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
     const categoryParam = searchParams.get("category");
+    const merchantParam = searchParams.get("merchant");
     const hasReimbursementParam = searchParams.get("hasReimbursement");
 
     let hasFilters = false;
@@ -57,6 +58,11 @@ const Transactions = () => {
       // Support multiple categories separated by comma
       const categories = categoryParam.split(",").map((c) => c.trim());
       handleFilterChange("categories", categories);
+      hasFilters = true;
+    }
+
+    if (merchantParam) {
+      handleFilterChange("merchants", [merchantParam]);
       hasFilters = true;
     }
 

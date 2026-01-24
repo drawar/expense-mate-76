@@ -25,6 +25,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { getCategoryIcon } from "@/utils/constants/categories";
+import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 import { CurrencyService } from "@/core/currency";
 import { TransactionDialog } from "@/components/expense/transaction/TransactionDialog";
 import TransactionDeleteDialog from "@/components/transaction/TransactionDeleteDialog";
@@ -451,13 +453,24 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                           onClick={() => handleTransactionClick(tx)}
                           className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
                         >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {formatMerchantName(tx.merchant)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {getEffectiveCategory(tx)}
-                            </p>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <CategoryIcon
+                              iconName={
+                                getCategoryIcon(
+                                  getEffectiveCategory(tx) || "Other"
+                                ) as CategoryIconName
+                              }
+                              size={16}
+                              className="text-muted-foreground flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">
+                                {formatMerchantName(tx.merchant)}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {getEffectiveCategory(tx) || "Other"}
+                              </p>
+                            </div>
                           </div>
                           <div className="text-right ml-4">
                             <p className="font-medium">

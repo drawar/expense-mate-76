@@ -354,7 +354,7 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
               )}
             </p>
 
-            {/* Period comparison */}
+            {/* Period comparison - show dollar variance */}
             {previousSpend > 0 && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-1">
                 {isUp ? (
@@ -373,8 +373,8 @@ const BudgetStatusCard: React.FC<BudgetStatusCardProps> = ({
                         : ""
                   }
                 >
-                  {isUp && "+"}
-                  {Math.round(percentageChange)}%
+                  {formatCurrency(Math.abs(netExpenses - previousSpend))}{" "}
+                  {isUp ? "more" : isDown ? "less" : "same"}
                 </span>
                 <span>{getPeriodLabel()}</span>
               </div>

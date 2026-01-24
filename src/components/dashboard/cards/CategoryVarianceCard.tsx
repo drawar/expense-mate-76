@@ -1,20 +1,33 @@
 // components/dashboard/cards/CategoryVarianceCard.tsx
 /**
- * Treemap showing spending by category
- * Visual proportions at a glance
+ * Drill-down treemap showing spending hierarchy:
+ * Parent Category → Subcategory → Merchant
  */
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ResponsiveTreeMap } from "@nivo/treemap";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ChevronRightIcon, HomeIcon } from "lucide-react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import {
+  buildCategoryHierarchy,
+  ParentCategorySpending,
+} from "@/utils/dashboard/categoryHierarchy";
 
 interface CategorySpendCardProps {
   className?: string;
+}
+
+type DrillLevel = "parent" | "subcategory" | "merchant";
+
+interface DrillState {
+  level: DrillLevel;
+  parentCategory?: ParentCategorySpending;
+  subcategoryName?: string;
 }
 
 const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
@@ -24,6 +37,9 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
   const { filteredTransactions, displayCurrency, activeTab } =
     useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
+
+  // Drill-down state
+  const [drillState, setDrillState] = useState<DrillState>({ level: "parent" });
 
   // Detect dark mode
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -40,63 +56,162 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Calculate net spending by category (gross - reimbursements)
-  // Group small categories (<5%) into "Other"
-  const treemapData = useMemo(() => {
-    const byCategory = new Map<string, number>();
+  // Build category hierarchy
+  const hierarchy = useMemo(() => {
+    return buildCategoryHierarchy(filteredTransactions, displayCurrency);
+  }, [filteredTransactions, displayCurrency]);
 
-    filteredTransactions.forEach((tx) => {
-      const category = getEffectiveCategory(tx) || "Other";
-      const grossAmount = CurrencyService.convert(
-        tx.paymentAmount ?? tx.amount,
-        tx.paymentCurrency ?? tx.currency,
-        displayCurrency
-      );
-      const reimbursedAmount = tx.reimbursementAmount
-        ? CurrencyService.convert(
-            tx.reimbursementAmount,
-            tx.paymentCurrency ?? tx.currency,
-            displayCurrency
-          )
-        : 0;
-      const netAmount = grossAmount - reimbursedAmount;
-      byCategory.set(category, (byCategory.get(category) || 0) + netAmount);
-    });
+  // Calculate merchant data for a specific subcategory
+  const getMerchantData = useCallback(
+    (subcategoryName: string) => {
+      const byMerchant = new Map<string, number>();
 
-    // Convert to array and filter positive values
-    const categories = Array.from(byCategory.entries())
+      filteredTransactions.forEach((tx) => {
+        const category = getEffectiveCategory(tx);
+        if (category !== subcategoryName) return;
+
+        const merchantName = tx.merchant?.name?.trim() || "Unknown";
+        const grossAmount = CurrencyService.convert(
+          tx.paymentAmount ?? tx.amount,
+          tx.paymentCurrency ?? tx.currency,
+          displayCurrency
+        );
+        const reimbursedAmount = tx.reimbursementAmount
+          ? CurrencyService.convert(
+              tx.reimbursementAmount,
+              tx.paymentCurrency ?? tx.currency,
+              displayCurrency
+            )
+          : 0;
+        const netAmount = grossAmount - reimbursedAmount;
+        byMerchant.set(
+          merchantName,
+          (byMerchant.get(merchantName) || 0) + netAmount
+        );
+      });
+
+      return groupAndThreshold(byMerchant, 0.02);
+    },
+    [filteredTransactions, displayCurrency]
+  );
+
+  // Helper to group and threshold data
+  const groupAndThreshold = (
+    dataMap: Map<string, number>,
+    thresholdPercent: number = 0.05
+  ) => {
+    const items = Array.from(dataMap.entries())
       .map(([name, value]) => ({ name, value }))
       .filter((c) => c.value > 0)
       .sort((a, b) => b.value - a.value);
 
-    // Calculate total for percentage threshold
-    const total = categories.reduce((sum, c) => sum + c.value, 0);
-    const threshold = total * 0.05; // 5% threshold
+    const total = items.reduce((sum, c) => sum + c.value, 0);
+    const threshold = total * thresholdPercent;
 
-    // Group small categories into "Other"
-    const mainCategories: { name: string; value: number }[] = [];
+    const mainItems: { name: string; value: number }[] = [];
     let otherTotal = 0;
 
-    categories.forEach((cat) => {
-      if (cat.value >= threshold) {
-        mainCategories.push(cat);
+    items.forEach((item) => {
+      if (item.value >= threshold) {
+        mainItems.push(item);
       } else {
-        otherTotal += cat.value;
+        otherTotal += item.value;
       }
     });
 
-    // Add "Other" if there are grouped small categories
     if (otherTotal > 0) {
-      mainCategories.push({ name: "Other", value: otherTotal });
+      mainItems.push({ name: "Other", value: otherTotal });
     }
 
     return {
       name: "spending",
-      children: mainCategories,
+      children: mainItems,
     };
-  }, [filteredTransactions, displayCurrency]);
+  };
 
-  const hasData = treemapData.children.length > 0;
+  // Build treemap data based on drill level
+  const treemapData = useMemo(() => {
+    if (drillState.level === "parent") {
+      // Show parent categories
+      return {
+        name: "spending",
+        children: hierarchy.categories.map((cat) => ({
+          name: cat.name,
+          value: cat.amount,
+        })),
+      };
+    } else if (
+      drillState.level === "subcategory" &&
+      drillState.parentCategory
+    ) {
+      // Show subcategories within selected parent
+      return {
+        name: drillState.parentCategory.name,
+        children: drillState.parentCategory.subcategories.map((sub) => ({
+          name: sub.name,
+          value: sub.amount,
+        })),
+      };
+    } else if (drillState.level === "merchant" && drillState.subcategoryName) {
+      // Show merchants within selected subcategory
+      return getMerchantData(drillState.subcategoryName);
+    }
+
+    return { name: "spending", children: [] };
+  }, [drillState, hierarchy, getMerchantData]);
+
+  // Handle click to drill down
+  const handleClick = useCallback(
+    (nodeName: string) => {
+      if (nodeName === "Other") return; // Don't drill into "Other"
+
+      if (drillState.level === "parent") {
+        const parentCat = hierarchy.categories.find(
+          (cat) => cat.name === nodeName
+        );
+        if (parentCat) {
+          setDrillState({
+            level: "subcategory",
+            parentCategory: parentCat,
+          });
+        }
+      } else if (drillState.level === "subcategory") {
+        setDrillState({
+          ...drillState,
+          level: "merchant",
+          subcategoryName: nodeName,
+        });
+      } else if (drillState.level === "merchant") {
+        // At merchant level, navigate to transactions filtered by merchant
+        const dateRange = getDateRange();
+        const params = new URLSearchParams();
+        if (nodeName !== "Other") {
+          params.set("merchant", nodeName);
+        }
+        if (dateRange) {
+          params.set("from", formatDate(dateRange.from));
+          params.set("to", formatDate(dateRange.to));
+        }
+        navigate(`/transactions?${params.toString()}`);
+      }
+    },
+    [drillState, hierarchy, navigate]
+  );
+
+  // Navigate back in breadcrumb
+  const goToLevel = useCallback(
+    (level: DrillLevel) => {
+      if (level === "parent") {
+        setDrillState({ level: "parent" });
+      } else if (level === "subcategory" && drillState.parentCategory) {
+        setDrillState({
+          level: "subcategory",
+          parentCategory: drillState.parentCategory,
+        });
+      }
+    },
+    [drillState.parentCategory]
+  );
 
   // Convert activeTab to date range for navigation
   const getDateRange = () => {
@@ -142,7 +257,7 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
 
   const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-  // Japandi color palette - darker for better contrast
+  // Japandi color palette
   const colors = [
     "hsl(152, 40%, 40%)", // Sage green
     "hsl(25, 45%, 45%)", // Warm terracotta
@@ -154,14 +269,55 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
     "hsl(260, 30%, 45%)", // Muted lavender
   ];
 
+  const hasData = treemapData.children.length > 0;
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Spending by Category</CardTitle>
+        {/* Breadcrumb navigation */}
+        <div className="flex items-center gap-1 text-sm">
+          <button
+            onClick={() => goToLevel("parent")}
+            className={`flex items-center gap-1 hover:text-primary transition-colors ${
+              drillState.level === "parent"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground"
+            }`}
+          >
+            <HomeIcon className="h-4 w-4" />
+            <span>Spending</span>
+          </button>
+
+          {drillState.level !== "parent" && drillState.parentCategory && (
+            <>
+              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+              <button
+                onClick={() => goToLevel("subcategory")}
+                className={`hover:text-primary transition-colors ${
+                  drillState.level === "subcategory"
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {drillState.parentCategory.name}
+              </button>
+            </>
+          )}
+
+          {drillState.level === "merchant" && drillState.subcategoryName && (
+            <>
+              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground font-medium">
+                {drillState.subcategoryName}
+              </span>
+            </>
+          )}
+        </div>
       </CardHeader>
+
       <CardContent>
         {!hasData ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground py-8 text-center">
             No spending data available for this period.
           </p>
         ) : (
@@ -190,25 +346,17 @@ const CategorySpendCard: React.FC<CategorySpendCardProps> = ({
               borderWidth={0}
               animate={true}
               motionConfig="gentle"
-              onClick={(node) => {
-                const category = node.id as string;
-                const dateRange = getDateRange();
-                const params = new URLSearchParams();
-                // Don't filter by category if clicking "Other" (grouped small categories)
-                if (category !== "Other") {
-                  params.set("category", category);
-                }
-                if (dateRange) {
-                  params.set("from", formatDate(dateRange.from));
-                  params.set("to", formatDate(dateRange.to));
-                }
-                navigate(`/transactions?${params.toString()}`);
-              }}
+              onClick={(node) => handleClick(node.id as string)}
               tooltip={({ node }) => (
                 <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-md text-sm">
                   <strong>{node.id}</strong>
                   <br />
                   {formatCurrency(node.value)}
+                  {node.id !== "Other" && drillState.level !== "merchant" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Click to drill down
+                    </p>
+                  )}
                 </div>
               )}
             />
