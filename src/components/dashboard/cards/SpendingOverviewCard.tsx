@@ -15,9 +15,11 @@ import {
   subMonths,
   startOfYear,
   endOfYear,
+  parseISO,
 } from "date-fns";
 import { Link } from "react-router-dom";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, TrendingUp } from "lucide-react";
+import { Transaction } from "@/types";
 import NumberFlow from "@number-flow/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardContext } from "@/contexts/DashboardContext";
@@ -291,6 +293,83 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return null;
   }, [chartData]);
 
+  // Calculate top spending days directly from transactions
+  interface SpikeDayInfo {
+    day: number;
+    date: string;
+    amount: number;
+    transactions: Transaction[];
+  }
+
+  const topSpendingDays = useMemo((): SpikeDayInfo[] => {
+    if (!filteredTransactions?.length) return [];
+
+    // Helper to get net amount converted to display currency
+    const getNetAmountInDisplayCurrency = (tx: Transaction): number => {
+      const gross = CurrencyService.convert(
+        tx.paymentAmount ?? tx.amount,
+        tx.paymentCurrency ?? tx.currency,
+        displayCurrency
+      );
+      const reimbursed = tx.reimbursementAmount
+        ? CurrencyService.convert(
+            tx.reimbursementAmount,
+            tx.paymentCurrency ?? tx.currency,
+            displayCurrency
+          )
+        : 0;
+      return gross - reimbursed;
+    };
+
+    // Group transactions by date and calculate daily totals
+    const dailyData = new Map<
+      string,
+      { amount: number; transactions: Transaction[] }
+    >();
+
+    filteredTransactions
+      .filter((tx) => tx.amount > 0)
+      .forEach((tx) => {
+        const dateKey = tx.date.split("T")[0];
+        const netAmount = getNetAmountInDisplayCurrency(tx);
+
+        if (netAmount <= 0) return; // Skip fully reimbursed
+
+        const existing = dailyData.get(dateKey) || {
+          amount: 0,
+          transactions: [],
+        };
+        dailyData.set(dateKey, {
+          amount: existing.amount + netAmount,
+          transactions: [...existing.transactions, tx],
+        });
+      });
+
+    // Convert to array and sort by amount descending
+    const sortedDays = Array.from(dailyData.entries())
+      .map(([date, data]) => ({
+        date,
+        day: parseInt(date.split("-")[2], 10), // Extract day number
+        amount: data.amount,
+        transactions: data.transactions.sort((a, b) => {
+          // Sort transactions by net amount descending
+          return (
+            getNetAmountInDisplayCurrency(b) - getNetAmountInDisplayCurrency(a)
+          );
+        }),
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3)
+      .filter((d) => d.amount > 50); // Only show days with significant spending
+
+    return sortedDays;
+  }, [filteredTransactions, displayCurrency]);
+
+  // Get days that should have spike markers
+  const spikeDays = useMemo(() => {
+    return new Set(topSpendingDays.map((d) => d.day));
+  }, [topSpendingDays]);
+
   // Custom tooltip
   const CustomTooltip = ({
     active,
@@ -400,16 +479,47 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
               </p>
             )}
           </div>
-          <Link
-            to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
-            className="group flex items-center gap-1 text-sm text-primary"
-          >
-            <span className="relative">
-              View transactions
-              <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
-            </span>
-            <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
+          <div className="text-right">
+            <Link
+              to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
+              className="group flex items-center gap-1 text-sm text-primary justify-end"
+            >
+              <span className="relative">
+                View transactions
+                <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
+              </span>
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+
+            {/* Top spending days callout */}
+            {topSpendingDays.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {topSpendingDays.slice(0, 3).map((spike, index) => (
+                  <div
+                    key={spike.date}
+                    className="text-xs text-muted-foreground"
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      <TrendingUp className="h-3 w-3 text-amber-500" />
+                      <span className="font-medium text-foreground">
+                        {format(parseISO(spike.date), "MMM d")}
+                      </span>
+                      <span>+{formatCurrency(spike.amount)}</span>
+                    </div>
+                    <div className="text-[11px] truncate max-w-[180px] ml-auto">
+                      {spike.transactions
+                        .slice(0, 2)
+                        .map((tx) => tx.merchant.name)
+                        .join(", ")}
+                      {spike.transactions.length > 2 && (
+                        <span> +{spike.transactions.length - 2} more</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Chart */}
@@ -469,22 +579,41 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                     cy?: number;
                     payload?: { day: number; actual: number | null };
                   }) => {
-                    // Only show dot at the last actual data point (today)
                     if (!props.payload || props.payload.actual === null)
                       return <></>;
+
                     const isLastActual =
                       props.payload.day === lastActualPoint?.day;
-                    if (!isLastActual) return <></>;
-                    return (
-                      <circle
-                        cx={props.cx}
-                        cy={props.cy}
-                        r={6}
-                        fill={spendingLineColor}
-                        stroke="#fff"
-                        strokeWidth={2}
-                      />
-                    );
+                    const isSpikeDay = spikeDays.has(props.payload.day);
+
+                    // Show dot for spike days (amber) or last actual (line color)
+                    if (isSpikeDay && !isLastActual) {
+                      return (
+                        <circle
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={5}
+                          fill="#f59e0b"
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      );
+                    }
+
+                    if (isLastActual) {
+                      return (
+                        <circle
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={6}
+                          fill={spendingLineColor}
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      );
+                    }
+
+                    return <></>;
                   }}
                   activeDot={{
                     fill: spendingLineColor,
