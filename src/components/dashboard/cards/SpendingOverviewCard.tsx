@@ -134,6 +134,9 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  // Track hovered spike badge for connection line
+  const [hoveredSpikeDate, setHoveredSpikeDate] = useState<string | null>(null);
+
   const netExpenses = mounted ? actualNetExpenses : 0;
 
   // Calculate today's spending
@@ -376,6 +379,13 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return map;
   }, [topSpendingDays]);
 
+  // Get the day number for the hovered spike (for vertical reference line)
+  const hoveredSpikeDay = useMemo(() => {
+    if (!hoveredSpikeDate) return null;
+    const spike = topSpendingDays.find((d) => d.date === hoveredSpikeDate);
+    return spike?.day ?? null;
+  }, [hoveredSpikeDate, topSpendingDays]);
+
   // Custom tooltip
   const CustomTooltip = ({
     active,
@@ -550,7 +560,9 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                   return (
                     <div
                       key={spike.date}
-                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative"
+                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative cursor-pointer transition-all hover:bg-muted"
+                      onMouseEnter={() => setHoveredSpikeDate(spike.date)}
+                      onMouseLeave={() => setHoveredSpikeDate(null)}
                     >
                       {/* Numbered badge - top left corner inside */}
                       <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
@@ -606,6 +618,17 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                   />
                 )}
 
+                {/* Vertical connection line when hovering spike badge */}
+                {hoveredSpikeDay && (
+                  <ReferenceLine
+                    x={hoveredSpikeDay}
+                    stroke="#f59e0b"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    strokeOpacity={0.6}
+                  />
+                )}
+
                 <Tooltip content={<CustomTooltip />} />
 
                 {/* Projected spending line (dashed) - only for current month */}
@@ -648,12 +671,24 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
 
                     // Show numbered marker for spike days
                     if (spikeIndex && !isLastActual) {
+                      const isHovered =
+                        props.payload.originalKey === hoveredSpikeDate;
                       return (
                         <g>
+                          {/* Glow effect when hovered */}
+                          {isHovered && (
+                            <circle
+                              cx={props.cx}
+                              cy={props.cy}
+                              r={14}
+                              fill="#f59e0b"
+                              fillOpacity={0.3}
+                            />
+                          )}
                           <circle
                             cx={props.cx}
                             cy={props.cy}
-                            r={8}
+                            r={isHovered ? 10 : 8}
                             fill="#f59e0b"
                             stroke="#fff"
                             strokeWidth={2}
@@ -664,7 +699,7 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                             textAnchor="middle"
                             dominantBaseline="central"
                             fill="#fff"
-                            fontSize={10}
+                            fontSize={isHovered ? 11 : 10}
                             fontWeight={600}
                           >
                             {spikeIndex}
