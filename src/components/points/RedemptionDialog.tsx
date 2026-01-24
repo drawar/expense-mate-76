@@ -125,6 +125,7 @@ export function RedemptionDialog({
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [showCabinDialog, setShowCabinDialog] = useState(false);
   const [showCashCurrencyDialog, setShowCashCurrencyDialog] = useState(false);
+  const [showAirlineDialog, setShowAirlineDialog] = useState(false);
   const [showRedemptionDatePicker, setShowRedemptionDatePicker] =
     useState(false);
   const [showTravelDatePicker, setShowTravelDatePicker] = useState(false);
@@ -215,6 +216,20 @@ export function RedemptionDialog({
     })
   );
 
+  // Build airline options from unique issuers
+  const airlineOptions: SelectionOption[] = useMemo(() => {
+    const uniqueIssuers = new Set<string>();
+    (rewardCurrencies || []).forEach((c) => {
+      if (c.issuer) uniqueIssuers.add(c.issuer);
+    });
+    return Array.from(uniqueIssuers)
+      .sort()
+      .map((issuer) => ({
+        value: issuer,
+        label: issuer,
+      }));
+  }, [rewardCurrencies]);
+
   const getTypeLabel = () => {
     return (
       REDEMPTION_TYPES.find((t) => t.value === redemptionType)?.label ||
@@ -234,6 +249,7 @@ export function RedemptionDialog({
     showTypeDialog ||
     showCabinDialog ||
     showCashCurrencyDialog ||
+    showAirlineDialog ||
     showRedemptionDatePicker ||
     showTravelDatePicker;
 
@@ -478,26 +494,30 @@ export function RedemptionDialog({
                     </button>
 
                     {/* Airline */}
-                    <div className="py-3 flex items-center justify-between gap-4">
-                      <label
-                        htmlFor="airline"
-                        className="text-base md:text-sm font-medium shrink-0"
+                    <button
+                      type="button"
+                      onClick={() => setShowAirlineDialog(true)}
+                      className="w-full py-3 flex items-center justify-between text-base md:text-sm"
+                    >
+                      <span
+                        className="font-medium whitespace-nowrap shrink-0"
                         style={{ color: "var(--color-text-secondary)" }}
                       >
                         Airline
-                      </label>
-                      <Input
-                        id="airline"
-                        placeholder="Singapore Airlines"
-                        value={airline}
-                        onChange={(e) => setAirline(e.target.value)}
-                        className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 flex-1 max-w-[180px]"
-                        style={{
-                          backgroundColor: "transparent",
-                          color: "var(--color-text-primary)",
-                        }}
-                      />
-                    </div>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span
+                          className="truncate"
+                          style={{ color: "var(--color-text-primary)" }}
+                        >
+                          {airline || "Select airline"}
+                        </span>
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: "var(--color-text-tertiary)" }}
+                        />
+                      </span>
+                    </button>
 
                     {/* Passengers */}
                     <div className="py-3 flex items-center justify-between gap-4">
@@ -759,6 +779,18 @@ export function RedemptionDialog({
         selectedValue={cabinClass}
         onSelect={(value) => {
           setCabinClass(value as CabinClass);
+        }}
+      />
+
+      <SelectionDialog
+        open={showAirlineDialog}
+        onOpenChange={setShowAirlineDialog}
+        onCloseAll={onClose}
+        title="Airline"
+        options={airlineOptions}
+        selectedValue={airline}
+        onSelect={(value) => {
+          setAirline(value);
         }}
       />
 
