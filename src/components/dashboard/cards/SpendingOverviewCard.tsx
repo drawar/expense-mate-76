@@ -330,7 +330,10 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     filteredTransactions
       .filter((tx) => tx.amount > 0)
       .forEach((tx) => {
-        const dateKey = tx.date.split("T")[0];
+        // Parse date as local time to match forecast data
+        // tx.date might be UTC, so convert to local date string
+        const txDate = new Date(tx.date);
+        const dateKey = format(txDate, "yyyy-MM-dd");
         const netAmount = getNetAmountInDisplayCurrency(tx);
 
         if (netAmount <= 0) return; // Skip fully reimbursed
