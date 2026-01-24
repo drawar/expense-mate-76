@@ -327,26 +327,27 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
       { amount: number; transactions: Transaction[] }
     >();
 
-    filteredTransactions
-      .filter((tx) => tx.amount > 0)
-      .forEach((tx) => {
-        // Parse date as local time to match forecast data
-        // tx.date might be UTC, so convert to local date string
-        const txDate = new Date(tx.date);
-        const dateKey = format(txDate, "yyyy-MM-dd");
-        const netAmount = getNetAmountInDisplayCurrency(tx);
+    filteredTransactions.forEach((tx) => {
+      // Parse date as local time to match forecast data
+      // tx.date might be UTC, so convert to local date string
+      const txDate = new Date(tx.date);
+      const dateKey = format(txDate, "yyyy-MM-dd");
+      // Include both positive and negative amounts, minus reimbursements
+      const netAmount = getNetAmountInDisplayCurrency(tx);
 
-        if (netAmount <= 0) return; // Skip fully reimbursed
-
-        const existing = dailyData.get(dateKey) || {
-          amount: 0,
-          transactions: [],
-        };
-        dailyData.set(dateKey, {
-          amount: existing.amount + netAmount,
-          transactions: [...existing.transactions, tx],
-        });
+      const existing = dailyData.get(dateKey) || {
+        amount: 0,
+        transactions: [],
+      };
+      dailyData.set(dateKey, {
+        amount: existing.amount + netAmount,
+        // Only include transactions with positive net spending for display
+        transactions:
+          netAmount > 0
+            ? [...existing.transactions, tx]
+            : existing.transactions,
       });
+    });
 
     // Convert to array and sort by amount descending
     const sortedDays = Array.from(dailyData.entries())
