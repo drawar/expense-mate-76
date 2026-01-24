@@ -497,9 +497,9 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
 
-            {/* Top spending days callout */}
+            {/* Top spending days callout - horizontal badges */}
             {topSpendingDays.length > 0 && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 flex gap-2">
                 {topSpendingDays.slice(0, 3).map((spike, index) => {
                   if (!spike.transactions.length) return null;
 
@@ -550,28 +550,23 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                   return (
                     <div
                       key={spike.date}
-                      className="text-xs text-muted-foreground flex items-start gap-2 justify-end"
+                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center"
                     >
-                      {/* Numbered badge matching chart dot */}
-                      <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                        {spikeNumber}
-                      </span>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 justify-end">
-                          <span className="font-medium text-foreground">
-                            {format(parseISO(spike.date), "MMM d")}
-                          </span>
-                          <span>
-                            +
-                            {CurrencyService.format(
-                              topMerchant.totalOriginal,
-                              topMerchant.currency
-                            )}
-                          </span>
-                        </div>
-                        <div className="text-[11px] truncate max-w-[160px]">
-                          {topMerchant.merchantName}
-                        </div>
+                      {/* Numbered badge */}
+                      <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                          {spikeNumber}
+                        </span>
+                        <span className="text-xs font-medium text-foreground">
+                          +
+                          {CurrencyService.format(
+                            topMerchant.totalOriginal,
+                            topMerchant.currency
+                          )}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {topMerchant.merchantName}
                       </div>
                     </div>
                   );
