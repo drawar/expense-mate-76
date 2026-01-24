@@ -201,12 +201,7 @@ const TransactionDetailsView = ({
   // Get display name for a tag slug
   const getTagDisplayName = (slug: string): string => {
     const tag = allTags.find((t) => t.slug === slug);
-    if (tag?.displayName) return tag.displayName;
-    // Prettify slug as fallback: "seoul-2026" -> "Seoul 2026"
-    return slug
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    return tag?.displayName || slug;
   };
 
   // Parse transaction tags
