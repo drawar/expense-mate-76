@@ -550,21 +550,21 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                   return (
                     <div
                       key={spike.date}
-                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center"
+                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative"
                     >
-                      {/* Numbered badge */}
-                      <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                          {spikeNumber}
-                        </span>
-                        <span className="text-xs font-medium text-foreground">
-                          +
-                          {CurrencyService.format(
-                            topMerchant.totalOriginal,
-                            topMerchant.currency
-                          )}
-                        </span>
+                      {/* Numbered badge - top left corner */}
+                      <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                        {spikeNumber}
+                      </span>
+                      {/* Amount - centered */}
+                      <div className="text-xs font-medium text-foreground">
+                        +
+                        {CurrencyService.format(
+                          topMerchant.totalOriginal,
+                          topMerchant.currency
+                        )}
                       </div>
+                      {/* Merchant name - centered */}
                       <div className="text-[11px] text-muted-foreground truncate">
                         {topMerchant.merchantName}
                       </div>
