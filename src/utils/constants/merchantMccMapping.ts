@@ -121,7 +121,6 @@ export const AIRLINE_MERCHANT_MCC_MAP: Record<
   westjet: { code: "3138", description: "WestJet" },
   "singapore airlines": { code: "3144", description: "Singapore Airlines" },
   sq: { code: "3144", description: "Singapore Airlines" },
-  sia: { code: "3144", description: "Singapore Airlines" },
   scoot: { code: "3145", description: "Scoot" },
   volaris: { code: "3146", description: "Volaris" },
   jetblue: { code: "3148", description: "JetBlue Airways" },

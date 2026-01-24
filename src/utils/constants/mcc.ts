@@ -87,7 +87,7 @@ export const MCC_CODES = [
   { code: "3080", description: "Air Zimbabwe" },
   { code: "3081", description: "Kenya Airways" },
   { code: "3082", description: "Korean Air" },
-  { code: "3083", description: "Cathay Pacific" },
+  { code: "3083", description: "Air Jamaica" },
   { code: "3084", description: "Singapore Airlines" },
   { code: "3085", description: "Thai Airways" },
   { code: "3086", description: "China Airlines" },

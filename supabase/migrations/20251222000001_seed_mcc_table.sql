@@ -91,7 +91,7 @@ INSERT INTO mcc (code, description) VALUES
 ('3080', 'Air Zimbabwe'),
 ('3081', 'Kenya Airways'),
 ('3082', 'Korean Air'),
-('3083', 'Cathay Pacific'),
+('3083', 'Air Jamaica'),
 ('3084', 'Singapore Airlines'),
 ('3085', 'Thai Airways'),
 ('3086', 'China Airlines'),
