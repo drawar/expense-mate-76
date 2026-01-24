@@ -62,11 +62,55 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
 
   return (
     <div className={`flex flex-col gap-4 h-full ${className}`}>
+      {/* Total Savings */}
+      <Card className="bg-card border-border/50 flex-1">
+        <CardContent className="pt-6 pb-4">
+          <p className="text-sm text-muted-foreground text-center">
+            {totalSavings >= 0 ? "You've saved" : "Over Budget"}
+          </p>
+          <p
+            className={`text-4xl font-bold tracking-tight mt-1 text-center ${
+              totalSavings >= 0 ? "text-primary" : "text-destructive"
+            }`}
+          >
+            <NumberFlow
+              value={totalSavings}
+              format={{
+                style: "currency",
+                currency: displayCurrency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                signDisplay: "exceptZero",
+              }}
+            />
+          </p>
+          <p className="text-sm text-muted-foreground mt-3 text-center">
+            that's
+          </p>
+          <p
+            className={`text-7xl font-bold tracking-tight text-center my-1 ${
+              totalSavings >= 0 ? "text-primary" : "text-destructive"
+            }`}
+          >
+            <NumberFlow
+              value={savingsPercentage}
+              suffix="%"
+              transformTiming={{ duration: 500 }}
+            />
+          </p>
+          <p className="text-sm text-muted-foreground text-center mb-1">
+            of income
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Total Income */}
       <Card className="bg-card border-border/50 flex-1">
         <CardContent className="pt-6 pb-4">
-          <p className="text-sm text-muted-foreground">Total Income</p>
-          <p className="text-4xl font-semibold tracking-tight mt-1">
+          <p className="text-sm text-muted-foreground text-center">
+            You've earned
+          </p>
+          <p className="text-4xl font-semibold tracking-tight mt-1 text-center">
             <NumberFlow
               value={totalIncome}
               format={{
@@ -87,48 +131,6 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
             </span>
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
-        </CardContent>
-      </Card>
-
-      {/* Total Savings */}
-      <Card className="bg-card border-border/50 flex-1">
-        <CardContent className="pt-6 pb-4">
-          <p className="text-sm text-muted-foreground">
-            {totalSavings >= 0 ? "Savings" : "Over Budget"}
-          </p>
-          <p
-            className={`text-4xl font-semibold tracking-tight mt-1 ${
-              totalSavings >= 0 ? "text-primary" : "text-destructive"
-            }`}
-          >
-            <NumberFlow
-              value={totalSavings}
-              format={{
-                style: "currency",
-                currency: displayCurrency,
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-                signDisplay: "exceptZero",
-              }}
-            />
-          </p>
-          <p className="text-sm text-muted-foreground mt-3 text-center">
-            that's
-          </p>
-          <p
-            className={`text-6xl font-bold tracking-tight text-center my-1 ${
-              totalSavings >= 0 ? "text-primary" : "text-destructive"
-            }`}
-          >
-            <NumberFlow
-              value={savingsPercentage}
-              suffix="%"
-              transformTiming={{ duration: 500 }}
-            />
-          </p>
-          <p className="text-sm text-muted-foreground text-center mb-1">
-            of income
-          </p>
         </CardContent>
       </Card>
     </div>
@@ -379,10 +381,12 @@ export const CategoryInsightCards: React.FC<{ className?: string }> = ({
     <div className={`h-full ${className}`}>
       {/* Top Subcategory Share Card */}
       <Card className="bg-card border-border/50 h-full">
-        <CardContent className="pt-6 pb-4">
-          <p className="text-sm text-muted-foreground">Top subcategory</p>
+        <CardContent className="h-full flex flex-col justify-center py-6">
+          <p className="text-sm text-muted-foreground text-center">
+            You spent the most on
+          </p>
           <p
-            className="text-3xl font-semibold tracking-tight mt-1"
+            className="text-3xl font-semibold tracking-tight mt-1 text-center"
             style={{
               color: topSubcategory
                 ? CATEGORY_COLORS[topSubcategory.parentId] || undefined
@@ -391,6 +395,19 @@ export const CategoryInsightCards: React.FC<{ className?: string }> = ({
           >
             {topSubcategory?.name || "-"}
           </p>
+          {topSubcategory && (
+            <p className="text-4xl font-bold tracking-tight mt-1 text-center">
+              <NumberFlow
+                value={topSubcategory.amount}
+                format={{
+                  style: "currency",
+                  currency: displayCurrency,
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }}
+              />
+            </p>
+          )}
           <p className="text-sm text-muted-foreground mt-3 text-center">
             that's
           </p>
@@ -722,10 +739,12 @@ export const MostFrequentMerchantCard: React.FC<{ className?: string }> = ({
 
   return (
     <Card className={`bg-card border-border/50 h-full ${className}`}>
-      <CardContent className="pt-6 pb-4">
-        <p className="text-sm text-muted-foreground">Most frequent merchant</p>
+      <CardContent className="h-full flex flex-col justify-center py-6">
+        <p className="text-sm text-muted-foreground text-center">
+          You shopped the most at
+        </p>
         <p
-          className="text-3xl font-semibold tracking-tight mt-1"
+          className="text-3xl font-semibold tracking-tight mt-1 text-center"
           style={{
             color: mostFrequentMerchant
               ? CATEGORY_COLORS[mostFrequentMerchant.parentCategoryId] ||
@@ -735,14 +754,11 @@ export const MostFrequentMerchantCard: React.FC<{ className?: string }> = ({
         >
           {mostFrequentMerchant?.name || "-"}
         </p>
-        <p className="text-sm text-muted-foreground mt-3 text-center">
-          You've shopped here
-        </p>
-        <p className="text-5xl font-bold tracking-tight text-center my-1">
+        <p className="text-4xl font-bold tracking-tight text-center mt-1">
           <NumberFlow value={visitCount} transformTiming={{ duration: 500 }} />
-        </p>
-        <p className="text-sm text-muted-foreground text-center mb-1">
-          {visitCount === 1 ? "time" : "times"}
+          <span className="text-sm font-normal text-muted-foreground ml-1">
+            {visitCount === 1 ? "time" : "times"}
+          </span>
         </p>
         {mostFrequentMerchant && mostFrequentMerchant.averageSpend > 0 && (
           <>
@@ -953,10 +969,12 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
 
   return (
     <Card className={`bg-card border-border/50 h-full ${className}`}>
-      <CardContent className="pt-6 pb-4">
-        <p className="text-sm text-muted-foreground">Most favorite card</p>
+      <CardContent className="h-full flex flex-col justify-center py-6">
+        <p className="text-sm text-muted-foreground text-center">
+          You used the most
+        </p>
         <p
-          className="text-3xl font-semibold tracking-tight mt-1"
+          className="text-3xl font-semibold tracking-tight mt-1 text-center"
           style={{
             color: mostFavoriteCard
               ? CATEGORY_COLORS[mostFavoriteCard.parentCategoryId] || undefined
@@ -965,14 +983,11 @@ export const MostFavoriteCardCard: React.FC<{ className?: string }> = ({
         >
           {mostFavoriteCard?.name || "-"}
         </p>
-        <p className="text-sm text-muted-foreground mt-3 text-center">
-          You've used this card
-        </p>
-        <p className="text-5xl font-bold tracking-tight text-center my-1">
+        <p className="text-4xl font-bold tracking-tight text-center mt-1">
           <NumberFlow value={useCount} transformTiming={{ duration: 500 }} />
-        </p>
-        <p className="text-sm text-muted-foreground text-center mb-1">
-          {useCount === 1 ? "time" : "times"}
+          <span className="text-sm font-normal text-muted-foreground ml-1">
+            {useCount === 1 ? "time" : "times"}
+          </span>
         </p>
         {mostFavoriteCard && mostFavoriteCard.totalSpend > 0 && (
           <>

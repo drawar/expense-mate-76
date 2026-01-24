@@ -134,6 +134,35 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
 
   const netExpenses = mounted ? actualNetExpenses : 0;
 
+  // Calculate today's spending
+  const todaySpending = useMemo(() => {
+    if (!filteredTransactions || filteredTransactions.length === 0) return 0;
+
+    const today = startOfDay(new Date());
+    let total = 0;
+
+    filteredTransactions.forEach((tx) => {
+      const txDate = startOfDay(new Date(tx.date));
+      if (txDate.getTime() === today.getTime() && tx.amount > 0) {
+        const grossAmount = CurrencyService.convert(
+          tx.paymentAmount ?? tx.amount,
+          tx.paymentCurrency ?? tx.currency,
+          displayCurrency
+        );
+        const reimbursed = tx.reimbursementAmount
+          ? CurrencyService.convert(
+              tx.reimbursementAmount,
+              tx.paymentCurrency ?? tx.currency,
+              displayCurrency
+            )
+          : 0;
+        total += grossAmount - reimbursed;
+      }
+    });
+
+    return total;
+  }, [filteredTransactions, displayCurrency]);
+
   // Calculate budget pace variance and dynamic line color
   const { spendingLineColor, varianceRatio } = useMemo(() => {
     // Japandi colors
@@ -349,7 +378,7 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
         {/* Header with total spent */}
         <div className="flex items-start justify-between mb-1">
           <div>
-            <p className="text-sm text-muted-foreground">Total spent</p>
+            <p className="text-sm text-muted-foreground">You've spent</p>
             <p className="text-4xl font-semibold tracking-tight mt-1">
               <NumberFlow
                 value={netExpenses}
@@ -361,6 +390,15 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                 }}
               />
             </p>
+            {todaySpending > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                of which{" "}
+                <span className="font-medium text-foreground">
+                  {formatCurrency(todaySpending)}
+                </span>{" "}
+                today
+              </p>
+            )}
           </div>
           <Link
             to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}

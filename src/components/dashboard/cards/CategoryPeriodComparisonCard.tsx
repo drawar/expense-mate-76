@@ -224,10 +224,7 @@ const CategoryPeriodComparisonCard: React.FC<
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <BarChart3Icon className="h-4 w-4 text-primary" />
-          Category Comparison
-        </CardTitle>
+        <CardTitle className="text-base">Category Comparison</CardTitle>
       </CardHeader>
       <CardContent>
         {!hasData ? (
