@@ -499,7 +499,7 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
 
             {/* Top spending days callout - horizontal badges */}
             {topSpendingDays.length > 0 && (
-              <div className="mt-3 flex gap-1.5 w-full">
+              <div className="mt-3 flex gap-1.5 w-[150%] -ml-[25%]">
                 {topSpendingDays.slice(0, 3).map((spike, index) => {
                   if (!spike.transactions.length) return null;
 
