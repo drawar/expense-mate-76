@@ -36,7 +36,6 @@ import type {
   CabinClass,
 } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
-import { CPPBadge } from "./BalanceCard";
 
 const REDEMPTION_TYPES: { value: RedemptionType; label: string }[] = [
   { value: "flight", label: "Flight Award" },
@@ -170,17 +169,6 @@ export function RedemptionDialog({
       }
     }
   }, [isOpen, redemption, defaultCurrencyId]);
-
-  // Calculate CPP in real-time
-  const calculatedCpp = useMemo(() => {
-    const points = Number(pointsRedeemed);
-    const value = Number(cashValue);
-    if (points > 0 && value > 0) {
-      // CPP = (cash value in cents) / points
-      return (value * 100) / points;
-    }
-    return null;
-  }, [pointsRedeemed, cashValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -684,19 +672,6 @@ export function RedemptionDialog({
                     }}
                   />
                 </div>
-
-                {/* CPP Preview */}
-                {calculatedCpp !== null && (
-                  <div className="flex items-center justify-end gap-2 pb-2">
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      CPP:
-                    </span>
-                    <CPPBadge cpp={calculatedCpp} />
-                  </div>
-                )}
               </div>
 
               {/* Description */}
