@@ -371,8 +371,11 @@ export function TransferDialog({
                       setSourceAmount(raw);
                     }}
                     disabled={!sourceCurrencyId || !destinationCurrencyId}
-                    className="h-10 w-full text-xl font-semibold text-center border-none shadow-none p-0 focus-visible:ring-0 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="h-10 w-full font-semibold text-center border-none shadow-none p-0 focus-visible:ring-0 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      color: "var(--color-text-primary)",
+                      fontSize: "1.25rem",
+                    }}
                   />
                   {/* Source Currency Selector */}
                   <button
@@ -438,14 +441,17 @@ export function TransferDialog({
                 >
                   {/* Destination Amount - Calculated (only show when valid source amount and no validation error) */}
                   <div
-                    className={`h-10 flex items-center text-xl font-semibold text-center ${
+                    className={`h-10 flex items-center font-semibold text-center ${
                       !sourceAmount ||
                       Number(sourceAmount) <= 0 ||
                       validationError
                         ? "opacity-50"
                         : ""
                     }`}
-                    style={{ color: "var(--color-accent)" }}
+                    style={{
+                      color: "var(--color-accent)",
+                      fontSize: "1.25rem",
+                    }}
                   >
                     {sourceAmount &&
                     Number(sourceAmount) > 0 &&
