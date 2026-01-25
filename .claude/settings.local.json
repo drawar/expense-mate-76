@@ -74,7 +74,8 @@
       "Bash(src/components/dashboard/cards/PointsEarnedCardDesktop.tsx )",
       "Bash(src/components/dashboard/layout/ActivitySection.tsx )",
       "Bash(src/components/dashboard/layout/DashboardDesktopLayout.tsx )",
-      "Bash(src/components/dashboard/layout/FinancialSummaryRow.tsx)"
+      "Bash(src/components/dashboard/layout/FinancialSummaryRow.tsx)",
+      "WebFetch(domain:financialhorse.com)"
     ]
   }
 }

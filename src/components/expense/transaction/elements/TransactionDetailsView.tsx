@@ -74,6 +74,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   CreditCardIcon,
   ChevronDownIcon,
   ChevronUpIcon,
@@ -82,6 +92,7 @@ import {
   SplitIcon,
   MapPinIcon,
   TagIcon,
+  RotateCcwIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/types";
@@ -104,6 +115,7 @@ interface TransactionDetailsViewProps {
   onCategoryChange?: (category: string) => void;
   onDelete?: () => void;
   onEdit?: () => void;
+  onRecordRefund?: () => void;
   isLoading?: boolean;
 }
 
@@ -112,10 +124,12 @@ const TransactionDetailsView = ({
   onCategoryChange,
   onDelete,
   onEdit,
+  onRecordRefund,
   isLoading = false,
 }: TransactionDetailsViewProps) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
   const [cardImageUrl, setCardImageUrl] = useState<string | undefined>(
     transaction.paymentMethod.imageUrl
   );
@@ -606,6 +620,17 @@ const TransactionDetailsView = ({
             Edit transaction
           </Button>
         )}
+        {onRecordRefund && (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setIsRefundDialogOpen(true)}
+            disabled={isLoading}
+          >
+            <RotateCcwIcon className="h-4 w-4 mr-2" />
+            Record refund
+          </Button>
+        )}
         {onDelete && (
           <Button
             variant="ghost"
@@ -617,6 +642,55 @@ const TransactionDetailsView = ({
           </Button>
         )}
       </div>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog
+        open={isRefundDialogOpen}
+        onOpenChange={setIsRefundDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Record refund?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new transaction dated today with reversed
+              amounts:
+              <div className="mt-3 p-3 bg-muted rounded-lg space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Amount</span>
+                  <span className="font-medium text-green-600">
+                    +
+                    {CurrencyService.format(
+                      transaction.amount,
+                      transaction.currency
+                    )}
+                  </span>
+                </div>
+                {transaction.rewardPoints !== 0 && (
+                  <div className="flex justify-between">
+                    <span>Points</span>
+                    <span className="font-medium text-destructive">
+                      {transaction.rewardPoints > 0 ? "−" : "+"}
+                      {Math.abs(transaction.rewardPoints).toLocaleString()}{" "}
+                      {transaction.paymentMethod.pointsCurrency || "pts"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onRecordRefund?.();
+                setIsRefundDialogOpen(false);
+              }}
+            >
+              Record refund
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Category Picker */}
       <CategoryPicker

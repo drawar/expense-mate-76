@@ -3,6 +3,8 @@ import { Transaction, PaymentMethod } from "@/types";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useTransactionActions } from "@/hooks/expense/useTransactionActions";
 import { getMccCategory } from "@/utils/categoryMapping";
+import { storageService } from "@/core/storage";
+import { toast } from "sonner";
 
 // Import sub-components
 import TransactionDialogHeader from "./elements/TransactionDialogHeader";
@@ -65,6 +67,49 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
       }
     : undefined;
 
+  const handleRecordRefund = async () => {
+    try {
+      // Create refund transaction with reversed amounts and current date
+      const refundTransaction: Omit<Transaction, "id"> = {
+        date: new Date().toISOString(),
+        merchant: transaction.merchant,
+        amount: -transaction.amount,
+        currency: transaction.currency,
+        paymentMethod: transaction.paymentMethod,
+        paymentAmount: -transaction.paymentAmount,
+        paymentCurrency: transaction.paymentCurrency,
+        rewardPoints: -transaction.rewardPoints,
+        basePoints: -transaction.basePoints,
+        bonusPoints: -transaction.bonusPoints,
+        promoBonusPoints: transaction.promoBonusPoints
+          ? -transaction.promoBonusPoints
+          : undefined,
+        isContactless: transaction.isContactless,
+        notes: `Refund for transaction on ${transaction.date.split("T")[0]}`,
+        mccCode: transaction.mccCode,
+        userCategory: transaction.userCategory,
+        category: transaction.category,
+        isRecategorized: transaction.isRecategorized,
+        tags: transaction.tags,
+      };
+
+      const result = await storageService.addTransaction(refundTransaction);
+
+      if (result) {
+        toast.success("Refund recorded successfully");
+        if (onTransactionUpdated) {
+          // Refresh the view by passing the original transaction
+          // The parent will refetch transactions
+          onTransactionUpdated(transaction);
+        }
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error recording refund:", error);
+      toast.error("Failed to record refund");
+    }
+  };
+
   return (
     <Dialog
       open={isOpen}
@@ -90,6 +135,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
               onCategoryChange={handleCategoryChange}
               onDelete={handleDeleteTransaction}
               onEdit={() => setDialogMode("edit")}
+              onRecordRefund={handleRecordRefund}
               isLoading={isLoading}
             />
           </>
