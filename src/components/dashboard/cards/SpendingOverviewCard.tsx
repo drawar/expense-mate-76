@@ -379,13 +379,6 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     return map;
   }, [topSpendingDays]);
 
-  // Get the day number for the hovered spike (for vertical reference line)
-  const hoveredSpikeDay = useMemo(() => {
-    if (!hoveredSpikeDate) return null;
-    const spike = topSpendingDays.find((d) => d.date === hoveredSpikeDate);
-    return spike?.day ?? null;
-  }, [hoveredSpikeDate, topSpendingDays]);
-
   // Custom tooltip
   const CustomTooltip = ({
     active,
@@ -615,17 +608,6 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                     stroke="#6b7280"
                     strokeWidth={2}
                     label={<BudgetLabel />}
-                  />
-                )}
-
-                {/* Vertical connection line when hovering spike badge */}
-                {hoveredSpikeDay && (
-                  <ReferenceLine
-                    x={hoveredSpikeDay}
-                    stroke="#f59e0b"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 2"
-                    strokeOpacity={0.6}
                   />
                 )}
 
