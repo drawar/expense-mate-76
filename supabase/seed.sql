@@ -37,7 +37,8 @@ INSERT INTO reward_currencies (code, display_name, issuer, is_transferrable) VAL
   ('asia_miles', 'Asia Miles', 'Cathay Pacific', FALSE),
   ('avios', 'Avios', 'British Airways', FALSE),
   ('flying_blue', 'Flying Blue Points', 'Air France-KLM', FALSE),
-  ('aeroplan', 'Aeroplan Points', 'Air Canada', FALSE)
+  ('aeroplan', 'Aeroplan Points', 'Air Canada', FALSE),
+  ('skypass', 'SKYPASS Miles', 'Korean Air', FALSE)
 ON CONFLICT (code) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   issuer = EXCLUDED.issuer,
