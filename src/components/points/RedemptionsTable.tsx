@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import {
   CoinsIcon,
   Plane,
@@ -39,16 +38,6 @@ const REDEMPTION_TYPE_CONFIG: Record<
   other: { label: "Other", icon: <CoinsIcon className="h-4 w-4" /> },
 };
 
-/**
- * Get CPP rating color
- */
-function getCppColor(cpp: number): string {
-  if (cpp >= 2.0) return "text-green-600";
-  if (cpp >= 1.5) return "text-emerald-600";
-  if (cpp >= 1.0) return "text-yellow-600";
-  return "text-red-600";
-}
-
 interface RedemptionsTableProps {
   redemptions: PointsRedemption[];
   onRowClick?: (redemption: PointsRedemption) => void;
@@ -68,7 +57,7 @@ export function RedemptionsTable({
             <TableHead>Reward Currency</TableHead>
             <TableHead className="w-[140px]">Type</TableHead>
             <TableHead className="w-[120px]">Points</TableHead>
-            <TableHead className="w-[100px]">CPP</TableHead>
+            <TableHead className="w-[120px]">Taxes & Fees</TableHead>
             <TableHead className="w-[130px]">Date</TableHead>
           </TableRow>
         </TableHeader>
@@ -147,15 +136,16 @@ export function RedemptionsTable({
                     </span>
                   </TableCell>
 
-                  {/* CPP */}
+                  {/* Taxes & Fees */}
                   <TableCell>
-                    {redemption.cpp ? (
-                      <Badge
-                        variant="outline"
-                        className={getCppColor(redemption.cpp)}
-                      >
-                        {redemption.cpp.toFixed(2)}cpp
-                      </Badge>
+                    {redemption.taxesFees ? (
+                      <span className="text-muted-foreground">
+                        {redemption.taxesFeesCurrency || "USD"}{" "}
+                        {redemption.taxesFees.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
