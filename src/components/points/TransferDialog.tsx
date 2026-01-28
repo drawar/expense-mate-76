@@ -306,6 +306,7 @@ export function TransferDialog({
 
     await onSubmit({
       sourceCurrencyId,
+      sourcePaymentMethodId: selectedBalance?.paymentMethodId || undefined,
       sourceAmount: numSourceAmount,
       destinationCurrencyId,
       destinationAmount: numDestinationAmount,

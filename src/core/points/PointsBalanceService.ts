@@ -400,12 +400,29 @@ export class PointsBalanceService {
     );
 
     // Calculate transfers out
-    const { data: transfersOutData } = await supabase
+    // If paymentMethodId is provided, only count transfers from that specific card
+    let transfersOutQuery = supabase
       .from("points_transfers")
       .select("source_amount")
       .eq("user_id", userId)
       .eq("source_currency_id", rewardCurrencyId)
       .eq("is_deleted", false);
+
+    if (paymentMethodId) {
+      // Card-specific balance: only count transfers from this card
+      transfersOutQuery = transfersOutQuery.eq(
+        "source_payment_method_id",
+        paymentMethodId
+      );
+    } else {
+      // Pooled balance: only count transfers without a specific payment method
+      transfersOutQuery = transfersOutQuery.is(
+        "source_payment_method_id",
+        null
+      );
+    }
+
+    const { data: transfersOutData } = await transfersOutQuery;
 
     const transfersOut = (transfersOutData ?? []).reduce(
       (sum, t) => sum + Number(t.source_amount),
@@ -511,8 +528,8 @@ export class PointsBalanceService {
   }
 
   /**
-   * Recalculate and update current balance for a currency
-   * Note: This updates ALL balances for the currency (both pooled and card-specific)
+   * Recalculate and update current balance for a currency (pooled balance)
+   * Note: This updates the pooled balance where payment_method_id is null
    */
   async recalculateBalance(
     userId: string,
@@ -531,6 +548,7 @@ export class PointsBalanceService {
       })
       .eq("user_id", userId)
       .eq("reward_currency_id", rewardCurrencyId)
+      .is("payment_method_id", null)
       .select(
         `
         *,
@@ -539,14 +557,56 @@ export class PointsBalanceService {
         )
       `
       )
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error recalculating balance:", error);
       return null;
     }
 
-    return toPointsBalance(data as DbPointsBalance);
+    return data ? toPointsBalance(data as DbPointsBalance) : null;
+  }
+
+  /**
+   * Recalculate and update current balance for a specific card
+   */
+  async recalculateBalanceForPaymentMethod(
+    userId: string,
+    rewardCurrencyId: string,
+    paymentMethodId: string
+  ): Promise<PointsBalance | null> {
+    const breakdown = await this.calculateBalanceBreakdown(
+      userId,
+      rewardCurrencyId,
+      undefined,
+      paymentMethodId
+    );
+
+    const { data, error } = await supabase
+      .from("points_balances")
+      .update({
+        current_balance: breakdown.currentBalance,
+        last_calculated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("reward_currency_id", rewardCurrencyId)
+      .eq("payment_method_id", paymentMethodId)
+      .select(
+        `
+        *,
+        reward_currencies (
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+        )
+      `
+      )
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error recalculating balance for payment method:", error);
+      return null;
+    }
+
+    return data ? toPointsBalance(data as DbPointsBalance) : null;
   }
 
   // ============================================================================
@@ -1012,6 +1072,7 @@ export class PointsBalanceService {
       .insert({
         user_id: user.id,
         source_currency_id: input.sourceCurrencyId,
+        source_payment_method_id: input.sourcePaymentMethodId || null,
         source_amount: input.sourceAmount,
         destination_currency_id: input.destinationCurrencyId,
         destination_amount: input.destinationAmount,
@@ -1042,8 +1103,17 @@ export class PointsBalanceService {
       throw error;
     }
 
-    // Recalculate both source and destination balances
-    await this.recalculateBalance(user.id, input.sourceCurrencyId);
+    // Recalculate balances
+    // If transfer has a specific payment method, recalculate that card's balance
+    if (input.sourcePaymentMethodId) {
+      await this.recalculateBalanceForPaymentMethod(
+        user.id,
+        input.sourceCurrencyId,
+        input.sourcePaymentMethodId
+      );
+    } else {
+      await this.recalculateBalance(user.id, input.sourceCurrencyId);
+    }
     await this.recalculateBalance(user.id, input.destinationCurrencyId);
 
     return toPointsTransfer(data as DbPointsTransfer);
@@ -1058,10 +1128,12 @@ export class PointsBalanceService {
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
-    // Get currency IDs before deleting
+    // Get currency IDs and payment method before deleting
     const { data: existing } = await supabase
       .from("points_transfers")
-      .select("source_currency_id, destination_currency_id")
+      .select(
+        "source_currency_id, destination_currency_id, source_payment_method_id"
+      )
       .eq("id", id)
       .single();
 
@@ -1076,9 +1148,17 @@ export class PointsBalanceService {
       throw error;
     }
 
-    // Recalculate both balances
+    // Recalculate balances
     if (existing?.source_currency_id) {
-      await this.recalculateBalance(user.id, existing.source_currency_id);
+      if (existing.source_payment_method_id) {
+        await this.recalculateBalanceForPaymentMethod(
+          user.id,
+          existing.source_currency_id,
+          existing.source_payment_method_id
+        );
+      } else {
+        await this.recalculateBalance(user.id, existing.source_currency_id);
+      }
     }
     if (existing?.destination_currency_id) {
       await this.recalculateBalance(user.id, existing.destination_currency_id);

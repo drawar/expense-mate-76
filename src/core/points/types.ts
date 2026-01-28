@@ -264,6 +264,8 @@ export interface PointsTransfer {
   userId: string;
   sourceCurrencyId: string;
   sourceCurrency?: RewardCurrency;
+  /** Optional: Links to specific payment method when multiple cards earn same currency */
+  sourcePaymentMethodId?: string;
   sourceAmount: number;
   destinationCurrencyId: string;
   destinationCurrency?: RewardCurrency;
@@ -286,6 +288,7 @@ export interface DbPointsTransfer {
   id: string;
   user_id: string;
   source_currency_id: string;
+  source_payment_method_id: string | null;
   source_amount: number;
   destination_currency_id: string;
   destination_amount: number;
@@ -328,6 +331,8 @@ export interface DbPointsTransfer {
  */
 export interface PointsTransferInput {
   sourceCurrencyId: string;
+  /** Optional: Links to specific payment method when multiple cards earn same currency */
+  sourcePaymentMethodId?: string;
   sourceAmount: number;
   destinationCurrencyId: string;
   destinationAmount: number;
@@ -594,6 +599,7 @@ export function toPointsTransfer(db: DbPointsTransfer): PointsTransfer {
     id: db.id,
     userId: db.user_id,
     sourceCurrencyId: db.source_currency_id,
+    sourcePaymentMethodId: db.source_payment_method_id ?? undefined,
     sourceCurrency: db.source_currency
       ? {
           id: db.source_currency.id,
