@@ -111,9 +111,9 @@ export function RedemptionDialog({
   const [bookingReference, setBookingReference] = useState("");
   const [passengers, setPassengers] = useState("1");
 
-  // Taxes and fees
-  const [taxesFees, setTaxesFees] = useState("");
-  const [taxesFeesCurrency, setTaxesFeesCurrency] = useState("USD");
+  // Taxes and fees (stored as cashValue)
+  const [cashValue, setCashValue] = useState("");
+  const [cashValueCurrency, setCashValueCurrency] = useState("USD");
 
   // Dates
   const [redemptionDate, setRedemptionDate] = useState<Date>(new Date());
@@ -123,8 +123,7 @@ export function RedemptionDialog({
   const [showCurrencyDialog, setShowCurrencyDialog] = useState(false);
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [showCabinDialog, setShowCabinDialog] = useState(false);
-  const [showTaxesFeesCurrencyDialog, setShowTaxesFeesCurrencyDialog] =
-    useState(false);
+  const [showCashCurrencyDialog, setShowCashCurrencyDialog] = useState(false);
   const [showAirlineDialog, setShowAirlineDialog] = useState(false);
   const [showRedemptionDatePicker, setShowRedemptionDatePicker] =
     useState(false);
@@ -144,8 +143,8 @@ export function RedemptionDialog({
         setAirline(redemption.airline || "");
         setBookingReference(redemption.bookingReference || "");
         setPassengers(String(redemption.passengers || 1));
-        setTaxesFees(redemption.taxesFees ? String(redemption.taxesFees) : "");
-        setTaxesFeesCurrency(redemption.taxesFeesCurrency || "USD");
+        setCashValue(redemption.cashValue ? String(redemption.cashValue) : "");
+        setCashValueCurrency(redemption.cashValueCurrency || "USD");
         setRedemptionDate(redemption.redemptionDate);
         setTravelDate(redemption.travelDate);
       } else {
@@ -158,8 +157,8 @@ export function RedemptionDialog({
         setAirline("");
         setBookingReference("");
         setPassengers("1");
-        setTaxesFees("");
-        setTaxesFeesCurrency("USD");
+        setCashValue("");
+        setCashValueCurrency("USD");
         setRedemptionDate(new Date());
         setTravelDate(undefined);
       }
@@ -184,8 +183,8 @@ export function RedemptionDialog({
       airline: airline || undefined,
       bookingReference: bookingReference || undefined,
       passengers: passengers ? Number(passengers) : undefined,
-      taxesFees: taxesFees ? Number(taxesFees) : undefined,
-      taxesFeesCurrency: taxesFees ? taxesFeesCurrency : undefined,
+      cashValue: cashValue ? Number(cashValue) : undefined,
+      cashValueCurrency: cashValue ? cashValueCurrency : undefined,
       redemptionDate,
       travelDate,
     });
@@ -237,7 +236,7 @@ export function RedemptionDialog({
     showCurrencyDialog ||
     showTypeDialog ||
     showCabinDialog ||
-    showTaxesFeesCurrencyDialog ||
+    showCashCurrencyDialog ||
     showAirlineDialog ||
     showRedemptionDatePicker ||
     showTravelDatePicker;
@@ -622,7 +621,7 @@ export function RedemptionDialog({
                 {/* Fee Currency */}
                 <button
                   type="button"
-                  onClick={() => setShowTaxesFeesCurrencyDialog(true)}
+                  onClick={() => setShowCashCurrencyDialog(true)}
                   className="w-full py-3 flex items-center justify-between text-base md:text-sm"
                 >
                   <span
@@ -636,7 +635,7 @@ export function RedemptionDialog({
                       className="truncate"
                       style={{ color: "var(--color-text-primary)" }}
                     >
-                      {taxesFeesCurrency}
+                      {cashValueCurrency}
                     </span>
                     <ChevronRight
                       className="h-4 w-4 shrink-0"
@@ -648,19 +647,19 @@ export function RedemptionDialog({
                 {/* Fee Amount */}
                 <div className="py-3 flex items-center justify-between gap-4">
                   <label
-                    htmlFor="taxesFees"
+                    htmlFor="cashValue"
                     className="text-base md:text-sm font-medium shrink-0"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
                     Amount
                   </label>
                   <Input
-                    id="taxesFees"
+                    id="cashValue"
                     type="text"
                     inputMode="decimal"
                     placeholder="150.00"
-                    value={taxesFees}
-                    onChange={(e) => setTaxesFees(e.target.value)}
+                    value={cashValue}
+                    onChange={(e) => setCashValue(e.target.value)}
                     className="h-9 rounded-lg text-base md:text-sm text-right border-none shadow-none pl-0 pr-2 focus-visible:ring-0 w-32"
                     style={{
                       backgroundColor: "transparent",
@@ -771,14 +770,14 @@ export function RedemptionDialog({
       />
 
       <SelectionDialog
-        open={showTaxesFeesCurrencyDialog}
-        onOpenChange={setShowTaxesFeesCurrencyDialog}
+        open={showCashCurrencyDialog}
+        onOpenChange={setShowCashCurrencyDialog}
         onCloseAll={onClose}
         title="Fee Currency"
         options={CASH_CURRENCY_OPTIONS}
-        selectedValue={taxesFeesCurrency}
+        selectedValue={cashValueCurrency}
         onSelect={(value) => {
-          setTaxesFeesCurrency(value);
+          setCashValueCurrency(value);
         }}
       />
     </>

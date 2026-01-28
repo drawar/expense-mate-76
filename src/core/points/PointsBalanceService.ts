@@ -884,8 +884,6 @@ export class PointsBalanceService {
         passengers: input.passengers,
         cash_value: input.cashValue,
         cash_value_currency: input.cashValueCurrency ?? "USD",
-        taxes_fees: input.taxesFees,
-        taxes_fees_currency: input.taxesFeesCurrency ?? "USD",
         redemption_date:
           input.redemptionDate?.toISOString() ?? new Date().toISOString(),
         travel_date: input.travelDate?.toISOString(),
@@ -949,9 +947,6 @@ export class PointsBalanceService {
     if (input.cashValue !== undefined) updateData.cash_value = input.cashValue;
     if (input.cashValueCurrency !== undefined)
       updateData.cash_value_currency = input.cashValueCurrency;
-    if (input.taxesFees !== undefined) updateData.taxes_fees = input.taxesFees;
-    if (input.taxesFeesCurrency !== undefined)
-      updateData.taxes_fees_currency = input.taxesFeesCurrency;
     if (input.redemptionDate !== undefined)
       updateData.redemption_date = input.redemptionDate.toISOString();
     if (input.travelDate !== undefined)

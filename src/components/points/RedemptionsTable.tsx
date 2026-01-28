@@ -136,12 +136,12 @@ export function RedemptionsTable({
                     </span>
                   </TableCell>
 
-                  {/* Taxes & Fees */}
+                  {/* Taxes & Fees (using cashValue field) */}
                   <TableCell>
-                    {redemption.taxesFees ? (
+                    {redemption.cashValue ? (
                       <span className="text-muted-foreground">
-                        {redemption.taxesFeesCurrency || "USD"}{" "}
-                        {redemption.taxesFees.toLocaleString(undefined, {
+                        {redemption.cashValueCurrency || "USD"}{" "}
+                        {redemption.cashValue.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}

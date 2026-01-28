@@ -182,13 +182,10 @@ export interface PointsRedemption {
   airline?: string;
   bookingReference?: string;
   passengers?: number;
-  // CPP fields
+  // CPP fields (cashValue used for taxes/fees display)
   cashValue?: number;
   cashValueCurrency?: string;
   cpp?: number; // Cents per point (auto-calculated)
-  // Taxes and fees
-  taxesFees?: number;
-  taxesFeesCurrency?: string;
   // Dates
   redemptionDate: Date;
   travelDate?: Date;
@@ -214,8 +211,6 @@ export interface DbPointsRedemption {
   cash_value: number | null;
   cash_value_currency: string | null;
   cpp: number | null;
-  taxes_fees: number | null;
-  taxes_fees_currency: string | null;
   redemption_date: string;
   travel_date: string | null;
   created_at: string;
@@ -249,12 +244,9 @@ export interface PointsRedemptionInput {
   airline?: string;
   bookingReference?: string;
   passengers?: number;
-  // CPP fields
+  // CPP fields (cashValue used for taxes/fees)
   cashValue?: number;
   cashValueCurrency?: string;
-  // Taxes and fees
-  taxesFees?: number;
-  taxesFeesCurrency?: string;
   // Dates
   redemptionDate?: Date;
   travelDate?: Date;
@@ -592,8 +584,6 @@ export function toPointsRedemption(db: DbPointsRedemption): PointsRedemption {
     cashValue: db.cash_value ? Number(db.cash_value) : undefined,
     cashValueCurrency: db.cash_value_currency ?? undefined,
     cpp: db.cpp ? Number(db.cpp) : undefined,
-    taxesFees: db.taxes_fees ? Number(db.taxes_fees) : undefined,
-    taxesFeesCurrency: db.taxes_fees_currency ?? undefined,
     redemptionDate: new Date(db.redemption_date),
     travelDate: db.travel_date ? new Date(db.travel_date) : undefined,
     createdAt: new Date(db.created_at),
