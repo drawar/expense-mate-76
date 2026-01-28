@@ -75,7 +75,8 @@
       "Bash(src/components/dashboard/layout/ActivitySection.tsx )",
       "Bash(src/components/dashboard/layout/DashboardDesktopLayout.tsx )",
       "Bash(src/components/dashboard/layout/FinancialSummaryRow.tsx)",
-      "WebFetch(domain:financialhorse.com)"
+      "WebFetch(domain:financialhorse.com)",
+      "WebFetch(domain:www.malaysiaairlines.com)"
     ]
   }
 }
