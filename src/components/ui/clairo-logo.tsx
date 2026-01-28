@@ -8,18 +8,14 @@ interface ClairoLogoProps {
   className?: string;
 }
 
-/**
- * Clairo logo component
- * Size sets the height, width auto-scales to preserve aspect ratio
- */
 export function ClairoLogo({ size = 24, className }: ClairoLogoProps) {
   return (
     <img
       src={LOGO_URL}
       alt="Clairo"
+      width={size}
       height={size}
-      className={cn("flex-shrink-0 rounded-md object-contain", className)}
-      style={{ height: size, width: "auto" }}
+      className={cn("flex-shrink-0 rounded-md", className)}
     />
   );
 }
