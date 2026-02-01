@@ -64,7 +64,8 @@ const TopLoyaltyProgramsCard: React.FC<TopLoyaltyProgramsCardProps> = ({
     const programMap = new Map<string, ProgramPoints>();
 
     transactions.forEach((tx) => {
-      if (tx.rewardPoints <= 0) return;
+      // Skip transactions with no reward points (0)
+      if (tx.rewardPoints === 0) return;
 
       const programName = tx.paymentMethod?.pointsCurrency || "Points";
       const existing = programMap.get(programName);
@@ -157,8 +158,11 @@ const TopLoyaltyProgramsCard: React.FC<TopLoyaltyProgramsCardProps> = ({
                   </div>
                 </div>
                 <div className="text-right ml-4">
-                  <p className="font-medium text-primary">
-                    +{program.points.toLocaleString()}
+                  <p
+                    className={`font-medium ${program.points >= 0 ? "text-primary" : "text-destructive"}`}
+                  >
+                    {program.points >= 0 ? "+" : ""}
+                    {program.points.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground">points</p>
                 </div>

@@ -14,6 +14,7 @@ import { categorizationService } from "@/core/categorization";
 import { storageService } from "@/core/storage/StorageService";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { Transaction, Tag } from "@/types";
+import { BUDGET_CATEGORIES } from "@/utils/constants/categories";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
@@ -205,10 +206,8 @@ const Transactions = () => {
     setReviewCount((prev) => Math.max(0, prev - 1));
   };
 
-  // Get unique categories for filter dropdown
-  const categories = Array.from(
-    new Set(transactions.map((t) => t.category).filter(Boolean))
-  );
+  // Use official categories for filter dropdown
+  const categories = [...BUDGET_CATEGORIES];
 
   return (
     <div className="min-h-screen">
