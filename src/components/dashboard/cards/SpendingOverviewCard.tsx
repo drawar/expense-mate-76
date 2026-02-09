@@ -651,8 +651,8 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                       props.payload.originalKey
                     );
 
-                    // Show numbered marker for spike days
-                    if (spikeIndex && !isLastActual) {
+                    // Show numbered marker for spike days (prioritize over last actual point)
+                    if (spikeIndex) {
                       const isHovered =
                         props.payload.originalKey === hoveredSpikeDate;
                       return (
