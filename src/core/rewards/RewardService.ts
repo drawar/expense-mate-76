@@ -11,6 +11,14 @@ import { RuleRepository } from "./RuleRepository";
 import { bonusPointsTracker } from "./BonusPointsTracker";
 import { logger } from "./logger";
 
+/**
+ * MCCs that are globally excluded from earning points on all cards.
+ * These typically represent cash-equivalent transactions.
+ */
+const GLOBALLY_EXCLUDED_MCCS = [
+  "6012", // Financial Institutions - Merchandise and Services (bill payments, money transfers)
+];
+
 export class RewardService {
   private ruleRepository: RuleRepository;
 
@@ -100,6 +108,26 @@ export class RewardService {
     let appliedTier: BonusTier | undefined;
 
     try {
+      // Check for globally excluded MCCs (no points earned on any card)
+      if (input.mcc && GLOBALLY_EXCLUDED_MCCS.includes(input.mcc)) {
+        logger.info(
+          "calculateRewards",
+          "MCC globally excluded from earning points",
+          {
+            mcc: input.mcc,
+            paymentMethodId: input.paymentMethod.id,
+          }
+        );
+        return {
+          totalPoints: 0,
+          basePoints: 0,
+          bonusPoints: 0,
+          pointsCurrency: input.paymentMethod.pointsCurrency || "points",
+          minSpendMet: true,
+          messages: [`MCC ${input.mcc} does not earn points`],
+        };
+      }
+
       // Determine which amount to use for calculations
       const calculationAmount = this.getCalculationAmount(input);
 
