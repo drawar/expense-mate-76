@@ -13,7 +13,7 @@
  * - Restaurant bonus excludes third-party food delivery outside the US
  * - Flights bonus only for direct airline purchases or amextravel.com
  * - No monthly caps on any category
- * - Points round to nearest integer after multiplier calculation (same as Cobalt)
+ * - Amount rounds to nearest integer FIRST, then multiplied by rate
  * - 3x = 1 base + 2 bonus
  *
  * Usage: Run this from the browser console after logging into the app:
@@ -168,7 +168,7 @@ export async function setupAmexGreenCard() {
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards Points (US)",
         pointsRoundingStrategy: "nearest",
-        amountRoundingStrategy: "none",
+        amountRoundingStrategy: "nearest",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -198,7 +198,7 @@ export async function setupAmexGreenCard() {
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards Points (US)",
         pointsRoundingStrategy: "nearest",
-        amountRoundingStrategy: "none",
+        amountRoundingStrategy: "nearest",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -228,7 +228,7 @@ export async function setupAmexGreenCard() {
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards Points (US)",
         pointsRoundingStrategy: "nearest",
-        amountRoundingStrategy: "none",
+        amountRoundingStrategy: "nearest",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -258,7 +258,7 @@ export async function setupAmexGreenCard() {
         bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
         pointsCurrency: "Membership Rewards Points (US)",
         pointsRoundingStrategy: "nearest",
-        amountRoundingStrategy: "none",
+        amountRoundingStrategy: "nearest",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -281,7 +281,7 @@ export async function setupAmexGreenCard() {
         bonusMultiplier: 0, // No bonus, just base
         pointsCurrency: "Membership Rewards Points (US)",
         pointsRoundingStrategy: "nearest",
-        amountRoundingStrategy: "none",
+        amountRoundingStrategy: "nearest",
         blockSize: 1,
         monthlyCap: null,
         bonusTiers: [],
@@ -310,7 +310,7 @@ export async function setupAmexGreenCard() {
     console.log(
       "3. Restaurant bonus excludes bars (5813) and convenience stores (5499)"
     );
-    console.log("4. Points round to nearest integer after calculation");
+    console.log("4. Amount rounds to nearest integer first, then multiplied");
     console.log("5. Statement cycle starts on day 10 of each month");
   } catch (error) {
     console.error("❌ Failed to create rules:", error);
