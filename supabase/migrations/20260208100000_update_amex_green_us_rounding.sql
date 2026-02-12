@@ -7,4 +7,4 @@ SET
   updated_at = NOW()
 FROM card_catalog cc
 WHERE rr.card_catalog_id = cc.id
-  AND cc.card_type_id = 'american-express-green';
+  AND cc.card_type_id = 'american-express-green-us';

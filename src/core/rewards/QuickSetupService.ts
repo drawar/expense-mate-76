@@ -17,6 +17,7 @@ import { PaymentMethod } from "@/types";
 
 export type QuickSetupType =
   | "amex-cobalt"
+  | "amex-gold-ca"
   | "amex-platinum"
   | "amex-green"
   | "amex-aeroplan-reserve"
@@ -57,6 +58,18 @@ export function getQuickSetupConfig(
       name: "Amex Cobalt",
       description:
         "5x food ($2.5K cap), 3x streaming, 2x gas/transit, 1x other",
+    };
+  }
+
+  if (
+    (issuer.includes("american express") || issuer.includes("amex")) &&
+    name.includes("gold") &&
+    !name.includes("aeroplan")
+  ) {
+    return {
+      type: "amex-gold-ca",
+      name: "Amex Gold (CA)",
+      description: "2x gas/groceries/drugstores (CAD), 2x travel, 1x other",
     };
   }
 
@@ -198,6 +211,8 @@ export class QuickSetupService {
       switch (setupType) {
         case "amex-cobalt":
           return await this.setupAmexCobalt(cardCatalogId);
+        case "amex-gold-ca":
+          return await this.setupAmexGoldCA(cardCatalogId);
         case "amex-platinum":
           return await this.setupAmexPlatinum(cardCatalogId);
         case "amex-green":
@@ -379,6 +394,106 @@ export class QuickSetupService {
     });
 
     return { success: true, rulesCreated: 4 };
+  }
+
+  private async setupAmexGoldCA(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
+    // Gas, Groceries, Drugstores MCCs
+    const gasGroceryDrugstoreMCCs = [
+      "5541",
+      "5542", // Gas stations
+      "5411",
+      "5422",
+      "5441",
+      "5451",
+      "5462", // Groceries
+      "5912", // Drugstores
+    ];
+
+    // Travel MCCs
+    const travelMCCs = [
+      // Airlines (3000-3299 range + 4511)
+      ...Array.from({ length: 300 }, (_, i) => String(3000 + i)),
+      "4511",
+      // Hotels (3501-3799 range + 7011)
+      ...Array.from({ length: 299 }, (_, i) => String(3501 + i)),
+      "7011",
+      // Car Rentals (3351-3441 range + 7512)
+      ...Array.from({ length: 91 }, (_, i) => String(3351 + i)),
+      "7512",
+      // Rail and Water Transport
+      "4011",
+      "4112",
+      "4411",
+      // Travel Agencies
+      "4722",
+      "4723",
+    ];
+
+    // 2x on Gas, Groceries, Drugstores (CAD only)
+    await this.repository.createRule({
+      cardCatalogId,
+      name: "2x Points on Gas, Groceries & Drugstores",
+      description:
+        "Earn 2 points per $1 CAD at stand-alone gas stations, grocery stores, and drugstores in Canada",
+      enabled: true,
+      priority: 3,
+      conditions: [
+        { type: "mcc", operation: "include", values: gasGroceryDrugstoreMCCs },
+        { type: "currency", operation: "equals", values: ["CAD"] },
+      ],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 1,
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    // 2x on Travel (any currency)
+    await this.repository.createRule({
+      cardCatalogId,
+      name: "2x Points on Travel",
+      description:
+        "Earn 2 points per $1 on flights, hotels, car rentals, cruises, and more",
+      enabled: true,
+      priority: 2,
+      conditions: [{ type: "mcc", operation: "include", values: travelMCCs }],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 1,
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    // 1x on Everything Else
+    await this.repository.createRule({
+      cardCatalogId,
+      name: "1x Points on All Other Purchases",
+      description: "Earn 1 point per $1 on all other purchases",
+      enabled: true,
+      priority: 1,
+      conditions: [],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 0,
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    return { success: true, rulesCreated: 3 };
   }
 
   private async setupAmexPlatinum(
