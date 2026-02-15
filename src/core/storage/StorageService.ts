@@ -2014,7 +2014,7 @@ export class StorageService {
       );
 
       // Check if balance is depleted and deactivate
-      const shouldDeactivate = newBalance <= 0;
+      const shouldDeactivate = newBalance <= 0 && paymentMethod.active;
       if (shouldDeactivate) {
         console.log(
           `[GiftCardBalance] Deactivating ${paymentMethod.name} - balance depleted (newBalance=${newBalance})`
@@ -2022,6 +2022,22 @@ export class StorageService {
 
         const updatedMethods = paymentMethods.map((pm) =>
           pm.id === paymentMethodId ? { ...pm, active: false } : pm
+        );
+
+        await this.savePaymentMethods(updatedMethods);
+      }
+
+      // Check if balance is restored (refund) and reactivate
+      const isRefund = transaction.amount < 0;
+      const shouldReactivate =
+        newBalance > 0 && !paymentMethod.active && isRefund;
+      if (shouldReactivate) {
+        console.log(
+          `[GiftCardBalance] Reactivating ${paymentMethod.name} - balance restored via refund (newBalance=${newBalance})`
+        );
+
+        const updatedMethods = paymentMethods.map((pm) =>
+          pm.id === paymentMethodId ? { ...pm, active: true } : pm
         );
 
         await this.savePaymentMethods(updatedMethods);
