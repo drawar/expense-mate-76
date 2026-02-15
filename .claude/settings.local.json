@@ -77,7 +77,14 @@
       "Bash(src/components/dashboard/layout/FinancialSummaryRow.tsx)",
       "WebFetch(domain:financialhorse.com)",
       "WebFetch(domain:www.malaysiaairlines.com)",
-      "WebFetch(domain:yulueezoyjxobhureuxj.supabase.co)"
+      "WebFetch(domain:yulueezoyjxobhureuxj.supabase.co)",
+      "WebFetch(domain:www.uob.com.vn)",
+      "WebFetch(domain:www.vib.com.vn)",
+      "WebFetch(domain:www.vietnamairlines.com)",
+      "WebFetch(domain:www.hsbc.com.vn)",
+      "WebFetch(domain:acb.com.vn)",
+      "WebFetch(domain:suitesmile.com)",
+      "WebFetch(domain:thealviator.com)"
     ]
   }
 }

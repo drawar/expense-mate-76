@@ -1949,18 +1949,20 @@ export class StorageService {
   ): Promise<void> {
     try {
       console.log(
-        `[PrepaidBalance] Checking balance for payment method ${paymentMethodId}`
+        `[GiftCardBalance] Checking balance for payment method ${paymentMethodId}`
       );
 
-      // Get the payment method
-      const paymentMethods = await this.getPaymentMethods();
+      // Get all payment methods including inactive ones (needed for reactivation)
+      const paymentMethods = await this.getPaymentMethods({
+        includeInactive: true,
+      });
       const paymentMethod = paymentMethods.find(
         (pm) => pm.id === paymentMethodId
       );
 
-      // Only process prepaid cards that are active and have a total loaded value
+      // Only process gift cards with a total loaded value
       if (!paymentMethod) {
-        console.log("[PrepaidBalance] Payment method not found");
+        console.log("[GiftCardBalance] Payment method not found");
         return;
       }
 
@@ -1971,18 +1973,13 @@ export class StorageService {
         return;
       }
 
-      if (!paymentMethod.active) {
-        console.log("[PrepaidBalance] Card is not active, skipping");
-        return;
-      }
-
       if (paymentMethod.totalLoaded === undefined) {
-        console.log("[PrepaidBalance] No totalLoaded set, skipping");
+        console.log("[GiftCardBalance] No totalLoaded set, skipping");
         return;
       }
 
       console.log(
-        `[GiftCardBalance] Processing ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}`
+        `[GiftCardBalance] Processing ${paymentMethod.name}: totalLoaded=${paymentMethod.totalLoaded}, active=${paymentMethod.active}`
       );
 
       // Get all transactions for this payment method
@@ -2000,20 +1997,23 @@ export class StorageService {
       // So balanceFromDb is already the NEW balance after the transaction
       const newBalance = paymentMethod.totalLoaded - totalSpentFromDb;
       const previousBalance = newBalance + transaction.amount;
+      const isRefund = transaction.amount < 0;
 
       console.log(
-        `[GiftCardBalance] totalSpent=${totalSpentFromDb}, txAmount=${transaction.amount}, previousBalance=${previousBalance}, newBalance=${newBalance}`
+        `[GiftCardBalance] totalSpent=${totalSpentFromDb}, txAmount=${transaction.amount}, previousBalance=${previousBalance}, newBalance=${newBalance}, isRefund=${isRefund}`
       );
 
-      // Send notification
-      await this.sendPrepaidBalanceNotification(
-        paymentMethod,
-        transaction,
-        previousBalance,
-        newBalance
-      );
+      // Only send notification for active cards
+      if (paymentMethod.active) {
+        await this.sendPrepaidBalanceNotification(
+          paymentMethod,
+          transaction,
+          previousBalance,
+          newBalance
+        );
+      }
 
-      // Check if balance is depleted and deactivate
+      // Check if balance is depleted and deactivate (only for active cards)
       const shouldDeactivate = newBalance <= 0 && paymentMethod.active;
       if (shouldDeactivate) {
         console.log(
@@ -2027,8 +2027,7 @@ export class StorageService {
         await this.savePaymentMethods(updatedMethods);
       }
 
-      // Check if balance is restored (refund) and reactivate
-      const isRefund = transaction.amount < 0;
+      // Check if balance is restored (refund) and reactivate (only for inactive cards)
       const shouldReactivate =
         newBalance > 0 && !paymentMethod.active && isRefund;
       if (shouldReactivate) {
