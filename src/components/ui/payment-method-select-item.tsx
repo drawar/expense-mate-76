@@ -63,9 +63,10 @@ export const PaymentMethodIcon: React.FC<{
       method.type === "debit_card" ||
       method.type === "gift_card"
     ) {
-      const network =
-        (method.network as ReturnType<typeof getCardNetwork>) ||
+      const rawNetwork =
+        method.network?.toLowerCase() ||
         getCardNetwork(method.issuer || "", method.name);
+      const network = rawNetwork === "american express" ? "amex" : rawNetwork;
 
       switch (network) {
         case "visa":

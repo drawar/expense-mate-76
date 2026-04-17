@@ -95,6 +95,7 @@ const NetworkIcon: React.FC<{ network?: string }> = ({ network }) => {
     case "mastercard":
       return <MastercardLogoIcon width={32} />;
     case "amex":
+    case "american express":
       return <AmericanExpressLogoIcon width={32} />;
     default:
       return <CreditCard className="h-6 w-6 text-muted-foreground" />;
