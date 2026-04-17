@@ -26,7 +26,8 @@ export type QuickSetupType =
   | "hsbc-travelone"
   | "brim-afklm"
   | "mbna-amazon"
-  | "dbs-wwmc";
+  | "dbs-wwmc"
+  | "rbc-ion-plus";
 
 export interface QuickSetupConfig {
   type: QuickSetupType;
@@ -161,6 +162,14 @@ export function getQuickSetupConfig(
     };
   }
 
+  if (issuer.includes("rbc") && name.includes("ion+")) {
+    return {
+      type: "rbc-ion-plus",
+      name: "RBC ION+ Visa",
+      description: "3x grocery/dining/gas/transit/streaming/digital, 1x other",
+    };
+  }
+
   return null;
 }
 
@@ -234,6 +243,8 @@ export class QuickSetupService {
           return await this.setupMBNAAmazon(cardCatalogId);
         case "dbs-wwmc":
           return await this.setupDBSWWMC(cardCatalogId);
+        case "rbc-ion-plus":
+          return await this.setupRBCIonPlus(cardCatalogId);
         default:
           return {
             success: false,
@@ -1250,6 +1261,85 @@ export class QuickSetupService {
       name: "1x DBS Points on All Other Purchases",
       description:
         "Earn 1 DBS Point per S$1 on all other purchases (= 0.4 mpd)",
+      enabled: true,
+      priority: 1,
+      conditions: [],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 0,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    return { success: true, rulesCreated: 2 };
+  }
+
+  private async setupRBCIonPlus(
+    cardCatalogId: string
+  ): Promise<QuickSetupResult> {
+    // Grocery, Dining, Food Delivery MCCs
+    const groceryDiningMCCs = [
+      "5411", // Grocery Stores and Supermarkets
+      "5812", // Eating Places and Restaurants
+      "5813", // Drinking Places (Bars, Taverns, Nightclubs)
+      "5814", // Fast Food Restaurants
+    ];
+
+    // Rides, Gas & Electric Vehicle Charging MCCs
+    const ridesGasEvMCCs = [
+      "5541", // Service Stations (with or without ancillary services)
+      "5542", // Automated Fuel Dispensers
+      "4121", // Taxicabs and Limousines
+      "4111", // Local/Suburban Commuter Passenger Transportation, Including Ferries
+      "5552", // Electric Vehicle Charging
+    ];
+
+    // Streaming, Digital Gaming & Subscriptions MCCs
+    const streamingDigitalMCCs = [
+      "5815", // Digital Goods Media – Books, Movies, Music
+      "5816", // Digital Goods – Games
+      "5817", // Digital Goods – Applications (Excludes Games)
+      "5818", // Digital Goods – Large Digital Goods Merchants
+      "4899", // Cable, Satellite and Other Pay Television/Radio/Streaming Services
+    ];
+
+    const allThreeXMCCs = [
+      ...groceryDiningMCCs,
+      ...ridesGasEvMCCs,
+      ...streamingDigitalMCCs,
+    ];
+
+    // 3x on Grocery, Dining, Food Delivery, Rides, Gas, EV Charging, Streaming & Digital
+    await this.repository.createRule({
+      cardCatalogId,
+      name: "3x Avion Points on Grocery, Dining, Gas, Transit, Streaming & Digital",
+      description:
+        "Earn 3 Avion points per $1 at grocery stores, restaurants, bars, fast food, gas stations, EV charging, taxis, local transit, streaming, and digital goods",
+      enabled: true,
+      priority: 2,
+      conditions: [
+        { type: "mcc", operation: "include", values: allThreeXMCCs },
+      ],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 2,
+        pointsRoundingStrategy: "floor",
+        amountRoundingStrategy: "none",
+        blockSize: 1,
+        bonusTiers: [],
+      },
+    });
+
+    // 1x on Everything Else
+    await this.repository.createRule({
+      cardCatalogId,
+      name: "1x Avion Points on All Other Purchases",
+      description: "Earn 1 Avion point per $1 on all other purchases",
       enabled: true,
       priority: 1,
       conditions: [],
