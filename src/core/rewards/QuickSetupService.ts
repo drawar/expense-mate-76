@@ -1318,7 +1318,7 @@ export class QuickSetupService {
       cardCatalogId,
       name: "3x Avion Points on Grocery, Dining, Gas, Transit, Streaming & Digital",
       description:
-        "Earn 3 Avion points per $1 at grocery stores, restaurants, bars, fast food, gas stations, EV charging, taxis, local transit, streaming, and digital goods",
+        "Earn 3 Avion points per $1. Eligible MCCs: 5411 (Grocery), 5812 (Restaurants), 5813 (Bars/Nightclubs), 5814 (Fast Food), 5541 (Gas Stations), 5542 (Fuel Dispensers), 4121 (Taxis/Limos), 4111 (Local Transit/Ferries), 5552 (EV Charging), 5815 (Digital Media), 5816 (Digital Games), 5817 (Digital Apps), 5818 (Large Digital Merchants), 4899 (Streaming/Cable/Satellite)",
       enabled: true,
       priority: 2,
       conditions: [

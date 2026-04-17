@@ -3,7 +3,7 @@
 -- when multiple cards earn the same reward currency
 
 ALTER TABLE points_transfers
-ADD COLUMN source_payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS source_payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;
 
 -- Create index for efficient queries
 CREATE INDEX IF NOT EXISTS idx_points_transfers_source_payment_method

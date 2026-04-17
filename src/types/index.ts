@@ -126,6 +126,7 @@ export interface PaymentMethod {
   rewardCurrencyLogoUrl?: string;
   rewardCurrencyBgColor?: string;
   rewardCurrencyLogoScale?: number;
+  network?: string;
   active: boolean;
   rewardRules?: unknown[];
   conversionRate?: Record<string, number>;

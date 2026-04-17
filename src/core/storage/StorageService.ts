@@ -93,7 +93,7 @@ export class StorageService {
       let query = supabase
         .from("payment_methods")
         .select(
-          "*, card_catalog(default_image_url), reward_currencies(display_name, logo_url, bg_color, logo_scale)"
+          "*, card_catalog(default_image_url, network), reward_currencies(display_name, logo_url, bg_color, logo_scale)"
         )
         .eq("user_id", session.user.id); // Filter by current user
 
@@ -143,9 +143,12 @@ export class StorageService {
 
       const mappedData = data.map((row) => {
         // Get catalog image as fallback (row.card_catalog is the joined data)
-        const catalogImageUrl = (
-          row.card_catalog as { default_image_url?: string } | null
-        )?.default_image_url;
+        const catalog = row.card_catalog as {
+          default_image_url?: string;
+          network?: string;
+        } | null;
+        const catalogImageUrl = catalog?.default_image_url;
+        const catalogNetwork = catalog?.network;
 
         // Get display_name, logo_url, bg_color, and logo_scale from reward_currencies as single source of truth
         // Fall back to points_currency for backwards compatibility
@@ -161,6 +164,7 @@ export class StorageService {
           name: row.name,
           type: row.type as PaymentMethod["type"],
           issuer: row.issuer || "",
+          network: catalogNetwork || undefined,
           lastFourDigits: row.last_four_digits || undefined,
           currency: row.currency as Currency,
           icon: row.icon || undefined,
