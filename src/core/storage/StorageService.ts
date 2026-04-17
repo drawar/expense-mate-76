@@ -570,7 +570,7 @@ export class StorageService {
             reward_rules, selected_categories, statement_start_day,
             is_monthly_statement, conversion_rate, reward_currency_id,
             card_catalog_id,
-            card_catalog(default_image_url),
+            card_catalog(default_image_url, network),
             reward_currencies(display_name, logo_url, bg_color, logo_scale)
           ),
           merchants:merchant_id(
@@ -627,16 +627,17 @@ export class StorageService {
             bg_color?: string;
             logo_scale?: number;
           } | null;
-          const catalogImageUrl = (
-            row.payment_methods?.card_catalog as {
-              default_image_url?: string;
-            } | null
-          )?.default_image_url;
+          const pmCatalog = row.payment_methods?.card_catalog as {
+            default_image_url?: string;
+            network?: string;
+          } | null;
+          const catalogImageUrl = pmCatalog?.default_image_url;
           return {
             id: row.payment_methods?.id || "",
             name: row.payment_methods?.name || "Unknown Payment Method",
             type: row.payment_methods?.type || "credit",
             issuer: row.payment_methods?.issuer || "",
+            network: pmCatalog?.network || undefined,
             lastFourDigits: row.payment_methods?.last_four_digits || undefined,
             currency: (row.payment_methods?.currency || "USD") as Currency,
             icon: row.payment_methods?.icon || undefined,
