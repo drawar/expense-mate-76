@@ -35,7 +35,6 @@ import type {
 } from "@/core/points/types";
 import type { RewardCurrency } from "@/core/currency/types";
 import { RedemptionDialog } from "./RedemptionDialog";
-import { CPPBadge } from "./BalanceCard";
 
 const REDEMPTION_TYPE_LABELS: Record<RedemptionType, string> = {
   flight: "Flight Award",
@@ -172,11 +171,6 @@ export function RedemptionDetailDialog({
                 <span>·</span>
                 <span>{REDEMPTION_TYPE_LABELS[redemption.redemptionType]}</span>
               </div>
-              {redemption.cpp && !redemption.isCancelled && (
-                <div className="mt-2">
-                  <CPPBadge cpp={redemption.cpp} />
-                </div>
-              )}
             </div>
 
             {/* Cash Value / Service Fee */}
@@ -185,7 +179,7 @@ export function RedemptionDetailDialog({
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                   {redemption.redemptionType === "cancellation"
                     ? "Service Fee"
-                    : "Cash Value"}
+                    : "Taxes & Fees"}
                 </p>
                 <p className="text-lg font-semibold">
                   {redemption.cashValueCurrency === "USD" && "$"}
