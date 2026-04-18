@@ -37,12 +37,17 @@ const CREDIT_CARD_ISSUERS = [
   "RBC",
   "Scotiabank",
   "TD",
-  "Trip.com",
   "UOB",
 ] as const;
 
 // Gift card issuers
-const GIFT_CARD_ISSUERS = ["Best Buy", "Joker", "Uber"] as const;
+const GIFT_CARD_ISSUERS = [
+  "Air Canada",
+  "Best Buy",
+  "Joker",
+  "Trip.com",
+  "Uber",
+] as const;
 
 // Combined list of all issuers (sorted alphabetically)
 const CARD_ISSUERS = [
