@@ -69,11 +69,13 @@ const CURRENCY_OPTIONS: SelectionOption[] = currencyOptions.map((opt) => ({
   label: opt.label,
 }));
 
-// Issuer options for selection dialog
-const ISSUER_OPTIONS: SelectionOption[] = CARD_ISSUERS.map((issuer) => ({
-  value: issuer,
-  label: issuer,
-}));
+// Issuer options by type
+const CREDIT_CARD_ISSUER_OPTIONS: SelectionOption[] = CREDIT_CARD_ISSUERS.map(
+  (issuer) => ({ value: issuer, label: issuer })
+);
+const GIFT_CARD_ISSUER_OPTIONS: SelectionOption[] = GIFT_CARD_ISSUERS.map(
+  (issuer) => ({ value: issuer, label: issuer })
+);
 
 // Validation error type
 interface ValidationErrors {
@@ -792,7 +794,19 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
       <SelectionDialog
         open={showTypeDialog}
         onOpenChange={setShowTypeDialog}
-        onSelect={setSelectedType}
+        onSelect={(newType) => {
+          setSelectedType(newType);
+          // Clear issuer if it doesn't belong to the new type
+          if (issuer) {
+            const validIssuers =
+              newType === "gift_card"
+                ? (GIFT_CARD_ISSUERS as readonly string[])
+                : (CREDIT_CARD_ISSUERS as readonly string[]);
+            if (!validIssuers.includes(issuer)) {
+              setIssuer("");
+            }
+          }
+        }}
         onCloseAll={onCloseAll}
         title="Select Type"
         options={TYPE_OPTIONS}
@@ -819,7 +833,11 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
         onSelect={setIssuer}
         onCloseAll={onCloseAll}
         title="Select Issuer"
-        options={ISSUER_OPTIONS}
+        options={
+          selectedType === "gift_card"
+            ? GIFT_CARD_ISSUER_OPTIONS
+            : CREDIT_CARD_ISSUER_OPTIONS
+        }
         selectedValue={issuer}
         searchable
         searchPlaceholder="Search issuers..."

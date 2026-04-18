@@ -66,11 +66,13 @@ const CURRENCY_OPTIONS: SelectionOption[] = currencyOptions.map((opt) => ({
   label: opt.label,
 }));
 
-// Issuer options for selection dialog
-const ISSUER_OPTIONS: SelectionOption[] = CARD_ISSUERS.map((issuer) => ({
-  value: issuer,
-  label: issuer,
-}));
+// Issuer options by type
+const CREDIT_CARD_ISSUER_OPTIONS: SelectionOption[] = CREDIT_CARD_ISSUERS.map(
+  (issuer) => ({ value: issuer, label: issuer })
+);
+const GIFT_CARD_ISSUER_OPTIONS: SelectionOption[] = GIFT_CARD_ISSUERS.map(
+  (issuer) => ({ value: issuer, label: issuer })
+);
 
 // Validation error type
 interface ValidationErrors {
@@ -937,7 +939,11 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
             onSelect={setIssuer}
             onCloseAll={onClose}
             title="Select Issuer"
-            options={ISSUER_OPTIONS}
+            options={
+              selectedType === "gift_card"
+                ? GIFT_CARD_ISSUER_OPTIONS
+                : CREDIT_CARD_ISSUER_OPTIONS
+            }
             selectedValue={issuer}
             searchable
             searchPlaceholder="Search issuers..."
