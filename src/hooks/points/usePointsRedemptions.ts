@@ -92,9 +92,34 @@ export function usePointsRedemptionMutations() {
     },
   });
 
+  const cancelRedemption = useMutation({
+    mutationFn: (input: {
+      originalRedemptionId: string;
+      serviceFee?: number;
+      serviceFeeCurrency?: string;
+      cancellationDate?: Date;
+      description?: string;
+    }) =>
+      pointsBalanceService.cancelRedemption(input.originalRedemptionId, {
+        serviceFee: input.serviceFee,
+        serviceFeeCurrency: input.serviceFeeCurrency,
+        cancellationDate: input.cancellationDate,
+        description: input.description,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pointsQueryKeys.all });
+      toast.success("Redemption cancelled — points restored");
+    },
+    onError: (error) => {
+      console.error("Error cancelling redemption:", error);
+      toast.error("Failed to cancel redemption");
+    },
+  });
+
   return {
     addRedemption,
     updateRedemption,
     deleteRedemption,
+    cancelRedemption,
   };
 }

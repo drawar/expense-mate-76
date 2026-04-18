@@ -13,6 +13,7 @@ import {
   CreditCard,
   Package,
   MoreHorizontal,
+  Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActivityItem } from "@/core/points/types";
@@ -51,6 +52,8 @@ export function ActivityFeedItem({ item, onClick }: ActivityFeedItemProps) {
           return <CreditCard className="h-4 w-4 text-orange-500" />;
         case "merchandise":
           return <Package className="h-4 w-4 text-yellow-500" />;
+        case "cancellation":
+          return <Undo2 className="h-4 w-4 text-green-500" />;
         default:
           return <MoreHorizontal className="h-4 w-4 text-gray-500" />;
       }
@@ -77,6 +80,9 @@ export function ActivityFeedItem({ item, onClick }: ActivityFeedItemProps) {
     }
 
     if (type === "redemption") {
+      if (data.redemptionType === "cancellation") {
+        return "Redemption Cancelled";
+      }
       const typeLabels: Record<string, string> = {
         flight: "Flight Award",
         hotel: "Hotel Reward",
@@ -133,9 +139,10 @@ export function ActivityFeedItem({ item, onClick }: ActivityFeedItemProps) {
     }
 
     if (type === "redemption") {
+      const isCancellation = data.redemptionType === "cancellation";
       return {
-        value: -data.pointsRedeemed,
-        isPositive: false,
+        value: isCancellation ? data.pointsRedeemed : -data.pointsRedeemed,
+        isPositive: isCancellation,
         currency: data.rewardCurrency?.displayName || "pts",
       };
     }

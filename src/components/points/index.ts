@@ -13,6 +13,7 @@ export { AdjustmentDialog } from "./AdjustmentDialog";
 export { AdjustmentDetailDialog } from "./AdjustmentDetailDialog";
 export { RedemptionDialog } from "./RedemptionDialog";
 export { RedemptionDetailDialog } from "./RedemptionDetailDialog";
+export { CancelRedemptionDialog } from "./CancelRedemptionDialog";
 export { TransferDialog } from "./TransferDialog";
 export { GoalDialog } from "./GoalDialog";
 

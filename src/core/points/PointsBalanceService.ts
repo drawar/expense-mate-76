@@ -386,18 +386,22 @@ export class PointsBalanceService {
       0
     );
 
-    // Calculate redemptions sum
+    // Calculate redemptions sum (cancellations restore points, so subtract them)
     const { data: redemptionsData } = await supabase
       .from("points_redemptions")
-      .select("points_redeemed")
+      .select("points_redeemed, redemption_type")
       .eq("user_id", userId)
       .eq("reward_currency_id", rewardCurrencyId)
       .eq("is_deleted", false);
 
-    const redemptions = (redemptionsData ?? []).reduce(
-      (sum, r) => sum + Number(r.points_redeemed),
-      0
-    );
+    const redemptions = (redemptionsData ?? []).reduce((sum, r) => {
+      const points = Number(r.points_redeemed);
+      // Cancellation records restore points (subtract from redemption total)
+      if (r.redemption_type === "cancellation") {
+        return sum - points;
+      }
+      return sum + points;
+    }, 0);
 
     // Calculate transfers out
     // If paymentMethodId is provided, only count transfers from that specific card
@@ -1012,6 +1016,103 @@ export class PointsBalanceService {
     if (existing?.reward_currency_id) {
       await this.recalculateBalance(user.id, existing.reward_currency_id);
     }
+  }
+
+  /**
+   * Cancel a redemption - creates a linked cancellation record and marks original as cancelled
+   */
+  async cancelRedemption(
+    originalRedemptionId: string,
+    options?: {
+      serviceFee?: number;
+      serviceFeeCurrency?: string;
+      cancellationDate?: Date;
+      description?: string;
+    }
+  ): Promise<PointsRedemption> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    // Fetch original redemption
+    const { data: original, error: fetchError } = await supabase
+      .from("points_redemptions")
+      .select("*")
+      .eq("id", originalRedemptionId)
+      .eq("user_id", user.id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError || !original) {
+      throw new Error("Redemption not found");
+    }
+
+    if (original.is_cancelled) {
+      throw new Error("Redemption is already cancelled");
+    }
+
+    if (original.redemption_type === "cancellation") {
+      throw new Error("Cannot cancel a cancellation record");
+    }
+
+    const cancellationDate =
+      options?.cancellationDate?.toISOString() ?? new Date().toISOString();
+    const description =
+      options?.description ?? `Cancellation of ${original.description}`;
+
+    // Insert cancellation record
+    const { data: cancellation, error: insertError } = await supabase
+      .from("points_redemptions")
+      .insert({
+        user_id: user.id,
+        reward_currency_id: original.reward_currency_id,
+        points_redeemed: original.points_redeemed,
+        redemption_type: "cancellation",
+        description,
+        flight_route: original.flight_route,
+        cabin_class: original.cabin_class,
+        airline: original.airline,
+        booking_reference: original.booking_reference,
+        passengers: original.passengers,
+        cash_value: options?.serviceFee ?? null,
+        cash_value_currency:
+          options?.serviceFeeCurrency ?? original.cash_value_currency,
+        cancelled_redemption_id: originalRedemptionId,
+        redemption_date: cancellationDate,
+        travel_date: original.travel_date,
+      })
+      .select(
+        `
+        *,
+        reward_currencies (
+          id, code, display_name, issuer, is_transferrable, logo_url, bg_color, logo_scale
+        )
+      `
+      )
+      .single();
+
+    if (insertError) {
+      console.error("Error creating cancellation record:", insertError);
+      throw insertError;
+    }
+
+    // Mark original as cancelled
+    const { error: updateError } = await supabase
+      .from("points_redemptions")
+      .update({ is_cancelled: true })
+      .eq("id", originalRedemptionId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Error marking redemption as cancelled:", updateError);
+      throw updateError;
+    }
+
+    // Recalculate balance
+    await this.recalculateBalance(user.id, original.reward_currency_id);
+
+    return toPointsRedemption(cancellation as DbPointsRedemption);
   }
 
   // ============================================================================

@@ -81,6 +81,7 @@ import {
   GoalDialog,
   ActivityFeedList,
   GoalProgressList,
+  CancelRedemptionDialog,
 } from "@/components/points";
 
 type DialogType =
@@ -89,6 +90,7 @@ type DialogType =
   | "adjustmentDetail"
   | "redemption"
   | "redemptionDetail"
+  | "cancelRedemption"
   | "transfer"
   | "transferDetail"
   | "goal"
@@ -184,8 +186,12 @@ export default function PointsManager() {
   const { setStartingBalance } = usePointsBalanceMutations();
   const { addAdjustment, updateAdjustment, deleteAdjustment } =
     usePointsAdjustmentMutations();
-  const { addRedemption, updateRedemption, deleteRedemption } =
-    usePointsRedemptionMutations();
+  const {
+    addRedemption,
+    updateRedemption,
+    deleteRedemption,
+    cancelRedemption,
+  } = usePointsRedemptionMutations();
   const { addTransfer, deleteTransfer } = usePointsTransferMutations();
   const { addGoal, completeGoal, cancelGoal } = usePointsGoalMutations();
 
@@ -299,6 +305,41 @@ export default function PointsManager() {
   const handleDeleteRedemption = async (id: string) => {
     await deleteRedemption.mutateAsync(id);
     handleCloseDialog();
+  };
+
+  const handleOpenCancelRedemption = (redemption: PointsRedemption) => {
+    setSelectedRedemption(redemption);
+    setOpenDialog("cancelRedemption");
+  };
+
+  const handleCancelRedemption = async (input: {
+    originalRedemptionId: string;
+    serviceFee?: number;
+    serviceFeeCurrency?: string;
+    cancellationDate?: Date;
+    description?: string;
+  }) => {
+    // Capture before handleCloseDialog clears state
+    const redemption = selectedRedemption;
+    await cancelRedemption.mutateAsync(input);
+    handleCloseDialog();
+
+    // Navigate to add-expense to log the service fee
+    if (input.serviceFee && input.serviceFee > 0) {
+      const currency = rewardCurrencies.find(
+        (c) => c.id === redemption?.rewardCurrencyId
+      );
+      const params = new URLSearchParams();
+      params.set("merchantName", currency?.displayName || "Cancellation Fee");
+      params.set("amount", String(input.serviceFee));
+      if (input.serviceFeeCurrency) {
+        params.set("currency", input.serviceFeeCurrency);
+      }
+      if (input.cancellationDate) {
+        params.set("date", format(input.cancellationDate, "yyyy-MM-dd"));
+      }
+      navigate(`/add-expense?${params.toString()}`);
+    }
   };
 
   const handleOpenTransferDetail = (transfer: PointsTransfer) => {
@@ -701,8 +742,17 @@ export default function PointsManager() {
           onClose={handleCloseDialog}
           onUpdate={handleUpdateRedemption}
           onDelete={handleDeleteRedemption}
+          onCancel={handleOpenCancelRedemption}
           rewardCurrencies={rewardCurrencies}
           isLoading={updateRedemption.isPending || deleteRedemption.isPending}
+        />
+
+        <CancelRedemptionDialog
+          redemption={selectedRedemption ?? null}
+          isOpen={openDialog === "cancelRedemption"}
+          onClose={handleCloseDialog}
+          onSubmit={handleCancelRedemption}
+          isLoading={cancelRedemption.isPending}
         />
 
         <TransferDialog

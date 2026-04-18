@@ -44,6 +44,7 @@ const REDEMPTION_TYPE_LABELS: Record<RedemptionType, string> = {
   cash_back: "Cash Back",
   statement_credit: "Statement Credit",
   transfer_out: "Transfer to Partner",
+  cancellation: "Cancellation",
   other: "Other",
 };
 
@@ -63,6 +64,7 @@ interface RedemptionDetailDialogProps {
     input: Partial<PointsRedemptionInput>
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onCancel?: (redemption: PointsRedemption) => void;
   rewardCurrencies: RewardCurrency[];
   isLoading?: boolean;
 }
@@ -73,6 +75,7 @@ export function RedemptionDetailDialog({
   onClose,
   onUpdate,
   onDelete,
+  onCancel,
   rewardCurrencies,
   isLoading = false,
 }: RedemptionDetailDialogProps) {
@@ -136,29 +139,53 @@ export function RedemptionDetailDialog({
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 min-h-0">
             {/* Amount (Hero) */}
             <div className="py-2 text-center">
+              {redemption.isCancelled && (
+                <span className="inline-block mb-2 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full">
+                  Cancelled
+                </span>
+              )}
+              {redemption.redemptionType === "cancellation" && (
+                <span className="inline-block mb-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                  Points Restored
+                </span>
+              )}
               <p
-                className="text-4xl font-semibold"
-                style={{ color: "var(--color-error)" }}
+                className={`text-4xl font-semibold ${
+                  redemption.redemptionType === "cancellation"
+                    ? "text-green-600"
+                    : redemption.isCancelled
+                      ? "line-through opacity-50"
+                      : ""
+                }`}
+                style={
+                  redemption.redemptionType !== "cancellation" &&
+                  !redemption.isCancelled
+                    ? { color: "var(--color-error)" }
+                    : undefined
+                }
               >
-                -{redemption.pointsRedeemed.toLocaleString()}
+                {redemption.redemptionType === "cancellation" ? "+" : "-"}
+                {redemption.pointsRedeemed.toLocaleString()}
               </p>
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
                 <span>{format(redemption.redemptionDate, "yyyy-MM-dd")}</span>
                 <span>·</span>
                 <span>{REDEMPTION_TYPE_LABELS[redemption.redemptionType]}</span>
               </div>
-              {redemption.cpp && (
+              {redemption.cpp && !redemption.isCancelled && (
                 <div className="mt-2">
                   <CPPBadge cpp={redemption.cpp} />
                 </div>
               )}
             </div>
 
-            {/* Cash Value */}
+            {/* Cash Value / Service Fee */}
             {redemption.cashValue && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                  Cash Value
+                  {redemption.redemptionType === "cancellation"
+                    ? "Service Fee"
+                    : "Cash Value"}
                 </p>
                 <p className="text-lg font-semibold">
                   {redemption.cashValueCurrency === "USD" && "$"}
@@ -260,22 +287,48 @@ export function RedemptionDetailDialog({
             className="px-4 py-4 border-t flex gap-3 flex-shrink-0"
             style={{ borderColor: "var(--color-border)" }}
           >
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={handleEdit}
-              disabled={isLoading}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isLoading}
-            >
-              Delete
-            </Button>
+            {!redemption.isCancelled &&
+              redemption.redemptionType !== "cancellation" && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleEdit}
+                    disabled={isLoading}
+                  >
+                    Edit
+                  </Button>
+                  {onCancel && (
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => onCancel(redemption)}
+                      disabled={isLoading}
+                    >
+                      Cancel Redemption
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={isLoading}
+                  >
+                    Delete
+                  </Button>
+                </>
+              )}
+            {(redemption.isCancelled ||
+              redemption.redemptionType === "cancellation") && (
+              <Button
+                variant="outline"
+                className="flex-1 hover:bg-destructive hover:text-white hover:border-destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isLoading}
+              >
+                Delete
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

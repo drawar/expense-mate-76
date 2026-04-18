@@ -18,6 +18,7 @@ import {
   Gift,
   CreditCard,
   ArrowRight,
+  Undo2,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { PointsRedemption, RedemptionType } from "@/core/points/types";
@@ -35,6 +36,7 @@ const REDEMPTION_TYPE_CONFIG: Record<
     icon: <CreditCard className="h-4 w-4" />,
   },
   transfer_out: { label: "Transfer", icon: <ArrowRight className="h-4 w-4" /> },
+  cancellation: { label: "Cancellation", icon: <Undo2 className="h-4 w-4" /> },
   other: { label: "Other", icon: <CoinsIcon className="h-4 w-4" /> },
 };
 
@@ -78,10 +80,16 @@ export function RedemptionsTable({
               const typeConfig =
                 REDEMPTION_TYPE_CONFIG[redemption.redemptionType];
 
+              const isCancellation =
+                redemption.redemptionType === "cancellation";
+              const isCancelled = redemption.isCancelled;
+
               return (
                 <TableRow
                   key={redemption.id}
-                  className={onRowClick ? "cursor-pointer" : ""}
+                  className={`${onRowClick ? "cursor-pointer" : ""} ${
+                    isCancelled ? "opacity-50" : ""
+                  }`}
                   onClick={() => onRowClick?.(redemption)}
                 >
                   {/* Reward Currency */}
@@ -109,9 +117,16 @@ export function RedemptionsTable({
                         </div>
                       )}
                       <div className="min-w-0">
-                        <span className="font-medium block truncate">
-                          {currencyName}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium block truncate">
+                            {currencyName}
+                          </span>
+                          {isCancelled && (
+                            <span className="inline-flex px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded">
+                              Cancelled
+                            </span>
+                          )}
+                        </div>
                         {redemption.flightRoute && (
                           <span className="text-xs text-muted-foreground truncate block">
                             {redemption.flightRoute}
@@ -131,15 +146,28 @@ export function RedemptionsTable({
 
                   {/* Points Redeemed */}
                   <TableCell>
-                    <span className="font-medium text-red-600">
-                      -{redemption.pointsRedeemed.toLocaleString()}
-                    </span>
+                    {isCancellation ? (
+                      <span className="font-medium text-green-600">
+                        +{redemption.pointsRedeemed.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span
+                        className={`font-medium text-red-600 ${
+                          isCancelled ? "line-through" : ""
+                        }`}
+                      >
+                        -{redemption.pointsRedeemed.toLocaleString()}
+                      </span>
+                    )}
                   </TableCell>
 
-                  {/* Taxes & Fees (using cashValue field) */}
+                  {/* Taxes & Fees / Service Fee */}
                   <TableCell>
                     {redemption.cashValue ? (
                       <span className="text-muted-foreground">
+                        {isCancellation && (
+                          <span className="text-xs mr-1">Service Fee:</span>
+                        )}
                         {redemption.cashValueCurrency || "USD"}{" "}
                         {redemption.cashValue.toLocaleString(undefined, {
                           minimumFractionDigits: 2,

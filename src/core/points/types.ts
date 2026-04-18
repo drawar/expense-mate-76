@@ -161,6 +161,7 @@ export type RedemptionType =
   | "cash_back"
   | "statement_credit"
   | "transfer_out"
+  | "cancellation"
   | "other";
 
 export type CabinClass = "economy" | "premium_economy" | "business" | "first";
@@ -186,6 +187,9 @@ export interface PointsRedemption {
   cashValue?: number;
   cashValueCurrency?: string;
   cpp?: number; // Cents per point (auto-calculated)
+  // Cancellation fields
+  cancelledRedemptionId?: string;
+  isCancelled?: boolean;
   // Dates
   redemptionDate: Date;
   travelDate?: Date;
@@ -211,6 +215,8 @@ export interface DbPointsRedemption {
   cash_value: number | null;
   cash_value_currency: string | null;
   cpp: number | null;
+  cancelled_redemption_id: string | null;
+  is_cancelled: boolean;
   redemption_date: string;
   travel_date: string | null;
   created_at: string;
@@ -247,6 +253,8 @@ export interface PointsRedemptionInput {
   // CPP fields (cashValue used for taxes/fees)
   cashValue?: number;
   cashValueCurrency?: string;
+  // Cancellation
+  cancelledRedemptionId?: string;
   // Dates
   redemptionDate?: Date;
   travelDate?: Date;
@@ -584,6 +592,8 @@ export function toPointsRedemption(db: DbPointsRedemption): PointsRedemption {
     cashValue: db.cash_value ? Number(db.cash_value) : undefined,
     cashValueCurrency: db.cash_value_currency ?? undefined,
     cpp: db.cpp ? Number(db.cpp) : undefined,
+    cancelledRedemptionId: db.cancelled_redemption_id ?? undefined,
+    isCancelled: db.is_cancelled ?? false,
     redemptionDate: new Date(db.redemption_date),
     travelDate: db.travel_date ? new Date(db.travel_date) : undefined,
     createdAt: new Date(db.created_at),
