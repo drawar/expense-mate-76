@@ -86,11 +86,10 @@ export function CancelRedemptionDialog({
 
   const currencyName = redemption.rewardCurrency?.displayName ?? "Points";
 
-  const currencyOptions: SelectionOption[] = CurrencyService.getInstance()
-    .getAllCurrencies()
-    .map((c) => ({
-      value: c.code,
-      label: `${c.code} - ${c.name}`,
+  const currencyOptions: SelectionOption[] =
+    CurrencyService.getCurrencyOptions().map((c) => ({
+      value: c.value,
+      label: c.value,
     }));
 
   const handleSubmit = async () => {
