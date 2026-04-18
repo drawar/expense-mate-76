@@ -64,7 +64,11 @@ const TYPE_OPTIONS: SelectionOption[] = [
     label: "Credit Card",
     description: "Visa, Mastercard, Amex, etc.",
   },
-  { value: "gift_card", label: "Gift Card", description: "Prepaid gift cards" },
+  {
+    value: "gift_card",
+    label: "Gift Card",
+    description: "Prepaid gift cards or e-wallet",
+  },
   { value: "cash", label: "Cash", description: "Cash payments" },
 ];
 
