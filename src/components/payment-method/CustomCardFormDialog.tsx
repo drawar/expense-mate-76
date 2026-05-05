@@ -43,6 +43,7 @@ const CREDIT_CARD_ISSUERS = [
 // Gift card issuers
 const GIFT_CARD_ISSUERS = [
   "Air Canada",
+  "Amazon",
   "Best Buy",
   "Joker",
   "Trip.com",
