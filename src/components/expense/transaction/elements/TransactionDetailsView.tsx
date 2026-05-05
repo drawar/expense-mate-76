@@ -83,6 +83,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import "flag-icons/css/flag-icons.min.css";
 import {
   CreditCardIcon,
   ChevronDownIcon,
@@ -94,6 +95,25 @@ import {
   TagIcon,
   RotateCcwIcon,
 } from "lucide-react";
+
+const currencyToCountry: Record<string, string> = {
+  CAD: "ca",
+  USD: "us",
+  SGD: "sg",
+  EUR: "eu",
+  GBP: "gb",
+  JPY: "jp",
+  AUD: "au",
+  CNY: "cn",
+  INR: "in",
+  TWD: "tw",
+  VND: "vn",
+  IDR: "id",
+  THB: "th",
+  MYR: "my",
+  HKD: "hk",
+  KRW: "kr",
+};
 import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/types";
 
@@ -326,21 +346,38 @@ const TransactionDetailsView = ({
             Payment method
           </p>
           <div className="flex items-center gap-3">
-            {cardImageUrl ? (
-              <img
-                src={cardImageUrl}
-                alt={transaction.paymentMethod.name}
-                className="h-10 w-16 object-contain rounded"
-              />
+            {transaction.paymentMethod.type === "cash" ? (
+              <>
+                {currencyToCountry[transaction.paymentMethod.currency] ? (
+                  <span
+                    className={`fi fi-${currencyToCountry[transaction.paymentMethod.currency]} text-2xl rounded`}
+                  />
+                ) : (
+                  <CreditCardIcon className="h-6 w-6 shrink-0" />
+                )}
+                <p className="font-medium">{transaction.paymentMethod.name}</p>
+              </>
             ) : (
-              <CreditCardIcon className="h-6 w-6 shrink-0" />
+              <>
+                {cardImageUrl ? (
+                  <img
+                    src={cardImageUrl}
+                    alt={transaction.paymentMethod.name}
+                    className="h-10 w-16 object-contain rounded"
+                  />
+                ) : (
+                  <CreditCardIcon className="h-6 w-6 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {transaction.paymentMethod.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {transaction.paymentMethod.issuer}
+                  </p>
+                </div>
+              </>
             )}
-            <div className="min-w-0">
-              <p className="font-medium">{transaction.paymentMethod.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {transaction.paymentMethod.issuer}
-              </p>
-            </div>
           </div>
         </div>
 
