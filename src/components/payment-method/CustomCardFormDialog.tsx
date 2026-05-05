@@ -398,12 +398,19 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
     }
   }, [isGiftCard, issuer, totalLoaded, purchaseDate, nameManuallyEdited]);
 
+  // Auto-generate name for cash: Cash ({currency})
+  useEffect(() => {
+    if (isCash && !nameManuallyEdited) {
+      setName(`Cash (${currency})`);
+    }
+  }, [isCash, currency, nameManuallyEdited]);
+
   // Reset nameManuallyEdited when type changes
   useEffect(() => {
-    if (!isGiftCard) {
+    if (!isGiftCard && !isCash) {
       setNameManuallyEdited(false);
     }
-  }, [isGiftCard]);
+  }, [isGiftCard, isCash]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -659,8 +666,8 @@ const CustomCardFormDialog: React.FC<CustomCardFormDialogProps> = ({
                         value={name}
                         onChange={(e) => {
                           setName(e.target.value);
-                          // Mark as manually edited if user is typing in a gift card name
-                          if (isGiftCard) {
+                          // Mark as manually edited if user is typing in a gift card or cash name
+                          if (isGiftCard || isCash) {
                             setNameManuallyEdited(true);
                           }
                         }}
