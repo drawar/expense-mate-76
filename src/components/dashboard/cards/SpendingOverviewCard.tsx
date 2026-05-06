@@ -464,122 +464,121 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     <Card className={`${className} h-full`}>
       <CardContent className="pt-6 h-full flex flex-col">
         {/* Header with total spent */}
-        <div className="mb-1">
-          <div className="flex items-start justify-between">
-            <div className="relative z-10">
-              <p className="text-sm text-muted-foreground">You've spent</p>
-              <p className="text-4xl font-semibold tracking-tight mt-1">
-                <NumberFlow
-                  value={netExpenses}
-                  format={{
-                    style: "currency",
-                    currency: displayCurrency,
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }}
-                />
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <p className="text-sm text-muted-foreground">You've spent</p>
+            <p className="text-4xl font-semibold tracking-tight mt-1">
+              <NumberFlow
+                value={netExpenses}
+                format={{
+                  style: "currency",
+                  currency: displayCurrency,
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }}
+              />
+            </p>
+            {todaySpending > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                of which{" "}
+                <span className="font-medium text-foreground">
+                  {formatCurrency(todaySpending)}
+                </span>{" "}
+                today
               </p>
-              {todaySpending > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  of which{" "}
-                  <span className="font-medium text-foreground">
-                    {formatCurrency(todaySpending)}
-                  </span>{" "}
-                  today
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <Link
-                to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
-                className="group flex items-center gap-1 text-sm text-primary justify-end"
-              >
-                <span className="relative">
-                  View transactions
-                  <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
-                </span>
-                <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
-            </div>
+            )}
           </div>
+          <div className="text-right max-w-[50%]">
+            <Link
+              to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
+              className="group flex items-center gap-1 text-sm text-primary justify-end"
+            >
+              <span className="relative">
+                View transactions
+                <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
+              </span>
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
 
-          {/* Top spending days callout - full width below header */}
-          {topSpendingDays.length > 0 && (
-            <div className="mt-3 flex gap-1.5">
-              {topSpendingDays.slice(0, 3).map((spike, index) => {
-                if (!spike.transactions.length) return null;
+            {/* Top spending days callout - right-aligned, max 50% width */}
+            {topSpendingDays.length > 0 && (
+              <div className="mt-3 flex gap-1.5">
+                {topSpendingDays.slice(0, 3).map((spike, index) => {
+                  if (!spike.transactions.length) return null;
 
-                // Aggregate transactions by merchant + currency
-                const merchantTotals = new Map<
-                  string,
-                  {
-                    merchantName: string;
-                    currency: Currency;
-                    totalOriginal: number;
-                    totalConverted: number;
-                  }
-                >();
+                  // Aggregate transactions by merchant + currency
+                  const merchantTotals = new Map<
+                    string,
+                    {
+                      merchantName: string;
+                      currency: Currency;
+                      totalOriginal: number;
+                      totalConverted: number;
+                    }
+                  >();
 
-                spike.transactions.forEach((tx) => {
-                  const key = `${tx.merchant.id}-${tx.currency}`;
-                  const netOriginal = tx.amount - (tx.reimbursementAmount ?? 0);
-                  const netConverted = CurrencyService.convert(
-                    netOriginal,
-                    tx.currency,
-                    displayCurrency
+                  spike.transactions.forEach((tx) => {
+                    const key = `${tx.merchant.id}-${tx.currency}`;
+                    const netOriginal =
+                      tx.amount - (tx.reimbursementAmount ?? 0);
+                    const netConverted = CurrencyService.convert(
+                      netOriginal,
+                      tx.currency,
+                      displayCurrency
+                    );
+
+                    const existing = merchantTotals.get(key);
+                    if (existing) {
+                      existing.totalOriginal += netOriginal;
+                      existing.totalConverted += netConverted;
+                    } else {
+                      merchantTotals.set(key, {
+                        merchantName: tx.merchant.name,
+                        currency: tx.currency,
+                        totalOriginal: netOriginal,
+                        totalConverted: netConverted,
+                      });
+                    }
+                  });
+
+                  // Find merchant with largest total (by converted amount)
+                  const topMerchant = Array.from(merchantTotals.values()).sort(
+                    (a, b) => b.totalConverted - a.totalConverted
+                  )[0];
+
+                  if (!topMerchant) return null;
+
+                  const spikeNumber = index + 1;
+
+                  return (
+                    <div
+                      key={spike.date}
+                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative cursor-pointer transition-all hover:bg-muted"
+                      onMouseEnter={() => setHoveredSpikeDate(spike.date)}
+                      onMouseLeave={() => setHoveredSpikeDate(null)}
+                    >
+                      {/* Numbered badge - top left corner inside */}
+                      <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                        {spikeNumber}
+                      </span>
+                      {/* Amount - centered */}
+                      <div className="text-xs font-medium text-foreground">
+                        +
+                        {CurrencyService.format(
+                          topMerchant.totalOriginal,
+                          topMerchant.currency
+                        )}
+                      </div>
+                      {/* Merchant name - centered */}
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {topMerchant.merchantName}
+                      </div>
+                    </div>
                   );
-
-                  const existing = merchantTotals.get(key);
-                  if (existing) {
-                    existing.totalOriginal += netOriginal;
-                    existing.totalConverted += netConverted;
-                  } else {
-                    merchantTotals.set(key, {
-                      merchantName: tx.merchant.name,
-                      currency: tx.currency,
-                      totalOriginal: netOriginal,
-                      totalConverted: netConverted,
-                    });
-                  }
-                });
-
-                // Find merchant with largest total (by converted amount)
-                const topMerchant = Array.from(merchantTotals.values()).sort(
-                  (a, b) => b.totalConverted - a.totalConverted
-                )[0];
-
-                if (!topMerchant) return null;
-
-                const spikeNumber = index + 1;
-
-                return (
-                  <div
-                    key={spike.date}
-                    className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative cursor-pointer transition-all hover:bg-muted"
-                    onMouseEnter={() => setHoveredSpikeDate(spike.date)}
-                    onMouseLeave={() => setHoveredSpikeDate(null)}
-                  >
-                    {/* Numbered badge - top left corner inside */}
-                    <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                      {spikeNumber}
-                    </span>
-                    {/* Amount - centered */}
-                    <div className="text-xs font-medium text-foreground">
-                      +
-                      {CurrencyService.format(
-                        topMerchant.totalOriginal,
-                        topMerchant.currency
-                      )}
-                    </div>
-                    {/* Merchant name - centered */}
-                    <div className="text-[11px] text-muted-foreground truncate">
-                      {topMerchant.merchantName}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Chart */}
