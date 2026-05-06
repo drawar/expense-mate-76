@@ -570,7 +570,10 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
                         )}
                       </div>
                       {/* Merchant name - centered */}
-                      <div className="text-[11px] text-muted-foreground truncate">
+                      <div
+                        className="text-[11px] text-muted-foreground truncate"
+                        title={topMerchant.merchantName}
+                      >
                         {topMerchant.merchantName}
                       </div>
                     </div>
