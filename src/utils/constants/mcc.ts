@@ -498,7 +498,7 @@ export const MCC_CODES = [
   { code: "5655", description: "Sports & Riding Apparel" },
   { code: "5661", description: "Shoe Stores" },
   { code: "5681", description: "Furriers & Fur Shops" },
-  { code: "5691", description: "Men" },
+  { code: "5691", description: "Men's and Women's Clothing Stores" },
   { code: "5697", description: "Tailors, Alterations & Seamstresses" },
   { code: "5698", description: "Wig & Toupee Shops" },
   { code: "5699", description: "Miscellaneous Apparel & Accessory Shops" },
