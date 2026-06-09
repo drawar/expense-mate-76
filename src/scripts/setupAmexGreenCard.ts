@@ -5,7 +5,8 @@
  * 1. 3x on restaurants worldwide (excludes bars, nightclubs, cafeterias, convenience stores)
  * 2. 3x on flights booked directly with airlines or amextravel.com
  * 3. 3x on transit (trains, taxicabs, rideshare, ferries, tolls, parking, buses, subways)
- * 4. 1x on everything else
+ * 4. 3x on hotels (direct hotel bookings)
+ * 5. 1x on everything else
  *
  * Important:
  * - Restaurant bonus applies worldwide but excludes bars (5813), convenience stores (5499)
@@ -130,6 +131,12 @@ export async function setupAmexGreenCard() {
       "AMEXTRAVEL",
       "AMERICAN EXPRESS TRAVEL",
       "AMEX VACATIONS",
+    ];
+
+    // MCCs for hotels (3500-3699 are specific hotel brand MCCs, 7011 is general hotels/motels)
+    const hotelMCCs = [
+      ...Array.from({ length: 200 }, (_, i) => String(3500 + i)),
+      "7011", // Hotels and Motels
     ];
 
     // MCCs for transit (trains, taxicabs, rideshare, ferries, tolls, parking, buses, subways)
@@ -266,6 +273,36 @@ export async function setupAmexGreenCard() {
     });
     console.log("✅ Rule 3 created (3x transit)\n");
 
+    // Rule 3b: 3x on Hotels
+    console.log("Creating Rule 3b: 3x on Hotels...");
+    await repository.createRule({
+      cardTypeId: cardTypeId,
+      name: "3x Points on Hotels",
+      description:
+        "Earn 3 points per $1 on hotel stays booked directly with hotels",
+      enabled: true,
+      priority: 2,
+      conditions: [
+        {
+          type: "mcc",
+          operation: "include",
+          values: hotelMCCs,
+        },
+      ],
+      reward: {
+        calculationMethod: "standard",
+        baseMultiplier: 1,
+        bonusMultiplier: 2, // 2 bonus + 1 base = 3x total
+        pointsCurrency: "Membership Rewards Points (US)",
+        pointsRoundingStrategy: "nearest",
+        amountRoundingStrategy: "nearest",
+        blockSize: 1,
+        monthlyCap: null,
+        bonusTiers: [],
+      },
+    });
+    console.log("✅ Rule 3b created (3x hotels)\n");
+
     // Rule 4: 1x on Everything Else (Base earn rate)
     console.log("Creating Rule 4: 1x on All Other Purchases...");
     await repository.createRule({
@@ -303,6 +340,7 @@ export async function setupAmexGreenCard() {
     console.log(
       "- Priority 2: 3x on transit (trains, buses, taxis, rideshares, ferries, tolls, parking)"
     );
+    console.log("- Priority 2: 3x on hotels (direct hotel bookings)");
     console.log("- Priority 1: 1x on everything else");
     console.log("\nImportant Notes:");
     console.log("1. No monthly caps on any categories");

@@ -227,7 +227,7 @@ export const useExpenseForm = ({
           convertedCurrency = selectedPaymentMethod.currency;
 
           // Use paymentAmount if it's set (user manually entered or auto-calculated)
-          if (paymentAmount > 0) {
+          if (paymentAmount !== 0) {
             convertedAmount = paymentAmount;
           } else if (
             selectedPaymentMethod.conversionRate &&
