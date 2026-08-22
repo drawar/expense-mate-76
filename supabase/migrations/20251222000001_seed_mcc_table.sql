@@ -559,7 +559,7 @@ INSERT INTO mcc (code, description) VALUES
 ('7296', 'Clothing Rental - Costumes, Uniforms, Formal Wear'),
 ('7297', 'Massage Parlors'),
 ('7298', 'Health & Beauty Spas'),
-('7299', 'Miscellaneous Recreation Services'),
+('7299', 'Miscellaneous Personal Services'),
 ('7311', 'Advertising Services'),
 ('7321', 'Consumer Credit Reporting Agencies'),
 ('7333', 'Commercial Photography, Art & Graphics'),
