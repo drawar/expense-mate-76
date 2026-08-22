@@ -57,14 +57,14 @@ const Income = () => {
     try {
       await deleteIncome(deleteConfirmId);
       toast({
-        title: "Payslip deleted",
-        description: "Payslip has been removed.",
+        title: "Income deleted",
+        description: "Income has been removed.",
       });
     } catch (error) {
-      console.error("Error deleting payslip:", error);
+      console.error("Error deleting income:", error);
       toast({
         title: "Error",
-        description: "Failed to delete payslip.",
+        description: "Failed to delete income.",
         variant: "destructive",
       });
     } finally {
@@ -78,14 +78,14 @@ const Income = () => {
     try {
       await saveIncome(income);
       toast({
-        title: editingIncome ? "Payslip updated" : "Payslip added",
+        title: editingIncome ? "Income updated" : "Income added",
         description: `${income.name} has been ${editingIncome ? "updated" : "added"}.`,
       });
     } catch (error) {
-      console.error("Error saving payslip:", error);
+      console.error("Error saving income:", error);
       toast({
         title: "Error",
-        description: "Failed to save payslip.",
+        description: "Failed to save income.",
         variant: "destructive",
       });
       throw error;
@@ -101,7 +101,7 @@ const Income = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 mt-4">
           <div>
             <h1 className="text-2xl font-medium tracking-tight text-gradient">
-              Payslips
+              Incomes
             </h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
               Track your income payments
@@ -111,10 +111,10 @@ const Income = () => {
           <Button
             onClick={handleAddIncome}
             className="w-full sm:w-auto mt-4 sm:mt-0 gap-2"
-            aria-label="Add new payslip"
+            aria-label="Add new income"
           >
             <Plus className="h-4 w-4" />
-            Add Payslip
+            Add Income
           </Button>
         </div>
 
@@ -184,7 +184,7 @@ const Income = () => {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Payslip</AlertDialogTitle>
+              <AlertDialogTitle>Delete Income</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete "{incomeToDelete?.name}"? This
                 action cannot be undone.

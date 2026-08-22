@@ -108,7 +108,7 @@ export const IncomeList: React.FC<IncomeListProps> = ({
           {incomeSources.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">
-                No payslips found.
+                No incomes found.
               </TableCell>
             </TableRow>
           ) : (

@@ -7,7 +7,7 @@ interface EmptyIncomeStateProps {
 }
 
 /**
- * Empty state for when no payslips exist.
+ * Empty state for when no incomes exist.
  * Uses the consolidated EmptyState component with the "dashed" variant.
  */
 export const EmptyIncomeState: React.FC<EmptyIncomeStateProps> = ({
@@ -17,11 +17,11 @@ export const EmptyIncomeState: React.FC<EmptyIncomeStateProps> = ({
     <EmptyState
       variant="dashed"
       size="lg"
-      title="No Payslips"
-      description="Add your payslips to track your income and net cash flow."
+      title="No Incomes"
+      description="Add your incomes to track your earnings and net cash flow."
       icon={<WalletIcon />}
       action={{
-        label: "Add Your First Payslip",
+        label: "Add Your First Income",
         onClick: onAddClick,
       }}
     />

@@ -126,7 +126,7 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
             className="group flex items-center justify-center gap-1 text-sm text-primary mt-2"
           >
             <span className="relative">
-              View payslips
+              View incomes
               <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
             </span>
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />

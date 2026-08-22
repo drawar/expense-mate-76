@@ -153,7 +153,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
           onClose={onClose}
         >
           <DialogTitle>
-            {editingIncome ? "Edit Payslip" : "Add Payslip"}
+            {editingIncome ? "Edit Income" : "Add Income"}
           </DialogTitle>
         </DialogHeader>
 
@@ -319,7 +319,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                 ? "Saving..."
                 : editingIncome
                   ? "Save Changes"
-                  : "Add Payslip"}
+                  : "Add Income"}
             </Button>
           </div>
         </form>
