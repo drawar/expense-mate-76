@@ -52,7 +52,7 @@ const MERCHANT_CATEGORIES: Record<string, string> = {
   "Épicerie Pumpui": "Groceries",
   "FamilyMart Taiwan (Zhongshan)": "Groceries",
   GS25: "Groceries",
-  "Body Energy Club": "Groceries", // per MCC 5411 (smoothies/health foods)
+  "Body Energy Club": "Groceries", // MCC 5499 (misc food / smoothies / supplements); category kept as Groceries pending user review
 
   // ────────────── DINING OUT (sit-down restaurants, bars, cafes) ──────────────
   "Joyeaux Cafe & Restaurant": "Dining Out",

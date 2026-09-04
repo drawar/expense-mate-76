@@ -241,8 +241,8 @@ const ENRICHMENTS: Enrichment[] = [
     update: {
       address: "1131 W Georgia St, Vancouver, BC V6E 4T9",
       display_location: "Coal Harbour (inside Equinox), Vancouver",
-      mcc: { code: "5411", description: "Grocery Stores & Supermarkets" },
-      // BEC is smoothie/juice bar/supplements — Amex actually codes them as grocery per statement's 5x categorization
+      mcc: { code: "5499", description: "Miscellaneous Food Stores" },
+      // Smoothie/juice bar/supplement shop. Statement charges may still arrive as 5411 (that's Amex's per-tx coding, kept as-is on the transaction rows); the merchant-level MCC reflects the store's true category. Both 5411 and 5499 earn 5x on Cobalt.
       coordinates: { lat: 49.2862881, lng: -123.123574 },
       google_maps_url: gmaps(
         "Body Energy Club, 1131 W Georgia St, Vancouver, BC"
