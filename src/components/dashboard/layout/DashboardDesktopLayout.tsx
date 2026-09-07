@@ -21,6 +21,7 @@ import {
   TopMerchantsCard,
   TopCardsCard,
   TopLoyaltyProgramsCard,
+  BudgetSpendingCard,
 } from "@/components/dashboard/cards";
 
 interface DashboardDesktopLayoutProps {
@@ -50,6 +51,14 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
         <IncomeSavingsStack />
         <SpendingOverviewCard className={`${cardClass} shadow-sm h-full`} />
       </div>
+
+      {/* ============================================
+          BUDGET ZONE - Pay-period budget per category vs spent
+          ============================================ */}
+      <BudgetSpendingCard
+        transactions={filteredTransactions}
+        className={`${cardClass} shadow-sm`}
+      />
 
       {/* ============================================
           CATEGORY ZONE - Top Category + Comparison Chart
@@ -98,7 +107,6 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
           className="min-w-0"
         />
       </div>
-
     </div>
   );
 };
