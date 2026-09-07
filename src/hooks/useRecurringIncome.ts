@@ -10,6 +10,7 @@ import type { IncomeFrequency } from "@/types/income";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
+import { matchesSalary } from "@/utils/budget/matchesSalary";
 import { syncBudgetPeriodForIncome } from "@/utils/budget/syncBudgetPeriod";
 import { UserPreferencesService } from "@/core/preferences/UserPreferencesService";
 
@@ -133,17 +134,29 @@ export function useRecurringIncome(
     loadIncome();
   }, [loadIncome]);
 
-  // Calculate total income for the timeframe by virtualizing biweekly /
-  // monthly occurrences from each row's (startDate, frequency) pattern.
+  // Calculate total income for the timeframe.
   //
-  // Example: one biweekly row anchored Aug 28, viewed for September, expands
-  // to Sep 11 + Sep 25 → counted twice at the row's amount. This matches the
-  // "expected income this month" model — future occurrences within the window
-  // count, so a paycheck due later in the month is not silently zero.
+  // Users have two ways of populating recurring_income:
+  //   (a) Enter one row per real paycheck as they land ("literal" mode).
+  //   (b) Enter a single row with frequency=biweekly/monthly and let the app
+  //       project future occurrences ("pattern" mode).
   //
-  // Dedupe is keyed on (name, currency, date) so that if the user has
-  // multiple rows for the same salary at overlapping cadences, we don't
-  // double-count occurrences that would land on the same day.
+  // Naive virtualization on every row breaks mode (a) — every historical row
+  // projects forward and inflates future months (a 12-month history projects
+  // 12 distinct September dates that don't dedupe by date). So the rule is:
+  //
+  //   For each (name, currency) group:
+  //     - literal contribution: any row whose startDate falls in the window
+  //       counts at its own amount.
+  //     - pattern contribution: ONLY the row with the greatest startDate
+  //       virtualizes forward from its anchor; its projections fill in dates
+  //       inside the window where no literal row already exists.
+  //     - one_off rows never virtualize (their occurrencesInRange returns
+  //       just the anchor date if in-range).
+  //
+  // Dedupe by (name, currency, date) with literal-wins semantics; a literal
+  // row's amount is preserved even if the latest row's projection lands on
+  // the same day.
   const { totalIncome, totalAllTime } = useMemo(() => {
     const dateRange = getTimeframeDateRange(timeframe);
 
@@ -157,33 +170,65 @@ export function useRecurringIncome(
       0
     );
 
-    // No timeframe filter (e.g. "all time" view) → mirror the all-time total.
     if (!dateRange) {
       return { totalIncome: allTimeTotal, totalAllTime: allTimeTotal };
     }
 
-    // Virtualize occurrences per row and dedupe by (name, currency, date).
-    const perDayAmount = new Map<string, number>();
+    // Bucket rows by (name, currency).
+    const groups = new Map<string, RecurringIncome[]>();
     for (const p of currencyFilteredPayslips) {
-      if (!p.startDate) {
-        // No anchor date — fall back to the literal, single-shot semantics.
-        continue;
-      }
-      const occurrences = occurrencesInRange(
-        p.startDate,
-        p.frequency,
-        dateRange.from,
-        dateRange.to
-      );
-      const nameKey = p.name.trim().toLowerCase();
-      for (const occ of occurrences) {
-        perDayAmount.set(`${nameKey}|${p.currency}|${occ}`, p.amount);
-      }
+      const key = `${p.name.trim().toLowerCase()}|${p.currency}`;
+      const bucket = groups.get(key);
+      if (bucket) bucket.push(p);
+      else groups.set(key, [p]);
     }
-    const timeframeTotal = Array.from(perDayAmount.values()).reduce(
-      (a, b) => a + b,
-      0
-    );
+
+    let timeframeTotal = 0;
+    for (const [groupKey, rows] of groups) {
+      // literalByDate: rows whose actual startDate is inside the window.
+      const literalByDate = new Map<string, number>();
+      for (const r of rows) {
+        if (!r.startDate) continue;
+        if (r.startDate >= dateRange.from && r.startDate <= dateRange.to) {
+          literalByDate.set(r.startDate, r.amount);
+        }
+      }
+
+      // pattern source: the latest-anchored row in the group. Its frequency
+      // decides the projection cadence; one_off rows just return their own
+      // startDate if it happens to land in-window. Only project forward
+      // when the group looks like a real salary/paycheck stream — other
+      // recurring-shaped rows (refunds, reimbursements, one-off sales the
+      // user hasn't reclassified as one_off yet) stay literal-only so they
+      // don't inflate future months.
+      const latest = rows.reduce<RecurringIncome | null>((max, r) => {
+        if (!r.startDate) return max;
+        if (!max || (r.startDate ?? "") > (max.startDate ?? "")) return r;
+        return max;
+      }, null);
+
+      const perDate = new Map<string, number>(literalByDate);
+      if (
+        latest?.startDate &&
+        latest.frequency !== "one_off" &&
+        matchesSalary(latest.name)
+      ) {
+        const occs = occurrencesInRange(
+          latest.startDate,
+          latest.frequency,
+          dateRange.from,
+          dateRange.to
+        );
+        for (const occ of occs) {
+          // Literal wins — if a real row already sits on this day, keep it.
+          if (!perDate.has(occ)) perDate.set(occ, latest.amount);
+        }
+      }
+
+      for (const amt of perDate.values()) timeframeTotal += amt;
+      // touch groupKey for eslint no-unused-vars in case future logic needs it
+      void groupKey;
+    }
 
     return { totalIncome: timeframeTotal, totalAllTime: allTimeTotal };
   }, [incomeSources, displayCurrency, timeframe]);
