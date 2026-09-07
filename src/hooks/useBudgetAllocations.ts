@@ -29,6 +29,7 @@ import {
   type ParentCategoryId,
   type SavingsId,
 } from "@/utils/budget/defaults";
+import { recomputeActivePeriods } from "@/utils/budget/recomputeActivePeriods";
 
 export const budgetAllocationsKey = (userId?: string) =>
   ["budget_allocations", userId ?? "anon"] as const;
@@ -148,11 +149,15 @@ export function useBudgetAllocationMutations() {
         .from("budget_allocations")
         .upsert(rows, { onConflict: "user_id,parent_category_id" });
       if (error) throw error;
+      // Re-snapshot every active + in-grace period so the dashboard
+      // reflects the new split immediately. Historical periods stay frozen.
+      if (user?.id) await recomputeActivePeriods(supabase, user.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: budgetAllocationsKey(user?.id),
       });
+      queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
       toast.success("Budget allocations saved");
     },
     onError: (error) => {
@@ -169,11 +174,13 @@ export function useBudgetAllocationMutations() {
         .delete()
         .eq("user_id", user.id);
       if (error) throw error;
+      if (user?.id) await recomputeActivePeriods(supabase, user.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: budgetAllocationsKey(user?.id),
       });
+      queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
       toast.success("Allocations reset to defaults");
     },
     onError: (error) => {
