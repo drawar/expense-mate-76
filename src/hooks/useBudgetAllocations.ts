@@ -135,6 +135,32 @@ export function useBudgetAllocationMutations() {
     },
   });
 
+  const setAllocations = useMutation({
+    mutationFn: async (inputs: SetAllocationInput[]) => {
+      if (!user?.id) throw new Error("Not signed in");
+      if (inputs.length === 0) return;
+      const rows = inputs.map(({ parentId, percentage }) => ({
+        user_id: user.id,
+        parent_category_id: parentId,
+        percentage: Math.max(0, Math.min(100, Number(percentage))),
+      }));
+      const { error } = await supabase
+        .from("budget_allocations")
+        .upsert(rows, { onConflict: "user_id,parent_category_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: budgetAllocationsKey(user?.id),
+      });
+      toast.success("Budget allocations saved");
+    },
+    onError: (error) => {
+      console.error("Error saving budget allocations:", error);
+      toast.error("Failed to save allocations");
+    },
+  });
+
   const resetAllocations = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("Not signed in");
@@ -156,5 +182,5 @@ export function useBudgetAllocationMutations() {
     },
   });
 
-  return { setAllocation, resetAllocations };
+  return { setAllocation, setAllocations, resetAllocations };
 }

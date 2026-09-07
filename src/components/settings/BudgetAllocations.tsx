@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  CheckIcon,
   Loader2,
   PiggyBankIcon,
   RotateCcwIcon,
   TargetIcon,
+  XIcon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -31,61 +33,82 @@ import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 
 type SlotId = ParentCategoryId | SavingsId;
 
+const SLOT_IDS: readonly SlotId[] = [SAVINGS_ID, ...PARENT_CATEGORY_IDS];
+
 /**
- * Settings section for budget percentages — pay-yourself-first framing.
- *
- * A prominent Savings row sits at the top of the card; the six spending
- * parent categories follow below a divider. Sum of (savings + spending)
- * ≤ 100. Unallocated remainder counts as extra implicit savings; sums
- * above 100 warn but still save so the user isn't blocked mid-edit.
+ * Settings section for budget percentages — pay-yourself-first framing with
+ * explicit save. Drafts live in local state; nothing hits the DB until the
+ * user clicks Save. Save is disabled when nothing has changed or when the
+ * total exceeds 100 — this prevents the persisted state from drifting into
+ * an over-allocated shape.
  */
 export function BudgetAllocations() {
-  const { savings, allocations, isValid, isLoading } = useBudgetAllocations();
-  const { setAllocation, resetAllocations } = useBudgetAllocationMutations();
+  const { savings, allocations, isLoading } = useBudgetAllocations();
+  const { setAllocations, resetAllocations } = useBudgetAllocationMutations();
 
-  // Local draft mirrors the persisted values so inputs accept in-progress
-  // typing without every keystroke round-tripping to the DB.
-  const [draft, setDraft] = useState<Record<SlotId, string>>(() => ({
-    [SAVINGS_ID]: String(savings),
-    ...(Object.fromEntries(
-      PARENT_CATEGORY_IDS.map((id) => [id, String(allocations[id])])
-    ) as Record<ParentCategoryId, string>),
-  }));
-
-  useEffect(() => {
-    if (isLoading) return;
-    setDraft({
+  const emptyDraft = (): Record<SlotId, string> =>
+    ({
       [SAVINGS_ID]: String(savings),
       ...(Object.fromEntries(
         PARENT_CATEGORY_IDS.map((id) => [id, String(allocations[id])])
       ) as Record<ParentCategoryId, string>),
-    });
-  }, [savings, allocations, isLoading]);
+    }) as Record<SlotId, string>;
 
-  const draftSavings = Number(draft[SAVINGS_ID]);
-  const draftSpending = PARENT_CATEGORY_IDS.reduce((sum, id) => {
-    const n = Number(draft[id]);
-    return sum + (Number.isFinite(n) ? n : 0);
-  }, 0);
-  const draftTotal =
-    (Number.isFinite(draftSavings) ? draftSavings : 0) + draftSpending;
+  const [draft, setDraft] = useState<Record<SlotId, string>>(emptyDraft);
+
+  // Reconcile draft with persisted values on initial load and on external
+  // refreshes (e.g., another device edited). We only overwrite if the user
+  // has no in-progress changes, to avoid clobbering typing mid-session.
+  const persistedSignature = `${savings}|${PARENT_CATEGORY_IDS.map(
+    (id) => allocations[id]
+  ).join("|")}`;
+  useEffect(() => {
+    if (isLoading) return;
+    setDraft(emptyDraft());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistedSignature, isLoading]);
 
   const persistedFor = (id: SlotId): number =>
     id === SAVINGS_ID ? savings : allocations[id as ParentCategoryId];
 
-  const commit = (slotId: SlotId) => {
-    const n = Number(draft[slotId]);
-    if (!Number.isFinite(n) || n < 0 || n > 100) {
-      setDraft((d) => ({ ...d, [slotId]: String(persistedFor(slotId)) }));
-      return;
-    }
-    if (n === persistedFor(slotId)) return;
-    setAllocation.mutate({ parentId: slotId, percentage: n });
-  };
+  const dirty = useMemo(
+    () =>
+      SLOT_IDS.filter((id) => {
+        const n = Number(draft[id]);
+        if (!Number.isFinite(n)) return false;
+        return n !== persistedFor(id);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [draft, persistedSignature]
+  );
+
+  const anyInvalidField = SLOT_IDS.some((id) => {
+    const n = Number(draft[id]);
+    return !Number.isFinite(n) || n < 0 || n > 100;
+  });
+
+  const draftTotal = SLOT_IDS.reduce((sum, id) => {
+    const n = Number(draft[id]);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+
+  const canSave =
+    dirty.length > 0 && !anyInvalidField && draftTotal <= 100 && !isLoading;
 
   const remaining = 100 - draftTotal;
   const totalBadgeVariant: "secondary" | "destructive" =
     draftTotal <= 100 ? "secondary" : "destructive";
+
+  const handleSave = () => {
+    setAllocations.mutate(
+      dirty.map((id) => ({
+        parentId: id,
+        percentage: Number(draft[id]),
+      }))
+    );
+  };
+
+  const handleDiscard = () => setDraft(emptyDraft());
 
   return (
     <Card>
@@ -96,9 +119,8 @@ export function BudgetAllocations() {
         </CardTitle>
         <CardDescription>
           Pay yourself first: set a savings % that comes off the top of each
-          paycheck, then split the rest across spending categories. We compute
-          per-category dollar budgets each time you add a Salary or Paycheck
-          income.
+          paycheck, then split the rest across spending categories. Changes
+          apply to your next salary — click Save when your split totals 100%.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -135,17 +157,12 @@ export function BudgetAllocations() {
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, [SAVINGS_ID]: e.target.value }))
                   }
-                  onBlur={() => commit(SAVINGS_ID)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") commit(SAVINGS_ID);
-                  }}
-                  disabled={setAllocation.isPending}
+                  disabled={setAllocations.isPending}
                 />
                 <span className="text-sm text-muted-foreground">%</span>
               </div>
             </div>
 
-            {/* Divider between savings and the six spending categories */}
             <div className="pt-1 pb-1 text-xs uppercase tracking-wide text-muted-foreground">
               Spending categories
             </div>
@@ -185,44 +202,77 @@ export function BudgetAllocations() {
                         [parent.id as ParentCategoryId]: e.target.value,
                       }))
                     }
-                    onBlur={() => commit(parent.id as ParentCategoryId)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter")
-                        commit(parent.id as ParentCategoryId);
-                    }}
-                    disabled={setAllocation.isPending}
+                    disabled={setAllocations.isPending}
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
               </div>
             ))}
 
-            <div className="flex items-center justify-between pt-3 border-t">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-col gap-3 pt-3 border-t sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm flex-wrap">
                 <span className="text-muted-foreground">Total</span>
                 <Badge variant={totalBadgeVariant}>
                   {draftTotal.toFixed(0)}%
                 </Badge>
-                {remaining > 0 && remaining <= 100 && (
+                {draftTotal <= 100 && remaining > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {remaining.toFixed(0)}% unallocated (extra implicit savings)
                   </span>
                 )}
-                {!isValid && (
+                {draftTotal > 100 && (
                   <span className="text-xs text-destructive">
-                    Over 100% — budgets will exceed your paycheck
+                    Over 100% — reduce a category before saving
+                  </span>
+                )}
+                {dirty.length > 0 && draftTotal <= 100 && (
+                  <span className="text-xs text-muted-foreground">
+                    · {dirty.length} unsaved change
+                    {dirty.length === 1 ? "" : "s"}
                   </span>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => resetAllocations.mutate()}
-                disabled={resetAllocations.isPending}
-              >
-                <RotateCcwIcon className="h-4 w-4 mr-2" />
-                Reset to defaults
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => resetAllocations.mutate()}
+                  disabled={
+                    resetAllocations.isPending || setAllocations.isPending
+                  }
+                >
+                  <RotateCcwIcon className="h-4 w-4 mr-2" />
+                  Reset to defaults
+                </Button>
+                {dirty.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscard}
+                    disabled={setAllocations.isPending}
+                  >
+                    <XIcon className="h-4 w-4 mr-2" />
+                    Discard
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={!canSave || setAllocations.isPending}
+                >
+                  {setAllocations.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="h-4 w-4 mr-2" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         )}
