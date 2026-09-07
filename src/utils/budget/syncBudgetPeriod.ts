@@ -63,12 +63,20 @@ export async function syncBudgetPeriodForIncome({
   prev,
 }: SyncArgs): Promise<void> {
   try {
+    // A one-off row is a single event, not a pay-period anchor — never
+    // creates a budget period (and if the row was previously recurring and
+    // is now one-off, the "not-a-match" cleanup below removes any prior
+    // period for this income_id).
+    const isRecurring = next.frequency !== "one_off";
     const nextMatches =
-      matchesSalary(next.name) && next.currency === displayCurrency;
+      isRecurring &&
+      matchesSalary(next.name) &&
+      next.currency === displayCurrency;
     const prevMatches =
       !!prev && matchesSalary(prev.name) && prev.currency === displayCurrency;
 
-    // Cases (d) and (e): dropped out of "salary + right currency" — clean up.
+    // Cases (d) and (e): dropped out of "salary + right currency + recurring"
+    // — clean up.
     if (!nextMatches) {
       if (prevMatches) {
         await supabase

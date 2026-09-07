@@ -33,7 +33,7 @@ interface RecurringIncomeSettings {
 }
 
 /** Step forward one cycle: biweekly = +14d, monthly = +1 calendar month. */
-function advance(d: Date, frequency: IncomeFrequency): Date {
+function advance(d: Date, frequency: "biweekly" | "monthly"): Date {
   return frequency === "biweekly" ? addDays(d, 14) : addMonths(d, 1);
 }
 
@@ -44,6 +44,9 @@ function advance(d: Date, frequency: IncomeFrequency): Date {
  * Includes future occurrences within the window — this matches the "expected
  * income this month" mental model requested at feature design time.
  *
+ * one_off returns the anchor date itself iff it falls inside the window;
+ * never virtualized into a series.
+ *
  * Returns date strings ("yyyy-MM-dd") to make caller-side dedup easy.
  */
 function occurrencesInRange(
@@ -52,6 +55,9 @@ function occurrencesInRange(
   fromDate: string,
   toDate: string
 ): string[] {
+  if (frequency === "one_off") {
+    return startDate >= fromDate && startDate <= toDate ? [startDate] : [];
+  }
   const from = parseISO(fromDate);
   const to = parseISO(toDate);
   let d = parseISO(startDate);

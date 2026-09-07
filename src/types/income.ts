@@ -1,6 +1,14 @@
 import { Currency } from "@/types";
 
-export type IncomeFrequency = "biweekly" | "monthly";
+/**
+ * Cadence of an income row.
+ *
+ * - `biweekly` / `monthly` — a recurring pattern; each occurrence in a view's
+ *   date range is counted (see useRecurringIncome virtualization).
+ * - `one_off` — a single event on `startDate` only. Never virtualized, never
+ *   triggers a pay-period budget snapshot even if the name matches "salary".
+ */
+export type IncomeFrequency = "biweekly" | "monthly" | "one_off";
 
 export interface RecurringIncome {
   id: string;

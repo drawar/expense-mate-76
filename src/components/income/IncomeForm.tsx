@@ -270,6 +270,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                   <SelectItem value="biweekly">
                     Biweekly (every 2 weeks)
                   </SelectItem>
+                  <SelectItem value="one_off">
+                    One-off (bonus, refund, etc.)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
