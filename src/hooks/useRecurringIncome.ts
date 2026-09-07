@@ -4,7 +4,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { addDays, addMonths, format, parseISO } from "date-fns";
 import { Currency, RecurringIncome } from "@/types";
+import type { IncomeFrequency } from "@/types/income";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
@@ -30,16 +32,39 @@ interface RecurringIncomeSettings {
   refresh: () => Promise<void>;
 }
 
+/** Step forward one cycle: biweekly = +14d, monthly = +1 calendar month. */
+function advance(d: Date, frequency: IncomeFrequency): Date {
+  return frequency === "biweekly" ? addDays(d, 14) : addMonths(d, 1);
+}
+
 /**
- * Check if a date string (YYYY-MM-DD) falls within a date range
+ * Yield every occurrence of a recurring income within [fromDate, toDate],
+ * inclusive, given the anchor `startDate` and its frequency. Occurrences
+ * before the anchor are ignored (we don't project backward from the anchor).
+ * Includes future occurrences within the window — this matches the "expected
+ * income this month" mental model requested at feature design time.
+ *
+ * Returns date strings ("yyyy-MM-dd") to make caller-side dedup easy.
  */
-function isDateInRange(
-  dateStr: string | undefined,
-  from: string,
-  to: string
-): boolean {
-  if (!dateStr) return false;
-  return dateStr >= from && dateStr <= to;
+function occurrencesInRange(
+  startDate: string,
+  frequency: IncomeFrequency,
+  fromDate: string,
+  toDate: string
+): string[] {
+  const from = parseISO(fromDate);
+  const to = parseISO(toDate);
+  let d = parseISO(startDate);
+  // Advance to the first occurrence on or after `from`.
+  while (d < from) d = advance(d, frequency);
+  const out: string[] = [];
+  // Hard cap to avoid runaway loops on pathological inputs.
+  let safety = 400;
+  while (d <= to && safety-- > 0) {
+    out.push(format(d, "yyyy-MM-dd"));
+    d = advance(d, frequency);
+  }
+  return out;
 }
 
 /**
@@ -102,41 +127,59 @@ export function useRecurringIncome(
     loadIncome();
   }, [loadIncome]);
 
-  // Calculate total income by summing payslips within the timeframe
+  // Calculate total income for the timeframe by virtualizing biweekly /
+  // monthly occurrences from each row's (startDate, frequency) pattern.
+  //
+  // Example: one biweekly row anchored Aug 28, viewed for September, expands
+  // to Sep 11 + Sep 25 → counted twice at the row's amount. This matches the
+  // "expected income this month" model — future occurrences within the window
+  // count, so a paycheck due later in the month is not silently zero.
+  //
+  // Dedupe is keyed on (name, currency, date) so that if the user has
+  // multiple rows for the same salary at overlapping cadences, we don't
+  // double-count occurrences that would land on the same day.
   const { totalIncome, totalAllTime } = useMemo(() => {
     const dateRange = getTimeframeDateRange(timeframe);
 
-    // Filter payslips by currency only (for all-time total)
     const currencyFilteredPayslips = incomeSources.filter(
       (payslip) => payslip.currency === displayCurrency
     );
 
-    // Calculate all-time total (no date filter)
+    // All-time total is a straight sum of literal rows (no virtualization).
     const allTimeTotal = currencyFilteredPayslips.reduce(
       (sum, payslip) => sum + payslip.amount,
       0
     );
 
-    // Filter by date range for timeframe-specific total
-    const timeframeFilteredPayslips = currencyFilteredPayslips.filter(
-      (payslip) => {
-        // If no date range, include all
-        if (!dateRange) return true;
-        // Check if payslip date falls within range
-        return isDateInRange(payslip.startDate, dateRange.from, dateRange.to);
-      }
-    );
+    // No timeframe filter (e.g. "all time" view) → mirror the all-time total.
+    if (!dateRange) {
+      return { totalIncome: allTimeTotal, totalAllTime: allTimeTotal };
+    }
 
-    // Sum the amounts for timeframe
-    const timeframeTotal = timeframeFilteredPayslips.reduce(
-      (sum, payslip) => sum + payslip.amount,
+    // Virtualize occurrences per row and dedupe by (name, currency, date).
+    const perDayAmount = new Map<string, number>();
+    for (const p of currencyFilteredPayslips) {
+      if (!p.startDate) {
+        // No anchor date — fall back to the literal, single-shot semantics.
+        continue;
+      }
+      const occurrences = occurrencesInRange(
+        p.startDate,
+        p.frequency,
+        dateRange.from,
+        dateRange.to
+      );
+      const nameKey = p.name.trim().toLowerCase();
+      for (const occ of occurrences) {
+        perDayAmount.set(`${nameKey}|${p.currency}|${occ}`, p.amount);
+      }
+    }
+    const timeframeTotal = Array.from(perDayAmount.values()).reduce(
+      (a, b) => a + b,
       0
     );
 
-    return {
-      totalIncome: timeframeTotal,
-      totalAllTime: allTimeTotal,
-    };
+    return { totalIncome: timeframeTotal, totalAllTime: allTimeTotal };
   }, [incomeSources, displayCurrency, timeframe]);
 
   // Save income (with pay-period-budget sync side-effect for salary rows)
