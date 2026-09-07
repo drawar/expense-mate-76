@@ -11,7 +11,9 @@ import {
 } from "../src/utils/budget/computeBudgetPeriod";
 import {
   DEFAULT_ALLOCATIONS,
+  DEFAULT_SAVINGS_PCT,
   PARENT_CATEGORY_IDS,
+  SAVINGS_ID,
   type ParentCategoryId,
 } from "../src/utils/budget/defaults";
 
@@ -72,18 +74,43 @@ describe("computeBudgetPeriod", () => {
     );
   });
 
-  it("sum of allocations equals round2(salary × sum(pct)/100) within 1¢ per category", () => {
+  it("sum of spending allocations equals round2(salary × sum(pct)/100) within 1¢ per category", () => {
     fc.assert(
       fc.property(salaryArb(), allocationsArb(), (salary, pcts) => {
-        const out = computeBudgetPeriod(salary, pcts);
+        // Pass savingsPct = 0 so the total reflects only the spending categories.
+        const out = computeBudgetPeriod(salary, pcts, 0);
         const totalPct = Object.values(pcts).reduce((a, b) => a + b, 0);
         const expectedTotal = round2((salary.amount * totalPct) / 100);
-        const actualTotal = round2(
-          Object.values(out.allocations).reduce((a, b) => a + b, 0)
+        const spendingSum = PARENT_CATEGORY_IDS.reduce(
+          (a, id) => a + (out.allocations[id] ?? 0),
+          0
         );
         // Rounding drift is bounded by ¢/category (six categories).
-        expect(Math.abs(actualTotal - expectedTotal)).toBeLessThanOrEqual(0.06);
+        expect(
+          Math.abs(round2(spendingSum) - expectedTotal)
+        ).toBeLessThanOrEqual(0.06);
+        // Savings slot is present and honors savingsPct = 0.
+        expect(out.allocations[SAVINGS_ID]).toBe(0);
       })
+    );
+  });
+
+  it("savings slot equals round2(salary × savingsPct / 100)", () => {
+    fc.assert(
+      fc.property(
+        salaryArb(),
+        fc.integer({ min: 0, max: 100 }),
+        (salary, savingsPct) => {
+          const out = computeBudgetPeriod(
+            salary,
+            DEFAULT_ALLOCATIONS,
+            savingsPct
+          );
+          expect(out.allocations[SAVINGS_ID]).toBe(
+            round2((salary.amount * savingsPct) / 100)
+          );
+        }
+      )
     );
   });
 
@@ -99,7 +126,7 @@ describe("computeBudgetPeriod", () => {
     );
   });
 
-  it("uses DEFAULT_ALLOCATIONS when no percentages provided", () => {
+  it("uses DEFAULT_ALLOCATIONS + DEFAULT_SAVINGS_PCT when no percentages provided", () => {
     const salary: SalaryInput = {
       id: "test",
       startDate: "2026-09-05",
@@ -111,12 +138,15 @@ describe("computeBudgetPeriod", () => {
     expect(out.allocations.essentials).toBe(
       round2((5000 * DEFAULT_ALLOCATIONS.essentials) / 100)
     );
+    expect(out.allocations[SAVINGS_ID]).toBe(
+      round2((5000 * DEFAULT_SAVINGS_PCT) / 100)
+    );
     expect(out.period_end).toBe("2026-09-19");
-    // Defaults sum to 100 → total spent budget equals salary amount.
-    const totalPct = Object.values(DEFAULT_ALLOCATIONS).reduce(
+    // Defaults: savings + spending must sum to 100.
+    const spendingTotal = Object.values(DEFAULT_ALLOCATIONS).reduce(
       (a, b) => a + b,
       0
     );
-    expect(totalPct).toBe(100);
+    expect(spendingTotal + DEFAULT_SAVINGS_PCT).toBe(100);
   });
 });

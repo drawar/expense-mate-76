@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2, RotateCcwIcon, TargetIcon } from "lucide-react";
+import {
+  Loader2,
+  PiggyBankIcon,
+  RotateCcwIcon,
+  TargetIcon,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,56 +22,65 @@ import {
 } from "@/hooks/useBudgetAllocations";
 import {
   PARENT_CATEGORY_IDS,
+  SAVINGS_ID,
   type ParentCategoryId,
+  type SavingsId,
 } from "@/utils/budget/defaults";
 import { PARENT_CATEGORIES } from "@/utils/constants/categories";
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
 
+type SlotId = ParentCategoryId | SavingsId;
+
 /**
- * Settings section for per-parent-category budget percentages.
+ * Settings section for budget percentages — pay-yourself-first framing.
  *
- * Percentages drive the per-category dollar budgets that are computed each
- * time a salary income is added (see useRecurringIncome → budget_periods).
- * Sums ≤ 100 are valid; the unallocated remainder counts as implicit savings.
- * Sums > 100 warn but are still saved so the user isn't blocked mid-edit.
+ * A prominent Savings row sits at the top of the card; the six spending
+ * parent categories follow below a divider. Sum of (savings + spending)
+ * ≤ 100. Unallocated remainder counts as extra implicit savings; sums
+ * above 100 warn but still save so the user isn't blocked mid-edit.
  */
 export function BudgetAllocations() {
-  const { allocations, totalPct, isValid, isLoading } = useBudgetAllocations();
+  const { savings, allocations, isValid, isLoading } = useBudgetAllocations();
   const { setAllocation, resetAllocations } = useBudgetAllocationMutations();
 
-  // Local draft mirrors the persisted allocations so the input can accept
-  // in-progress typing without every keystroke round-tripping to the DB.
-  const [draft, setDraft] = useState<Record<ParentCategoryId, string>>(
-    () =>
-      Object.fromEntries(
-        PARENT_CATEGORY_IDS.map((id) => [id, String(allocations[id])])
-      ) as Record<ParentCategoryId, string>
-  );
+  // Local draft mirrors the persisted values so inputs accept in-progress
+  // typing without every keystroke round-tripping to the DB.
+  const [draft, setDraft] = useState<Record<SlotId, string>>(() => ({
+    [SAVINGS_ID]: String(savings),
+    ...(Object.fromEntries(
+      PARENT_CATEGORY_IDS.map((id) => [id, String(allocations[id])])
+    ) as Record<ParentCategoryId, string>),
+  }));
 
-  // Reconcile draft with persisted values when they load / change externally.
   useEffect(() => {
     if (isLoading) return;
-    setDraft(
-      Object.fromEntries(
+    setDraft({
+      [SAVINGS_ID]: String(savings),
+      ...(Object.fromEntries(
         PARENT_CATEGORY_IDS.map((id) => [id, String(allocations[id])])
-      ) as Record<ParentCategoryId, string>
-    );
-  }, [allocations, isLoading]);
+      ) as Record<ParentCategoryId, string>),
+    });
+  }, [savings, allocations, isLoading]);
 
-  const draftTotal = PARENT_CATEGORY_IDS.reduce((sum, id) => {
+  const draftSavings = Number(draft[SAVINGS_ID]);
+  const draftSpending = PARENT_CATEGORY_IDS.reduce((sum, id) => {
     const n = Number(draft[id]);
     return sum + (Number.isFinite(n) ? n : 0);
   }, 0);
+  const draftTotal =
+    (Number.isFinite(draftSavings) ? draftSavings : 0) + draftSpending;
 
-  const commit = (parentId: ParentCategoryId) => {
-    const n = Number(draft[parentId]);
+  const persistedFor = (id: SlotId): number =>
+    id === SAVINGS_ID ? savings : allocations[id as ParentCategoryId];
+
+  const commit = (slotId: SlotId) => {
+    const n = Number(draft[slotId]);
     if (!Number.isFinite(n) || n < 0 || n > 100) {
-      // Snap back to persisted value on invalid entry.
-      setDraft((d) => ({ ...d, [parentId]: String(allocations[parentId]) }));
+      setDraft((d) => ({ ...d, [slotId]: String(persistedFor(slotId)) }));
       return;
     }
-    if (n === allocations[parentId]) return;
-    setAllocation.mutate({ parentId, percentage: n });
+    if (n === persistedFor(slotId)) return;
+    setAllocation.mutate({ parentId: slotId, percentage: n });
   };
 
   const remaining = 100 - draftTotal;
@@ -81,9 +95,10 @@ export function BudgetAllocations() {
           Budget Allocations
         </CardTitle>
         <CardDescription>
-          Set the percentage of each paycheck that should go to each spending
-          category. When you add a Salary or Paycheck income, we compute a
-          budget per category for that pay period.
+          Pay yourself first: set a savings % that comes off the top of each
+          paycheck, then split the rest across spending categories. We compute
+          per-category dollar budgets each time you add a Salary or Paycheck
+          income.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,6 +109,47 @@ export function BudgetAllocations() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
+            {/* Pay-yourself-first: Savings row at the top */}
+            <div className="flex items-center justify-between gap-4 rounded-lg bg-[var(--color-accent-subtle)] p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <PiggyBankIcon
+                  className="h-5 w-5"
+                  style={{ color: "var(--color-success)" }}
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">Savings</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Set aside first — comes off the top of every paycheck
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="w-20 text-right"
+                  value={draft[SAVINGS_ID] ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, [SAVINGS_ID]: e.target.value }))
+                  }
+                  onBlur={() => commit(SAVINGS_ID)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commit(SAVINGS_ID);
+                  }}
+                  disabled={setAllocation.isPending}
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+            </div>
+
+            {/* Divider between savings and the six spending categories */}
+            <div className="pt-1 pb-1 text-xs uppercase tracking-wide text-muted-foreground">
+              Spending categories
+            </div>
+
             {PARENT_CATEGORIES.map((parent) => (
               <div
                 key={parent.id}
@@ -149,7 +205,7 @@ export function BudgetAllocations() {
                 </Badge>
                 {remaining > 0 && remaining <= 100 && (
                   <span className="text-xs text-muted-foreground">
-                    {remaining.toFixed(0)}% unallocated (treated as savings)
+                    {remaining.toFixed(0)}% unallocated (extra implicit savings)
                   </span>
                 )}
                 {!isValid && (

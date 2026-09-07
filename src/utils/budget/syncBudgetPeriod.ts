@@ -13,7 +13,9 @@ import type { Currency, RecurringIncome } from "@/types";
 import { computeBudgetPeriod } from "./computeBudgetPeriod";
 import {
   DEFAULT_ALLOCATIONS,
+  DEFAULT_SAVINGS_PCT,
   PARENT_CATEGORY_IDS,
+  SAVINGS_ID,
   type ParentCategoryId,
 } from "./defaults";
 import { matchesSalary } from "./matchesSalary";
@@ -29,25 +31,33 @@ interface SyncArgs {
 async function loadAllocations(
   supabase: SupabaseClient,
   userId: string
-): Promise<Record<ParentCategoryId, number>> {
+): Promise<{
+  allocations: Record<ParentCategoryId, number>;
+  savingsPct: number;
+}> {
   const { data, error } = await supabase
     .from("budget_allocations")
     .select("parent_category_id, percentage")
     .eq("user_id", userId);
   if (error) throw error;
-  const merged: Record<ParentCategoryId, number> = { ...DEFAULT_ALLOCATIONS };
+  const allocations: Record<ParentCategoryId, number> = {
+    ...DEFAULT_ALLOCATIONS,
+  };
+  let savingsPct = DEFAULT_SAVINGS_PCT;
   for (const row of data ?? []) {
-    if (
+    if (row.parent_category_id === SAVINGS_ID) {
+      savingsPct = Number(row.percentage);
+    } else if (
       (PARENT_CATEGORY_IDS as readonly string[]).includes(
         row.parent_category_id
       )
     ) {
-      merged[row.parent_category_id as ParentCategoryId] = Number(
+      allocations[row.parent_category_id as ParentCategoryId] = Number(
         row.percentage
       );
     }
   }
-  return merged;
+  return { allocations, savingsPct };
 }
 
 /**
@@ -90,7 +100,7 @@ export async function syncBudgetPeriodForIncome({
 
     // Cases (a), (b), (c): still (or newly) a matching salary — upsert.
     if (!next.startDate) return; // guarded upstream but be safe
-    const allocations = await loadAllocations(supabase, userId);
+    const { allocations, savingsPct } = await loadAllocations(supabase, userId);
     const payload = computeBudgetPeriod(
       {
         id: next.id,
@@ -99,7 +109,8 @@ export async function syncBudgetPeriodForIncome({
         currency: next.currency,
         frequency: next.frequency,
       },
-      allocations
+      allocations,
+      savingsPct
     );
 
     const { error } = await supabase.from("budget_periods").upsert(

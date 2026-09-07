@@ -1,13 +1,19 @@
 /**
- * React-query hook for the user's per-parent-category budget percentages.
+ * React-query hook for the user's budget percentages: pay-yourself-first
+ * savings + six per-parent-category spending %s.
  *
- * Read: merges any persisted budget_allocations rows over DEFAULT_ALLOCATIONS,
- * so a fresh user has a full 100%-sum baseline without any DB writes.
- * Write: `setAllocation` upserts a single (user, parent_category_id) row;
- * `resetAllocations` deletes all rows for the user (fall-through to defaults).
+ * Read: merges any persisted budget_allocations rows over
+ * DEFAULT_ALLOCATIONS (+ DEFAULT_SAVINGS_PCT). A fresh user gets a
+ * baseline that sums to 100% (10 savings + 90 spending) without any DB
+ * writes.
  *
- * Sums > 100 are surfaced via the returned `isValid` flag but are not blocked
- * at write time — the settings UI shows a warning and lets the user save.
+ * Write: `setAllocation` upserts a single (user, parent_category_id) row
+ * — `parentId` may be a ParentCategoryId or the reserved "savings" slot.
+ * `resetAllocations` deletes all rows for the user (fall-through to
+ * defaults).
+ *
+ * Sums > 100 are surfaced via the returned `isValid` flag but are not
+ * blocked at write time — the settings UI warns and still saves.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,18 +23,36 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_ALLOCATIONS,
+  DEFAULT_SAVINGS_PCT,
   PARENT_CATEGORY_IDS,
+  SAVINGS_ID,
   type ParentCategoryId,
+  type SavingsId,
 } from "@/utils/budget/defaults";
 
 export const budgetAllocationsKey = (userId?: string) =>
   ["budget_allocations", userId ?? "anon"] as const;
 
 interface UseBudgetAllocationsResult {
+  savings: number;
   allocations: Record<ParentCategoryId, number>;
+  /** savings + spending %s combined */
   totalPct: number;
-  isValid: boolean; // sum ≤ 100 (implicit savings when < 100)
+  /** true when savings + spending ≤ 100 */
+  isValid: boolean;
   isLoading: boolean;
+}
+
+interface QueryShape {
+  savings: number;
+  allocations: Record<ParentCategoryId, number>;
+}
+
+function defaults(): QueryShape {
+  return {
+    savings: DEFAULT_SAVINGS_PCT,
+    allocations: { ...DEFAULT_ALLOCATIONS },
+  };
 }
 
 export function useBudgetAllocations(): UseBudgetAllocationsResult {
@@ -36,8 +60,8 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
 
   const query = useQuery({
     queryKey: budgetAllocationsKey(user?.id),
-    queryFn: async (): Promise<Record<ParentCategoryId, number>> => {
-      if (!user?.id) return { ...DEFAULT_ALLOCATIONS };
+    queryFn: async (): Promise<QueryShape> => {
+      if (!user?.id) return defaults();
 
       const { data, error } = await supabase
         .from("budget_allocations")
@@ -45,18 +69,17 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
         .eq("user_id", user.id);
       if (error) throw error;
 
-      const merged: Record<ParentCategoryId, number> = {
-        ...DEFAULT_ALLOCATIONS,
-      };
+      const merged = defaults();
       for (const row of data ?? []) {
-        if (
+        if (row.parent_category_id === SAVINGS_ID) {
+          merged.savings = Number(row.percentage);
+        } else if (
           (PARENT_CATEGORY_IDS as readonly string[]).includes(
             row.parent_category_id
           )
         ) {
-          merged[row.parent_category_id as ParentCategoryId] = Number(
-            row.percentage
-          );
+          merged.allocations[row.parent_category_id as ParentCategoryId] =
+            Number(row.percentage);
         }
       }
       return merged;
@@ -65,10 +88,12 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
     staleTime: 60 * 1000,
   });
 
-  const allocations = query.data ?? { ...DEFAULT_ALLOCATIONS };
-  const totalPct = Object.values(allocations).reduce((a, b) => a + b, 0);
+  const { savings, allocations } = query.data ?? defaults();
+  const spendingTotal = Object.values(allocations).reduce((a, b) => a + b, 0);
+  const totalPct = spendingTotal + savings;
 
   return {
+    savings,
     allocations,
     totalPct,
     isValid: totalPct <= 100,
@@ -77,7 +102,7 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
 }
 
 interface SetAllocationInput {
-  parentId: ParentCategoryId;
+  parentId: ParentCategoryId | SavingsId;
   percentage: number;
 }
 

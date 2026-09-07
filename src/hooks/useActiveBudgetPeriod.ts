@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Currency, Transaction } from "@/types";
 import {
   PARENT_CATEGORY_IDS,
+  SAVINGS_ID,
   type ParentCategoryId,
 } from "@/utils/budget/defaults";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
@@ -54,7 +55,13 @@ export interface AllocationLine {
 export interface UseActiveBudgetPeriodResult {
   period: BudgetPeriodRow | null;
   allocations: AllocationLine[];
+  /** Pay-yourself-first savings amount snapshotted from period.allocations.savings; 0 for legacy rows. */
+  savingsBudgeted: number;
+  /** salary_amount − savingsBudgeted; the pot that funds the six category budgets. */
+  remainingToSpend: number;
+  /** Sum of the six per-parent-category budgets (does NOT include savings). */
   totalBudgeted: number;
+  /** Sum of actual spend across the six spending categories (does NOT include savings). */
   totalSpent: number;
   isInGracePeriod: boolean;
   isLoading: boolean;
@@ -134,12 +141,17 @@ export function useActiveBudgetPeriod(
   const totalBudgeted = allocations.reduce((s, a) => s + a.budgeted, 0);
   const totalSpent = allocations.reduce((s, a) => s + a.spent, 0);
 
+  const savingsBudgeted = period?.allocations?.[SAVINGS_ID] ?? 0;
+  const remainingToSpend = period ? period.salary_amount - savingsBudgeted : 0;
+
   const isInGracePeriod =
     !!period && isAfter(new Date(), parseISO(period.period_end));
 
   return {
     period,
     allocations,
+    savingsBudgeted,
+    remainingToSpend,
     totalBudgeted,
     totalSpent,
     isInGracePeriod,

@@ -12,7 +12,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { TargetIcon } from "lucide-react";
+import { PiggyBankIcon, TargetIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +66,8 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   const {
     period,
     allocations,
+    savingsBudgeted,
+    remainingToSpend,
     totalBudgeted,
     totalSpent,
     isInGracePeriod,
@@ -111,7 +113,32 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
           </div>
         ) : (
           <>
-            {/* Header — overall spent vs budgeted for the period */}
+            {/* Pay-yourself-first: savings comes off the top */}
+            {savingsBudgeted > 0 && (
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <PiggyBankIcon
+                    className="h-4 w-4 flex-shrink-0"
+                    style={{ color: "var(--color-success)" }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Save first
+                    </p>
+                    <p className="text-sm font-medium truncate">
+                      {formatCurrency(savingsBudgeted)} set aside from{" "}
+                      {formatCurrency(period.salary_amount)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">
+                  Ends {format(parseISO(period.period_end), "MMM d")}
+                  {isInGracePeriod ? " (in grace)" : ""}
+                </p>
+              </div>
+            )}
+
+            {/* Header — spent vs remaining-to-spend for the period */}
             <div className="space-y-3 mb-4">
               <div className="flex items-end justify-between">
                 <div>
@@ -119,7 +146,14 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                     {formatCurrency(totalSpent)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    of {formatCurrency(totalBudgeted)}
+                    of {formatCurrency(totalBudgeted)} to spend
+                    {remainingToSpend !== totalBudgeted && (
+                      <>
+                        {" "}
+                        ({formatCurrency(remainingToSpend)} remaining after
+                        savings)
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-right">
@@ -130,10 +164,12 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                         ? "Nearing limit"
                         : "On track"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Ends {format(parseISO(period.period_end), "MMM d")}
-                    {isInGracePeriod ? " (in grace)" : ""}
-                  </p>
+                  {savingsBudgeted === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Ends {format(parseISO(period.period_end), "MMM d")}
+                      {isInGracePeriod ? " (in grace)" : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <Progress
