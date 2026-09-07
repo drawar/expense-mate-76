@@ -15,7 +15,6 @@ import { PieChartIcon } from "lucide-react";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import FAB from "@/components/common/FAB";
 import PullToRefresh from "@/components/common/PullToRefresh";
-import { useBudget } from "@/hooks/useBudget";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 /**
@@ -38,12 +37,6 @@ export function Dashboard() {
     displayCurrency,
     refreshData,
   } = useDashboardContext();
-
-  // Get budget for current currency scaled to timeframe
-  const { scaledBudget, rawBudget, periodType, setBudget } = useBudget(
-    displayCurrency,
-    activeTab
-  );
 
   // Get recent transactions for display
   const recentTransactions = React.useMemo(() => {
@@ -120,7 +113,6 @@ export function Dashboard() {
                 dashboardData={dashboardData}
                 paymentMethods={paymentMethods}
                 currency={displayCurrency}
-                scaledBudget={scaledBudget}
                 timeframe={activeTab}
                 previousPeriodTransactions={previousPeriodTransactions}
                 allTransactions={transactions}

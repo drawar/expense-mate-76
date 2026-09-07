@@ -24,7 +24,7 @@ import NumberFlow from "@number-flow/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
-import { useBudget } from "@/hooks/useBudget";
+import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
 import { useForecast } from "@/hooks/dashboard/useForecast";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import {
@@ -54,8 +54,11 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
   } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
 
-  // Get budget
-  const { scaledBudget } = useBudget(displayCurrency, activeTab);
+  // Pay-period budget total (0 when no active period).
+  const { totalBudgeted: scaledBudget } = useActiveBudgetPeriod(
+    displayCurrency,
+    filteredTransactions
+  );
 
   // Get forecast data
   const { forecast, chartData: forecastChartData } = useForecast(

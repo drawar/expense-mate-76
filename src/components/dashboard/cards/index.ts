@@ -1,7 +1,6 @@
 // components/dashboard/cards/index.ts
 export { default as Card } from "./Card";
 export { default as SummaryCard } from "./SummaryCard";
-export { default as BudgetProgressCard } from "./BudgetProgressCard";
 export { default as BudgetSpendingCard } from "./BudgetSpendingCard";
 export { default as CardOptimizationCard } from "./CardOptimizationCard";
 export { default as InsightsCard } from "./InsightsCard";
@@ -23,7 +22,6 @@ export { default as MoneyFlowSankey } from "./MoneyFlowSankey";
 export { default as RewardsVisualizationOptions } from "./RewardsVisualizationOptions";
 
 // Actionable dashboard cards
-export { default as BudgetStatusCard } from "./BudgetStatusCard";
 export { default as CategoryVarianceCard } from "./CategoryVarianceCard";
 export { default as CollapsibleCard } from "./CollapsibleCard";
 export { default as SpendingOverviewCard } from "./SpendingOverviewCard";

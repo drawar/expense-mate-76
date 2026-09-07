@@ -12,6 +12,7 @@ import {
   SpendByCardCard,
 } from "@/components/dashboard/cards";
 import CategoryDrilldownSheet from "@/components/dashboard/CategoryDrilldownSheet";
+import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
 import { EmptyState } from ".";
 import { BarChartIcon } from "lucide-react";
 import { TimeframeTab } from "@/utils/dashboard";
@@ -20,7 +21,6 @@ interface InsightsGridProps {
   dashboardData: DashboardData | null;
   paymentMethods?: PaymentMethod[];
   currency: Currency;
-  scaledBudget?: number;
   timeframe?: TimeframeTab;
   previousPeriodTransactions?: Transaction[];
   /** All transactions (unfiltered) - used for forecast historical analysis */
@@ -34,11 +34,15 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
   dashboardData,
   paymentMethods = [],
   currency,
-  scaledBudget = 0,
   timeframe = "thisMonth",
   previousPeriodTransactions = [],
   allTransactions = [],
 }) => {
+  // Pay-period budget total for downstream insight cards
+  const { totalBudgeted } = useActiveBudgetPeriod(
+    currency,
+    dashboardData?.filteredTransactions ?? []
+  );
   // State for category drill-down
   const [drilldownOpen, setDrilldownOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -120,7 +124,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Smart Insights Card - AI-powered recommendations */}
         <InsightsCard
           transactions={filteredTransactions}
-          monthlyBudget={scaledBudget}
+          monthlyBudget={totalBudgeted}
           currency={currency}
           paymentMethods={paymentMethods}
           className={commonCardClass}
@@ -145,7 +149,7 @@ const InsightsGrid: React.FC<InsightsGridProps> = ({
         {/* Spending Health Score Card */}
         {/* <SpendingHealthCard
           transactions={filteredTransactions}
-          monthlyBudget={scaledBudget}
+          monthlyBudget={totalBudgeted}
           totalSpent={dashboardData?.metrics?.totalExpenses || 0}
           currency={currency}
           className={commonCardClass}

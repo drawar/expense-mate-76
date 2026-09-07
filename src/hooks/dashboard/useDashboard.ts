@@ -171,7 +171,10 @@ export function useDashboard(options: {
     }
   };
 
-  // Set up Supabase realtime subscription for data updates
+  // Set up Supabase realtime subscription for data updates. Same channel
+  // watches transactions (spent-side) plus budget_periods and
+  // budget_allocations (so pay-period budget changes on another device or
+  // from the salary-add flow propagate here without a manual refresh).
   useEffect(() => {
     const channel = supabase
       .channel("dashboard_transactions")
@@ -183,9 +186,30 @@ export function useDashboard(options: {
           table: "transactions",
         },
         () => {
-          // Invalidate the transactions query to trigger refetch
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
           setLastUpdate(Date.now());
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "budget_periods",
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "budget_allocations",
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["budget_allocations"] });
         }
       )
       .subscribe();

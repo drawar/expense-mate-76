@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { TimeframeTab } from "@/utils/dashboard";
-import { useBudget } from "@/hooks/useBudget";
+import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
 import {
   forecastService,
   spenderProfiler,
@@ -57,11 +57,8 @@ export function useForecast(
   timeframe: TimeframeTab,
   options: UseForecastOptions = {}
 ): UseForecastReturn {
-  const {
-    scaledBudget,
-    periodType,
-    isLoading: budgetLoading,
-  } = useBudget(currency, timeframe);
+  const { totalBudgeted: scaledBudget, isLoading: budgetLoading } =
+    useActiveBudgetPeriod(currency, transactions);
 
   const { includeHolidays = true, historicalMonths = 3 } = options;
 
@@ -73,10 +70,12 @@ export function useForecast(
       return null;
     }
 
+    // Forecast still runs on a calendar-month cadence; the pay-period budget
+    // is treated as an approximate monthly target for the projection.
     const forecastOptions: ForecastOptions = {
       currency,
       budget: scaledBudget > 0 ? scaledBudget : undefined,
-      budgetPeriod: periodType,
+      budgetPeriod: "monthly",
       includeHolidays,
       historicalMonths,
       targetMonth: new Date(),
@@ -88,7 +87,6 @@ export function useForecast(
     transactions,
     currency,
     scaledBudget,
-    periodType,
     includeHolidays,
     historicalMonths,
   ]);

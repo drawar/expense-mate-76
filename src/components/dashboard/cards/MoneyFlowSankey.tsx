@@ -11,7 +11,6 @@ import { Currency, Transaction } from "@/types";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { useRecurringIncome } from "@/hooks/useRecurringIncome";
 import { useDashboardContext } from "@/contexts/DashboardContext";
-import { useBudget } from "@/hooks/useBudget";
 import {
   buildCategoryHierarchy,
   ParentCategorySpending,
@@ -97,7 +96,6 @@ const MoneyFlowSankey: React.FC<MoneyFlowSankeyProps> = ({
     displayCurrency,
     activeTab
   );
-  const { scaledBudget } = useBudget(displayCurrency, activeTab);
 
   // Get metrics
   const metrics = dashboardData?.metrics || {

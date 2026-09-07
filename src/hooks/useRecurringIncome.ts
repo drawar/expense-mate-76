@@ -3,10 +3,13 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Currency, RecurringIncome } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
+import { syncBudgetPeriodForIncome } from "@/utils/budget/syncBudgetPeriod";
+import { UserPreferencesService } from "@/core/preferences/UserPreferencesService";
 
 interface RecurringIncomeSettings {
   /** All payslips */
@@ -47,6 +50,7 @@ export function useRecurringIncome(
   timeframe: TimeframeTab = "thisMonth"
 ): RecurringIncomeSettings {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [incomeSources, setIncomeSources] = useState<RecurringIncome[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -135,11 +139,29 @@ export function useRecurringIncome(
     };
   }, [incomeSources, displayCurrency, timeframe]);
 
-  // Save income
+  // Save income (with pay-period-budget sync side-effect for salary rows)
   const saveIncome = useCallback(
     async (income: Omit<RecurringIncome, "createdAt" | "updatedAt">) => {
       if (!user) {
         throw new Error("User not authenticated");
+      }
+
+      // Read pre-image so the budget-period sync can decide insert vs update
+      // vs "lost salary match" vs "currency changed". If this fails we still
+      // proceed with the upsert; the sync just falls back to "no prev".
+      let prev: { name: string; currency: string } | null = null;
+      try {
+        const { data } = await supabase
+          .from("recurring_income")
+          .select("name, currency")
+          .eq("id", income.id)
+          .maybeSingle();
+        if (data) prev = { name: data.name, currency: data.currency };
+      } catch (readErr) {
+        console.warn(
+          "[saveIncome] pre-image read failed, continuing:",
+          readErr
+        );
       }
 
       const { error } = await supabase.from("recurring_income").upsert(
@@ -163,12 +185,25 @@ export function useRecurringIncome(
         throw error;
       }
 
+      // Pay-period budget side-effect. Best-effort — swallows its own errors
+      // so a failed sync never rolls back the income save.
+      const displayCurrency =
+        (await UserPreferencesService.getDisplayCurrency()) ?? "CAD";
+      await syncBudgetPeriodForIncome({
+        supabase,
+        userId: user.id,
+        displayCurrency,
+        next: income,
+        prev,
+      });
+      queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
+
       await loadIncome();
     },
-    [user, loadIncome]
+    [user, loadIncome, queryClient]
   );
 
-  // Delete income
+  // Delete income (ON DELETE CASCADE removes any linked budget_periods row)
   const deleteIncome = useCallback(
     async (id: string) => {
       const { error } = await supabase
@@ -181,9 +216,10 @@ export function useRecurringIncome(
         throw error;
       }
 
+      queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
       await loadIncome();
     },
-    [loadIncome]
+    [loadIncome, queryClient]
   );
 
   return {

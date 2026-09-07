@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { RecurringIncome, Currency } from "@/types";
+import type { IncomeFrequency } from "@/types/income";
 import { format } from "date-fns";
 import { CalendarIcon, CheckIcon } from "lucide-react";
 import {
@@ -61,6 +62,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<Currency>(defaultCurrency);
+  const [frequency, setFrequency] = useState<IncomeFrequency>("monthly");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +85,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         setName(editingIncome.name);
         setAmount(editingIncome.amount.toString());
         setCurrency(editingIncome.currency);
+        setFrequency(editingIncome.frequency);
         // Parse date string to Date object (local timezone)
         if (editingIncome.startDate) {
           const [year, month, day] = editingIncome.startDate
@@ -97,6 +100,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         setName("");
         setAmount("");
         setCurrency(defaultCurrency);
+        setFrequency("monthly");
         setDate(undefined);
         setNotes("");
       }
@@ -126,7 +130,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         name: name.trim(),
         amount: parseFloat(amount),
         currency,
-        frequency: "monthly", // Default to monthly
+        frequency,
         startDate: formatDateToString(date),
         isActive: true, // Always active for payslips
         notes: notes.trim() || undefined,
@@ -250,6 +254,24 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Frequency</Label>
+              <Select
+                value={frequency}
+                onValueChange={(v) => setFrequency(v as IncomeFrequency)}
+              >
+                <SelectTrigger id="frequency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="biweekly">
+                    Biweekly (every 2 weeks)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
+    PostgrestVersion: "14.5";
+  };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -60,6 +85,80 @@ export type Database = {
             columns: ["payment_method_id"];
             isOneToOne: false;
             referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      budget_allocations: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          parent_category_id: string;
+          percentage: number;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          parent_category_id: string;
+          percentage: number;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          parent_category_id?: string;
+          percentage?: number;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      budget_periods: {
+        Row: {
+          allocations: Json;
+          created_at: string | null;
+          currency: string;
+          id: string;
+          income_id: string;
+          period_end: string;
+          period_start: string;
+          salary_amount: number;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          allocations?: Json;
+          created_at?: string | null;
+          currency: string;
+          id?: string;
+          income_id: string;
+          period_end: string;
+          period_start: string;
+          salary_amount: number;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          allocations?: Json;
+          created_at?: string | null;
+          currency?: string;
+          id?: string;
+          income_id?: string;
+          period_end?: string;
+          period_start?: string;
+          salary_amount?: number;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "budget_periods_income_id_fkey";
+            columns: ["income_id"];
+            isOneToOne: false;
+            referencedRelation: "recurring_income";
             referencedColumns: ["id"];
           },
         ];
@@ -332,6 +431,8 @@ export type Database = {
           address: string | null;
           coordinates: Json | null;
           created_at: string | null;
+          display_location: string | null;
+          google_maps_url: string | null;
           id: string;
           is_deleted: boolean | null;
           is_online: boolean | null;
@@ -344,6 +445,8 @@ export type Database = {
           address?: string | null;
           coordinates?: Json | null;
           created_at?: string | null;
+          display_location?: string | null;
+          google_maps_url?: string | null;
           id?: string;
           is_deleted?: boolean | null;
           is_online?: boolean | null;
@@ -356,6 +459,8 @@ export type Database = {
           address?: string | null;
           coordinates?: Json | null;
           created_at?: string | null;
+          display_location?: string | null;
+          google_maps_url?: string | null;
           id?: string;
           is_deleted?: boolean | null;
           is_online?: boolean | null;
@@ -471,6 +576,44 @@ export type Database = {
           },
         ];
       };
+      payment_reminders: {
+        Row: {
+          created_at: string;
+          id: string;
+          payment_method_id: string;
+          sent_at: string;
+          sent_to_email: string;
+          statement_period: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          payment_method_id: string;
+          sent_at?: string;
+          sent_to_email: string;
+          statement_period: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          payment_method_id?: string;
+          sent_at?: string;
+          sent_to_email?: string;
+          statement_period?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_payment_method_id_fkey";
+            columns: ["payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       points_adjustments: {
         Row: {
           adjustment_date: string;
@@ -527,7 +670,6 @@ export type Database = {
       points_balances: {
         Row: {
           balance_date: string | null;
-          card_type_id: string | null;
           created_at: string | null;
           current_balance: number;
           expiry_date: string | null;
@@ -542,7 +684,6 @@ export type Database = {
         };
         Insert: {
           balance_date?: string | null;
-          card_type_id?: string | null;
           created_at?: string | null;
           current_balance?: number;
           expiry_date?: string | null;
@@ -557,7 +698,6 @@ export type Database = {
         };
         Update: {
           balance_date?: string | null;
-          card_type_id?: string | null;
           created_at?: string | null;
           current_balance?: number;
           expiry_date?: string | null;
@@ -660,6 +800,7 @@ export type Database = {
           airline: string | null;
           booking_reference: string | null;
           cabin_class: string | null;
+          cancelled_redemption_id: string | null;
           cash_value: number | null;
           cash_value_currency: string | null;
           cpp: number | null;
@@ -668,6 +809,7 @@ export type Database = {
           description: string;
           flight_route: string | null;
           id: string;
+          is_cancelled: boolean | null;
           is_deleted: boolean | null;
           passengers: number | null;
           points_redeemed: number;
@@ -682,6 +824,7 @@ export type Database = {
           airline?: string | null;
           booking_reference?: string | null;
           cabin_class?: string | null;
+          cancelled_redemption_id?: string | null;
           cash_value?: number | null;
           cash_value_currency?: string | null;
           cpp?: number | null;
@@ -690,6 +833,7 @@ export type Database = {
           description: string;
           flight_route?: string | null;
           id?: string;
+          is_cancelled?: boolean | null;
           is_deleted?: boolean | null;
           passengers?: number | null;
           points_redeemed: number;
@@ -704,6 +848,7 @@ export type Database = {
           airline?: string | null;
           booking_reference?: string | null;
           cabin_class?: string | null;
+          cancelled_redemption_id?: string | null;
           cash_value?: number | null;
           cash_value_currency?: string | null;
           cpp?: number | null;
@@ -712,6 +857,7 @@ export type Database = {
           description?: string;
           flight_route?: string | null;
           id?: string;
+          is_cancelled?: boolean | null;
           is_deleted?: boolean | null;
           passengers?: number | null;
           points_redeemed?: number;
@@ -723,6 +869,13 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "points_redemptions_cancelled_redemption_id_fkey";
+            columns: ["cancelled_redemption_id"];
+            isOneToOne: false;
+            referencedRelation: "points_redemptions";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "points_redemptions_reward_currency_id_fkey";
             columns: ["reward_currency_id"];
@@ -745,6 +898,7 @@ export type Database = {
           reference_number: string | null;
           source_amount: number;
           source_currency_id: string;
+          source_payment_method_id: string | null;
           transfer_bonus_rate: number | null;
           transfer_date: string;
           transfer_fee: number | null;
@@ -764,6 +918,7 @@ export type Database = {
           reference_number?: string | null;
           source_amount: number;
           source_currency_id: string;
+          source_payment_method_id?: string | null;
           transfer_bonus_rate?: number | null;
           transfer_date?: string;
           transfer_fee?: number | null;
@@ -783,6 +938,7 @@ export type Database = {
           reference_number?: string | null;
           source_amount?: number;
           source_currency_id?: string;
+          source_payment_method_id?: string | null;
           transfer_bonus_rate?: number | null;
           transfer_date?: string;
           transfer_fee?: number | null;
@@ -803,6 +959,13 @@ export type Database = {
             columns: ["source_currency_id"];
             isOneToOne: false;
             referencedRelation: "reward_currencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "points_transfers_source_payment_method_id_fkey";
+            columns: ["source_payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
             referencedColumns: ["id"];
           },
         ];
@@ -1026,31 +1189,21 @@ export type Database = {
           bonus_multiplier: number | null;
           bonus_tiers: Json | null;
           calculation_method: string | null;
+          cap_duration: string | null;
           cap_group_id: string | null;
           card_catalog_id: string | null;
-          card_type_id: string;
           compound_bonus_multipliers: Json | null;
           conditions: Json | null;
           created_at: string | null;
           description: string | null;
           enabled: boolean | null;
-          excluded_categories: string[] | null;
-          excluded_merchants: string[] | null;
           id: string;
-          included_categories: string[] | null;
-          included_merchants: string[] | null;
-          max_bonus_per_transaction: number | null;
-          min_spend: number | null;
-          monthly_bonus_cap: number | null;
           monthly_cap: number | null;
           monthly_cap_type: string | null;
           monthly_min_spend: number | null;
-          monthly_spend_period_type: string | null;
           name: string;
           points_rounding_strategy: string | null;
           priority: number | null;
-          promo_start_date: string | null;
-          qualifying_period_days: number | null;
           updated_at: string | null;
           valid_from: string | null;
           valid_until: string | null;
@@ -1062,31 +1215,21 @@ export type Database = {
           bonus_multiplier?: number | null;
           bonus_tiers?: Json | null;
           calculation_method?: string | null;
+          cap_duration?: string | null;
           cap_group_id?: string | null;
           card_catalog_id?: string | null;
-          card_type_id: string;
           compound_bonus_multipliers?: Json | null;
           conditions?: Json | null;
           created_at?: string | null;
           description?: string | null;
           enabled?: boolean | null;
-          excluded_categories?: string[] | null;
-          excluded_merchants?: string[] | null;
           id?: string;
-          included_categories?: string[] | null;
-          included_merchants?: string[] | null;
-          max_bonus_per_transaction?: number | null;
-          min_spend?: number | null;
-          monthly_bonus_cap?: number | null;
           monthly_cap?: number | null;
           monthly_cap_type?: string | null;
           monthly_min_spend?: number | null;
-          monthly_spend_period_type?: string | null;
           name: string;
           points_rounding_strategy?: string | null;
           priority?: number | null;
-          promo_start_date?: string | null;
-          qualifying_period_days?: number | null;
           updated_at?: string | null;
           valid_from?: string | null;
           valid_until?: string | null;
@@ -1098,31 +1241,21 @@ export type Database = {
           bonus_multiplier?: number | null;
           bonus_tiers?: Json | null;
           calculation_method?: string | null;
+          cap_duration?: string | null;
           cap_group_id?: string | null;
           card_catalog_id?: string | null;
-          card_type_id?: string;
           compound_bonus_multipliers?: Json | null;
           conditions?: Json | null;
           created_at?: string | null;
           description?: string | null;
           enabled?: boolean | null;
-          excluded_categories?: string[] | null;
-          excluded_merchants?: string[] | null;
           id?: string;
-          included_categories?: string[] | null;
-          included_merchants?: string[] | null;
-          max_bonus_per_transaction?: number | null;
-          min_spend?: number | null;
-          monthly_bonus_cap?: number | null;
           monthly_cap?: number | null;
           monthly_cap_type?: string | null;
           monthly_min_spend?: number | null;
-          monthly_spend_period_type?: string | null;
           name?: string;
           points_rounding_strategy?: string | null;
           priority?: number | null;
-          promo_start_date?: string | null;
-          qualifying_period_days?: number | null;
           updated_at?: string | null;
           valid_from?: string | null;
           valid_until?: string | null;
@@ -1136,6 +1269,71 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      split_groups: {
+        Row: {
+          created_at: string | null;
+          date: string;
+          id: string;
+          merchant_id: string | null;
+          notes: string | null;
+          total_amount: number;
+          total_currency: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          date: string;
+          id?: string;
+          merchant_id?: string | null;
+          notes?: string | null;
+          total_amount: number;
+          total_currency: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          date?: string;
+          id?: string;
+          merchant_id?: string | null;
+          notes?: string | null;
+          total_amount?: number;
+          total_currency?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_groups_merchant_id_fkey";
+            columns: ["merchant_id"];
+            isOneToOne: false;
+            referencedRelation: "merchants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tags: {
+        Row: {
+          created_at: string | null;
+          display_name: string;
+          id: string;
+          slug: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          display_name: string;
+          id?: string;
+          slug: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          display_name?: string;
+          id?: string;
+          slug?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       transactions: {
         Row: {
@@ -1163,6 +1361,8 @@ export type Database = {
           promo_bonus_points: number | null;
           receipt_image_id: string | null;
           reimbursement_amount: number | null;
+          split_group_id: string | null;
+          tags: string | null;
           total_points: number | null;
           updated_at: string | null;
           user_category: string | null;
@@ -1193,6 +1393,8 @@ export type Database = {
           promo_bonus_points?: number | null;
           receipt_image_id?: string | null;
           reimbursement_amount?: number | null;
+          split_group_id?: string | null;
+          tags?: string | null;
           total_points?: number | null;
           updated_at?: string | null;
           user_category?: string | null;
@@ -1223,6 +1425,8 @@ export type Database = {
           promo_bonus_points?: number | null;
           receipt_image_id?: string | null;
           reimbursement_amount?: number | null;
+          split_group_id?: string | null;
+          tags?: string | null;
           total_points?: number | null;
           updated_at?: string | null;
           user_category?: string | null;
@@ -1248,6 +1452,13 @@ export type Database = {
             columns: ["receipt_image_id"];
             isOneToOne: false;
             referencedRelation: "receipt_images";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_split_group_id_fkey";
+            columns: ["split_group_id"];
+            isOneToOne: false;
+            referencedRelation: "split_groups";
             referencedColumns: ["id"];
           },
         ];
@@ -1285,6 +1496,7 @@ export type Database = {
         Row: {
           created_at: string | null;
           default_currency: string;
+          display_currency: string;
           id: string;
           updated_at: string | null;
           user_id: string;
@@ -1292,6 +1504,7 @@ export type Database = {
         Insert: {
           created_at?: string | null;
           default_currency?: string;
+          display_currency?: string;
           id?: string;
           updated_at?: string | null;
           user_id: string;
@@ -1299,6 +1512,7 @@ export type Database = {
         Update: {
           created_at?: string | null;
           default_currency?: string;
+          display_currency?: string;
           id?: string;
           updated_at?: string | null;
           user_id?: string;
@@ -1470,6 +1684,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],

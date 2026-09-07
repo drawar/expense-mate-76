@@ -1,8 +1,8 @@
 import {
+  BudgetAllocations,
   ConversionRateManager,
   DefaultCurrencySelector,
   DisplayCurrencySelector,
-  BudgetSettings,
 } from "@/components/settings";
 
 /**
@@ -26,7 +26,7 @@ export default function Settings() {
         <div className="grid gap-6">
           <DefaultCurrencySelector />
           <DisplayCurrencySelector />
-          <BudgetSettings />
+          <BudgetAllocations />
           <ConversionRateManager />
         </div>
       </div>
