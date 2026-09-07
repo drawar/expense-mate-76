@@ -2,11 +2,14 @@
 /**
  * Pay-period Budget & Spending card — the primary spent-vs-budgeted surface.
  *
- * Reads the active budget_periods row via useActiveBudgetPeriod (grace
- * window: +3 days after period_end). Renders six parent-category rows in
- * canonical order with two-tone progress bars: green ≤ 80%, amber 80–100%,
- * red > 100%. When no active period exists, shows an empty-state banner
- * pointing at /income so the user can add a salary.
+ * Compact layout:
+ *  - Single-row header: Save-first pill · Spent-of-budget · Status/ends
+ *  - Single-line category rows: icon · name · inline progress bar · dollars · %
+ *  - Two-tone bars: green ≤ 80%, amber 80–100%, red > 100%
+ *  - Empty-state banner when no active period.
+ *
+ * Reads the active budget_periods row via useActiveBudgetPeriod (3-day
+ * grace after period_end).
  */
 
 import React from "react";
@@ -32,10 +35,7 @@ interface BudgetSpendingCardProps {
   onCategoryClick?: (categoryId: string, categoryName: string) => void;
 }
 
-function statusColor(pctUsed: number): {
-  bar: string;
-  text: string;
-} {
+function statusColor(pctUsed: number): { bar: string; text: string } {
   if (!Number.isFinite(pctUsed) || pctUsed > 100) {
     return {
       bar: "bg-[var(--color-error)]",
@@ -67,19 +67,23 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
     period,
     allocations,
     savingsBudgeted,
-    remainingToSpend,
     totalBudgeted,
     totalSpent,
     isInGracePeriod,
     isLoading,
   } = useActiveBudgetPeriod(displayCurrency, transactions);
 
-  const overallStatus = statusColor(
-    totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0
-  );
+  const overallPct = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+  const overallStatus = statusColor(overallPct);
+  const statusLabel =
+    totalSpent > totalBudgeted
+      ? "Over budget"
+      : overallPct >= 80
+        ? "Nearing limit"
+        : "On track";
 
-  // Sort: rows with budgeted > 0 first (in canonical PARENT_CATEGORIES order,
-  // already preserved by useActiveBudgetPeriod); zero-budget rows to the end.
+  // Rows with budgeted > 0 first (canonical PARENT_CATEGORIES order); zero
+  // to the end so the always-empty ones don't dominate visual scan.
   const orderedAllocations = React.useMemo<AllocationLine[]>(() => {
     const withBudget = allocations.filter((a) => a.budgeted > 0);
     const withoutBudget = allocations.filter((a) => a.budgeted === 0);
@@ -88,170 +92,135 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center gap-2">
-          <TargetIcon className="h-5 w-5 text-primary" />
+      <CardHeader className="py-3 px-4">
+        <CardTitle className="text-base flex items-center gap-2">
+          <TargetIcon className="h-4 w-4 text-primary" />
           Budget & Spending
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 pt-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-pulse text-muted-foreground">
-              Loading budget...
-            </div>
+          <div className="py-3 text-sm text-muted-foreground animate-pulse">
+            Loading budget…
           </div>
         ) : !period ? (
-          <div className="py-4 space-y-3">
+          <div className="py-3 flex items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               No active pay-period budget. Add an income named
               &quot;Salary&quot; or &quot;Paycheck&quot; to activate one.
             </p>
-            <Button asChild variant="outline" size="sm" className="w-full">
+            <Button asChild variant="outline" size="sm">
               <Link to="/income">Add Salary</Link>
             </Button>
           </div>
         ) : (
           <>
-            {/* Pay-yourself-first: savings comes off the top */}
-            {savingsBudgeted > 0 && (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2">
-                <div className="flex items-center gap-2 min-w-0">
+            {/* Compact header: Save-first pill · Spent · Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 mb-2">
+              {savingsBudgeted > 0 ? (
+                <div className="flex items-center gap-2 rounded-md bg-[var(--color-accent-subtle)] px-2.5 py-1.5 min-w-0">
                   <PiggyBankIcon
                     className="h-4 w-4 flex-shrink-0"
                     style={{ color: "var(--color-success)" }}
                   />
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <div className="min-w-0 leading-tight">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       Save first
                     </p>
                     <p className="text-sm font-medium truncate">
-                      {formatCurrency(savingsBudgeted)} set aside from{" "}
-                      {formatCurrency(period.salary_amount)}
+                      {formatCurrency(savingsBudgeted)}{" "}
+                      <span className="text-muted-foreground text-xs">
+                        of {formatCurrency(period.salary_amount)}
+                      </span>
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                  Ends {format(parseISO(period.period_end), "MMM d")}
-                  {isInGracePeriod ? " (in grace)" : ""}
+              ) : (
+                <div />
+              )}
+              <div className="text-right sm:text-left leading-tight">
+                <p className="text-xl font-medium">
+                  {formatCurrency(totalSpent)}
+                  <span className="text-sm text-muted-foreground font-normal">
+                    {" "}
+                    of {formatCurrency(totalBudgeted)}
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Spent of period budget
                 </p>
               </div>
-            )}
-
-            {/* Header — spent vs remaining-to-spend for the period */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-3xl font-medium tracking-tight">
-                    {formatCurrency(totalSpent)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    of {formatCurrency(totalBudgeted)} to spend
-                    {remainingToSpend !== totalBudgeted && (
-                      <>
-                        {" "}
-                        ({formatCurrency(remainingToSpend)} remaining after
-                        savings)
-                      </>
-                    )}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-medium ${overallStatus.text}`}>
-                    {totalSpent > totalBudgeted
-                      ? "Over budget"
-                      : totalSpent / (totalBudgeted || 1) >= 0.8
-                        ? "Nearing limit"
-                        : "On track"}
-                  </p>
-                  {savingsBudgeted === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Ends {format(parseISO(period.period_end), "MMM d")}
-                      {isInGracePeriod ? " (in grace)" : ""}
-                    </p>
-                  )}
-                </div>
+              <div className="text-right leading-tight">
+                <p className={`text-sm font-medium ${overallStatus.text}`}>
+                  {statusLabel}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Ends {format(parseISO(period.period_end), "MMM d")}
+                  {isInGracePeriod ? " · grace" : ""}
+                </p>
               </div>
-              <Progress
-                value={
-                  totalBudgeted > 0
-                    ? Math.min(100, (totalSpent / totalBudgeted) * 100)
-                    : 0
-                }
-                className="h-2"
-                indicatorClassName={overallStatus.bar}
-              />
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-border/50 my-4" />
+            <Progress
+              value={Math.min(100, overallPct)}
+              className="h-1.5 mb-3"
+              indicatorClassName={overallStatus.bar}
+            />
 
-            {/* Per-parent breakdown */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                By Category
-              </p>
-              <div className="space-y-2">
-                {orderedAllocations.map((row) => {
-                  const status = statusColor(row.pctUsed);
-                  const hasBudget = row.budgeted > 0;
-                  return (
-                    <button
-                      key={row.parentId}
-                      type="button"
-                      onClick={() => {
-                        onCategoryClick?.(row.parentId, row.name);
-                        // Deep-link to Transactions filtered by parent id
-                        // — subcategory list per parent lives in the app's
-                        // existing filter code; keep the URL simple here.
-                        const params = new URLSearchParams();
-                        params.set("parent", row.parentId);
-                        navigate(`/transactions?${params.toString()}`);
-                      }}
-                      className={`w-full flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
-                    >
-                      <CategoryIcon
-                        iconName={row.icon as CategoryIconName}
-                        size={18}
-                        color={row.color}
+            {/* Single-line category rows */}
+            <div className="space-y-0.5">
+              {orderedAllocations.map((row) => {
+                const status = statusColor(row.pctUsed);
+                const hasBudget = row.budgeted > 0;
+                return (
+                  <button
+                    key={row.parentId}
+                    type="button"
+                    onClick={() => {
+                      onCategoryClick?.(row.parentId, row.name);
+                      const params = new URLSearchParams();
+                      params.set("parent", row.parentId);
+                      navigate(`/transactions?${params.toString()}`);
+                    }}
+                    className={`w-full grid grid-cols-[16px_minmax(0,1fr)_minmax(80px,1fr)_auto_36px] items-center gap-3 py-1 px-1.5 rounded-md hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-55"}`}
+                  >
+                    <CategoryIcon
+                      iconName={row.icon as CategoryIconName}
+                      size={14}
+                      color={row.color}
+                    />
+                    <span className="text-xs truncate">{row.name}</span>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
+                        style={{
+                          width: hasBudget
+                            ? `${Math.min(100, row.pctUsed)}%`
+                            : "0%",
+                        }}
                       />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm truncate">{row.name}</span>
-                          <span className="text-sm font-medium">
-                            {formatCurrency(row.spent)}
-                            {hasBudget && (
-                              <span className="text-muted-foreground">
-                                {" "}
-                                of {formatCurrency(row.budgeted)}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
-                            style={{
-                              width: hasBudget
-                                ? `${Math.min(100, row.pctUsed)}%`
-                                : "0%",
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <span
-                        className={`text-xs w-14 text-right ${status.text}`}
-                      >
-                        {hasBudget && Number.isFinite(row.pctUsed)
-                          ? `${row.pctUsed.toFixed(0)}%`
-                          : hasBudget
-                            ? "—"
-                            : "0%"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                    <span className="text-xs font-medium whitespace-nowrap text-right">
+                      {formatCurrency(row.spent)}
+                      {hasBudget && (
+                        <span className="text-muted-foreground font-normal">
+                          {" / "}
+                          {formatCurrency(row.budgeted)}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={`text-[11px] text-right tabular-nums ${status.text}`}
+                    >
+                      {hasBudget && Number.isFinite(row.pctUsed)
+                        ? `${row.pctUsed.toFixed(0)}%`
+                        : hasBudget
+                          ? "—"
+                          : ""}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
