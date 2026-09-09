@@ -19,8 +19,16 @@ export function useMerchantSuggestions() {
       try {
         const transactions = await storageService.getTransactions();
 
-        // Extract unique merchants from transactions with usage count
-        // Use most recent MCC for each merchant
+        // Group suggestions per physical merchant (by merchant.id), not
+        // per name — two branches of the same chain now share a bare
+        // brand name, and grouping by name collapses them into one row
+        // showing only the most-recent location. Keying on merchant.id
+        // gives each branch its own suggestion with its own address and
+        // its own transaction count.
+        //
+        // Fallback: transactions from very old exports may lack a
+        // merchant.id (name-only imports). Those get a synthetic
+        // "name|address" key so we still dedupe them sensibly.
         const merchantMap = new Map<
           string,
           { merchant: Merchant; count: number; latestDate: string }
@@ -29,7 +37,9 @@ export function useMerchantSuggestions() {
         transactions.forEach((tx) => {
           if (!tx.merchant?.name) return;
 
-          const key = tx.merchant.name.toLowerCase().trim();
+          const key =
+            tx.merchant.id ??
+            `${tx.merchant.name.toLowerCase().trim()}|${(tx.merchant.address ?? "").toLowerCase().trim()}`;
           const existing = merchantMap.get(key);
           if (existing) {
             existing.count++;
