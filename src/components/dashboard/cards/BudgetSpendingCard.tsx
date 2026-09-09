@@ -241,8 +241,36 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               {orderedAllocations.map((row) => {
                 const status = statusColor(row.pctUsed);
                 const hasBudget = row.budgeted > 0;
-                const remaining = Math.max(0, row.budgeted - row.spent);
-                const isOverRow = row.spent > row.budgeted && hasBudget;
+                const remaining = row.budgeted - row.spent;
+                const isOverRow = remaining < 0 && hasBudget;
+
+                // One number per row, driven by the sort dimension.
+                //   spent      → "$X spent"
+                //   remaining  → "$X left" (or red "-$Y over" when overspent)
+                //   total      → "$X budget"
+                let primaryNumber = "";
+                let primaryLabel = "";
+                let primaryTone: "default" | "error" = "default";
+                if (!hasBudget) {
+                  primaryNumber = formatCurrency(row.spent);
+                  primaryLabel = "spent";
+                } else if (sortBy === "spent") {
+                  primaryNumber = formatCurrency(row.spent);
+                  primaryLabel = "spent";
+                } else if (sortBy === "remaining") {
+                  if (isOverRow) {
+                    primaryNumber = `-${formatCurrency(-remaining)}`;
+                    primaryLabel = "over";
+                    primaryTone = "error";
+                  } else {
+                    primaryNumber = formatCurrency(remaining);
+                    primaryLabel = "left";
+                  }
+                } else {
+                  primaryNumber = formatCurrency(row.budgeted);
+                  primaryLabel = "budget";
+                }
+
                 return (
                   <button
                     key={row.parentId}
@@ -253,58 +281,17 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                       params.set("parent", row.parentId);
                       navigate(`/transactions?${params.toString()}`);
                     }}
-                    className={`w-full flex items-start gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
+                    className={`w-full grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
                   >
                     <CategoryIcon
                       iconName={row.icon as CategoryIconName}
                       size={20}
                       color={row.color}
-                      className="mt-0.5"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {row.name}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {hasBudget
-                              ? `${formatCurrency(row.budgeted)} budget`
-                              : "No budget set"}
-                          </p>
-                        </div>
-                        <div className="text-right whitespace-nowrap">
-                          <p className="text-sm font-medium tabular-nums">
-                            {formatCurrency(row.spent)}{" "}
-                            <span className="text-muted-foreground text-xs font-normal">
-                              spent
-                            </span>
-                          </p>
-                          {hasBudget ? (
-                            <p
-                              className={`text-[11px] tabular-nums ${
-                                isOverRow
-                                  ? "text-[var(--color-error)]"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {isOverRow
-                                ? `-${formatCurrency(row.spent - row.budgeted)}`
-                                : `${formatCurrency(remaining)} left`}
-                            </p>
-                          ) : (
-                            <Link
-                              to="/settings"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-[11px] text-primary hover:underline"
-                            >
-                              Set budget
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                      {hasBudget && (
-                        <div className="flex items-center gap-2 mt-1.5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{row.name}</p>
+                      {hasBudget ? (
+                        <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
@@ -321,6 +308,42 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                               : "—"}
                           </span>
                         </div>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          No budget set
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right whitespace-nowrap">
+                      {hasBudget ? (
+                        <>
+                          <p
+                            className={`text-sm font-medium tabular-nums ${
+                              primaryTone === "error"
+                                ? "text-[var(--color-error)]"
+                                : ""
+                            }`}
+                          >
+                            {primaryNumber}
+                          </p>
+                          <p
+                            className={`text-[10px] uppercase tracking-wide ${
+                              primaryTone === "error"
+                                ? "text-[var(--color-error)]"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {primaryLabel}
+                          </p>
+                        </>
+                      ) : (
+                        <Link
+                          to="/settings"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] text-primary hover:underline"
+                        >
+                          Set budget
+                        </Link>
                       )}
                     </div>
                   </button>
