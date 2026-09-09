@@ -225,7 +225,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                   value={sortBy}
                   onValueChange={(v) => setSortBy(v as SortBy)}
                 >
-                  <SelectTrigger className="h-7 w-[110px] text-xs">
+                  <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs">
                     <SelectValue>{SORT_LABEL[sortBy]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
