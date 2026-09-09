@@ -112,31 +112,33 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
           </div>
         ) : (
           <>
-            {/* Pay-yourself-first strip (kept from prior design) */}
+            {/* Pay-yourself-first strip — stacks under label on narrow */}
             {savingsBudgeted > 0 && (
-              <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-[var(--color-accent-subtle)] px-3 py-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <PiggyBankIcon
-                    className="h-4 w-4 flex-shrink-0"
-                    style={{ color: "var(--color-success)" }}
-                  />
-                  <p className="text-sm truncate">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground mr-2">
+              <div className="mb-3 flex items-center gap-2 rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2">
+                <PiggyBankIcon
+                  className="h-4 w-4 flex-shrink-0"
+                  style={{ color: "var(--color-success)" }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
                       Save first
-                    </span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-none">
+                      Ends {format(parseISO(period.period_end), "MMM d")}
+                      {isInGracePeriod ? " · grace" : ""}
+                    </p>
+                  </div>
+                  <p className="text-sm mt-0.5 truncate">
                     <span className="font-medium">
                       {formatCurrency(savingsBudgeted)}
                     </span>
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {" "}
                       of {formatCurrency(period.salary_amount)}
                     </span>
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                  Ends {format(parseISO(period.period_end), "MMM d")}
-                  {isInGracePeriod ? " · grace" : ""}
-                </p>
               </div>
             )}
 
@@ -176,12 +178,12 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="mb-3 inline-flex rounded-full bg-muted p-0.5 text-xs">
+            {/* Tabs — full-width, each half of the card */}
+            <div className="mb-3 flex w-full rounded-full bg-muted p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setTab("progress")}
-                className={`px-3 py-1 rounded-full transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-full transition-colors text-center ${
                   tab === "progress"
                     ? "bg-primary text-primary-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -192,7 +194,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               <button
                 type="button"
                 onClick={() => setTab("breakdown")}
-                className={`px-3 py-1 rounded-full transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-full transition-colors text-center ${
                   tab === "breakdown"
                     ? "bg-primary text-primary-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -346,23 +348,22 @@ function SpendingBreakdownTab({
           return (
             <div
               key={row.parentId}
-              className="flex items-center gap-2.5 py-0.5"
+              className="grid grid-cols-[16px_minmax(0,1.2fr)_minmax(60px,2fr)_auto] items-center gap-2 py-0.5"
+              title={row.name}
             >
               <CategoryIcon
                 iconName={row.icon as CategoryIconName}
                 size={14}
                 color={row.color}
               />
-              <span className="text-xs truncate w-24 flex-shrink-0">
-                {row.name}
-              </span>
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+              <span className="text-xs truncate">{row.name}</span>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-300"
                   style={{ width: `${pctOfMax}%` }}
                 />
               </div>
-              <span className="text-xs font-medium tabular-nums whitespace-nowrap w-16 text-right">
+              <span className="text-xs font-medium tabular-nums whitespace-nowrap text-right">
                 {formatCurrency(row.spent)}
               </span>
             </div>
