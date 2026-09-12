@@ -4,7 +4,14 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { addDays, addMonths, format, parseISO } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  format,
+  parseISO,
+  setDate,
+} from "date-fns";
 import { Currency, RecurringIncome } from "@/types";
 import type { IncomeFrequency } from "@/types/income";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,9 +40,21 @@ interface RecurringIncomeSettings {
   refresh: () => Promise<void>;
 }
 
-/** Step forward one cycle: biweekly = +14d, monthly = +1 calendar month. */
-function advance(d: Date, frequency: "biweekly" | "monthly"): Date {
-  return frequency === "biweekly" ? addDays(d, 14) : addMonths(d, 1);
+/**
+ * Step forward one cycle:
+ *   biweekly     = +14 days
+ *   semi_monthly = if day ≤ 15 → last-day of same month; else → 15th of next month
+ *   monthly      = +1 calendar month
+ */
+function advance(
+  d: Date,
+  frequency: "biweekly" | "semi_monthly" | "monthly"
+): Date {
+  if (frequency === "biweekly") return addDays(d, 14);
+  if (frequency === "semi_monthly") {
+    return d.getDate() <= 15 ? endOfMonth(d) : setDate(addMonths(d, 1), 15);
+  }
+  return addMonths(d, 1);
 }
 
 /**

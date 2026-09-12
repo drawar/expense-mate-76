@@ -3,12 +3,19 @@ import { Currency } from "@/types";
 /**
  * Cadence of an income row.
  *
- * - `biweekly` / `monthly` — a recurring pattern; each occurrence in a view's
- *   date range is counted (see useRecurringIncome virtualization).
+ * - `biweekly` — every 14 days from startDate (26/yr, drifts across months).
+ * - `semi_monthly` — twice per month, mid-month + end-of-month (24/yr, does
+ *   not drift). Advance rule: if start.day <= 15 → next = last day of same
+ *   month; if start.day > 15 → next = 15th of next month.
+ * - `monthly` — every calendar month from startDate.
  * - `one_off` — a single event on `startDate` only. Never virtualized, never
  *   triggers a pay-period budget snapshot even if the name matches "salary".
  */
-export type IncomeFrequency = "biweekly" | "monthly" | "one_off";
+export type IncomeFrequency =
+  | "biweekly"
+  | "semi_monthly"
+  | "monthly"
+  | "one_off";
 
 export interface RecurringIncome {
   id: string;

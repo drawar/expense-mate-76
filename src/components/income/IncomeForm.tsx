@@ -267,6 +267,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="semi_monthly">
+                    Semi-monthly (twice a month)
+                  </SelectItem>
                   <SelectItem value="biweekly">
                     Biweekly (every 2 weeks)
                   </SelectItem>

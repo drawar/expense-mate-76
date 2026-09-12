@@ -1,9 +1,12 @@
 /**
  * Compute the end date of a pay period from its start date + frequency.
  *
- * biweekly = start + 14 days; monthly = start + 1 calendar month. `addMonths`
- * clamps to the last day of the target month when the start day doesn't exist
- * there (e.g. Jan 31 + 1mo = Feb 28/29).
+ * biweekly     = start + 14 days
+ * semi_monthly = if start.day ≤ 15 → last day of same month
+ *                else                → 15th of next month
+ * monthly      = start + 1 calendar month (addMonths clamps to last day
+ *                of target month when start.day doesn't exist there,
+ *                e.g. Jan 31 + 1mo = Feb 28/29)
  *
  * one_off has no pay period and callers should not reach this function with
  * that frequency (syncBudgetPeriodForIncome guards it upstream). If it does,
@@ -13,7 +16,14 @@
  * to keep parity with the recurring_income.start_date column type.
  */
 
-import { addDays, addMonths, format, parseISO } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  format,
+  parseISO,
+  setDate,
+} from "date-fns";
 import type { IncomeFrequency } from "@/types/income";
 
 export function computePeriodEnd(
@@ -21,7 +31,14 @@ export function computePeriodEnd(
   frequency: IncomeFrequency
 ): string {
   const start = parseISO(startDate);
-  const end =
-    frequency === "biweekly" ? addDays(start, 14) : addMonths(start, 1);
+  let end: Date;
+  if (frequency === "biweekly") {
+    end = addDays(start, 14);
+  } else if (frequency === "semi_monthly") {
+    const day = start.getDate();
+    end = day <= 15 ? endOfMonth(start) : setDate(addMonths(start, 1), 15);
+  } else {
+    end = addMonths(start, 1);
+  }
   return format(end, "yyyy-MM-dd");
 }

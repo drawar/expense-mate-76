@@ -32,4 +32,34 @@ describe("computePeriodEnd", () => {
       expect(computePeriodEnd("2026-12-15", "monthly")).toBe("2027-01-15");
     });
   });
+
+  describe("semi_monthly", () => {
+    it("start on 1st → last day of same month", () => {
+      expect(computePeriodEnd("2026-09-01", "semi_monthly")).toBe("2026-09-30");
+    });
+
+    it("start on 14th → last day of same month", () => {
+      expect(computePeriodEnd("2026-09-14", "semi_monthly")).toBe("2026-09-30");
+    });
+
+    it("start on 15th → last day of same month", () => {
+      expect(computePeriodEnd("2026-09-15", "semi_monthly")).toBe("2026-09-30");
+    });
+
+    it("start on 16th → 15th of next month", () => {
+      expect(computePeriodEnd("2026-08-16", "semi_monthly")).toBe("2026-09-15");
+    });
+
+    it("start on 28th → 15th of next month", () => {
+      expect(computePeriodEnd("2026-08-28", "semi_monthly")).toBe("2026-09-15");
+    });
+
+    it("start on last day of Feb (non-leap) → 15th of March", () => {
+      expect(computePeriodEnd("2026-02-28", "semi_monthly")).toBe("2026-03-15");
+    });
+
+    it("crosses year boundary", () => {
+      expect(computePeriodEnd("2026-12-28", "semi_monthly")).toBe("2027-01-15");
+    });
+  });
 });
