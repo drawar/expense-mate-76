@@ -3,23 +3,16 @@
  * per-parent-category spent-vs-budgeted numbers.
  *
  * "Active" = most recent budget_periods row in `displayCurrency` whose
- * period_end + 3-day grace >= today. Grace window only affects visibility;
- * `spent` still aggregates transactions strictly within [period_start,
- * period_end] so the last period's numbers don't grow after it ends.
+ * period_end >= today. Once period_end has passed, the card flips to the
+ * empty-state banner immediately — the user's next Salary income starts
+ * the next period.
  *
  * Spent-side normalizes cross-currency transactions to the period's currency
  * via CurrencyService.convert — same shape as buildCategoryHierarchy.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  addDays,
-  formatISO,
-  isAfter,
-  isBefore,
-  parseISO,
-  startOfDay,
-} from "date-fns";
+import { addDays, formatISO, isBefore, parseISO } from "date-fns";
 
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,8 +28,6 @@ import {
   PARENT_CATEGORIES,
   SUBCATEGORY_TO_PARENT,
 } from "@/utils/constants/categories";
-
-const GRACE_DAYS = 3;
 
 export interface BudgetPeriodRow {
   id: string;
@@ -70,7 +61,6 @@ export interface UseActiveBudgetPeriodResult {
   totalBudgeted: number;
   /** Sum of actual spend across the six spending categories (does NOT include savings). */
   totalSpent: number;
-  isInGracePeriod: boolean;
   isLoading: boolean;
 }
 
@@ -90,11 +80,9 @@ export function useActiveBudgetPeriod(
     queryFn: async (): Promise<BudgetPeriodRow | null> => {
       if (!user?.id) return null;
       // Filter server-side: only rows in the right currency where
-      // period_end + grace hasn't passed. Sort by period_start desc so the
-      // most recent salary wins when two overlap.
-      const cutoff = formatISO(addDays(new Date(), -GRACE_DAYS), {
-        representation: "date",
-      });
+      // period_end hasn't passed. Sort by period_start desc so the most
+      // recent salary wins when two overlap.
+      const cutoff = formatISO(new Date(), { representation: "date" });
       const { data, error } = await supabase
         .from("budget_periods")
         .select(
@@ -151,13 +139,6 @@ export function useActiveBudgetPeriod(
   const savingsBudgeted = period?.allocations?.[SAVINGS_ID] ?? 0;
   const remainingToSpend = period ? period.salary_amount - savingsBudgeted : 0;
 
-  // Grace = the day-of-today is strictly after period_end's day. The period
-  // is still ACTIVE (not grace) throughout period_end day itself; grace only
-  // kicks in the calendar day after.
-  const isInGracePeriod =
-    !!period &&
-    isAfter(startOfDay(new Date()), startOfDay(parseISO(period.period_end)));
-
   return {
     period,
     allocations,
@@ -165,7 +146,6 @@ export function useActiveBudgetPeriod(
     remainingToSpend,
     totalBudgeted,
     totalSpent,
-    isInGracePeriod,
     isLoading: query.isLoading,
   };
 }

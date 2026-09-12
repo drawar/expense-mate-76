@@ -10,7 +10,8 @@
  *
  * Rows with no budget set are always pinned to the end (a "Set budget"
  * link takes the user to Settings). Reads the active budget_periods row
- * via useActiveBudgetPeriod (grace: +3 days after period_end).
+ * via useActiveBudgetPeriod; once period_end passes, the card flips to
+ * an empty-state banner prompting a new Salary income entry.
  */
 
 import React from "react";
@@ -105,7 +106,6 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
     savingsBudgeted,
     totalBudgeted,
     totalSpent,
-    isInGracePeriod,
     isLoading,
   } = useActiveBudgetPeriod(displayCurrency, transactions);
 
@@ -157,7 +157,6 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                     </p>
                     <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-none">
                       Ends {format(parseISO(period.period_end), "MMM d")}
-                      {isInGracePeriod ? " · grace" : ""}
                     </p>
                   </div>
                   <p className="text-sm mt-0.5 truncate">

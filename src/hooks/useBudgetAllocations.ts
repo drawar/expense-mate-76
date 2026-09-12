@@ -149,8 +149,8 @@ export function useBudgetAllocationMutations() {
         .from("budget_allocations")
         .upsert(rows, { onConflict: "user_id,parent_category_id" });
       if (error) throw error;
-      // Re-snapshot every active + in-grace period so the dashboard
-      // reflects the new split immediately. Historical periods stay frozen.
+      // Re-snapshot every active period so the dashboard reflects the new
+      // split immediately. Historical (ended) periods stay frozen.
       if (user?.id) await recomputeActivePeriods(supabase, user.id);
     },
     onSuccess: () => {

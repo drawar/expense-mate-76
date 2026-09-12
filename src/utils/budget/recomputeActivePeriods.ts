@@ -1,18 +1,18 @@
 /**
- * Re-snapshot every active + in-grace budget_periods row for a user using
- * the current budget_allocations. Wired into setAllocations.onSuccess so a
- * mid-period allocation change immediately updates the dashboard; historical
+ * Re-snapshot every active budget_periods row for a user using the current
+ * budget_allocations. Wired into setAllocations.onSuccess so a mid-period
+ * allocation change immediately updates the dashboard; historical
  * (already-ended) periods stay frozen as designed.
  *
- * "Active" here is the same filter useActiveBudgetPeriod uses:
- *   period_end >= today - 3 grace days
+ * "Active" here is the same filter useActiveBudgetPeriod uses: period_end
+ * >= today.
  *
  * Never throws — errors are logged and swallowed so a failed recompute
  * doesn't block the allocation save from completing.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDays, formatISO } from "date-fns";
+import { formatISO } from "date-fns";
 
 import { computeBudgetPeriod } from "./computeBudgetPeriod";
 import {
@@ -22,8 +22,6 @@ import {
   SAVINGS_ID,
   type ParentCategoryId,
 } from "./defaults";
-
-const GRACE_DAYS = 3;
 
 async function loadAllocationsFor(
   supabase: SupabaseClient,
@@ -62,9 +60,7 @@ export async function recomputeActivePeriods(
   userId: string
 ): Promise<{ recomputed: number }> {
   try {
-    const cutoff = formatISO(addDays(new Date(), -GRACE_DAYS), {
-      representation: "date",
-    });
+    const cutoff = formatISO(new Date(), { representation: "date" });
     const { data: periods, error } = await supabase
       .from("budget_periods")
       .select(
