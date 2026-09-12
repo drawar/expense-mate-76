@@ -12,7 +12,14 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { addDays, formatISO, isAfter, isBefore, parseISO } from "date-fns";
+import {
+  addDays,
+  formatISO,
+  isAfter,
+  isBefore,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { useAuth } from "@/hooks/useAuth";
@@ -144,8 +151,12 @@ export function useActiveBudgetPeriod(
   const savingsBudgeted = period?.allocations?.[SAVINGS_ID] ?? 0;
   const remainingToSpend = period ? period.salary_amount - savingsBudgeted : 0;
 
+  // Grace = the day-of-today is strictly after period_end's day. The period
+  // is still ACTIVE (not grace) throughout period_end day itself; grace only
+  // kicks in the calendar day after.
   const isInGracePeriod =
-    !!period && isAfter(new Date(), parseISO(period.period_end));
+    !!period &&
+    isAfter(startOfDay(new Date()), startOfDay(parseISO(period.period_end)));
 
   return {
     period,
