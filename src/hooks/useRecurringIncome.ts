@@ -43,7 +43,10 @@ interface RecurringIncomeSettings {
 /**
  * Step forward one cycle:
  *   biweekly     = +14 days
- *   semi_monthly = if day ≤ 15 → last-day of same month; else → 15th of next month
+ *   semi_monthly = day ≤ 22 → last-day of same month; else → 15th of next
+ *                  month (cutoff 22 = midway between the two typical
+ *                  paydays 15 & 30; a paycheck arriving days late still
+ *                  classifies correctly)
  *   monthly      = +1 calendar month
  */
 function advance(
@@ -52,7 +55,7 @@ function advance(
 ): Date {
   if (frequency === "biweekly") return addDays(d, 14);
   if (frequency === "semi_monthly") {
-    return d.getDate() <= 15 ? endOfMonth(d) : setDate(addMonths(d, 1), 15);
+    return d.getDate() <= 22 ? endOfMonth(d) : setDate(addMonths(d, 1), 15);
   }
   return addMonths(d, 1);
 }

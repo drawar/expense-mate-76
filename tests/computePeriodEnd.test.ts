@@ -33,21 +33,29 @@ describe("computePeriodEnd", () => {
     });
   });
 
-  describe("semi_monthly", () => {
+  describe("semi_monthly (cutoff = day 22)", () => {
     it("start on 1st → last day of same month", () => {
       expect(computePeriodEnd("2026-09-01", "semi_monthly")).toBe("2026-09-30");
     });
 
-    it("start on 14th → last day of same month", () => {
+    it("start on 14th (mid-month) → last day of same month", () => {
       expect(computePeriodEnd("2026-09-14", "semi_monthly")).toBe("2026-09-30");
     });
 
-    it("start on 15th → last day of same month", () => {
+    it("start on 15th (mid-month) → last day of same month", () => {
       expect(computePeriodEnd("2026-09-15", "semi_monthly")).toBe("2026-09-30");
     });
 
-    it("start on 16th → 15th of next month", () => {
-      expect(computePeriodEnd("2026-08-16", "semi_monthly")).toBe("2026-09-15");
+    it("start on 16th (mid-month paycheck a day late) → last day of same month", () => {
+      expect(computePeriodEnd("2026-09-16", "semi_monthly")).toBe("2026-09-30");
+    });
+
+    it("start on 22nd (still in mid-month bucket) → last day of same month", () => {
+      expect(computePeriodEnd("2026-09-22", "semi_monthly")).toBe("2026-09-30");
+    });
+
+    it("start on 23rd (end-of-month bucket, arriving early) → 15th of next month", () => {
+      expect(computePeriodEnd("2026-08-23", "semi_monthly")).toBe("2026-09-15");
     });
 
     it("start on 28th → 15th of next month", () => {
