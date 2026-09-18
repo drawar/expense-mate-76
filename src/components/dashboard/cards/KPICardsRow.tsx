@@ -18,9 +18,12 @@ import {
 import { ArrowRightIcon, TriangleIcon, MinusIcon } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { Card, CardContent } from "@/components/ui/card";
+import { parseISO } from "date-fns";
+
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { useRecurringIncome } from "@/hooks/useRecurringIncome";
+import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { getCurrencySymbol } from "@/utils/currency";
 import { getParentCategory } from "@/utils/constants/categories";
@@ -46,35 +49,45 @@ interface KPICardsRowProps {
 export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
   className = "",
 }) => {
-  const { displayCurrency, dashboardData, activeTab } = useDashboardContext();
+  const { displayCurrency, dashboardData } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
-  const { totalIncome } = useRecurringIncome(displayCurrency, activeTab);
+  const filteredTransactions = dashboardData?.filteredTransactions ?? [];
+  const { period, totalSpent, savingsBudgeted } = useActiveBudgetPeriod(
+    displayCurrency,
+    filteredTransactions
+  );
 
-  const { totalSavings, savingsPercentage } = useMemo(() => {
-    const netExpenses =
-      (dashboardData?.metrics?.totalExpenses || 0) -
-      (dashboardData?.metrics?.totalReimbursed || 0);
-    const savings = totalIncome - netExpenses;
-    const percentage =
-      totalIncome > 0 ? Math.round((savings / totalIncome) * 100) : 0;
-    return { totalSavings: savings, savingsPercentage: percentage };
-  }, [totalIncome, dashboardData]);
+  // Pay-period-aligned math: earned = salary for this period; spent =
+  // aggregated spend in [period_start, period_end]; saved = earned − spent.
+  // All three come from the same time slice — coherent savings math.
+  const salary = period?.salary_amount ?? 0;
+  const savings = salary - totalSpent;
+  const savingsPercentage =
+    salary > 0 ? Math.round((savings / salary) * 100) : 0;
+
+  const periodLabel = period
+    ? `${format(parseISO(period.period_start), "MMM d")} – ${format(parseISO(period.period_end), "MMM d")}`
+    : null;
 
   return (
     <div className={`flex flex-col gap-4 h-full ${className}`}>
-      {/* Total Savings */}
+      {/* Savings (this pay period) */}
       <Card className="bg-card border-border/50 flex-1">
         <CardContent className="pt-6 pb-4">
           <p className="text-sm text-muted-foreground text-center">
-            {totalSavings >= 0 ? "You've saved" : "Over Budget"}
+            {!period
+              ? "No active pay period"
+              : savings >= 0
+                ? "You've saved this period"
+                : "Over budget this period"}
           </p>
           <p
             className={`text-4xl font-bold tracking-tight mt-1 text-center ${
-              totalSavings >= 0 ? "text-primary" : "text-destructive"
+              savings >= 0 ? "text-primary" : "text-destructive"
             }`}
           >
             <NumberFlow
-              value={totalSavings}
+              value={period ? savings : 0}
               format={{
                 style: "currency",
                 currency: displayCurrency,
@@ -84,35 +97,44 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
               }}
             />
           </p>
-          <p className="text-sm text-muted-foreground mt-3 text-center">
-            that's
-          </p>
-          <p
-            className={`text-7xl font-bold tracking-tight text-center my-1 ${
-              totalSavings >= 0 ? "text-primary" : "text-destructive"
-            }`}
-          >
-            <NumberFlow
-              value={savingsPercentage}
-              suffix="%"
-              transformTiming={{ duration: 500 }}
-            />
-          </p>
-          <p className="text-sm text-muted-foreground text-center mb-1">
-            of income
-          </p>
+          {period && (
+            <>
+              <p className="text-sm text-muted-foreground mt-3 text-center">
+                that's
+              </p>
+              <p
+                className={`text-7xl font-bold tracking-tight text-center my-1 ${
+                  savings >= 0 ? "text-primary" : "text-destructive"
+                }`}
+              >
+                <NumberFlow
+                  value={savingsPercentage}
+                  suffix="%"
+                  transformTiming={{ duration: 500 }}
+                />
+              </p>
+              <p className="text-sm text-muted-foreground text-center mb-1">
+                of this paycheck
+              </p>
+              {savingsBudgeted > 0 && (
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  Target: {formatCurrency(savingsBudgeted)} set aside first
+                </p>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Total Income */}
+      {/* Paycheck this period */}
       <Card className="bg-card border-border/50 flex-1">
         <CardContent className="pt-6 pb-4">
           <p className="text-sm text-muted-foreground text-center">
-            You've earned
+            {period ? "This paycheck" : "You've earned"}
           </p>
           <p className="text-4xl font-semibold tracking-tight mt-1 text-center">
             <NumberFlow
-              value={totalIncome}
+              value={salary}
               format={{
                 style: "currency",
                 currency: displayCurrency,
@@ -121,6 +143,11 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
               }}
             />
           </p>
+          {periodLabel && (
+            <p className="text-xs text-muted-foreground text-center mt-1">
+              {periodLabel}
+            </p>
+          )}
           <Link
             to="/income"
             className="group flex items-center justify-center gap-1 text-sm text-primary mt-2"
