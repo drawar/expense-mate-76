@@ -51,16 +51,19 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
 }) => {
   const { displayCurrency, dashboardData } = useDashboardContext();
   const filteredTransactions = dashboardData?.filteredTransactions ?? [];
-  const { period, totalSpent } = useActiveBudgetPeriod(
+  const { period, periodOnlyTotalSpent } = useActiveBudgetPeriod(
     displayCurrency,
     filteredTransactions
   );
 
   // Pay-period-aligned math: earned = salary for this period; spent =
-  // aggregated spend in [period_start, period_end]; saved = earned − spent.
-  // All three come from the same time slice — coherent savings math.
+  // aggregated spend in [period_start, period_end] across ALL categories
+  // regardless of cadence; saved = earned − spent. All three come from the
+  // same time slice — coherent paycheck savings math. Using cadence-mixed
+  // totalSpent here would over-charge this paycheck with monthly-cadence
+  // spend from the previous period's window that overlaps this calendar month.
   const salary = period?.salary_amount ?? 0;
-  const savings = salary - totalSpent;
+  const savings = salary - periodOnlyTotalSpent;
   const savingsPercentage =
     salary > 0 ? Math.round((savings / salary) * 100) : 0;
 

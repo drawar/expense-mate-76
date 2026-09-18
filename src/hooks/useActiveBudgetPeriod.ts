@@ -80,6 +80,13 @@ export interface UseActiveBudgetPeriodResult {
   totalBudgeted: number;
   /** Sum of actual spend across the six spending categories (does NOT include savings). */
   totalSpent: number;
+  /**
+   * Sum of all spending in [period_start, period_end] regardless of category cadence.
+   * Use this for paycheck-scoped math ("did I burn through this paycheck?") — it
+   * excludes the monthly-essentials tail from the previous period that
+   * `totalSpent` picks up when Essentials/Home & Living are on `monthly` cadence.
+   */
+  periodOnlyTotalSpent: number;
   isLoading: boolean;
 }
 
@@ -223,6 +230,13 @@ export function useActiveBudgetPeriod(
 
   const totalBudgeted = allocations.reduce((s, a) => s + a.budgeted, 0);
   const totalSpent = allocations.reduce((s, a) => s + a.spent, 0);
+  // Paycheck-scoped spend: all categories, always in [period_start, period_end].
+  // Independent of cadence — the paycheck question is "what did this pay period
+  // burn?", not "what did each budget bucket burn in its own window?".
+  const periodOnlyTotalSpent = PARENT_CATEGORY_IDS.reduce(
+    (s, id) => s + (perPeriodSpent[id] ?? 0),
+    0
+  );
 
   const savingsBudgeted = period?.allocations?.[SAVINGS_ID] ?? 0;
   const remainingToSpend = period ? period.salary_amount - savingsBudgeted : 0;
@@ -234,6 +248,7 @@ export function useActiveBudgetPeriod(
     remainingToSpend,
     totalBudgeted,
     totalSpent,
+    periodOnlyTotalSpent,
     isLoading: activePeriodQuery.isLoading || monthPeriodsQuery.isLoading,
   };
 }
