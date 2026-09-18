@@ -17,7 +17,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PiggyBankIcon, TargetIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +90,61 @@ function sortAllocations(
   return [...withBudget, ...withoutBudget];
 }
 
+interface HeroTotals {
+  budget: number;
+  spent: number;
+  left: number;
+  isOver: boolean;
+  pctUsed: number;
+}
+
+const HeroRow: React.FC<{
+  title: string;
+  windowLabel: string;
+  totals: HeroTotals;
+  formatCurrency: (n: number) => string;
+}> = ({ title, windowLabel, totals, formatCurrency }) => {
+  const status = statusColor(totals.pctUsed);
+  return (
+    <div className="px-3 py-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
+          {title}
+        </p>
+        <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-none">
+          {windowLabel}
+        </p>
+      </div>
+      <p
+        className={`text-2xl font-medium tracking-tight leading-none mt-1.5 ${
+          totals.isOver ? "text-[var(--color-error)]" : ""
+        }`}
+      >
+        {formatCurrency(totals.left)}
+        <span className="text-xs text-muted-foreground font-normal ml-1.5">
+          left of {formatCurrency(totals.budget)}
+        </span>
+      </p>
+      <div className="flex items-center gap-2 mt-2">
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
+            style={{ width: `${Math.min(100, totals.pctUsed)}%` }}
+          />
+        </div>
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+          {totals.pctUsed.toFixed(0)}% used
+        </span>
+      </div>
+      {totals.isOver && (
+        <p className="text-[11px] text-[var(--color-error)] font-medium mt-1">
+          Over by {formatCurrency(totals.spent - totals.budget)}
+        </p>
+      )}
+    </div>
+  );
+};
+
 const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   className = "",
   transactions = [],
@@ -100,23 +155,32 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
   const [sortBy, setSortBy] = React.useState<SortBy>("spent");
 
-  const {
-    period,
-    allocations,
-    savingsBudgeted,
-    totalBudgeted,
-    totalSpent,
-    isLoading,
-  } = useActiveBudgetPeriod(displayCurrency, transactions);
-
-  const overallPct = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
-  const leftToSpend = Math.max(0, totalBudgeted - totalSpent);
-  const isOver = totalSpent > totalBudgeted;
+  const { period, allocations, savingsBudgeted, isLoading } =
+    useActiveBudgetPeriod(displayCurrency, transactions);
 
   const orderedAllocations = React.useMemo(
     () => sortAllocations(allocations, sortBy),
     [allocations, sortBy]
   );
+
+  // Split hero totals by cadence group so each sub-total lives in a
+  // single time window instead of mixing pay-period and month numbers.
+  const perPeriodRows = allocations.filter((r) => r.cadence === "per_period");
+  const monthlyRows = allocations.filter((r) => r.cadence === "monthly");
+
+  const groupTotals = (rows: typeof allocations) => {
+    const budget = rows.reduce((s, r) => s + r.budgeted, 0);
+    const spent = rows.reduce((s, r) => s + r.spent, 0);
+    return {
+      budget,
+      spent,
+      left: Math.max(0, budget - spent),
+      isOver: spent > budget && budget > 0,
+      pctUsed: budget > 0 ? (spent / budget) * 100 : 0,
+    };
+  };
+  const perPeriodTotals = groupTotals(perPeriodRows);
+  const monthlyTotals = groupTotals(monthlyRows);
 
   return (
     <Card className={className}>
@@ -172,40 +236,26 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
               </div>
             )}
 
-            {/* LEFT TO SPEND hero */}
-            <div className="mb-3 rounded-lg border border-border/50 px-3 py-2.5">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
-                Left to spend
-              </p>
-              <p
-                className={`text-3xl font-medium tracking-tight leading-none mt-1.5 ${
-                  isOver ? "text-[var(--color-error)]" : ""
-                }`}
-              >
-                {formatCurrency(leftToSpend)}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${statusColor(overallPct).bar}`}
-                    style={{ width: `${Math.min(100, overallPct)}%` }}
-                  />
-                </div>
-                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                  {overallPct.toFixed(0)}% used
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {formatCurrency(totalSpent)} spent of{" "}
-                {formatCurrency(totalBudgeted)}
-                {isOver && (
-                  <span className="text-[var(--color-error)] font-medium">
-                    {" · over by "}
-                    {formatCurrency(totalSpent - totalBudgeted)}
-                  </span>
-                )}
-                {" · Allowance after savings"}
-              </p>
+            {/* LEFT TO SPEND hero — split by cadence into two coherent
+                sub-totals: per-period cats (pay-period window) and monthly
+                cats (calendar month window). */}
+            <div className="mb-3 rounded-lg border border-border/50 divide-y divide-border/50">
+              {perPeriodRows.length > 0 && (
+                <HeroRow
+                  title="This period"
+                  windowLabel={`Ends ${format(parseISO(period.period_end), "MMM d")}`}
+                  totals={perPeriodTotals}
+                  formatCurrency={formatCurrency}
+                />
+              )}
+              {monthlyRows.length > 0 && (
+                <HeroRow
+                  title="This month"
+                  windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")} – ${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
+                  totals={monthlyTotals}
+                  formatCurrency={formatCurrency}
+                />
+              )}
             </div>
 
             {/* Categories header + sort */}
