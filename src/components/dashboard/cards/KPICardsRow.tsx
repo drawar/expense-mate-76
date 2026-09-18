@@ -50,9 +50,8 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
   className = "",
 }) => {
   const { displayCurrency, dashboardData } = useDashboardContext();
-  const { formatCurrency } = useCurrencyFormatter(displayCurrency);
   const filteredTransactions = dashboardData?.filteredTransactions ?? [];
-  const { period, totalSpent, savingsBudgeted } = useActiveBudgetPeriod(
+  const { period, totalSpent } = useActiveBudgetPeriod(
     displayCurrency,
     filteredTransactions
   );
@@ -116,11 +115,6 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
               <p className="text-sm text-muted-foreground text-center mb-1">
                 of this paycheck
               </p>
-              {savingsBudgeted > 0 && (
-                <p className="text-xs text-muted-foreground text-center mt-1">
-                  Target: {formatCurrency(savingsBudgeted)} set aside first
-                </p>
-              )}
             </>
           )}
         </CardContent>
