@@ -30,6 +30,7 @@ import {
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { useAuth } from "@/hooks/useAuth";
 import { useBudgetAllocations } from "@/hooks/useBudgetAllocations";
+import { calcWindowBudgetForKey } from "@/hooks/useMonthlyBudgetTarget";
 import { supabase } from "@/integrations/supabase/client";
 import type { Currency, Transaction } from "@/types";
 import {
@@ -149,8 +150,10 @@ export function useActiveBudgetPeriod(
       })
     : null;
 
-  // For monthly-cadence categories, sum budgets across all periods
-  // overlapping the calendar month.
+  // For monthly-cadence categories, sum PRORATED budgets across all periods
+  // overlapping the calendar month — each period contributes proportional to
+  // the days that fall inside the month, so a period straddling a month
+  // boundary doesn't double-count on both sides.
   const monthPeriodsQuery = useQuery({
     queryKey: [
       "budget_periods_month",
@@ -159,17 +162,23 @@ export function useActiveBudgetPeriod(
       monthStartISO,
       monthEndISO,
     ] as const,
-    queryFn: async (): Promise<Array<Pick<BudgetPeriodRow, "allocations">>> => {
+    queryFn: async (): Promise<
+      Array<
+        Pick<BudgetPeriodRow, "period_start" | "period_end" | "allocations">
+      >
+    > => {
       if (!user?.id || !monthStartISO || !monthEndISO) return [];
       const { data, error } = await supabase
         .from("budget_periods")
-        .select("allocations")
+        .select("period_start, period_end, allocations")
         .eq("user_id", user.id)
         .eq("currency", displayCurrency)
         .lte("period_start", monthEndISO)
         .gte("period_end", monthStartISO);
       if (error) throw error;
       return (data ?? []).map((row) => ({
+        period_start: row.period_start,
+        period_end: row.period_end,
         allocations: (row.allocations as Record<string, number>) ?? {},
       }));
     },
@@ -200,10 +209,15 @@ export function useActiveBudgetPeriod(
     let spent: number;
     let windowLabel: string;
     if (cat === "monthly") {
-      budgeted = monthPeriods.reduce(
-        (s, mp) => s + (Number(mp.allocations?.[parentId]) || 0),
-        0
-      );
+      budgeted =
+        monthStartISO && monthEndISO
+          ? calcWindowBudgetForKey(
+              monthPeriods,
+              monthStartISO,
+              monthEndISO,
+              parentId
+            )
+          : 0;
       spent = monthlySpent[parentId] ?? 0;
       windowLabel = "This month";
     } else {

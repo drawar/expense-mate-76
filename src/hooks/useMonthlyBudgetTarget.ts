@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Currency } from "@/types";
 import { SAVINGS_ID } from "@/utils/budget/defaults";
 
-interface BudgetPeriodSlim {
+export interface BudgetPeriodSlim {
   period_start: string;
   period_end: string;
   allocations: Record<string, number>;
@@ -49,6 +49,36 @@ export function calcWindowBudget(
   from: string,
   to: string
 ): number {
+  return calcWindowBudgetFor(periods, from, to, (a) => spendingBudgetOf(a));
+}
+
+/**
+ * Prorated aggregation of a single allocation key across overlapping periods.
+ * Same math as `calcWindowBudget` but for one parent category — used by the
+ * monthly-cadence rows in `useActiveBudgetPeriod` so the "This month" budget
+ * only counts each period's contribution by the days that fall inside the
+ * calendar month.
+ */
+export function calcWindowBudgetForKey(
+  periods: readonly BudgetPeriodSlim[],
+  from: string,
+  to: string,
+  key: string
+): number {
+  return calcWindowBudgetFor(
+    periods,
+    from,
+    to,
+    (allocations) => Number(allocations?.[key]) || 0
+  );
+}
+
+function calcWindowBudgetFor(
+  periods: readonly BudgetPeriodSlim[],
+  from: string,
+  to: string,
+  pick: (allocations: Record<string, number>) => number
+): number {
   if (periods.length === 0) return 0;
   const wStart = parseISO(from);
   const wEnd = parseISO(to);
@@ -61,8 +91,7 @@ export function calcWindowBudget(
     const overlapDays = differenceInDays(overlapEnd, overlapStart) + 1;
     const totalDays = differenceInDays(pEnd, pStart) + 1;
     if (overlapDays <= 0 || totalDays <= 0) continue;
-    const spending = spendingBudgetOf(p.allocations);
-    total += spending * (overlapDays / totalDays);
+    total += pick(p.allocations ?? {}) * (overlapDays / totalDays);
   }
   return total;
 }
