@@ -2,25 +2,41 @@
  * React-query hook returning the currently active pay-period budget plus
  * per-parent-category spent-vs-budgeted numbers.
  *
- * "Active" = most recent budget_periods row in `displayCurrency` whose
- * period_end >= today. Once period_end has passed, the card flips to the
- * empty-state banner immediately — the user's next Salary income starts
- * the next period.
+ * Cadence-aware:
+ *   - `per_period` categories → budget from current period's snapshot, spend
+ *     scoped to [period_start, period_end]
+ *   - `monthly` categories    → budget summed across every period
+ *     overlapping the current period's calendar month, spend accumulated
+ *     across the whole calendar month
+ *
+ * The `period` value returned always represents the current pay period
+ * (used for the "Save first" strip, ends-date, and total-budget math).
+ * Per-row `budgeted`/`spent`/`window` reflect that row's cadence.
  *
  * Spent-side normalizes cross-currency transactions to the period's currency
  * via CurrencyService.convert — same shape as buildCategoryHierarchy.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { addDays, formatISO, isBefore, parseISO } from "date-fns";
+import {
+  addDays,
+  endOfMonth,
+  formatISO,
+  isBefore,
+  parseISO,
+  startOfMonth,
+} from "date-fns";
 
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { useAuth } from "@/hooks/useAuth";
+import { useBudgetAllocations } from "@/hooks/useBudgetAllocations";
 import { supabase } from "@/integrations/supabase/client";
 import type { Currency, Transaction } from "@/types";
 import {
+  DEFAULT_CADENCE,
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
+  type Cadence,
   type ParentCategoryId,
 } from "@/utils/budget/defaults";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
@@ -44,10 +60,13 @@ export interface AllocationLine {
   name: string;
   icon: string;
   color: string;
+  cadence: Cadence;
   budgeted: number;
   spent: number;
   remaining: number;
   pctUsed: number; // 0..∞ (may exceed 100 when overspent)
+  /** Which window the numbers cover — "This period" or "This month". */
+  windowLabel: string;
 }
 
 export interface UseActiveBudgetPeriodResult {
@@ -74,14 +93,12 @@ export function useActiveBudgetPeriod(
   transactions: Transaction[] = []
 ): UseActiveBudgetPeriodResult {
   const { user } = useAuth();
+  const { cadence } = useBudgetAllocations();
 
-  const query = useQuery({
+  const activePeriodQuery = useQuery({
     queryKey: activeBudgetPeriodKey(user?.id, displayCurrency),
     queryFn: async (): Promise<BudgetPeriodRow | null> => {
       if (!user?.id) return null;
-      // Filter server-side: only rows in the right currency where
-      // period_end hasn't passed. Sort by period_start desc so the most
-      // recent salary wins when two overlap.
       const cutoff = formatISO(new Date(), { representation: "date" });
       const { data, error } = await supabase
         .from("budget_periods")
@@ -110,26 +127,97 @@ export function useActiveBudgetPeriod(
     staleTime: 30 * 1000,
   });
 
-  const period = query.data ?? null;
+  const period = activePeriodQuery.data ?? null;
 
-  // Aggregate spent per parent for the period.
-  const spentByParent = aggregateSpent(period, transactions, displayCurrency);
+  // Calendar month bounds — anchored on the current period's start so a
+  // period spanning two months still resolves to one meaningful month.
+  const monthStartISO = period
+    ? formatISO(startOfMonth(parseISO(period.period_start)), {
+        representation: "date",
+      })
+    : null;
+  const monthEndISO = period
+    ? formatISO(endOfMonth(parseISO(period.period_start)), {
+        representation: "date",
+      })
+    : null;
+
+  // For monthly-cadence categories, sum budgets across all periods
+  // overlapping the calendar month.
+  const monthPeriodsQuery = useQuery({
+    queryKey: [
+      "budget_periods_month",
+      user?.id ?? "anon",
+      displayCurrency,
+      monthStartISO,
+      monthEndISO,
+    ] as const,
+    queryFn: async (): Promise<Array<Pick<BudgetPeriodRow, "allocations">>> => {
+      if (!user?.id || !monthStartISO || !monthEndISO) return [];
+      const { data, error } = await supabase
+        .from("budget_periods")
+        .select("allocations")
+        .eq("user_id", user.id)
+        .eq("currency", displayCurrency)
+        .lte("period_start", monthEndISO)
+        .gte("period_end", monthStartISO);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        allocations: (row.allocations as Record<string, number>) ?? {},
+      }));
+    },
+    enabled: !!user?.id && !!monthStartISO,
+    staleTime: 30 * 1000,
+  });
+
+  const monthPeriods = monthPeriodsQuery.data ?? [];
+
+  // Aggregate spent per parent × cadence window.
+  const perPeriodSpent = aggregateSpent(
+    period ? { start: period.period_start, end: period.period_end } : null,
+    transactions,
+    displayCurrency
+  );
+  const monthlySpent = aggregateSpent(
+    monthStartISO && monthEndISO
+      ? { start: monthStartISO, end: monthEndISO }
+      : null,
+    transactions,
+    displayCurrency
+  );
 
   const allocations: AllocationLine[] = PARENT_CATEGORIES.map((p) => {
-    const budgeted = period?.allocations?.[p.id] ?? 0;
-    const spent = spentByParent[p.id as ParentCategoryId] ?? 0;
+    const parentId = p.id as ParentCategoryId;
+    const cat = cadence[parentId] ?? DEFAULT_CADENCE[parentId];
+    let budgeted: number;
+    let spent: number;
+    let windowLabel: string;
+    if (cat === "monthly") {
+      budgeted = monthPeriods.reduce(
+        (s, mp) => s + (Number(mp.allocations?.[parentId]) || 0),
+        0
+      );
+      spent = monthlySpent[parentId] ?? 0;
+      windowLabel = "This month";
+    } else {
+      budgeted = period?.allocations?.[parentId] ?? 0;
+      spent = perPeriodSpent[parentId] ?? 0;
+      windowLabel = "This period";
+    }
     const remaining = budgeted - spent;
     const pctUsed =
       budgeted > 0 ? (spent / budgeted) * 100 : spent > 0 ? Infinity : 0;
     return {
-      parentId: p.id as ParentCategoryId,
+      parentId,
       name: p.name,
       icon: p.icon,
       color: p.color,
+      cadence: cat,
       budgeted,
       spent,
       remaining,
       pctUsed,
+      windowLabel,
     };
   });
 
@@ -146,25 +234,30 @@ export function useActiveBudgetPeriod(
     remainingToSpend,
     totalBudgeted,
     totalSpent,
-    isLoading: query.isLoading,
+    isLoading: activePeriodQuery.isLoading || monthPeriodsQuery.isLoading,
   };
 }
 
 // -----------------------------------------------------------------------------
 // helpers
 
+interface DateWindow {
+  start: string; // yyyy-MM-dd inclusive
+  end: string; // yyyy-MM-dd inclusive
+}
+
 function aggregateSpent(
-  period: BudgetPeriodRow | null,
+  window: DateWindow | null,
   transactions: Transaction[],
   displayCurrency: Currency
 ): Record<ParentCategoryId, number> {
   const zero = Object.fromEntries(
     PARENT_CATEGORY_IDS.map((id) => [id, 0])
   ) as Record<ParentCategoryId, number>;
-  if (!period) return zero;
+  if (!window) return zero;
 
-  const start = parseISO(period.period_start);
-  const endExclusive = addDays(parseISO(period.period_end), 1);
+  const start = parseISO(window.start);
+  const endExclusive = addDays(parseISO(window.end), 1);
 
   for (const tx of transactions) {
     const rawDate = tx.date;

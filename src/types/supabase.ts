@@ -91,6 +91,7 @@ export type Database = {
       };
       budget_allocations: {
         Row: {
+          cadence: string;
           created_at: string | null;
           id: string;
           parent_category_id: string;
@@ -99,6 +100,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          cadence?: string;
           created_at?: string | null;
           id?: string;
           parent_category_id: string;
@@ -107,6 +109,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          cadence?: string;
           created_at?: string | null;
           id?: string;
           parent_category_id?: string;

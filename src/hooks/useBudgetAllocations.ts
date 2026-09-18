@@ -1,19 +1,16 @@
 /**
- * React-query hook for the user's budget percentages: pay-yourself-first
- * savings + six per-parent-category spending %s.
+ * React-query hook for the user's budget percentages + cadence:
+ *   - Pay-yourself-first savings %
+ *   - Six per-parent-category spending %s
+ *   - Per-category cadence flag: `per_period` (default) or `monthly` for
+ *     categories with lumpy monthly bills (rent, mortgage, car loan, etc.)
  *
- * Read: merges any persisted budget_allocations rows over
- * DEFAULT_ALLOCATIONS (+ DEFAULT_SAVINGS_PCT). A fresh user gets a
- * baseline that sums to 100% (10 savings + 90 spending) without any DB
- * writes.
+ * Read: merges any persisted budget_allocations rows over DEFAULT_ALLOCATIONS
+ * + DEFAULT_SAVINGS_PCT + DEFAULT_CADENCE.
  *
- * Write: `setAllocation` upserts a single (user, parent_category_id) row
- * — `parentId` may be a ParentCategoryId or the reserved "savings" slot.
- * `resetAllocations` deletes all rows for the user (fall-through to
- * defaults).
- *
- * Sums > 100 are surfaced via the returned `isValid` flag but are not
- * blocked at write time — the settings UI warns and still saves.
+ * Write: `setAllocation` upserts a single (user, parent_category_id) row;
+ * `setAllocations` batches many rows atomically. `resetAllocations` deletes
+ * all rows for the user (fall-through to defaults).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,9 +20,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_ALLOCATIONS,
+  DEFAULT_CADENCE,
   DEFAULT_SAVINGS_PCT,
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
+  type Cadence,
   type ParentCategoryId,
   type SavingsId,
 } from "@/utils/budget/defaults";
@@ -37,9 +36,8 @@ export const budgetAllocationsKey = (userId?: string) =>
 interface UseBudgetAllocationsResult {
   savings: number;
   allocations: Record<ParentCategoryId, number>;
-  /** savings + spending %s combined */
+  cadence: Record<ParentCategoryId, Cadence>;
   totalPct: number;
-  /** true when savings + spending ≤ 100 */
   isValid: boolean;
   isLoading: boolean;
 }
@@ -47,12 +45,14 @@ interface UseBudgetAllocationsResult {
 interface QueryShape {
   savings: number;
   allocations: Record<ParentCategoryId, number>;
+  cadence: Record<ParentCategoryId, Cadence>;
 }
 
 function defaults(): QueryShape {
   return {
     savings: DEFAULT_SAVINGS_PCT,
     allocations: { ...DEFAULT_ALLOCATIONS },
+    cadence: { ...DEFAULT_CADENCE },
   };
 }
 
@@ -66,7 +66,7 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
 
       const { data, error } = await supabase
         .from("budget_allocations")
-        .select("parent_category_id, percentage")
+        .select("parent_category_id, percentage, cadence")
         .eq("user_id", user.id);
       if (error) throw error;
 
@@ -79,8 +79,11 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
             row.parent_category_id
           )
         ) {
-          merged.allocations[row.parent_category_id as ParentCategoryId] =
-            Number(row.percentage);
+          const cat = row.parent_category_id as ParentCategoryId;
+          merged.allocations[cat] = Number(row.percentage);
+          if (row.cadence === "monthly" || row.cadence === "per_period") {
+            merged.cadence[cat] = row.cadence;
+          }
         }
       }
       return merged;
@@ -89,13 +92,14 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
     staleTime: 60 * 1000,
   });
 
-  const { savings, allocations } = query.data ?? defaults();
+  const { savings, allocations, cadence } = query.data ?? defaults();
   const spendingTotal = Object.values(allocations).reduce((a, b) => a + b, 0);
   const totalPct = spendingTotal + savings;
 
   return {
     savings,
     allocations,
+    cadence,
     totalPct,
     isValid: totalPct <= 100,
     isLoading: query.isLoading,
@@ -105,24 +109,38 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
 interface SetAllocationInput {
   parentId: ParentCategoryId | SavingsId;
   percentage: number;
+  /** Optional; only meaningful for parent categories, ignored for savings. */
+  cadence?: Cadence;
 }
 
 export function useBudgetAllocationMutations() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const buildRow = ({ parentId, percentage, cadence }: SetAllocationInput) => {
+    const row: {
+      user_id: string;
+      parent_category_id: string;
+      percentage: number;
+      cadence?: Cadence;
+    } = {
+      user_id: user!.id,
+      parent_category_id: parentId,
+      percentage: Math.max(0, Math.min(100, Number(percentage))),
+    };
+    // Cadence is only stored for parent categories; savings stays default.
+    if (parentId !== SAVINGS_ID && cadence) row.cadence = cadence;
+    return row;
+  };
+
   const setAllocation = useMutation({
-    mutationFn: async ({ parentId, percentage }: SetAllocationInput) => {
+    mutationFn: async (input: SetAllocationInput) => {
       if (!user?.id) throw new Error("Not signed in");
-      const pct = Math.max(0, Math.min(100, Number(percentage)));
-      const { error } = await supabase.from("budget_allocations").upsert(
-        {
-          user_id: user.id,
-          parent_category_id: parentId,
-          percentage: pct,
-        },
-        { onConflict: "user_id,parent_category_id" }
-      );
+      const { error } = await supabase
+        .from("budget_allocations")
+        .upsert(buildRow(input), {
+          onConflict: "user_id,parent_category_id",
+        });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -140,17 +158,11 @@ export function useBudgetAllocationMutations() {
     mutationFn: async (inputs: SetAllocationInput[]) => {
       if (!user?.id) throw new Error("Not signed in");
       if (inputs.length === 0) return;
-      const rows = inputs.map(({ parentId, percentage }) => ({
-        user_id: user.id,
-        parent_category_id: parentId,
-        percentage: Math.max(0, Math.min(100, Number(percentage))),
-      }));
+      const rows = inputs.map(buildRow);
       const { error } = await supabase
         .from("budget_allocations")
         .upsert(rows, { onConflict: "user_id,parent_category_id" });
       if (error) throw error;
-      // Re-snapshot every active period so the dashboard reflects the new
-      // split immediately. Historical (ended) periods stay frozen.
       if (user?.id) await recomputeActivePeriods(supabase, user.id);
     },
     onSuccess: () => {

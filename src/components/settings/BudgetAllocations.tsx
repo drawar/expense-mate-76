@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   useBudgetAllocationMutations,
   useBudgetAllocations,
@@ -25,6 +26,7 @@ import {
 import {
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
+  type Cadence,
   type ParentCategoryId,
   type SavingsId,
 } from "@/utils/budget/defaults";
@@ -41,12 +43,18 @@ const SLOT_IDS: readonly SlotId[] = [SAVINGS_ID, ...PARENT_CATEGORY_IDS];
  * user clicks Save. Save is disabled when nothing has changed or when the
  * total exceeds 100 — this prevents the persisted state from drifting into
  * an over-allocated shape.
+ *
+ * Each spending category also carries a "Monthly" toggle for lumpy bills:
+ *   OFF → per-period cadence: budget/spent scoped to the active pay period.
+ *   ON  → monthly cadence: budget summed across the calendar month, spend
+ *          accumulated across the whole month. Use for rent, mortgage,
+ *          car loan, insurance — anything paid once a month.
  */
 export function BudgetAllocations() {
-  const { savings, allocations, isLoading } = useBudgetAllocations();
+  const { savings, allocations, cadence, isLoading } = useBudgetAllocations();
   const { setAllocations, resetAllocations } = useBudgetAllocationMutations();
 
-  const emptyDraft = (): Record<SlotId, string> =>
+  const emptyPctDraft = (): Record<SlotId, string> =>
     ({
       [SAVINGS_ID]: String(savings),
       ...(Object.fromEntries(
@@ -54,33 +62,46 @@ export function BudgetAllocations() {
       ) as Record<ParentCategoryId, string>),
     }) as Record<SlotId, string>;
 
-  const [draft, setDraft] = useState<Record<SlotId, string>>(emptyDraft);
+  const emptyCadenceDraft = (): Record<ParentCategoryId, Cadence> => ({
+    ...cadence,
+  });
 
-  // Reconcile draft with persisted values on initial load and on external
-  // refreshes (e.g., another device edited). We only overwrite if the user
-  // has no in-progress changes, to avoid clobbering typing mid-session.
-  const persistedSignature = `${savings}|${PARENT_CATEGORY_IDS.map(
+  const [draft, setDraft] = useState<Record<SlotId, string>>(emptyPctDraft);
+  const [cadenceDraft, setCadenceDraft] =
+    useState<Record<ParentCategoryId, Cadence>>(emptyCadenceDraft);
+
+  const persistedPctSignature = `${savings}|${PARENT_CATEGORY_IDS.map(
     (id) => allocations[id]
   ).join("|")}`;
+  const persistedCadenceSignature = PARENT_CATEGORY_IDS.map(
+    (id) => cadence[id]
+  ).join("|");
+
   useEffect(() => {
     if (isLoading) return;
-    setDraft(emptyDraft());
+    setDraft(emptyPctDraft());
+    setCadenceDraft(emptyCadenceDraft());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persistedSignature, isLoading]);
+  }, [persistedPctSignature, persistedCadenceSignature, isLoading]);
 
-  const persistedFor = (id: SlotId): number =>
+  const persistedPctFor = (id: SlotId): number =>
     id === SAVINGS_ID ? savings : allocations[id as ParentCategoryId];
 
-  const dirty = useMemo(
-    () =>
-      SLOT_IDS.filter((id) => {
-        const n = Number(draft[id]);
-        if (!Number.isFinite(n)) return false;
-        return n !== persistedFor(id);
-      }),
+  const dirty = useMemo(() => {
+    const dirtyIds: SlotId[] = [];
+    for (const id of SLOT_IDS) {
+      const nPct = Number(draft[id]);
+      if (!Number.isFinite(nPct)) continue;
+      const pctChanged = nPct !== persistedPctFor(id);
+      const cadenceChanged =
+        id !== SAVINGS_ID &&
+        cadenceDraft[id as ParentCategoryId] !==
+          cadence[id as ParentCategoryId];
+      if (pctChanged || cadenceChanged) dirtyIds.push(id);
+    }
+    return dirtyIds;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft, persistedSignature]
-  );
+  }, [draft, cadenceDraft, persistedPctSignature, persistedCadenceSignature]);
 
   const anyInvalidField = SLOT_IDS.some((id) => {
     const n = Number(draft[id]);
@@ -104,11 +125,16 @@ export function BudgetAllocations() {
       dirty.map((id) => ({
         parentId: id,
         percentage: Number(draft[id]),
+        cadence:
+          id === SAVINGS_ID ? undefined : cadenceDraft[id as ParentCategoryId],
       }))
     );
   };
 
-  const handleDiscard = () => setDraft(emptyDraft());
+  const handleDiscard = () => {
+    setDraft(emptyPctDraft());
+    setCadenceDraft(emptyCadenceDraft());
+  };
 
   return (
     <Card>
@@ -119,8 +145,11 @@ export function BudgetAllocations() {
         </CardTitle>
         <CardDescription>
           Pay yourself first: set a savings % that comes off the top of each
-          paycheck, then split the rest across spending categories. Changes
-          apply to your next salary — click Save when your split totals 100%.
+          paycheck, then split the rest across spending categories. Toggle{" "}
+          <strong>Monthly</strong> on categories with lumpy monthly bills (rent,
+          mortgage, car loan) so their budget spans the calendar month instead
+          of a single pay period. Changes apply to your next salary — click Save
+          when your split totals 100%.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -167,47 +196,66 @@ export function BudgetAllocations() {
               Spending categories
             </div>
 
-            {PARENT_CATEGORIES.map((parent) => (
-              <div
-                key={parent.id}
-                className="flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <CategoryIcon
-                    iconName={parent.icon as CategoryIconName}
-                    size={20}
-                    color={parent.color}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {parent.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {parent.description}
-                    </p>
+            {PARENT_CATEGORIES.map((parent) => {
+              const catId = parent.id as ParentCategoryId;
+              const isMonthly = cadenceDraft[catId] === "monthly";
+              return (
+                <div
+                  key={parent.id}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CategoryIcon
+                      iconName={parent.icon as CategoryIconName}
+                      size={20}
+                      color={parent.color}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {parent.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {parent.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+                      <Switch
+                        checked={isMonthly}
+                        onCheckedChange={(checked) =>
+                          setCadenceDraft((c) => ({
+                            ...c,
+                            [catId]: checked ? "monthly" : "per_period",
+                          }))
+                        }
+                        disabled={setAllocations.isPending}
+                        aria-label={`${parent.name} monthly cadence`}
+                      />
+                      <span className={isMonthly ? "text-foreground" : ""}>
+                        Monthly
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={100}
+                        step={1}
+                        className="w-20 text-right"
+                        value={draft[catId] ?? ""}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, [catId]: e.target.value }))
+                        }
+                        disabled={setAllocations.isPending}
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={100}
-                    step={1}
-                    className="w-20 text-right"
-                    value={draft[parent.id as ParentCategoryId] ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        [parent.id as ParentCategoryId]: e.target.value,
-                      }))
-                    }
-                    disabled={setAllocations.isPending}
-                  />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="flex flex-col gap-3 pt-3 border-t sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm flex-wrap">

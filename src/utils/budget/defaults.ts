@@ -54,3 +54,28 @@ export const DEFAULT_ALLOCATIONS: Record<ParentCategoryId, number> = {
   work_education: 3,
   financial_other: 2,
 };
+
+/**
+ * Per-category cadence for budget display:
+ *   `per_period` — budget/spent scoped to the active pay period
+ *   `monthly`    — budget summed across the calendar month; spend accumulated
+ *                  across the whole month. Use for lumpy monthly bills that
+ *                  don't respect pay-period boundaries (rent, mortgage,
+ *                  utilities, car loan, insurance).
+ */
+export type Cadence = "per_period" | "monthly";
+
+/**
+ * Default cadence per parent category. Essentials + Home & Living carry the
+ * big lumpy monthly bills so they default to monthly; discretionary
+ * categories stay on per-period so pay-yourself-first per paycheck still
+ * feels tangible.
+ */
+export const DEFAULT_CADENCE: Record<ParentCategoryId, Cadence> = {
+  essentials: "monthly",
+  lifestyle: "per_period",
+  home_living: "monthly",
+  personal_care: "per_period",
+  work_education: "per_period",
+  financial_other: "per_period",
+};

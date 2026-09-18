@@ -288,7 +288,16 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                       color={row.color}
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{row.name}</p>
+                      <div className="flex items-baseline gap-1.5 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {row.name}
+                        </p>
+                        {row.cadence === "monthly" && (
+                          <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted/60 px-1 py-0.5 rounded whitespace-nowrap">
+                            Monthly
+                          </span>
+                        )}
+                      </div>
                       {hasBudget ? (
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
