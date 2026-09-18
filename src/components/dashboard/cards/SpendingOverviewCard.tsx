@@ -24,7 +24,7 @@ import NumberFlow from "@number-flow/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
-import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
+import { useMonthlyBudgetTarget } from "@/hooks/useMonthlyBudgetTarget";
 import { useForecast } from "@/hooks/dashboard/useForecast";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import {
@@ -53,19 +53,6 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     dashboardData,
   } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
-
-  // Pay-period budget total (0 when no active period).
-  const { totalBudgeted: scaledBudget } = useActiveBudgetPeriod(
-    displayCurrency,
-    filteredTransactions
-  );
-
-  // Get forecast data
-  const { forecast, chartData: forecastChartData } = useForecast(
-    transactions,
-    displayCurrency,
-    activeTab
-  );
 
   // Calculate date range based on active time filter
   const { dateRange, periodLabel } = useMemo(() => {
@@ -121,6 +108,25 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
       periodLabel: label,
     };
   }, [activeTab]);
+
+  // Calendar-window spending budget = prorated sum of every pay-period
+  // that overlaps the active timeframe. Honest for the chart's calendar
+  // x-axis; the currently-active pay period alone would only cover a
+  // fraction of the month.
+  const { totalBudget: scaledBudget } = useMonthlyBudgetTarget(
+    displayCurrency,
+    dateRange.startISO,
+    dateRange.endISO
+  );
+
+  // Get forecast data — passes scaledBudget so the forecast projects
+  // against the same calendar-window target the chart line displays.
+  const { forecast, chartData: forecastChartData } = useForecast(
+    transactions,
+    displayCurrency,
+    activeTab,
+    { calendarBudget: scaledBudget }
+  );
 
   // Get net expenses
   const metrics = dashboardData?.metrics || {

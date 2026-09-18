@@ -6,7 +6,6 @@
 import { useMemo } from "react";
 import { Transaction, Currency } from "@/types";
 import { TimeframeTab } from "@/utils/dashboard";
-import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
 import {
   forecastService,
   spenderProfiler,
@@ -22,6 +21,14 @@ interface UseForecastOptions {
   includeHolidays?: boolean;
   /** Number of months to look back for patterns */
   historicalMonths?: number;
+  /**
+   * Calendar-month spending budget to project against — should be the
+   * prorated sum of all budget_periods overlapping the current month,
+   * NOT a single pay-period's totalBudgeted (which only covers half a
+   * month for semi-monthly earners). Caller computes via
+   * useMonthlyBudgetTarget and passes in.
+   */
+  calendarBudget?: number;
 }
 
 interface UseForecastReturn {
@@ -57,10 +64,11 @@ export function useForecast(
   timeframe: TimeframeTab,
   options: UseForecastOptions = {}
 ): UseForecastReturn {
-  const { totalBudgeted: scaledBudget, isLoading: budgetLoading } =
-    useActiveBudgetPeriod(currency, transactions);
-
-  const { includeHolidays = true, historicalMonths = 3 } = options;
+  const {
+    includeHolidays = true,
+    historicalMonths = 3,
+    calendarBudget,
+  } = options;
 
   // Only generate forecast for "thisMonth" timeframe
   const shouldForecast = timeframe === "thisMonth";
@@ -70,11 +78,9 @@ export function useForecast(
       return null;
     }
 
-    // Forecast still runs on a calendar-month cadence; the pay-period budget
-    // is treated as an approximate monthly target for the projection.
     const forecastOptions: ForecastOptions = {
       currency,
-      budget: scaledBudget > 0 ? scaledBudget : undefined,
+      budget: calendarBudget && calendarBudget > 0 ? calendarBudget : undefined,
       budgetPeriod: "monthly",
       includeHolidays,
       historicalMonths,
@@ -86,7 +92,7 @@ export function useForecast(
     shouldForecast,
     transactions,
     currency,
-    scaledBudget,
+    calendarBudget,
     includeHolidays,
     historicalMonths,
   ]);
@@ -156,7 +162,7 @@ export function useForecast(
     forecast,
     chartData,
     hasEnoughHistory: forecast ? !forecast.isFirstMonth : false,
-    isLoading: budgetLoading,
+    isLoading: false,
     profileDescription,
     projectedTotal,
     daysRemaining,
