@@ -24,6 +24,7 @@ import { useDashboardContext } from "@/contexts/DashboardContext";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { useRecurringIncome } from "@/hooks/useRecurringIncome";
 import { useActiveBudgetPeriod } from "@/hooks/useActiveBudgetPeriod";
+import { useLastSettledPeriod } from "@/hooks/useLastSettledPeriod";
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { getCurrencySymbol } from "@/utils/currency";
 import { getParentCategory } from "@/utils/constants/categories";
@@ -55,6 +56,7 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
     displayCurrency,
     filteredTransactions
   );
+  const { data: lastSettled } = useLastSettledPeriod(displayCurrency);
 
   // Pay-period-aligned math: earned = salary for this period; spent =
   // aggregated spend in [period_start, period_end] across ALL categories
@@ -64,6 +66,20 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
   // spend from the previous period's window that overlaps this calendar month.
   const salary = period?.salary_amount ?? 0;
   const savings = salary - periodOnlyTotalSpent;
+
+  // Extra available to save = closed_out sum from the previous settled
+  // period. NOT the same as "saved" — this is unused RESET budget that
+  // the user could optionally sweep to savings. Rollover surplus lives
+  // in the next period's carry_in and does not appear here.
+  const extraAvailable = React.useMemo(() => {
+    if (!lastSettled) return 0;
+    let sum = 0;
+    for (const [key, value] of Object.entries(lastSettled.closed_out)) {
+      if (key === "savings") continue;
+      sum += Number(value) || 0;
+    }
+    return sum;
+  }, [lastSettled]);
   const savingsPercentage =
     salary > 0 ? Math.round((savings / salary) * 100) : 0;
 
@@ -119,6 +135,25 @@ export const IncomeSavingsStack: React.FC<{ className?: string }> = ({
                 of this paycheck
               </p>
             </>
+          )}
+          {extraAvailable > 0 && (
+            <p
+              className="text-xs text-center mt-2 pt-2 border-t border-border/40"
+              style={{ color: "var(--color-success)" }}
+              title="Unused RESET-category budget from your previous pay period. Move it to Savings when you transfer."
+            >
+              +
+              <NumberFlow
+                value={extraAvailable}
+                format={{
+                  style: "currency",
+                  currency: displayCurrency,
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }}
+              />{" "}
+              extra available to save
+            </p>
           )}
         </CardContent>
       </Card>
