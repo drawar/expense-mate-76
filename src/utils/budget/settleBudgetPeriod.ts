@@ -27,8 +27,6 @@
  * function trusts its inputs and just produces the settlement math.
  */
 
-import { createHash } from "crypto";
-
 import {
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
@@ -90,12 +88,32 @@ function stableStringify(value: unknown): string {
 }
 
 /**
+ * FNV-1a 64-bit deterministic string hash. Not cryptographic — this is
+ * strictly a change-detection fingerprint. Browser-safe (unlike
+ * node:crypto) and synchronous (unlike SubtleCrypto.digest).
+ *
+ * Collision probability at our scale (a few hundred periods per user
+ * over years) is negligible; even 32-bit would be safe. 64-bit hex
+ * gives 16 chars, comfortably distinctive when inspected in DB tools.
+ */
+function fnv1a64Hex(input: string): string {
+  const FNV_PRIME = BigInt("0x100000001b3");
+  const FNV_OFFSET = BigInt("0xcbf29ce484222325");
+  const MASK = (BigInt(1) << BigInt(64)) - BigInt(1);
+  let hash = FNV_OFFSET;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= BigInt(input.charCodeAt(i));
+    hash = (hash * FNV_PRIME) & MASK;
+  }
+  return hash.toString(16).padStart(16, "0");
+}
+
+/**
  * Deterministic fingerprint of the settlement input. Two inputs that
  * produce the same output must hash to the same fingerprint.
  */
 export function computeSettlementFingerprint(input: SettlementInput): string {
-  const h = createHash("sha256");
-  h.update(
+  return fnv1a64Hex(
     stableStringify({
       period_id: input.period.id,
       allocations: input.period.allocations,
@@ -105,7 +123,6 @@ export function computeSettlementFingerprint(input: SettlementInput): string {
       end_behavior: input.endBehaviorByCategory,
     })
   );
-  return h.digest("hex");
 }
 
 export function settleBudgetPeriod(input: SettlementInput): SettlementResult {

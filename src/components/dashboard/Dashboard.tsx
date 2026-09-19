@@ -16,6 +16,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import FAB from "@/components/common/FAB";
 import PullToRefresh from "@/components/common/PullToRefresh";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useSettleDuePeriods } from "@/hooks/useSettleDuePeriods";
 
 /**
  * Main dashboard component - the entry point for the dashboard UI
@@ -23,6 +24,12 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 export function Dashboard() {
   // Check for desktop viewport (1024px+)
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // Fire the lazy end-of-cycle settlement once per session. Fallback
+  // path for when the nightly cron hasn't caught up yet — settles any
+  // budget_periods row whose period_end has passed and which is still
+  // open, using the same fingerprint-guarded UPDATE the cron uses.
+  useSettleDuePeriods();
 
   // Get all dashboard data from context
   const {
