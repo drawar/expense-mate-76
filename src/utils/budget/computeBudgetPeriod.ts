@@ -43,6 +43,13 @@ export interface BudgetPeriodPayload {
    * "savings" key for the pay-yourself-first slot.
    */
   allocations: Record<string, number>;
+  /**
+   * Carry-in from the immediately-preceding settled period, keyed by
+   * parent_category_id (savings always excluded). Only rollover
+   * categories from the prior period appear here — reset cats contribute
+   * 0 and are omitted. Empty object when no prior settled period exists.
+   */
+  carry_in: Record<string, number>;
 }
 
 function round2(n: number): number {
@@ -54,7 +61,8 @@ export function computeBudgetPeriod(
   allocationsPct: Partial<
     Record<ParentCategoryId, number>
   > = DEFAULT_ALLOCATIONS,
-  savingsPct: number = DEFAULT_SAVINGS_PCT
+  savingsPct: number = DEFAULT_SAVINGS_PCT,
+  carryIn: Record<string, number> = {}
 ): BudgetPeriodPayload {
   const allocations: Record<string, number> = {
     [SAVINGS_ID]: round2((salary.amount * Math.max(0, savingsPct)) / 100),
@@ -63,6 +71,16 @@ export function computeBudgetPeriod(
     const pct = allocationsPct[parentId] ?? 0;
     allocations[parentId] = round2((salary.amount * pct) / 100);
   }
+
+  // Only carry non-zero rollover slots; drop savings and any zero keys.
+  const carry_in: Record<string, number> = {};
+  for (const [key, value] of Object.entries(carryIn)) {
+    if (key === SAVINGS_ID) continue;
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) continue;
+    carry_in[key] = round2(n);
+  }
+
   return {
     income_id: salary.id,
     currency: salary.currency,
@@ -70,5 +88,6 @@ export function computeBudgetPeriod(
     period_end: computePeriodEnd(salary.startDate, salary.frequency),
     salary_amount: salary.amount,
     allocations,
+    carry_in,
   };
 }

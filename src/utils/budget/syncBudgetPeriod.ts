@@ -18,6 +18,7 @@ import {
   SAVINGS_ID,
   type ParentCategoryId,
 } from "./defaults";
+import { loadPreviousSettledCarry } from "./loadPreviousSettledCarry";
 import { matchesSalary } from "./matchesSalary";
 
 interface SyncArgs {
@@ -100,7 +101,32 @@ export async function syncBudgetPeriodForIncome({
 
     // Cases (a), (b), (c): still (or newly) a matching salary — upsert.
     if (!next.startDate) return; // guarded upstream but be safe
+
+    // Immutability guard: if the existing row is already settled
+    // (closed_at IS NOT NULL), do NOT rewrite its snapshot — that would
+    // corrupt the carry_out already computed against the frozen shape.
+    // A settled period can only be changed via the resettleFromDate
+    // walker after an actual transaction/income edit.
+    const { data: existing } = await supabase
+      .from("budget_periods")
+      .select("id, closed_at")
+      .eq("user_id", userId)
+      .eq("income_id", next.id)
+      .maybeSingle();
+    if (existing?.closed_at) {
+      // Settled row exists — leave it frozen. resettleFromDate will
+      // reconcile the chain if this income edit affects a window that
+      // overlaps a settled period.
+      return;
+    }
+
     const { allocations, savingsPct } = await loadAllocations(supabase, userId);
+    const carryIn = await loadPreviousSettledCarry({
+      supabase,
+      userId,
+      currency: next.currency,
+      beforeDate: next.startDate,
+    });
     const payload = computeBudgetPeriod(
       {
         id: next.id,
@@ -110,7 +136,8 @@ export async function syncBudgetPeriodForIncome({
         frequency: next.frequency,
       },
       allocations,
-      savingsPct
+      savingsPct,
+      carryIn
     );
 
     const { error } = await supabase.from("budget_periods").upsert(
@@ -122,6 +149,7 @@ export async function syncBudgetPeriodForIncome({
         period_end: payload.period_end,
         salary_amount: payload.salary_amount,
         allocations: payload.allocations,
+        carry_in: payload.carry_in,
       },
       { onConflict: "user_id,income_id" }
     );

@@ -22,6 +22,7 @@ import {
   SAVINGS_ID,
   type ParentCategoryId,
 } from "./defaults";
+import { loadPreviousSettledCarry } from "./loadPreviousSettledCarry";
 
 async function loadAllocationsFor(
   supabase: SupabaseClient,
@@ -61,13 +62,20 @@ export async function recomputeActivePeriods(
 ): Promise<{ recomputed: number }> {
   try {
     const cutoff = formatISO(new Date(), { representation: "date" });
+    // LOAD-BEARING GUARD: .is("closed_at", null) excludes settled
+    // periods. Without this, an allocation-percentage edit would rewrite
+    // a closed period's base allocation → the frozen carry_out (which
+    // was computed against the original base) would no longer reconcile
+    // with the new numbers, silently corrupting the rollover chain.
+    // Settled periods can only be changed via resettleFromDate (C10).
     const { data: periods, error } = await supabase
       .from("budget_periods")
       .select(
         "id, income_id, currency, period_start, period_end, salary_amount"
       )
       .eq("user_id", userId)
-      .gte("period_end", cutoff);
+      .gte("period_end", cutoff)
+      .is("closed_at", null);
     if (error) throw error;
     if (!periods || periods.length === 0) return { recomputed: 0 };
 
@@ -85,6 +93,13 @@ export async function recomputeActivePeriods(
         .maybeSingle();
       if (iErr || !incomeData || !incomeData.start_date) continue;
 
+      const carryIn = await loadPreviousSettledCarry({
+        supabase,
+        userId,
+        currency: incomeData.currency as never,
+        beforeDate: incomeData.start_date,
+      });
+
       const payload = computeBudgetPeriod(
         {
           id: incomeData.id,
@@ -94,7 +109,8 @@ export async function recomputeActivePeriods(
           frequency: incomeData.frequency as never,
         },
         allocations,
-        savingsPct
+        savingsPct,
+        carryIn
       );
 
       const { error: uErr } = await supabase.from("budget_periods").upsert(
@@ -106,6 +122,7 @@ export async function recomputeActivePeriods(
           period_end: payload.period_end,
           salary_amount: payload.salary_amount,
           allocations: payload.allocations,
+          carry_in: payload.carry_in,
         },
         { onConflict: "user_id,income_id" }
       );
