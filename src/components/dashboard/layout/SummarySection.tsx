@@ -6,6 +6,7 @@ import {
   BudgetSpendingCard,
   IncomeSummaryCard,
 } from "@/components/dashboard/cards";
+import PeriodSettlementTile from "@/components/dashboard/cards/PeriodSettlementTile";
 import { ArrowDownLeftIcon } from "lucide-react";
 import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,11 @@ const SummarySection: React.FC = () => {
         className="rounded-xl border border-border/50 bg-card"
         transactions={dashboardData?.filteredTransactions || []}
       />
+
+      {/* End-of-cycle settlement summary (fades out after 7 days) */}
+      <div className="mt-4">
+        <PeriodSettlementTile />
+      </div>
 
       {/* Income & Savings Card - only show when user has income sources */}
       {hasIncomeSources && (
