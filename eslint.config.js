@@ -18,6 +18,11 @@ export default tseslint.config(
       "package.json",
       "postcss.config.js",
       "tailwind.config.ts",
+      // Supabase Edge Functions run in Deno, not the browser. They
+      // have their own type system, `deno-lint-ignore` directives, and
+      // remote-URL imports (esm.sh / deno.land) that TS-ESLint can't
+      // resolve — running the browser lint rules on them just noise.
+      "supabase/functions/**",
     ],
   },
   {
