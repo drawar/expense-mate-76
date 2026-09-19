@@ -27,6 +27,7 @@ import {
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
   type Cadence,
+  type EndBehavior,
   type ParentCategoryId,
   type SavingsId,
 } from "@/utils/budget/defaults";
@@ -51,7 +52,8 @@ const SLOT_IDS: readonly SlotId[] = [SAVINGS_ID, ...PARENT_CATEGORY_IDS];
  *          car loan, insurance — anything paid once a month.
  */
 export function BudgetAllocations() {
-  const { savings, allocations, cadence, isLoading } = useBudgetAllocations();
+  const { savings, allocations, cadence, endBehavior, isLoading } =
+    useBudgetAllocations();
   const { setAllocations, resetAllocations } = useBudgetAllocationMutations();
 
   const emptyPctDraft = (): Record<SlotId, string> =>
@@ -66,9 +68,16 @@ export function BudgetAllocations() {
     ...cadence,
   });
 
+  const emptyEndBehaviorDraft = (): Record<ParentCategoryId, EndBehavior> => ({
+    ...endBehavior,
+  });
+
   const [draft, setDraft] = useState<Record<SlotId, string>>(emptyPctDraft);
   const [cadenceDraft, setCadenceDraft] =
     useState<Record<ParentCategoryId, Cadence>>(emptyCadenceDraft);
+  const [endBehaviorDraft, setEndBehaviorDraft] = useState<
+    Record<ParentCategoryId, EndBehavior>
+  >(emptyEndBehaviorDraft);
 
   const persistedPctSignature = `${savings}|${PARENT_CATEGORY_IDS.map(
     (id) => allocations[id]
@@ -76,13 +85,22 @@ export function BudgetAllocations() {
   const persistedCadenceSignature = PARENT_CATEGORY_IDS.map(
     (id) => cadence[id]
   ).join("|");
+  const persistedEndBehaviorSignature = PARENT_CATEGORY_IDS.map(
+    (id) => endBehavior[id]
+  ).join("|");
 
   useEffect(() => {
     if (isLoading) return;
     setDraft(emptyPctDraft());
     setCadenceDraft(emptyCadenceDraft());
+    setEndBehaviorDraft(emptyEndBehaviorDraft());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persistedPctSignature, persistedCadenceSignature, isLoading]);
+  }, [
+    persistedPctSignature,
+    persistedCadenceSignature,
+    persistedEndBehaviorSignature,
+    isLoading,
+  ]);
 
   const persistedPctFor = (id: SlotId): number =>
     id === SAVINGS_ID ? savings : allocations[id as ParentCategoryId];
@@ -97,11 +115,22 @@ export function BudgetAllocations() {
         id !== SAVINGS_ID &&
         cadenceDraft[id as ParentCategoryId] !==
           cadence[id as ParentCategoryId];
-      if (pctChanged || cadenceChanged) dirtyIds.push(id);
+      const endBehaviorChanged =
+        id !== SAVINGS_ID &&
+        endBehaviorDraft[id as ParentCategoryId] !==
+          endBehavior[id as ParentCategoryId];
+      if (pctChanged || cadenceChanged || endBehaviorChanged) dirtyIds.push(id);
     }
     return dirtyIds;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, cadenceDraft, persistedPctSignature, persistedCadenceSignature]);
+  }, [
+    draft,
+    cadenceDraft,
+    endBehaviorDraft,
+    persistedPctSignature,
+    persistedCadenceSignature,
+    persistedEndBehaviorSignature,
+  ]);
 
   const anyInvalidField = SLOT_IDS.some((id) => {
     const n = Number(draft[id]);
@@ -127,6 +156,10 @@ export function BudgetAllocations() {
         percentage: Number(draft[id]),
         cadence:
           id === SAVINGS_ID ? undefined : cadenceDraft[id as ParentCategoryId],
+        endBehavior:
+          id === SAVINGS_ID
+            ? undefined
+            : endBehaviorDraft[id as ParentCategoryId],
       }))
     );
   };
@@ -134,6 +167,7 @@ export function BudgetAllocations() {
   const handleDiscard = () => {
     setDraft(emptyPctDraft());
     setCadenceDraft(emptyCadenceDraft());
+    setEndBehaviorDraft(emptyEndBehaviorDraft());
   };
 
   return (
@@ -148,8 +182,12 @@ export function BudgetAllocations() {
           paycheck, then split the rest across spending categories. Toggle{" "}
           <strong>Monthly</strong> on categories with lumpy monthly bills (rent,
           mortgage, car loan) so their budget spans the calendar month instead
-          of a single pay period. Changes apply to your next salary — click Save
-          when your split totals 100%.
+          of a single pay period. Toggle <strong>Rollover</strong> on categories
+          where leftover budget should carry into next period (e.g., save this
+          period&apos;s Lifestyle surplus for a trip); untoggled categories
+          reset each cycle and their leftover becomes extra available to save.
+          Changes apply to your next salary — click Save when your split totals
+          100%.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -199,6 +237,7 @@ export function BudgetAllocations() {
             {PARENT_CATEGORIES.map((parent) => {
               const catId = parent.id as ParentCategoryId;
               const isMonthly = cadenceDraft[catId] === "monthly";
+              const isRollover = endBehaviorDraft[catId] === "rollover";
               return (
                 <div
                   key={parent.id}
@@ -234,6 +273,22 @@ export function BudgetAllocations() {
                       />
                       <span className={isMonthly ? "text-foreground" : ""}>
                         Monthly
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+                      <Switch
+                        checked={isRollover}
+                        onCheckedChange={(checked) =>
+                          setEndBehaviorDraft((b) => ({
+                            ...b,
+                            [catId]: checked ? "rollover" : "reset",
+                          }))
+                        }
+                        disabled={setAllocations.isPending}
+                        aria-label={`${parent.name} rollover behavior`}
+                      />
+                      <span className={isRollover ? "text-foreground" : ""}>
+                        Rollover
                       </span>
                     </label>
                     <div className="flex items-center gap-1">

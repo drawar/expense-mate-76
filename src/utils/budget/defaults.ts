@@ -79,3 +79,39 @@ export const DEFAULT_CADENCE: Record<ParentCategoryId, Cadence> = {
   work_education: "per_period",
   financial_other: "per_period",
 };
+
+/**
+ * End-of-cycle behavior for a category budget.
+ *   `reset`    — unused budget closes out at cycle end; the remainder
+ *                becomes "extra available to save" (never silently
+ *                increases the next cycle's budget). Overspend is
+ *                reported but does not carry as a debt.
+ *   `rollover` — unused budget carries forward as carry_in on the next
+ *                budget_periods row. Negative balances (overspend) also
+ *                carry as negative carry_in so a next-cycle boundary
+ *                cannot silently forgive overspending.
+ *
+ * Independent from `Cadence` — every category is one of four
+ * combinations: monthly|reset, monthly|rollover, per_period|reset,
+ * per_period|rollover.
+ */
+export type EndBehavior = "reset" | "rollover";
+
+/**
+ * Default end-behavior per parent category. All spending parents default
+ * to `reset` — the safest choice for existing users during rollout, and
+ * matches the design-doc migration rule "all existing categories retain
+ * RESET behavior unless the user explicitly opts in".
+ *
+ * The `savings` slot is always `reset` in application code regardless of
+ * what's stored — savings is set aside at open, not settled at close, so
+ * it has no carry_out to roll.
+ */
+export const DEFAULT_END_BEHAVIOR: Record<ParentCategoryId, EndBehavior> = {
+  essentials: "reset",
+  lifestyle: "reset",
+  home_living: "reset",
+  personal_care: "reset",
+  work_education: "reset",
+  financial_other: "reset",
+};

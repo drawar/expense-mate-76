@@ -21,10 +21,12 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_ALLOCATIONS,
   DEFAULT_CADENCE,
+  DEFAULT_END_BEHAVIOR,
   DEFAULT_SAVINGS_PCT,
   PARENT_CATEGORY_IDS,
   SAVINGS_ID,
   type Cadence,
+  type EndBehavior,
   type ParentCategoryId,
   type SavingsId,
 } from "@/utils/budget/defaults";
@@ -37,6 +39,7 @@ interface UseBudgetAllocationsResult {
   savings: number;
   allocations: Record<ParentCategoryId, number>;
   cadence: Record<ParentCategoryId, Cadence>;
+  endBehavior: Record<ParentCategoryId, EndBehavior>;
   totalPct: number;
   isValid: boolean;
   isLoading: boolean;
@@ -46,6 +49,7 @@ interface QueryShape {
   savings: number;
   allocations: Record<ParentCategoryId, number>;
   cadence: Record<ParentCategoryId, Cadence>;
+  endBehavior: Record<ParentCategoryId, EndBehavior>;
 }
 
 function defaults(): QueryShape {
@@ -53,6 +57,7 @@ function defaults(): QueryShape {
     savings: DEFAULT_SAVINGS_PCT,
     allocations: { ...DEFAULT_ALLOCATIONS },
     cadence: { ...DEFAULT_CADENCE },
+    endBehavior: { ...DEFAULT_END_BEHAVIOR },
   };
 }
 
@@ -66,7 +71,7 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
 
       const { data, error } = await supabase
         .from("budget_allocations")
-        .select("parent_category_id, percentage, cadence")
+        .select("parent_category_id, percentage, cadence, end_behavior")
         .eq("user_id", user.id);
       if (error) throw error;
 
@@ -84,6 +89,9 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
           if (row.cadence === "monthly" || row.cadence === "per_period") {
             merged.cadence[cat] = row.cadence;
           }
+          if (row.end_behavior === "reset" || row.end_behavior === "rollover") {
+            merged.endBehavior[cat] = row.end_behavior;
+          }
         }
       }
       return merged;
@@ -92,7 +100,8 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
     staleTime: 60 * 1000,
   });
 
-  const { savings, allocations, cadence } = query.data ?? defaults();
+  const { savings, allocations, cadence, endBehavior } =
+    query.data ?? defaults();
   const spendingTotal = Object.values(allocations).reduce((a, b) => a + b, 0);
   const totalPct = spendingTotal + savings;
 
@@ -100,6 +109,7 @@ export function useBudgetAllocations(): UseBudgetAllocationsResult {
     savings,
     allocations,
     cadence,
+    endBehavior,
     totalPct,
     isValid: totalPct <= 100,
     isLoading: query.isLoading,
@@ -111,25 +121,37 @@ interface SetAllocationInput {
   percentage: number;
   /** Optional; only meaningful for parent categories, ignored for savings. */
   cadence?: Cadence;
+  /** Optional; only meaningful for parent categories, ignored for savings. */
+  endBehavior?: EndBehavior;
 }
 
 export function useBudgetAllocationMutations() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const buildRow = ({ parentId, percentage, cadence }: SetAllocationInput) => {
+  const buildRow = ({
+    parentId,
+    percentage,
+    cadence,
+    endBehavior,
+  }: SetAllocationInput) => {
     const row: {
       user_id: string;
       parent_category_id: string;
       percentage: number;
       cadence?: Cadence;
+      end_behavior?: EndBehavior;
     } = {
       user_id: user!.id,
       parent_category_id: parentId,
       percentage: Math.max(0, Math.min(100, Number(percentage))),
     };
-    // Cadence is only stored for parent categories; savings stays default.
-    if (parentId !== SAVINGS_ID && cadence) row.cadence = cadence;
+    // Cadence + end_behavior are only stored for parent categories;
+    // savings always uses defaults (reset, per_period).
+    if (parentId !== SAVINGS_ID) {
+      if (cadence) row.cadence = cadence;
+      if (endBehavior) row.end_behavior = endBehavior;
+    }
     return row;
   };
 
