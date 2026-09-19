@@ -347,6 +347,23 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                             Monthly
                           </span>
                         )}
+                        {row.carryIn !== 0 && (
+                          <span
+                            className={`text-[10px] tabular-nums whitespace-nowrap ${
+                              row.carryIn > 0
+                                ? "text-primary"
+                                : "text-destructive"
+                            }`}
+                            title={
+                              row.carryIn > 0
+                                ? `${formatCurrency(row.carryIn)} rolled forward from last cycle`
+                                : `${formatCurrency(-row.carryIn)} overspend carried from last cycle`
+                            }
+                          >
+                            {row.carryIn > 0 ? "+" : "−"}
+                            {formatCurrency(Math.abs(row.carryIn))} rolled
+                          </span>
+                        )}
                       </div>
                       {hasBudget ? (
                         <div className="flex items-center gap-2 mt-1">

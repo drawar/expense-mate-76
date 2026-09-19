@@ -54,6 +54,8 @@ export interface BudgetPeriodRow {
   period_end: string; // "YYYY-MM-DD"
   salary_amount: number;
   allocations: Record<string, number>;
+  /** Rollover balance inherited from prior settled period. Empty for legacy rows. */
+  carry_in: Record<string, number>;
 }
 
 export interface AllocationLine {
@@ -62,6 +64,21 @@ export interface AllocationLine {
   icon: string;
   color: string;
   cadence: Cadence;
+  /**
+   * Base recurring budget for this cadence window — what the % → dollar
+   * calculation produced, before any rollover balance.
+   */
+  base: number;
+  /**
+   * Rollover balance inherited from prior settled cycle for this cadence
+   * window. Positive = surplus rolled forward; negative = prior overspend
+   * pulled into this cycle. 0 for reset categories AND for periods with
+   * no prior settled data.
+   */
+  carryIn: number;
+  /** base + carryIn. This is what the progress bar denominator uses. */
+  available: number;
+  /** @deprecated Use `base` (recurring budget) or `available` (base+carryIn). Kept for callers not yet migrated. */
   budgeted: number;
   spent: number;
   remaining: number;
@@ -111,7 +128,7 @@ export function useActiveBudgetPeriod(
       const { data, error } = await supabase
         .from("budget_periods")
         .select(
-          "id, income_id, currency, period_start, period_end, salary_amount, allocations"
+          "id, income_id, currency, period_start, period_end, salary_amount, allocations, carry_in"
         )
         .eq("user_id", user.id)
         .eq("currency", displayCurrency)
@@ -129,6 +146,7 @@ export function useActiveBudgetPeriod(
         period_end: data.period_end,
         salary_amount: Number(data.salary_amount),
         allocations: (data.allocations as Record<string, number>) ?? {},
+        carry_in: (data.carry_in as Record<string, number>) ?? {},
       };
     },
     enabled: !!user?.id,
@@ -164,13 +182,16 @@ export function useActiveBudgetPeriod(
     ] as const,
     queryFn: async (): Promise<
       Array<
-        Pick<BudgetPeriodRow, "period_start" | "period_end" | "allocations">
+        Pick<
+          BudgetPeriodRow,
+          "period_start" | "period_end" | "allocations" | "carry_in"
+        >
       >
     > => {
       if (!user?.id || !monthStartISO || !monthEndISO) return [];
       const { data, error } = await supabase
         .from("budget_periods")
-        .select("period_start, period_end, allocations")
+        .select("period_start, period_end, allocations, carry_in")
         .eq("user_id", user.id)
         .eq("currency", displayCurrency)
         .lte("period_start", monthEndISO)
@@ -180,6 +201,7 @@ export function useActiveBudgetPeriod(
         period_start: row.period_start,
         period_end: row.period_end,
         allocations: (row.allocations as Record<string, number>) ?? {},
+        carry_in: (row.carry_in as Record<string, number>) ?? {},
       }));
     },
     enabled: !!user?.id && !!monthStartISO,
@@ -205,11 +227,12 @@ export function useActiveBudgetPeriod(
   const allocations: AllocationLine[] = PARENT_CATEGORIES.map((p) => {
     const parentId = p.id as ParentCategoryId;
     const cat = cadence[parentId] ?? DEFAULT_CADENCE[parentId];
-    let budgeted: number;
+    let base: number;
+    let carryIn: number;
     let spent: number;
     let windowLabel: string;
     if (cat === "monthly") {
-      budgeted =
+      base =
         monthStartISO && monthEndISO
           ? calcWindowBudgetForKey(
               monthPeriods,
@@ -218,23 +241,38 @@ export function useActiveBudgetPeriod(
               parentId
             )
           : 0;
+      // Monthly carry-in: sum across every period overlapping the
+      // calendar month. Same shape as the base aggregation so the two
+      // stay consistent when a period straddles the boundary.
+      carryIn = monthPeriods.reduce(
+        (sum, mp) => sum + (Number(mp.carry_in?.[parentId]) || 0),
+        0
+      );
       spent = monthlySpent[parentId] ?? 0;
       windowLabel = "This month";
     } else {
-      budgeted = period?.allocations?.[parentId] ?? 0;
+      base = period?.allocations?.[parentId] ?? 0;
+      carryIn = Number(period?.carry_in?.[parentId] ?? 0) || 0;
       spent = perPeriodSpent[parentId] ?? 0;
       windowLabel = "This period";
     }
-    const remaining = budgeted - spent;
+    const available = base + carryIn;
+    const remaining = available - spent;
+    // Progress bar denominator uses `available` (base + carry) so a
+    // rollover category with a large surplus doesn't show as "150%
+    // spent" against its recurring base.
     const pctUsed =
-      budgeted > 0 ? (spent / budgeted) * 100 : spent > 0 ? Infinity : 0;
+      available > 0 ? (spent / available) * 100 : spent > 0 ? Infinity : 0;
     return {
       parentId,
       name: p.name,
       icon: p.icon,
       color: p.color,
       cadence: cat,
-      budgeted,
+      base,
+      carryIn,
+      available,
+      budgeted: available, // deprecated alias — callers should migrate to `available`
       spent,
       remaining,
       pctUsed,
