@@ -93,6 +93,7 @@ export type Database = {
         Row: {
           cadence: string;
           created_at: string | null;
+          end_behavior: string;
           id: string;
           parent_category_id: string;
           percentage: number;
@@ -102,6 +103,7 @@ export type Database = {
         Insert: {
           cadence?: string;
           created_at?: string | null;
+          end_behavior?: string;
           id?: string;
           parent_category_id: string;
           percentage: number;
@@ -111,6 +113,7 @@ export type Database = {
         Update: {
           cadence?: string;
           created_at?: string | null;
+          end_behavior?: string;
           id?: string;
           parent_category_id?: string;
           percentage?: number;
