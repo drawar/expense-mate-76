@@ -150,6 +150,7 @@ interface SettlementInput {
   cadenceByCategory: Record<ParentCategoryId, Cadence>;
   endBehaviorByCategory: Record<ParentCategoryId, EndBehavior>;
   spentByCategory: Record<string, number>;
+  passThroughCategories?: readonly ParentCategoryId[];
 }
 
 interface SettlementResult {
@@ -196,19 +197,29 @@ function settleBudgetPeriod(input: SettlementInput): SettlementResult {
   const cadence_snapshot: Record<string, Cadence> = {};
   const end_behavior_snapshot: Record<string, EndBehavior> = {};
 
+  const passThrough = new Set(input.passThroughCategories ?? []);
+
   for (const parentId of PARENT_CATEGORY_IDS) {
+    const behavior = input.endBehaviorByCategory[parentId] ?? "reset";
+    const cadence = input.cadenceByCategory[parentId] ?? "per_period";
+    cadence_snapshot[parentId] = cadence;
+    end_behavior_snapshot[parentId] = behavior;
+
+    if (passThrough.has(parentId)) {
+      settled_spent[parentId] = 0;
+      carry_out[parentId] = 0;
+      closed_out[parentId] = 0;
+      overspend[parentId] = 0;
+      continue;
+    }
+
     const base = Number(input.period.allocations[parentId] ?? 0) || 0;
     const carryIn = Number(input.carryInByCategory[parentId] ?? 0) || 0;
     const spent = Number(input.spentByCategory[parentId] ?? 0) || 0;
     const available = round2(base + carryIn);
     const remaining = round2(available - spent);
 
-    const behavior = input.endBehaviorByCategory[parentId] ?? "reset";
-    const cadence = input.cadenceByCategory[parentId] ?? "per_period";
-
     settled_spent[parentId] = round2(spent);
-    cadence_snapshot[parentId] = cadence;
-    end_behavior_snapshot[parentId] = behavior;
 
     if (behavior === "rollover") {
       carry_out[parentId] = remaining;
@@ -234,6 +245,7 @@ function settleBudgetPeriod(input: SettlementInput): SettlementResult {
       spent: input.spentByCategory,
       cadence: input.cadenceByCategory,
       end_behavior: input.endBehaviorByCategory,
+      pass_through: [...(input.passThroughCategories ?? [])].sort(),
     })
   );
 
@@ -460,15 +472,20 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
     );
 
     const spentByCategory: Record<string, number> = {};
+    const passThroughCategories: ParentCategoryId[] = [];
     for (const parentId of PARENT_CATEGORY_IDS) {
       const cad =
         settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
-      spentByCategory[parentId] =
-        cad === "monthly"
-          ? ownsMonth
-            ? (monthlySpent[parentId] ?? 0)
-            : 0
-          : (perPeriodSpent[parentId] ?? 0);
+      if (cad === "monthly") {
+        if (ownsMonth) {
+          spentByCategory[parentId] = monthlySpent[parentId] ?? 0;
+        } else {
+          spentByCategory[parentId] = 0;
+          passThroughCategories.push(parentId);
+        }
+      } else {
+        spentByCategory[parentId] = perPeriodSpent[parentId] ?? 0;
+      }
     }
 
     const result = settleBudgetPeriod({
@@ -477,6 +494,7 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
       cadenceByCategory: settings.cadenceByCategory,
       endBehaviorByCategory: settings.endBehaviorByCategory,
       spentByCategory,
+      passThroughCategories,
     });
 
     const { data: updated, error: uErr } = await supabase

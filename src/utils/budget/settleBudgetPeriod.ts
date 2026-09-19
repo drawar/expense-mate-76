@@ -51,11 +51,21 @@ export interface SettlementInput {
   endBehaviorByCategory: Record<ParentCategoryId, EndBehavior>;
   /**
    * {parent | "savings": dollars} — spend the settlement is computed
-   * against. Caller is responsible for choosing the right window per
-   * parent's cadence (per-period vs calendar-month) AND for zeroing
-   * monthly parents on non-month-closing periods.
+   * against. Caller chooses the window per parent's cadence
+   * (per-period vs calendar-month).
    */
   spentByCategory: Record<string, number>;
+  /**
+   * Optional: parents this period should NOT settle. All four outputs
+   * (settled_spent, closed_out, carry_out, overspend) are forced to 0
+   * for these — the period is a "pass-through" for that cat.
+   *
+   * Used for monthly-cadence parents on a mid-month pay-period: the
+   * period doesn't own the month-close, so it should say nothing about
+   * that cat rather than turn the entire base allocation into leftover.
+   * The month-owning period picks up the real settlement.
+   */
+  passThroughCategories?: readonly ParentCategoryId[];
 }
 
 export interface SettlementResult {
@@ -121,6 +131,7 @@ export function computeSettlementFingerprint(input: SettlementInput): string {
       spent: input.spentByCategory,
       cadence: input.cadenceByCategory,
       end_behavior: input.endBehaviorByCategory,
+      pass_through: [...(input.passThroughCategories ?? [])].sort(),
     })
   );
 }
@@ -133,20 +144,34 @@ export function settleBudgetPeriod(input: SettlementInput): SettlementResult {
   const cadence_snapshot: Record<string, Cadence> = {};
   const end_behavior_snapshot: Record<string, EndBehavior> = {};
 
+  const passThrough = new Set(input.passThroughCategories ?? []);
+
   // Spending parent categories
   for (const parentId of PARENT_CATEGORY_IDS) {
+    const behavior = input.endBehaviorByCategory[parentId] ?? "reset";
+    const cadence = input.cadenceByCategory[parentId] ?? "per_period";
+
+    // Snapshot the live settings even for pass-through cats so a later
+    // reader can tell WHY the cat was zero here (cadence=monthly on a
+    // non-owner period).
+    cadence_snapshot[parentId] = cadence;
+    end_behavior_snapshot[parentId] = behavior;
+
+    if (passThrough.has(parentId)) {
+      settled_spent[parentId] = 0;
+      carry_out[parentId] = 0;
+      closed_out[parentId] = 0;
+      overspend[parentId] = 0;
+      continue;
+    }
+
     const base = Number(input.period.allocations[parentId] ?? 0) || 0;
     const carryIn = Number(input.carryInByCategory[parentId] ?? 0) || 0;
     const spent = Number(input.spentByCategory[parentId] ?? 0) || 0;
     const available = round2(base + carryIn);
     const remaining = round2(available - spent);
 
-    const behavior = input.endBehaviorByCategory[parentId] ?? "reset";
-    const cadence = input.cadenceByCategory[parentId] ?? "per_period";
-
     settled_spent[parentId] = round2(spent);
-    cadence_snapshot[parentId] = cadence;
-    end_behavior_snapshot[parentId] = behavior;
 
     if (behavior === "rollover") {
       // Rollover: the negative remaining carries as negative carry_out.

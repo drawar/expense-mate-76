@@ -269,11 +269,20 @@ async function settleOnePeriod(args: {
   );
 
   const spentByCategory: Record<string, number> = {};
+  const passThroughCategories: ParentCategoryId[] = [];
   for (const parentId of PARENT_CATEGORY_IDS) {
     const cad =
       settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
     if (cad === "monthly") {
-      spentByCategory[parentId] = ownsMonth ? (monthlySpent[parentId] ?? 0) : 0;
+      if (ownsMonth) {
+        spentByCategory[parentId] = monthlySpent[parentId] ?? 0;
+      } else {
+        // Mid-month period for a monthly-cadence parent: pass through
+        // so the base allocation doesn't get treated as "closed out
+        // unused budget" here. The month-owning period settles it.
+        spentByCategory[parentId] = 0;
+        passThroughCategories.push(parentId);
+      }
     } else {
       spentByCategory[parentId] = perPeriodSpent[parentId] ?? 0;
     }
@@ -285,6 +294,7 @@ async function settleOnePeriod(args: {
     cadenceByCategory: settings.cadenceByCategory,
     endBehaviorByCategory: settings.endBehaviorByCategory,
     spentByCategory,
+    passThroughCategories,
   });
 
   // Guarded UPDATE — writes only when the fingerprint differs.
