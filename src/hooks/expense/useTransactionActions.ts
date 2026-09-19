@@ -2,7 +2,39 @@ import { useState } from "react";
 import { Transaction } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { storageService } from "@/core/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatISO, parseISO } from "date-fns";
+import { scheduleResettleFromDate } from "@/utils/budget/resettleFromDate";
+
+/**
+ * Extract a stable ISO "YYYY-MM-DD" from a Transaction.date, which can
+ * be a bare date, a full ISO timestamp, or (rarely) a Date object.
+ */
+function txDateISO(tx: Partial<Transaction> | undefined): string | null {
+  if (!tx?.date) return null;
+  if (typeof tx.date === "string") return tx.date.slice(0, 10);
+  try {
+    return formatISO(tx.date as unknown as Date, { representation: "date" });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fire-and-forget resettle walker for the given tx date. Falls back to
+ * today when no date is known. Never throws.
+ */
+function scheduleWalkForTx(
+  userId: string | undefined,
+  tx: Partial<Transaction> | undefined
+): void {
+  if (!userId) return;
+  const dateISO =
+    txDateISO(tx) ?? formatISO(new Date(), { representation: "date" });
+  scheduleResettleFromDate({ supabase, userId, fromDateISO: dateISO });
+}
 
 export function useTransactionActions(options?: {
   onAddSuccess?: () => void;
@@ -11,6 +43,7 @@ export function useTransactionActions(options?: {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { onAddSuccess, redirectPath = "/transactions" } = options || {};
 
   const handleSave = async (
@@ -22,6 +55,10 @@ export function useTransactionActions(options?: {
       const updated = await storageService.updateTransaction(id, data);
       // Invalidate transactions query to refresh UI
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      // Debounced re-settle chain in case this edit touched a closed
+      // budget period. Fire-and-forget; the walker never throws and
+      // no-ops when fingerprints stay stable.
+      scheduleWalkForTx(user?.id, updated ?? data);
       toast({
         title: "Success",
         description: "Transaction updated successfully",
@@ -47,6 +84,9 @@ export function useTransactionActions(options?: {
       if (success) {
         // Invalidate transactions query to refresh UI
         queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        // Debounced re-settle in case the deleted tx was in a closed
+        // period's window.
+        scheduleWalkForTx(user?.id, transaction);
         toast({
           title: "Success",
           description: "Transaction deleted successfully",
@@ -80,6 +120,9 @@ export function useTransactionActions(options?: {
       const added = await storageService.addTransaction(transaction);
       // Invalidate transactions query to refresh UI (including cap progress)
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      // Debounced re-settle in case this tx landed in a closed period's
+      // window (e.g. a receipt entered late).
+      scheduleWalkForTx(user?.id, added ?? transaction);
       toast({
         title: "Success",
         description: "Transaction added successfully",

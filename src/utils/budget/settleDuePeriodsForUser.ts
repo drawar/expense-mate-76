@@ -223,6 +223,97 @@ export interface SettleDueResult {
   skipped: number;
 }
 
+/**
+ * Settle-one: run the full pipeline for a single period (load prior
+ * carry, aggregate spend per cadence window, call the pure settlement
+ * function, guarded UPDATE). Extracted so `resettleFromDate` can call
+ * it for closed rows without duplicating the aggregation logic.
+ *
+ * Returns:
+ *   true  — the DB row was updated with new fingerprint
+ *   false — no-op (fingerprint unchanged) or update rejected
+ */
+async function settleOnePeriod(args: {
+  supabase: SupabaseClient;
+  userId: string;
+  period: DuePeriodRow;
+  settings: UserAllocationSettings;
+  transactions: Transaction[];
+}): Promise<boolean> {
+  const { supabase, userId, period, settings, transactions } = args;
+
+  const carryIn = await loadPreviousSettledCarry({
+    supabase,
+    userId,
+    currency: period.currency,
+    beforeDate: period.period_start,
+  });
+  const ownsMonth = await ownsMonthClose(supabase, userId, period);
+
+  const perPeriodSpent = aggregateSpent(
+    { startISO: period.period_start, endISO: period.period_end },
+    transactions,
+    period.currency
+  );
+  const monthlySpent = aggregateSpent(
+    {
+      startISO: formatISO(startOfMonth(parseISO(period.period_end)), {
+        representation: "date",
+      }),
+      endISO: formatISO(endOfMonth(parseISO(period.period_end)), {
+        representation: "date",
+      }),
+    },
+    transactions,
+    period.currency
+  );
+
+  const spentByCategory: Record<string, number> = {};
+  for (const parentId of PARENT_CATEGORY_IDS) {
+    const cad =
+      settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
+    if (cad === "monthly") {
+      spentByCategory[parentId] = ownsMonth ? (monthlySpent[parentId] ?? 0) : 0;
+    } else {
+      spentByCategory[parentId] = perPeriodSpent[parentId] ?? 0;
+    }
+  }
+
+  const result = settleBudgetPeriod({
+    period: { id: period.id, allocations: period.allocations },
+    carryInByCategory: carryIn,
+    cadenceByCategory: settings.cadenceByCategory,
+    endBehaviorByCategory: settings.endBehaviorByCategory,
+    spentByCategory,
+  });
+
+  // Guarded UPDATE — writes only when the fingerprint differs.
+  // COALESCE preserves the original closed_at across recomputes so
+  // "when was this first settled" stays true even after edits.
+  const { data: updated, error: uErr } = await supabase
+    .from("budget_periods")
+    .update({
+      closed_at: new Date().toISOString(),
+      settled_spent: result.settled_spent,
+      closed_out: result.closed_out,
+      carry_out: result.carry_out,
+      overspend: result.overspend,
+      cadence_snapshot: result.cadence_snapshot,
+      end_behavior_snapshot: result.end_behavior_snapshot,
+      settlement_fingerprint: result.fingerprint,
+    })
+    .eq("id", period.id)
+    .or(
+      `settlement_fingerprint.is.null,settlement_fingerprint.neq.${result.fingerprint}`
+    )
+    .select("id");
+  if (uErr) {
+    console.error("[settleOnePeriod] update failed:", uErr);
+    return false;
+  }
+  return !!updated && updated.length > 0;
+}
+
 export async function settleDuePeriodsForUser({
   supabase,
   userId,
@@ -248,8 +339,6 @@ export async function settleDuePeriodsForUser({
 
     const settings = await loadUserAllocationSettings(supabase, userId);
 
-    // Widest window: earliest period_start across all due rows, going
-    // back to that month's start (so monthly cats have full context).
     const earliestStart = dueRows
       .map((r) => parseISO(r.period_start))
       .reduce((a, b) => (a < b ? a : b));
@@ -275,98 +364,101 @@ export async function settleDuePeriodsForUser({
         salary_amount: Number(raw.salary_amount),
         allocations: (raw.allocations as Record<string, number>) ?? {},
       };
-
-      const carryIn = await loadPreviousSettledCarry({
+      const changed = await settleOnePeriod({
         supabase,
         userId,
-        currency: period.currency,
-        beforeDate: period.period_start,
-      });
-
-      const ownsMonth = await ownsMonthClose(supabase, userId, period);
-
-      // Per-period spend (all parents against pay-period window)
-      const perPeriodSpent = aggregateSpent(
-        { startISO: period.period_start, endISO: period.period_end },
+        period,
+        settings,
         transactions,
-        period.currency
-      );
-      // Monthly spend (only used for monthly-cadence parents)
-      const monthlySpent = aggregateSpent(
-        {
-          startISO: formatISO(startOfMonth(parseISO(period.period_end)), {
-            representation: "date",
-          }),
-          endISO: formatISO(endOfMonth(parseISO(period.period_end)), {
-            representation: "date",
-          }),
-        },
-        transactions,
-        period.currency
-      );
-
-      const spentByCategory: Record<string, number> = {};
-      for (const parentId of PARENT_CATEGORY_IDS) {
-        const cad =
-          settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
-        if (cad === "monthly") {
-          spentByCategory[parentId] = ownsMonth
-            ? (monthlySpent[parentId] ?? 0)
-            : 0;
-        } else {
-          spentByCategory[parentId] = perPeriodSpent[parentId] ?? 0;
-        }
-      }
-
-      const result = settleBudgetPeriod({
-        period: { id: period.id, allocations: period.allocations },
-        carryInByCategory: carryIn,
-        cadenceByCategory: settings.cadenceByCategory,
-        endBehaviorByCategory: settings.endBehaviorByCategory,
-        spentByCategory,
       });
-
-      // Guarded UPDATE — writes only when the fingerprint differs.
-      // COALESCE preserves the original closed_at across recomputes so
-      // "when was this first settled" stays true even after edits.
-      const { data: updated, error: uErr } = await supabase
-        .from("budget_periods")
-        .update({
-          closed_at: new Date().toISOString(),
-          settled_spent: result.settled_spent,
-          closed_out: result.closed_out,
-          carry_out: result.carry_out,
-          overspend: result.overspend,
-          cadence_snapshot: result.cadence_snapshot,
-          end_behavior_snapshot: result.end_behavior_snapshot,
-          settlement_fingerprint: result.fingerprint,
-        })
-        .eq("id", period.id)
-        // Only write when nothing has changed yet OR fingerprint differs.
-        // Postgres does not support "IS DISTINCT FROM" via PostgREST's
-        // `.neq` (that would treat NULL as "not equal to anything"). We
-        // approximate by allowing either closed_at IS NULL OR fingerprint
-        // is different from what we're about to write.
-        .or(
-          `settlement_fingerprint.is.null,settlement_fingerprint.neq.${result.fingerprint}`
-        )
-        .select("id");
-      if (uErr) {
-        console.error("[settleDuePeriodsForUser] update failed:", uErr);
-        skipped++;
-        continue;
-      }
-      if (!updated || updated.length === 0) {
-        // Another writer already produced identical output — no-op.
-        skipped++;
-      } else {
-        settled++;
-      }
+      if (changed) settled++;
+      else skipped++;
     }
 
     return { settled, skipped };
   } catch (err) {
     console.error("[settleDuePeriodsForUser] failed:", err);
     return { settled: 0, skipped: 0 };
+  }
+}
+
+/**
+ * Re-settle already-closed periods for a user (forward-walk). Fingerprint
+ * short-circuit means periods whose inputs haven't changed remain no-ops
+ * at the DB layer. Used by resettleFromDate when a late transaction /
+ * income edit could have shifted a closed period's carry_out.
+ *
+ * Stops walking forward the first time a period's fingerprint stays
+ * identical — downstream carry chain is then guaranteed stable too.
+ */
+export async function resettleClosedPeriodsForUser({
+  supabase,
+  userId,
+  fromDateISO,
+}: {
+  supabase: SupabaseClient;
+  userId: string;
+  /** ISO "YYYY-MM-DD" — walk closed periods whose period_end >= this. */
+  fromDateISO: string;
+}): Promise<{ resettled: number; scanned: number }> {
+  try {
+    const { data: closedRows, error } = await supabase
+      .from("budget_periods")
+      .select(
+        "id, income_id, currency, period_start, period_end, salary_amount, allocations"
+      )
+      .eq("user_id", userId)
+      .gte("period_end", fromDateISO)
+      .not("closed_at", "is", null)
+      .order("period_end", { ascending: true });
+    if (error) throw error;
+    if (!closedRows || closedRows.length === 0) {
+      return { resettled: 0, scanned: 0 };
+    }
+
+    const settings = await loadUserAllocationSettings(supabase, userId);
+    const earliestStart = closedRows
+      .map((r) => parseISO(r.period_start))
+      .reduce((a, b) => (a < b ? a : b));
+    const fromISO = formatISO(startOfMonth(earliestStart), {
+      representation: "date",
+    });
+    const transactions = await loadTransactionsForUser(
+      supabase,
+      userId,
+      fromISO
+    );
+
+    let resettled = 0;
+    let scanned = 0;
+    for (const raw of closedRows) {
+      scanned++;
+      const period: DuePeriodRow = {
+        id: raw.id,
+        income_id: raw.income_id,
+        currency: raw.currency as Currency,
+        period_start: raw.period_start,
+        period_end: raw.period_end,
+        salary_amount: Number(raw.salary_amount),
+        allocations: (raw.allocations as Record<string, number>) ?? {},
+      };
+      const changed = await settleOnePeriod({
+        supabase,
+        userId,
+        period,
+        settings,
+        transactions,
+      });
+      if (changed) {
+        resettled++;
+      } else {
+        // Fingerprint stable → downstream is stable → we can stop early.
+        break;
+      }
+    }
+    return { resettled, scanned };
+  } catch (err) {
+    console.error("[resettleClosedPeriodsForUser] failed:", err);
+    return { resettled: 0, scanned: 0 };
   }
 }

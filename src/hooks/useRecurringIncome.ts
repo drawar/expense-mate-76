@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { TimeframeTab, getTimeframeDateRange } from "@/utils/dashboard";
 import { matchesSalary } from "@/utils/budget/matchesSalary";
 import { syncBudgetPeriodForIncome } from "@/utils/budget/syncBudgetPeriod";
+import { scheduleResettleFromDate } from "@/utils/budget/resettleFromDate";
 import { UserPreferencesService } from "@/core/preferences/UserPreferencesService";
 
 interface RecurringIncomeSettings {
@@ -312,6 +313,18 @@ export function useRecurringIncome(
         next: income,
         prev,
       });
+      // Historical recompute chain. Fire-and-forget; the walker never
+      // throws. Walks closed periods forward from the income's start
+      // date. If the user shifted an income earlier (rare), the walker
+      // won't catch periods before the new start date; the nightly
+      // cron picks those up on its next pass.
+      if (income.startDate) {
+        scheduleResettleFromDate({
+          supabase,
+          userId: user.id,
+          fromDateISO: income.startDate.slice(0, 10),
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["budget_periods"] });
 
       await loadIncome();
