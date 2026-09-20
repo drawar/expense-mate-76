@@ -107,25 +107,28 @@ const HeroRow: React.FC<{
 }> = ({ title, windowLabel, totals, formatCurrency }) => {
   const status = statusColor(totals.pctUsed);
   return (
-    <div className="px-3 py-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
-          {title}
-        </p>
-        <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-none">
-          {windowLabel}
-        </p>
-      </div>
+    <div className="py-1.5">
+      {/* Title line — sits alone so the eye reads label → value cleanly. */}
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+        {title}
+      </p>
+      {/* Primary "$X left" is its own line so the number can breathe. */}
       <p
-        className={`text-2xl font-medium tracking-tight leading-none mt-1.5 ${
+        className={`text-2xl font-semibold tracking-tight leading-tight mt-1.5 tabular-nums ${
           totals.isOver ? "text-[var(--color-error)]" : ""
         }`}
       >
         {formatCurrency(totals.left)}
         <span className="text-xs text-muted-foreground font-normal ml-1.5">
-          left of {formatCurrency(totals.budget)}
+          left
         </span>
       </p>
+      {/* Secondary context on its own line — of $X · window. */}
+      <p className="text-[11px] text-muted-foreground mt-0.5">
+        of {formatCurrency(totals.budget)} · {windowLabel.toLowerCase()}
+      </p>
+      {/* Progress bar with % inline at the end — one horizontal element,
+          not two competing for the width. */}
       <div className="flex items-center gap-2 mt-2">
         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
@@ -133,8 +136,10 @@ const HeroRow: React.FC<{
             style={{ width: `${Math.min(100, totals.pctUsed)}%` }}
           />
         </div>
-        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-          {totals.pctUsed.toFixed(0)}% used
+        <span
+          className={`text-[11px] tabular-nums whitespace-nowrap ${status.text}`}
+        >
+          {totals.pctUsed.toFixed(0)}%
         </span>
       </div>
       {totals.isOver && (
@@ -212,43 +217,40 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                 last-period settled summary. On mobile the right column
                 stacks below via the responsive grid. */}
             <div className="flex flex-col gap-3 min-w-0">
-              {/* Pay-yourself-first strip */}
+              {/* Pay-yourself-first — compact accent strip. Icon leads
+                  the label; value on its own line with subtle "of $X"
+                  context underneath so the primary number breathes. */}
               {savingsBudgeted > 0 && (
-                <div className="flex items-center gap-2 rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2">
-                  <PiggyBankIcon
-                    className="h-4 w-4 flex-shrink-0"
-                    style={{ color: "var(--color-success)" }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
-                        Save first
-                      </p>
-                      <p className="text-[11px] text-muted-foreground whitespace-nowrap leading-none">
-                        Ends {format(parseISO(period.period_end), "MMM d")}
-                      </p>
-                    </div>
-                    <p className="text-sm mt-0.5 truncate">
-                      <span className="font-medium">
-                        {formatCurrency(savingsBudgeted)}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {" "}
-                        of {formatCurrency(period.salary_amount)}
-                      </span>
+                <div className="rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <PiggyBankIcon
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ color: "var(--color-success)" }}
+                    />
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+                      Save first
                     </p>
                   </div>
+                  <p
+                    className="text-lg font-semibold tabular-nums leading-tight mt-1.5"
+                    style={{ color: "var(--color-success)" }}
+                  >
+                    {formatCurrency(savingsBudgeted)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    of {formatCurrency(period.salary_amount)}
+                  </p>
                 </div>
               )}
 
-              {/* LEFT TO SPEND hero — split by cadence into two coherent
-                  sub-totals: per-period cats (pay-period window) and monthly
-                  cats (calendar month window). */}
-              <div className="rounded-lg border border-border/50 divide-y divide-border/50">
+              {/* LEFT TO SPEND — two vertically-stacked heros. Dropped
+                  the shared border+divider container; each hero is its
+                  own breathing block separated by generous whitespace. */}
+              <div className="flex flex-col gap-3">
                 {perPeriodRows.length > 0 && (
                   <HeroRow
                     title="This period"
-                    windowLabel={`Ends ${format(parseISO(period.period_end), "MMM d")}`}
+                    windowLabel={`ends ${format(parseISO(period.period_end), "MMM d")}`}
                     totals={perPeriodTotals}
                     formatCurrency={formatCurrency}
                   />
@@ -256,16 +258,17 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                 {monthlyRows.length > 0 && (
                   <HeroRow
                     title="This month"
-                    windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")} – ${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
+                    windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")}–${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
                     totals={monthlyTotals}
                     formatCurrency={formatCurrency}
                   />
                 )}
               </div>
 
-              {/* Last period settled — inline body; renders null if
-                  nothing to show or if closed_at is > 7 days old. */}
-              <PeriodSettlementBody className="rounded-lg border border-border/50 px-3 py-2.5" />
+              {/* Last period settled — inline body. Border dropped;
+                  a top-hairline separator visually groups it as the
+                  bottom of the left column. */}
+              <PeriodSettlementBody className="border-t border-border/50 pt-3" />
             </div>
 
             {/* RIGHT COLUMN — Categories header + sort + bar rows */}

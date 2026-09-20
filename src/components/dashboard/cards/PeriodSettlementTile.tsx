@@ -99,14 +99,14 @@ export const PeriodSettlementBody: React.FC<{
 
   return (
     <div className={className}>
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
-          Last period settled · {periodLabel}
-        </p>
-        <p className="text-[10px] text-muted-foreground leading-none">
-          Settled {settledDateLabel}
-        </p>
-      </div>
+      {/* Two-line header — never wraps in a narrow column. Label on
+          top, period range + settled date on line 2 in a small tone. */}
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+        Last period settled
+      </p>
+      <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
+        {periodLabel} · settled {settledDateLabel}
+      </p>
 
       <div className="flex flex-col gap-2">
         {closedOutTotal > 0 && (
