@@ -23,7 +23,6 @@ import {
   TopLoyaltyProgramsCard,
   BudgetSpendingCard,
 } from "@/components/dashboard/cards";
-import PeriodSettlementTile from "@/components/dashboard/cards/PeriodSettlementTile";
 
 interface DashboardDesktopLayoutProps {
   className?: string;
@@ -55,14 +54,12 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
 
       {/* ============================================
           BUDGET ZONE - Pay-period budget per category vs spent
+          (settlement summary is inline in the left column now)
           ============================================ */}
       <BudgetSpendingCard
         transactions={filteredTransactions}
         className={`${cardClass} shadow-sm`}
       />
-
-      {/* End-of-cycle settlement summary (fades out after 7 days) */}
-      <PeriodSettlementTile />
 
       {/* ============================================
           CATEGORY ZONE - Top Category + Comparison Chart

@@ -1,12 +1,17 @@
 /**
- * Dashboard tile summarising the immediately-past settled budget
- * period. Renders three groups when non-zero:
+ * Dashboard summary for the immediately-past settled budget period.
+ * Two shells over the same body:
+ *   - PeriodSettlementBody: no card wrapper — for embedding inside
+ *     another card (see BudgetSpendingCard's left column).
+ *   - PeriodSettlementTile (default export): standalone Card, kept for
+ *     tests/legacy call sites but no longer mounted on the dashboard.
+ *
+ * Rows shown only when non-zero:
  *   - Rolled forward:  sum of positive carry_out (top 3 parents named)
  *   - Extra available to save:  sum of closed_out (the marquee number)
  *   - Over budget:  sum of positive overspend (reset cats' deficits)
  *
- * Fades out after 7 days via useLastSettledPeriod's built-in window so
- * it doesn't linger on the dashboard forever.
+ * Fades out after 7 days via useLastSettledPeriod's built-in window.
  *
  * Copy discipline (per plan §8):
  *   - "Rolled forward"  → carry_out on rollover cats
@@ -57,7 +62,14 @@ function topContributions(
     .slice(0, n);
 }
 
-export const PeriodSettlementTile: React.FC = () => {
+/**
+ * Card-free body — for embedding inside another card. Returns null
+ * during loading or when there's nothing worth surfacing.
+ */
+export const PeriodSettlementBody: React.FC<{
+  /** Extra classes on the outermost wrapper. */
+  className?: string;
+}> = ({ className = "" }) => {
   const { displayCurrency } = useDashboardContext();
   const { formatCurrency } = useCurrencyFormatter(displayCurrency);
   const { data: settled, isLoading } = useLastSettledPeriod(displayCurrency);
@@ -78,7 +90,6 @@ export const PeriodSettlementTile: React.FC = () => {
 
   const closedOutTotal = sumSpendingSlots(settled.closed_out);
 
-  // Nothing worth surfacing → hide.
   if (rolledTotal === 0 && closedOutTotal === 0 && overspendTotal === 0) {
     return null;
   }
@@ -87,86 +98,96 @@ export const PeriodSettlementTile: React.FC = () => {
   const periodLabel = `${format(parseISO(settled.period_start), "MMM d")} – ${format(parseISO(settled.period_end), "MMM d")}`;
 
   return (
-    <Card className="bg-card border-border/50">
-      <CardContent className="pt-4 pb-4">
-        <div className="flex items-baseline justify-between mb-3">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Last period settled · {periodLabel}
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            Settled {settledDateLabel}
-          </p>
-        </div>
+    <div className={className}>
+      <div className="flex items-baseline justify-between mb-2">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
+          Last period settled · {periodLabel}
+        </p>
+        <p className="text-[10px] text-muted-foreground leading-none">
+          Settled {settledDateLabel}
+        </p>
+      </div>
 
-        <div className="flex flex-col gap-3">
-          {closedOutTotal > 0 && (
-            <div className="flex items-start gap-2.5">
-              <PiggyBankIcon
-                className="h-4 w-4 mt-0.5 shrink-0"
-                style={{ color: "var(--color-success)" }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-sm font-medium">Extra available to save</p>
-                  <span
-                    className="text-sm font-bold tabular-nums"
-                    style={{ color: "var(--color-success)" }}
-                  >
-                    +{formatCurrency(closedOutTotal)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  From reset-category leftovers. Move it to Savings when you
-                  transfer.
-                </p>
+      <div className="flex flex-col gap-2">
+        {closedOutTotal > 0 && (
+          <div className="flex items-start gap-2">
+            <PiggyBankIcon
+              className="h-4 w-4 mt-0.5 shrink-0"
+              style={{ color: "var(--color-success)" }}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <p className="text-sm font-medium">Extra available to save</p>
+                <span
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: "var(--color-success)" }}
+                >
+                  +{formatCurrency(closedOutTotal)}
+                </span>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                From reset-category leftovers.
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          {rolledTotal > 0 && (
-            <div className="flex items-start gap-2.5">
-              <TrendingUpIcon className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5 flex-wrap">
-                  <p className="text-sm font-medium">Rolled forward</p>
-                  <span className="text-sm font-bold tabular-nums text-primary">
-                    +{formatCurrency(rolledTotal)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {rolledContribs
-                    .map(
-                      (c) =>
-                        `${PARENT_NAME_BY_ID[c.parentId] ?? c.parentId} +${formatCurrency(c.amount)}`
-                    )
-                    .join(" · ")}
-                </p>
+        {rolledTotal > 0 && (
+          <div className="flex items-start gap-2">
+            <TrendingUpIcon className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <p className="text-sm font-medium">Rolled forward</p>
+                <span className="text-sm font-bold tabular-nums text-primary">
+                  +{formatCurrency(rolledTotal)}
+                </span>
               </div>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {rolledContribs
+                  .map(
+                    (c) =>
+                      `${PARENT_NAME_BY_ID[c.parentId] ?? c.parentId} +${formatCurrency(c.amount)}`
+                  )
+                  .join(" · ")}
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          {overspendTotal > 0 && (
-            <div className="flex items-start gap-2.5">
-              <AlertTriangleIcon className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-sm font-medium">Over budget</p>
-                  <span className="text-sm font-bold tabular-nums text-destructive">
-                    −{formatCurrency(overspendTotal)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {rolloverDeficit < 0
-                    ? "Rollover deficits carry into this period."
-                    : "Reset-category overspend closed with the cycle."}
-                </p>
+        {overspendTotal > 0 && (
+          <div className="flex items-start gap-2">
+            <AlertTriangleIcon className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <p className="text-sm font-medium">Over budget</p>
+                <span className="text-sm font-bold tabular-nums text-destructive">
+                  −{formatCurrency(overspendTotal)}
+                </span>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                {rolloverDeficit < 0
+                  ? "Rollover deficits carry into this period."
+                  : "Reset-category overspend closed with the cycle."}
+              </p>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
+
+/**
+ * Standalone Card-wrapped variant. Kept exported for any legacy call
+ * site, but no longer mounted on the dashboard — the body is embedded
+ * inside BudgetSpendingCard's left column.
+ */
+export const PeriodSettlementTile: React.FC = () => (
+  <Card className="bg-card border-border/50">
+    <CardContent className="pt-4 pb-4">
+      <PeriodSettlementBody />
+    </CardContent>
+  </Card>
+);
 
 export default React.memo(PeriodSettlementTile);
