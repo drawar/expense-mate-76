@@ -47,7 +47,7 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       {/* ============================================
           HERO ZONE - Income/Savings Stack + Spending Overview
           ============================================ */}
-      <div className="grid grid-cols-[25%_1fr] gap-4">
+      <div className="grid grid-cols-[33%_1fr] gap-4">
         <IncomeSavingsStack />
         <SpendingOverviewCard className={`${cardClass} shadow-sm h-full`} />
       </div>
@@ -64,7 +64,7 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       {/* ============================================
           CATEGORY ZONE - Top Category + Comparison Chart
           ============================================ */}
-      <div className="grid grid-cols-[25%_1fr] gap-4">
+      <div className="grid grid-cols-[33%_1fr] gap-4">
         <CategoryInsightCards />
         <CategoryPeriodComparisonCard className={`${cardClassHover} h-full`} />
       </div>
@@ -72,7 +72,7 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       {/* ============================================
           MERCHANT ZONE - Most Frequent Merchant + Recent Transactions + Top Merchants
           ============================================ */}
-      <div className="grid grid-cols-[25%_1fr_1fr] gap-4 items-start">
+      <div className="grid grid-cols-[33%_1fr_1fr] gap-4 items-start">
         <MostFrequentMerchantCard />
         <RecentTransactionsCard
           transactions={filteredTransactions}
@@ -93,7 +93,7 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
       {/* ============================================
           CARD ZONE - Most Favorite Card + Spending by Card + Rewards by Program
           ============================================ */}
-      <div className="grid grid-cols-[25%_1fr_1fr] gap-4 items-start">
+      <div className="grid grid-cols-[33%_1fr_1fr] gap-4 items-start">
         <MostFavoriteCardCard />
         <TopCardsCard
           transactions={filteredTransactions}
