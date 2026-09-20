@@ -207,7 +207,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+          <div className="grid gap-4 md:grid-cols-[25%_1fr]">
             {/* LEFT COLUMN — Save first, per-period hero, monthly hero,
                 last-period settled summary. On mobile the right column
                 stacks below via the responsive grid. */}
