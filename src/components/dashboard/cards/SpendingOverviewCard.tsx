@@ -40,10 +40,17 @@ import {
 
 interface SpendingOverviewCardProps {
   className?: string;
+  /**
+   * When true, render the chart + header WITHOUT the outer Card
+   * wrapper. Used by BudgetOverviewCard, which provides its own Card
+   * so this content nests directly into a two-row layout.
+   */
+  bare?: boolean;
 }
 
 const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
   className = "",
+  bare = false,
 }) => {
   const {
     transactions,
@@ -469,315 +476,322 @@ const SpendingOverviewCard: React.FC<SpendingOverviewCardProps> = ({
     );
   };
 
-  return (
-    <Card className={`${className} h-full`}>
-      <CardContent className="pt-6 h-full flex flex-col">
-        {/* Header with total spent */}
-        <div className="flex items-start justify-between mb-1">
-          <div>
-            <p className="text-sm text-muted-foreground">You've spent</p>
-            <p className="text-4xl font-semibold tracking-tight mt-1">
-              <NumberFlow
-                value={netExpenses}
-                format={{
-                  style: "currency",
-                  currency: displayCurrency,
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }}
-              />
-            </p>
-            {todaySpending > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                of which{" "}
-                <span className="font-medium text-foreground">
-                  {formatCurrency(todaySpending)}
-                </span>{" "}
-                today
-              </p>
-            )}
-          </div>
-          <div className="text-right max-w-[50%]">
-            <Link
-              to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
-              className="group flex items-center gap-1 text-sm text-primary justify-end"
-            >
-              <span className="relative">
-                View transactions
-                <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
-              </span>
-              <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
-
-            {/* Top spending days callout - right-aligned, max 50% width */}
-            {topSpendingDays.length > 0 && (
-              <div className="mt-3 flex gap-1.5">
-                {topSpendingDays.slice(0, 3).map((spike, index) => {
-                  if (!spike.transactions.length) return null;
-
-                  // Aggregate transactions by merchant + currency
-                  const merchantTotals = new Map<
-                    string,
-                    {
-                      merchantName: string;
-                      currency: Currency;
-                      totalOriginal: number;
-                      totalConverted: number;
-                    }
-                  >();
-
-                  spike.transactions.forEach((tx) => {
-                    const key = `${tx.merchant.id}-${tx.currency}`;
-                    const netOriginal =
-                      tx.amount - (tx.reimbursementAmount ?? 0);
-                    const netConverted = CurrencyService.convert(
-                      netOriginal,
-                      tx.currency,
-                      displayCurrency
-                    );
-
-                    const existing = merchantTotals.get(key);
-                    if (existing) {
-                      existing.totalOriginal += netOriginal;
-                      existing.totalConverted += netConverted;
-                    } else {
-                      merchantTotals.set(key, {
-                        merchantName: tx.merchant.name,
-                        currency: tx.currency,
-                        totalOriginal: netOriginal,
-                        totalConverted: netConverted,
-                      });
-                    }
-                  });
-
-                  // Find merchant with largest total (by converted amount)
-                  const topMerchant = Array.from(merchantTotals.values()).sort(
-                    (a, b) => b.totalConverted - a.totalConverted
-                  )[0];
-
-                  if (!topMerchant) return null;
-
-                  const spikeNumber = index + 1;
-
-                  return (
-                    <div
-                      key={spike.date}
-                      className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative cursor-pointer transition-all hover:bg-muted"
-                      onMouseEnter={() => setHoveredSpikeDate(spike.date)}
-                      onMouseLeave={() => setHoveredSpikeDate(null)}
-                    >
-                      {/* Numbered badge - top left corner inside */}
-                      <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                        {spikeNumber}
-                      </span>
-                      {/* Amount - centered */}
-                      <div className="text-xs font-medium text-foreground">
-                        +
-                        {CurrencyService.format(
-                          topMerchant.totalOriginal,
-                          topMerchant.currency
-                        )}
-                      </div>
-                      {/* Merchant name - centered */}
-                      <div
-                        className="text-[11px] text-muted-foreground truncate"
-                        title={topMerchant.merchantName}
-                      >
-                        {topMerchant.merchantName}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Chart */}
-        {chartData.length > 0 && (
-          <div className="flex-1 min-h-[12rem]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={chartData}
-                margin={{ top: 20, right: 10, left: -10, bottom: 5 }}
-              >
-                <XAxis
-                  dataKey="day"
-                  axisLine={{ stroke: "#e5e7eb" }}
-                  tickLine={false}
-                  tick={{ fontSize: 14, fill: "#9ca3af" }}
-                  tickFormatter={(value) => `${value}`}
-                  interval="preserveStartEnd"
-                />
-
-                <YAxis hide domain={[0, "auto"]} />
-
-                {/* Budget target line */}
-                {scaledBudget > 0 && (
-                  <ReferenceLine
-                    key={`budget-${scaledBudget}`}
-                    y={scaledBudget}
-                    stroke="#6b7280"
-                    strokeWidth={2}
-                    label={<BudgetLabel />}
-                  />
-                )}
-
-                <Tooltip content={<CustomTooltip />} />
-
-                {/* Projected spending line (dashed) - only for current month */}
-                {activeTab === "thisMonth" && (
-                  <Line
-                    type="monotone"
-                    dataKey="projected"
-                    stroke="#9ca3af"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
-                    dot={false}
-                    connectNulls={false}
-                    name="Projected"
-                  />
-                )}
-
-                {/* Actual spending line (solid) - dynamic color based on budget pace */}
-                <Line
-                  type="monotone"
-                  dataKey="actual"
-                  stroke={spendingLineColor}
-                  strokeWidth={2.5}
-                  dot={(props: {
-                    cx?: number;
-                    cy?: number;
-                    payload?: {
-                      day: number;
-                      actual: number | null;
-                      originalKey: string;
-                    };
-                  }) => {
-                    if (!props.payload || props.payload.actual === null)
-                      return <></>;
-
-                    const isLastActual =
-                      props.payload.day === lastActualPoint?.day;
-                    const spikeIndex = spikeDateToIndex.get(
-                      props.payload.originalKey
-                    );
-
-                    // Show numbered marker for spike days (prioritize over last actual point)
-                    if (spikeIndex) {
-                      const isHovered =
-                        props.payload.originalKey === hoveredSpikeDate;
-                      return (
-                        <g>
-                          {/* Glow effect when hovered */}
-                          {isHovered && (
-                            <circle
-                              cx={props.cx}
-                              cy={props.cy}
-                              r={14}
-                              fill="#f59e0b"
-                              fillOpacity={0.3}
-                            />
-                          )}
-                          <circle
-                            cx={props.cx}
-                            cy={props.cy}
-                            r={isHovered ? 10 : 8}
-                            fill="#f59e0b"
-                            stroke="#fff"
-                            strokeWidth={2}
-                          />
-                          <text
-                            x={props.cx}
-                            y={props.cy}
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fill="#fff"
-                            fontSize={isHovered ? 11 : 10}
-                            fontWeight={600}
-                          >
-                            {spikeIndex}
-                          </text>
-                        </g>
-                      );
-                    }
-
-                    if (isLastActual) {
-                      return (
-                        <circle
-                          cx={props.cx}
-                          cy={props.cy}
-                          r={6}
-                          fill={spendingLineColor}
-                          stroke="#fff"
-                          strokeWidth={2}
-                        />
-                      );
-                    }
-
-                    return <></>;
-                  }}
-                  activeDot={{
-                    fill: spendingLineColor,
-                    strokeWidth: 2,
-                    stroke: "#fff",
-                    r: 6,
-                  }}
-                  connectNulls={false}
-                  name="Actual"
-                />
-
-                {/* End point marker for projection - only for current month */}
-                {activeTab === "thisMonth" &&
-                  projectedEndAmount > 0 &&
-                  chartData.length > 0 && (
-                    <Line
-                      type="monotone"
-                      dataKey={(d: (typeof chartData)[0]) =>
-                        d.day === chartData[chartData.length - 1].day
-                          ? d.projected
-                          : null
-                      }
-                      stroke="transparent"
-                      dot={{
-                        fill: "#fff",
-                        stroke: "#9ca3af",
-                        strokeWidth: 2,
-                        r: 5,
-                      }}
-                    />
-                  )}
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-0.5 bg-[#6b7280]" />
-            <span>Budget</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div
-              className="w-4 h-0.5"
-              style={{ backgroundColor: spendingLineColor }}
+  const bodyContent = (
+    <div className="h-full flex flex-col">
+      {/* Header with total spent */}
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <p className="text-sm text-muted-foreground">You've spent</p>
+          <p className="text-4xl font-semibold tracking-tight mt-1">
+            <NumberFlow
+              value={netExpenses}
+              format={{
+                style: "currency",
+                currency: displayCurrency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }}
             />
-            <span>Actual</span>
-          </div>
-          {activeTab === "thisMonth" && (
-            <div className="flex items-center gap-1.5">
-              <div
-                className="w-4 h-0.5"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to right, #9ca3af 0, #9ca3af 4px, transparent 4px, transparent 8px)",
-                }}
-              />
-              <span>Forecast</span>
+          </p>
+          {todaySpending > 0 && (
+            <p className="text-sm text-muted-foreground mt-1">
+              of which{" "}
+              <span className="font-medium text-foreground">
+                {formatCurrency(todaySpending)}
+              </span>{" "}
+              today
+            </p>
+          )}
+        </div>
+        <div className="text-right max-w-[50%]">
+          <Link
+            to={`/transactions?from=${dateRange.startISO}&to=${dateRange.endISO}`}
+            className="group flex items-center gap-1 text-sm text-primary justify-end"
+          >
+            <span className="relative">
+              View transactions
+              <span className="absolute left-0 bottom-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
+            </span>
+            <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+
+          {/* Top spending days callout - right-aligned, max 50% width */}
+          {topSpendingDays.length > 0 && (
+            <div className="mt-3 flex gap-1.5">
+              {topSpendingDays.slice(0, 3).map((spike, index) => {
+                if (!spike.transactions.length) return null;
+
+                // Aggregate transactions by merchant + currency
+                const merchantTotals = new Map<
+                  string,
+                  {
+                    merchantName: string;
+                    currency: Currency;
+                    totalOriginal: number;
+                    totalConverted: number;
+                  }
+                >();
+
+                spike.transactions.forEach((tx) => {
+                  const key = `${tx.merchant.id}-${tx.currency}`;
+                  const netOriginal = tx.amount - (tx.reimbursementAmount ?? 0);
+                  const netConverted = CurrencyService.convert(
+                    netOriginal,
+                    tx.currency,
+                    displayCurrency
+                  );
+
+                  const existing = merchantTotals.get(key);
+                  if (existing) {
+                    existing.totalOriginal += netOriginal;
+                    existing.totalConverted += netConverted;
+                  } else {
+                    merchantTotals.set(key, {
+                      merchantName: tx.merchant.name,
+                      currency: tx.currency,
+                      totalOriginal: netOriginal,
+                      totalConverted: netConverted,
+                    });
+                  }
+                });
+
+                // Find merchant with largest total (by converted amount)
+                const topMerchant = Array.from(merchantTotals.values()).sort(
+                  (a, b) => b.totalConverted - a.totalConverted
+                )[0];
+
+                if (!topMerchant) return null;
+
+                const spikeNumber = index + 1;
+
+                return (
+                  <div
+                    key={spike.date}
+                    className="flex-1 min-w-0 bg-muted/50 rounded-lg px-2 py-1.5 text-center relative cursor-pointer transition-all hover:bg-muted"
+                    onMouseEnter={() => setHoveredSpikeDate(spike.date)}
+                    onMouseLeave={() => setHoveredSpikeDate(null)}
+                  >
+                    {/* Numbered badge - top left corner inside */}
+                    <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                      {spikeNumber}
+                    </span>
+                    {/* Amount - centered */}
+                    <div className="text-xs font-medium text-foreground">
+                      +
+                      {CurrencyService.format(
+                        topMerchant.totalOriginal,
+                        topMerchant.currency
+                      )}
+                    </div>
+                    {/* Merchant name - centered */}
+                    <div
+                      className="text-[11px] text-muted-foreground truncate"
+                      title={topMerchant.merchantName}
+                    >
+                      {topMerchant.merchantName}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Chart */}
+      {chartData.length > 0 && (
+        <div className="flex-1 min-h-[12rem]">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 20, right: 10, left: -10, bottom: 5 }}
+            >
+              <XAxis
+                dataKey="day"
+                axisLine={{ stroke: "#e5e7eb" }}
+                tickLine={false}
+                tick={{ fontSize: 14, fill: "#9ca3af" }}
+                tickFormatter={(value) => `${value}`}
+                interval="preserveStartEnd"
+              />
+
+              <YAxis hide domain={[0, "auto"]} />
+
+              {/* Budget target line */}
+              {scaledBudget > 0 && (
+                <ReferenceLine
+                  key={`budget-${scaledBudget}`}
+                  y={scaledBudget}
+                  stroke="#6b7280"
+                  strokeWidth={2}
+                  label={<BudgetLabel />}
+                />
+              )}
+
+              <Tooltip content={<CustomTooltip />} />
+
+              {/* Projected spending line (dashed) - only for current month */}
+              {activeTab === "thisMonth" && (
+                <Line
+                  type="monotone"
+                  dataKey="projected"
+                  stroke="#9ca3af"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={false}
+                  connectNulls={false}
+                  name="Projected"
+                />
+              )}
+
+              {/* Actual spending line (solid) - dynamic color based on budget pace */}
+              <Line
+                type="monotone"
+                dataKey="actual"
+                stroke={spendingLineColor}
+                strokeWidth={2.5}
+                dot={(props: {
+                  cx?: number;
+                  cy?: number;
+                  payload?: {
+                    day: number;
+                    actual: number | null;
+                    originalKey: string;
+                  };
+                }) => {
+                  if (!props.payload || props.payload.actual === null)
+                    return <></>;
+
+                  const isLastActual =
+                    props.payload.day === lastActualPoint?.day;
+                  const spikeIndex = spikeDateToIndex.get(
+                    props.payload.originalKey
+                  );
+
+                  // Show numbered marker for spike days (prioritize over last actual point)
+                  if (spikeIndex) {
+                    const isHovered =
+                      props.payload.originalKey === hoveredSpikeDate;
+                    return (
+                      <g>
+                        {/* Glow effect when hovered */}
+                        {isHovered && (
+                          <circle
+                            cx={props.cx}
+                            cy={props.cy}
+                            r={14}
+                            fill="#f59e0b"
+                            fillOpacity={0.3}
+                          />
+                        )}
+                        <circle
+                          cx={props.cx}
+                          cy={props.cy}
+                          r={isHovered ? 10 : 8}
+                          fill="#f59e0b"
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                        <text
+                          x={props.cx}
+                          y={props.cy}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#fff"
+                          fontSize={isHovered ? 11 : 10}
+                          fontWeight={600}
+                        >
+                          {spikeIndex}
+                        </text>
+                      </g>
+                    );
+                  }
+
+                  if (isLastActual) {
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={6}
+                        fill={spendingLineColor}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }
+
+                  return <></>;
+                }}
+                activeDot={{
+                  fill: spendingLineColor,
+                  strokeWidth: 2,
+                  stroke: "#fff",
+                  r: 6,
+                }}
+                connectNulls={false}
+                name="Actual"
+              />
+
+              {/* End point marker for projection - only for current month */}
+              {activeTab === "thisMonth" &&
+                projectedEndAmount > 0 &&
+                chartData.length > 0 && (
+                  <Line
+                    type="monotone"
+                    dataKey={(d: (typeof chartData)[0]) =>
+                      d.day === chartData[chartData.length - 1].day
+                        ? d.projected
+                        : null
+                    }
+                    stroke="transparent"
+                    dot={{
+                      fill: "#fff",
+                      stroke: "#9ca3af",
+                      strokeWidth: 2,
+                      r: 5,
+                    }}
+                  />
+                )}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 mt-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-0.5 bg-[#6b7280]" />
+          <span>Budget</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-4 h-0.5"
+            style={{ backgroundColor: spendingLineColor }}
+          />
+          <span>Actual</span>
+        </div>
+        {activeTab === "thisMonth" && (
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-4 h-0.5"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(to right, #9ca3af 0, #9ca3af 4px, transparent 4px, transparent 8px)",
+              }}
+            />
+            <span>Forecast</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (bare) return bodyContent;
+
+  return (
+    <Card className={`${className} h-full`}>
+      <CardContent className="pt-6 h-full flex flex-col">
+        {bodyContent}
       </CardContent>
     </Card>
   );

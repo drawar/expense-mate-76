@@ -11,9 +11,7 @@
 import React from "react";
 import { useDashboardContext } from "@/contexts/DashboardContext";
 import {
-  SpendingOverviewCard,
   CategoryPeriodComparisonCard,
-  IncomeSavingsStack,
   CategoryInsightCards,
   MostFrequentMerchantCard,
   MostFavoriteCardCard,
@@ -21,8 +19,8 @@ import {
   TopMerchantsCard,
   TopCardsCard,
   TopLoyaltyProgramsCard,
-  BudgetSpendingCard,
 } from "@/components/dashboard/cards";
+import BudgetOverviewCard from "@/components/dashboard/cards/BudgetOverviewCard";
 
 interface DashboardDesktopLayoutProps {
   className?: string;
@@ -45,21 +43,15 @@ const DashboardDesktopLayout: React.FC<DashboardDesktopLayoutProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* ============================================
-          HERO ZONE - Income/Savings Stack + Spending Overview
+          OVERVIEW ZONE - one combined card replacing:
+            - IncomeSavingsStack
+            - SpendingOverviewCard
+            - BudgetSpendingCard
+          Row 1: KPI stack (savings %, save first, this period, this
+          month, last settled) + spending trajectory chart.
+          Row 2: Categories bar chart.
           ============================================ */}
-      <div className="grid grid-cols-[25%_1fr] gap-4">
-        <IncomeSavingsStack />
-        <SpendingOverviewCard className={`${cardClass} shadow-sm h-full`} />
-      </div>
-
-      {/* ============================================
-          BUDGET ZONE - Pay-period budget per category vs spent
-          (settlement summary is inline in the left column now)
-          ============================================ */}
-      <BudgetSpendingCard
-        transactions={filteredTransactions}
-        className={`${cardClass} shadow-sm`}
-      />
+      <BudgetOverviewCard className={`${cardClass} shadow-sm`} />
 
       {/* ============================================
           CATEGORY ZONE - Top Category + Comparison Chart

@@ -42,6 +42,18 @@ interface BudgetSpendingCardProps {
   className?: string;
   transactions?: Transaction[];
   onCategoryClick?: (categoryId: string, categoryName: string) => void;
+  /**
+   * Which pieces to render:
+   *   "card"             — full standalone card (default): header + 3-col
+   *                        internal grid. Used by mobile SummarySection.
+   *   "kpi-only"         — just the Save First + hero rows + Last Settled
+   *                        stack, no Card wrapper. Used inside
+   *                        BudgetOverviewCard's left column.
+   *   "categories-only"  — just the Categories header + sort + bar rows,
+   *                        no Card wrapper. Used as BudgetOverviewCard's
+   *                        bottom row.
+   */
+  layout?: "card" | "kpi-only" | "categories-only";
 }
 
 type SortBy = "spent" | "remaining" | "total";
@@ -155,6 +167,7 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   className = "",
   transactions = [],
   onCategoryClick,
+  layout = "card",
 }) => {
   const navigate = useNavigate();
   const { displayCurrency } = useDashboardContext();
@@ -188,6 +201,238 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
   const perPeriodTotals = groupTotals(perPeriodRows);
   const monthlyTotals = groupTotals(monthlyRows);
 
+  // ─── KPI SECTION: Save First + This Period + This Month + Last Settled
+  const kpiSection =
+    !isLoading && period ? (
+      <div className="flex flex-col gap-3 min-w-0">
+        {savingsBudgeted > 0 && (
+          <div className="rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <PiggyBankIcon
+                className="h-3.5 w-3.5 shrink-0"
+                style={{ color: "var(--color-success)" }}
+              />
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+                Save first
+              </p>
+            </div>
+            <p
+              className="text-lg font-semibold tabular-nums leading-tight mt-1.5"
+              style={{ color: "var(--color-success)" }}
+            >
+              {formatCurrency(savingsBudgeted)}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              of {formatCurrency(period.salary_amount)}
+            </p>
+          </div>
+        )}
+        {perPeriodRows.length > 0 && (
+          <HeroRow
+            title="This period"
+            windowLabel={`ends ${format(parseISO(period.period_end), "MMM d")}`}
+            totals={perPeriodTotals}
+            formatCurrency={formatCurrency}
+          />
+        )}
+        {monthlyRows.length > 0 && (
+          <HeroRow
+            title="This month"
+            windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")}–${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
+            totals={monthlyTotals}
+            formatCurrency={formatCurrency}
+          />
+        )}
+        <PeriodSettlementBody className="border-t border-border/50 pt-3" />
+      </div>
+    ) : null;
+
+  // "kpi-only" bails early
+  if (layout === "kpi-only") {
+    if (isLoading || !period) return null;
+    return kpiSection;
+  }
+
+  // ─── CATEGORIES SECTION: header + sort + bar rows
+  const categoriesSection =
+    !isLoading && period ? (
+      <div className="min-w-0">
+        {/* Categories header + sort */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Categories</p>
+            <p className="text-[11px] text-muted-foreground leading-none">
+              Bars show budget used
+            </p>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[11px] text-muted-foreground">Sort by</span>
+            <Select
+              value={sortBy}
+              onValueChange={(v) => setSortBy(v as SortBy)}
+            >
+              <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs">
+                <SelectValue>{SORT_LABEL[sortBy]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="spent">Spent</SelectItem>
+                <SelectItem value="remaining">Remaining</SelectItem>
+                <SelectItem value="total">Total</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="divide-y divide-border/50">
+          {orderedAllocations.map((row) => {
+            const status = statusColor(row.pctUsed);
+            const hasBudget = row.budgeted > 0;
+            const remaining = row.budgeted - row.spent;
+            const isOverRow = remaining < 0 && hasBudget;
+
+            // One number per row, driven by the sort dimension.
+            //   spent      → "$X spent"
+            //   remaining  → "$X left" (or red "-$Y over" when overspent)
+            //   total      → "$X budget"
+            let primaryNumber = "";
+            let primaryLabel = "";
+            let primaryTone: "default" | "error" = "default";
+            if (!hasBudget) {
+              primaryNumber = formatCurrency(row.spent);
+              primaryLabel = "spent";
+            } else if (sortBy === "spent") {
+              primaryNumber = formatCurrency(row.spent);
+              primaryLabel = "spent";
+            } else if (sortBy === "remaining") {
+              if (isOverRow) {
+                primaryNumber = `-${formatCurrency(-remaining)}`;
+                primaryLabel = "over";
+                primaryTone = "error";
+              } else {
+                primaryNumber = formatCurrency(remaining);
+                primaryLabel = "left";
+              }
+            } else {
+              primaryNumber = formatCurrency(row.budgeted);
+              primaryLabel = "budget";
+            }
+
+            return (
+              <button
+                key={row.parentId}
+                type="button"
+                onClick={() => {
+                  onCategoryClick?.(row.parentId, row.name);
+                  const params = new URLSearchParams();
+                  params.set("parent", row.parentId);
+                  navigate(`/transactions?${params.toString()}`);
+                }}
+                className={`w-full grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
+              >
+                <CategoryIcon
+                  iconName={row.icon as CategoryIconName}
+                  size={20}
+                  color={row.color}
+                />
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    <p className="text-sm font-medium truncate">{row.name}</p>
+                    {row.cadence === "monthly" && (
+                      <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted/60 px-1 py-0.5 rounded whitespace-nowrap">
+                        Monthly
+                      </span>
+                    )}
+                    {row.carryIn !== 0 && (
+                      <span
+                        className={`text-[10px] tabular-nums whitespace-nowrap ${
+                          row.carryIn > 0 ? "text-primary" : "text-destructive"
+                        }`}
+                        title={
+                          row.carryIn > 0
+                            ? `${formatCurrency(row.carryIn)} rolled forward from last cycle`
+                            : `${formatCurrency(-row.carryIn)} overspend carried from last cycle`
+                        }
+                      >
+                        {row.carryIn > 0 ? "+" : "−"}
+                        {formatCurrency(Math.abs(row.carryIn))} rolled
+                      </span>
+                    )}
+                  </div>
+                  {hasBudget ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
+                          style={{
+                            width: `${Math.min(100, row.pctUsed)}%`,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className={`text-[11px] tabular-nums w-9 text-right ${status.text}`}
+                      >
+                        {Number.isFinite(row.pctUsed)
+                          ? `${row.pctUsed.toFixed(0)}%`
+                          : "—"}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      No budget set
+                    </p>
+                  )}
+                </div>
+                <div className="text-right whitespace-nowrap">
+                  {hasBudget ? (
+                    <>
+                      <p
+                        className={`text-sm font-medium tabular-nums ${
+                          primaryTone === "error"
+                            ? "text-[var(--color-error)]"
+                            : ""
+                        }`}
+                      >
+                        {primaryNumber}
+                      </p>
+                      <p
+                        className={`text-[10px] uppercase tracking-wide ${
+                          primaryTone === "error"
+                            ? "text-[var(--color-error)]"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {primaryLabel}
+                      </p>
+                    </>
+                  ) : (
+                    <Link
+                      to="/settings"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] text-primary hover:underline"
+                    >
+                      Set budget
+                    </Link>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    ) : null;
+
+  // Categories-only: no Card wrapper.
+  if (layout === "categories-only") {
+    return (
+      categoriesSection ?? (
+        <div className="py-3 text-sm text-muted-foreground animate-pulse">
+          Loading budget…
+        </div>
+      )
+    );
+  }
+
+  // Full card layout: header + 2-col grid (KPI + Categories).
   return (
     <Card className={className}>
       <CardHeader className="pb-2 pt-4 px-4">
@@ -212,237 +457,9 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-[25%_25%_1fr]">
-            {/* COLUMN 1 — Save First (top) + Last Period Settled (bottom).
-                The two "period-summary" pieces sit together so the eye
-                reads salary-in-scope → what-just-closed. */}
-            <div className="flex flex-col gap-3 min-w-0">
-              {/* Pay-yourself-first — compact accent strip. Icon leads
-                  the label; value on its own line with subtle "of $X"
-                  context underneath so the primary number breathes. */}
-              {savingsBudgeted > 0 && (
-                <div className="rounded-lg bg-[var(--color-accent-subtle)] px-3 py-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <PiggyBankIcon
-                      className="h-3.5 w-3.5 shrink-0"
-                      style={{ color: "var(--color-success)" }}
-                    />
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
-                      Save first
-                    </p>
-                  </div>
-                  <p
-                    className="text-lg font-semibold tabular-nums leading-tight mt-1.5"
-                    style={{ color: "var(--color-success)" }}
-                  >
-                    {formatCurrency(savingsBudgeted)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    of {formatCurrency(period.salary_amount)}
-                  </p>
-                </div>
-              )}
-
-              {/* Last period settled — inline body. Renders null when
-                  nothing worth showing (>7 days since close, or all
-                  buckets zero). */}
-              <PeriodSettlementBody className="border-t border-border/50 pt-3" />
-            </div>
-
-            {/* COLUMN 2 — Left-to-spend heros: This Period + This Month
-                stacked. Two coherent time-windowed sub-totals, each
-                block is its own KPI-shaped card without borders. */}
-            <div className="flex flex-col gap-3 min-w-0">
-              {perPeriodRows.length > 0 && (
-                <HeroRow
-                  title="This period"
-                  windowLabel={`ends ${format(parseISO(period.period_end), "MMM d")}`}
-                  totals={perPeriodTotals}
-                  formatCurrency={formatCurrency}
-                />
-              )}
-              {monthlyRows.length > 0 && (
-                <HeroRow
-                  title="This month"
-                  windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")}–${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
-                  totals={monthlyTotals}
-                  formatCurrency={formatCurrency}
-                />
-              )}
-            </div>
-
-            {/* COLUMN 3 — Categories header + sort + bar rows. Gets
-                the remaining ~50% of the card width. */}
-            <div className="min-w-0">
-              {/* Categories header + sort */}
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">Categories</p>
-                  <p className="text-[11px] text-muted-foreground leading-none">
-                    Bars show budget used
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <span className="text-[11px] text-muted-foreground">
-                    Sort by
-                  </span>
-                  <Select
-                    value={sortBy}
-                    onValueChange={(v) => setSortBy(v as SortBy)}
-                  >
-                    <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs">
-                      <SelectValue>{SORT_LABEL[sortBy]}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="spent">Spent</SelectItem>
-                      <SelectItem value="remaining">Remaining</SelectItem>
-                      <SelectItem value="total">Total</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="divide-y divide-border/50">
-                {orderedAllocations.map((row) => {
-                  const status = statusColor(row.pctUsed);
-                  const hasBudget = row.budgeted > 0;
-                  const remaining = row.budgeted - row.spent;
-                  const isOverRow = remaining < 0 && hasBudget;
-
-                  // One number per row, driven by the sort dimension.
-                  //   spent      → "$X spent"
-                  //   remaining  → "$X left" (or red "-$Y over" when overspent)
-                  //   total      → "$X budget"
-                  let primaryNumber = "";
-                  let primaryLabel = "";
-                  let primaryTone: "default" | "error" = "default";
-                  if (!hasBudget) {
-                    primaryNumber = formatCurrency(row.spent);
-                    primaryLabel = "spent";
-                  } else if (sortBy === "spent") {
-                    primaryNumber = formatCurrency(row.spent);
-                    primaryLabel = "spent";
-                  } else if (sortBy === "remaining") {
-                    if (isOverRow) {
-                      primaryNumber = `-${formatCurrency(-remaining)}`;
-                      primaryLabel = "over";
-                      primaryTone = "error";
-                    } else {
-                      primaryNumber = formatCurrency(remaining);
-                      primaryLabel = "left";
-                    }
-                  } else {
-                    primaryNumber = formatCurrency(row.budgeted);
-                    primaryLabel = "budget";
-                  }
-
-                  return (
-                    <button
-                      key={row.parentId}
-                      type="button"
-                      onClick={() => {
-                        onCategoryClick?.(row.parentId, row.name);
-                        const params = new URLSearchParams();
-                        params.set("parent", row.parentId);
-                        navigate(`/transactions?${params.toString()}`);
-                      }}
-                      className={`w-full grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
-                    >
-                      <CategoryIcon
-                        iconName={row.icon as CategoryIconName}
-                        size={20}
-                        color={row.color}
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-baseline gap-1.5 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {row.name}
-                          </p>
-                          {row.cadence === "monthly" && (
-                            <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted/60 px-1 py-0.5 rounded whitespace-nowrap">
-                              Monthly
-                            </span>
-                          )}
-                          {row.carryIn !== 0 && (
-                            <span
-                              className={`text-[10px] tabular-nums whitespace-nowrap ${
-                                row.carryIn > 0
-                                  ? "text-primary"
-                                  : "text-destructive"
-                              }`}
-                              title={
-                                row.carryIn > 0
-                                  ? `${formatCurrency(row.carryIn)} rolled forward from last cycle`
-                                  : `${formatCurrency(-row.carryIn)} overspend carried from last cycle`
-                              }
-                            >
-                              {row.carryIn > 0 ? "+" : "−"}
-                              {formatCurrency(Math.abs(row.carryIn))} rolled
-                            </span>
-                          )}
-                        </div>
-                        {hasBudget ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
-                                style={{
-                                  width: `${Math.min(100, row.pctUsed)}%`,
-                                }}
-                              />
-                            </div>
-                            <span
-                              className={`text-[11px] tabular-nums w-9 text-right ${status.text}`}
-                            >
-                              {Number.isFinite(row.pctUsed)
-                                ? `${row.pctUsed.toFixed(0)}%`
-                                : "—"}
-                            </span>
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            No budget set
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right whitespace-nowrap">
-                        {hasBudget ? (
-                          <>
-                            <p
-                              className={`text-sm font-medium tabular-nums ${
-                                primaryTone === "error"
-                                  ? "text-[var(--color-error)]"
-                                  : ""
-                              }`}
-                            >
-                              {primaryNumber}
-                            </p>
-                            <p
-                              className={`text-[10px] uppercase tracking-wide ${
-                                primaryTone === "error"
-                                  ? "text-[var(--color-error)]"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {primaryLabel}
-                            </p>
-                          </>
-                        ) : (
-                          <Link
-                            to="/settings"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[11px] text-primary hover:underline"
-                          >
-                            Set budget
-                          </Link>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {/* /RIGHT COLUMN */}
+          <div className="grid gap-4 md:grid-cols-[33%_1fr]">
+            {kpiSection}
+            {categoriesSection}
           </div>
         )}
       </CardContent>
