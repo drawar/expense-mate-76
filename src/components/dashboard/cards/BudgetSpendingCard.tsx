@@ -212,10 +212,10 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-[25%_1fr]">
-            {/* LEFT COLUMN — Save first, per-period hero, monthly hero,
-                last-period settled summary. On mobile the right column
-                stacks below via the responsive grid. */}
+          <div className="grid gap-4 md:grid-cols-[25%_25%_1fr]">
+            {/* COLUMN 1 — Save First (top) + Last Period Settled (bottom).
+                The two "period-summary" pieces sit together so the eye
+                reads salary-in-scope → what-just-closed. */}
             <div className="flex flex-col gap-3 min-w-0">
               {/* Pay-yourself-first — compact accent strip. Icon leads
                   the label; value on its own line with subtle "of $X"
@@ -243,35 +243,36 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                 </div>
               )}
 
-              {/* LEFT TO SPEND — two vertically-stacked heros. Dropped
-                  the shared border+divider container; each hero is its
-                  own breathing block separated by generous whitespace. */}
-              <div className="flex flex-col gap-3">
-                {perPeriodRows.length > 0 && (
-                  <HeroRow
-                    title="This period"
-                    windowLabel={`ends ${format(parseISO(period.period_end), "MMM d")}`}
-                    totals={perPeriodTotals}
-                    formatCurrency={formatCurrency}
-                  />
-                )}
-                {monthlyRows.length > 0 && (
-                  <HeroRow
-                    title="This month"
-                    windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")}–${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
-                    totals={monthlyTotals}
-                    formatCurrency={formatCurrency}
-                  />
-                )}
-              </div>
-
-              {/* Last period settled — inline body. Border dropped;
-                  a top-hairline separator visually groups it as the
-                  bottom of the left column. */}
+              {/* Last period settled — inline body. Renders null when
+                  nothing worth showing (>7 days since close, or all
+                  buckets zero). */}
               <PeriodSettlementBody className="border-t border-border/50 pt-3" />
             </div>
 
-            {/* RIGHT COLUMN — Categories header + sort + bar rows */}
+            {/* COLUMN 2 — Left-to-spend heros: This Period + This Month
+                stacked. Two coherent time-windowed sub-totals, each
+                block is its own KPI-shaped card without borders. */}
+            <div className="flex flex-col gap-3 min-w-0">
+              {perPeriodRows.length > 0 && (
+                <HeroRow
+                  title="This period"
+                  windowLabel={`ends ${format(parseISO(period.period_end), "MMM d")}`}
+                  totals={perPeriodTotals}
+                  formatCurrency={formatCurrency}
+                />
+              )}
+              {monthlyRows.length > 0 && (
+                <HeroRow
+                  title="This month"
+                  windowLabel={`${format(startOfMonth(parseISO(period.period_start)), "MMM d")}–${format(endOfMonth(parseISO(period.period_start)), "MMM d")}`}
+                  totals={monthlyTotals}
+                  formatCurrency={formatCurrency}
+                />
+              )}
+            </div>
+
+            {/* COLUMN 3 — Categories header + sort + bar rows. Gets
+                the remaining ~50% of the card width. */}
             <div className="min-w-0">
               {/* Categories header + sort */}
               <div className="flex items-center justify-between gap-2 mb-2">
