@@ -110,3 +110,27 @@ export const isDateInStatementPeriod = (
   const { start, end } = getStatementPeriod(paymentMethod, date);
   return isWithinInterval(date, { start, end });
 };
+
+/**
+ * Circular distance (in days) between two days-of-month, accounting
+ * for short months. Used by recurring-merchant reminder to test if
+ * today falls within ±N days of a merchant's typical charge day —
+ * with wrap-around so a Feb-28th "today" is 3 days from a day-31
+ * merchant, not 3 days early.
+ *
+ * Examples:
+ *   dayOfMonthDistance(1, 1, 30)   === 0
+ *   dayOfMonthDistance(2, 30, 30)  === 3  (wraps: 30→31/1 (n/a) →1→2)
+ *   dayOfMonthDistance(31, 1, 28)  === 2  (Feb wrap: 31→28 (clamp) →1)
+ *   dayOfMonthDistance(15, 15, 31) === 0
+ */
+export const dayOfMonthDistance = (
+  a: number,
+  b: number,
+  monthLen: number
+): number => {
+  const clampA = Math.min(Math.max(1, a), monthLen);
+  const clampB = Math.min(Math.max(1, b), monthLen);
+  const raw = Math.abs(clampA - clampB);
+  return Math.min(raw, monthLen - raw);
+};
