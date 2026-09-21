@@ -11,6 +11,7 @@ import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 // Import sub-components
 import PaymentMethodSelect from "../elements/PaymentMethodSelect";
+import RecommendedPaymentMethods from "../elements/RecommendedPaymentMethods";
 import ContactlessToggle from "../elements/ContactlessToggle";
 import PointsDisplay from "../elements/PointsDisplay";
 import ConvertedAmountField from "../elements/ConvertedAmountField";
@@ -68,9 +69,15 @@ export const PaymentDetailsSection: React.FC<PaymentDetailsSectionProps> = ({
         Payment Details
       </h2>
 
-      {/* Essential field - always visible */}
+      {/* Essential field - always visible.
+          Recommended pills render above the dropdown when the current
+          merchant has prior transactions; they auto-hide once a PM is
+          chosen (via pill or dropdown). */}
       <div className="space-y-4">
-        <PaymentMethodSelect paymentMethods={paymentMethods} />
+        <div>
+          <RecommendedPaymentMethods paymentMethods={paymentMethods} />
+          <PaymentMethodSelect paymentMethods={paymentMethods} />
+        </div>
       </div>
 
       {/* Optional fields - collapsible when minimal mode is enabled */}
