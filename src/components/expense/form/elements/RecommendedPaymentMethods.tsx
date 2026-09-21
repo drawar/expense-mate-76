@@ -16,7 +16,7 @@
  * Pattern mirrors CategoryPicker's "Suggested for you" pill row.
  */
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { PaymentMethodItemContent } from "@/components/ui/payment-method-select-item";
@@ -37,6 +37,23 @@ const RecommendedPaymentMethods: React.FC<RecommendedPaymentMethodsProps> = ({
 
   const { paymentMethods: recommendations, canonicalMerchantName } =
     useRecommendedPaymentMethods(merchantName, paymentMethods);
+
+  // Reset the selected PM whenever the merchant name changes to a
+  // different value (typed edit, backspace, autocomplete pick to a
+  // different merchant). Skips the initial mount so an edit-mode form
+  // with a pre-populated PM doesn't nuke it on first render.
+  const previousMerchantRef = useRef<string>(merchantName);
+  useEffect(() => {
+    if (previousMerchantRef.current !== merchantName) {
+      if (paymentMethodId) {
+        form.setValue("paymentMethodId", "", { shouldValidate: false });
+      }
+      previousMerchantRef.current = merchantName;
+    }
+    // paymentMethodId intentionally omitted from deps: we only want to
+    // react to merchant-name changes, not to the PM being cleared.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantName, form]);
 
   // Hide once any PM is set (whether via pill or dropdown) OR when we
   // have nothing to recommend. Keeps the UI collapsed to the standard
