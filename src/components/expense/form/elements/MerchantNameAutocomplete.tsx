@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { StoreIcon, MapPinIcon } from "lucide-react";
+import { StoreIcon, MapPinIcon, ClockIcon } from "lucide-react";
 import {
   FormControl,
   FormField,
@@ -20,6 +20,7 @@ import {
   useMerchantSuggestions,
   MerchantSuggestion,
 } from "@/hooks/useMerchantSuggestions";
+import { useRecurringMerchantReminders } from "@/hooks/useRecurringMerchantReminders";
 import { MerchantCategoryCode } from "@/types";
 import { getMCCFromMerchantName } from "@/utils/constants/merchantMccMapping";
 
@@ -42,10 +43,21 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
     getMerchantByName,
     isLoading: isMerchantsLoading,
   } = useMerchantSuggestions();
+  const { data: reminders } = useRecurringMerchantReminders();
 
   const currentValue = form.watch("merchantName") || "";
   const suggestions = getNameSuggestions(currentValue);
-  const showDropdown = open && suggestions.length > 0;
+
+  // Reminders are shown when input is empty OR the reminder's merchant
+  // name matches the current query (so they don't clutter searches).
+  const query = currentValue.trim().toLowerCase();
+  const filteredReminders = reminders.filter((r) => {
+    if (query.length === 0) return true;
+    return r.merchantName.toLowerCase().includes(query);
+  });
+
+  const showDropdown =
+    open && (suggestions.length > 0 || filteredReminders.length > 0);
 
   // Track if we've done the initial MCC lookup for pre-filled values
   const hasInitialLookupRef = useRef(false);
@@ -150,6 +162,29 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
     onSelectMerchant?.(suggestion);
   };
 
+  /**
+   * Handle picking a reminder — reuses handleSelect by materializing
+   * a MerchantSuggestion. Prefers the merchant's historical address /
+   * MCC / online flag via getMerchantByName so the picked reminder
+   * auto-fills the form the same way a Previous Merchants pick does.
+   */
+  const handleReminderSelect = (merchantName: string) => {
+    const merchant = getMerchantByName(merchantName);
+    handleSelect({
+      name: merchantName,
+      address: merchant?.address,
+      isOnline: merchant?.isOnline ?? false,
+      mcc: merchant?.mcc,
+      count: 0,
+    });
+  };
+
+  const reminderRightLabel = (daysUntilExpected: number): string => {
+    if (daysUntilExpected === 0) return "due today";
+    if (daysUntilExpected > 0) return `in ${daysUntilExpected}d`;
+    return `${Math.abs(daysUntilExpected)}d ago`;
+  };
+
   return (
     <FormField
       control={form.control}
@@ -175,7 +210,15 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
                 }}
                 onFocus={() => {
                   setIsFocused(true);
-                  if (currentValue.length >= 2 && suggestions.length > 0) {
+                  // Open the popover on focus when EITHER previous
+                  // merchant suggestions apply to the current query OR
+                  // recurring reminders are available (so a fresh
+                  // form-open on a due-date day surfaces them without
+                  // requiring the user to type first).
+                  if (
+                    (currentValue.length >= 2 && suggestions.length > 0) ||
+                    filteredReminders.length > 0
+                  ) {
                     setOpen(true);
                   }
                   // MCC lookup handled by useEffect watching isFocused
@@ -192,29 +235,59 @@ const MerchantNameAutocomplete: React.FC<MerchantNameAutocompleteProps> = ({
                 <Command>
                   <CommandList>
                     <CommandEmpty>No suggestions found</CommandEmpty>
-                    <CommandGroup heading="Previous Merchants">
-                      {suggestions.map((suggestion, index) => (
-                        <CommandItem
-                          key={`${suggestion.name}-${index}`}
-                          onSelect={() => handleSelect(suggestion)}
-                          className="cursor-pointer"
-                        >
-                          <StoreIcon className="mr-2 h-4 w-4 flex-shrink-0 opacity-70" />
-                          <div className="flex flex-col overflow-hidden">
-                            <span className="truncate">{suggestion.name}</span>
-                            {suggestion.address && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                                <MapPinIcon className="h-3 w-3 flex-shrink-0" />
-                                {suggestion.address}
+
+                    {filteredReminders.length > 0 && (
+                      <CommandGroup heading="Recurring today">
+                        {filteredReminders.map((reminder) => (
+                          <CommandItem
+                            key={`reminder-${reminder.merchantName}`}
+                            onSelect={() =>
+                              handleReminderSelect(reminder.merchantName)
+                            }
+                            className="cursor-pointer"
+                          >
+                            <ClockIcon className="mr-2 h-4 w-4 flex-shrink-0 opacity-70" />
+                            <div className="flex flex-col overflow-hidden">
+                              <span className="truncate font-medium">
+                                {reminder.merchantName}
                               </span>
-                            )}
-                          </div>
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {suggestion.count}x
-                          </span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                              <span className="text-xs text-muted-foreground truncate">
+                                ~${reminder.expectedAmount.toFixed(2)} ·{" "}
+                                {reminderRightLabel(reminder.daysUntilExpected)}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+
+                    {suggestions.length > 0 && (
+                      <CommandGroup heading="Previous Merchants">
+                        {suggestions.map((suggestion, index) => (
+                          <CommandItem
+                            key={`${suggestion.name}-${index}`}
+                            onSelect={() => handleSelect(suggestion)}
+                            className="cursor-pointer"
+                          >
+                            <StoreIcon className="mr-2 h-4 w-4 flex-shrink-0 opacity-70" />
+                            <div className="flex flex-col overflow-hidden">
+                              <span className="truncate">
+                                {suggestion.name}
+                              </span>
+                              {suggestion.address && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                                  <MapPinIcon className="h-3 w-3 flex-shrink-0" />
+                                  {suggestion.address}
+                                </span>
+                              )}
+                            </div>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {suggestion.count}x
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
                   </CommandList>
                 </Command>
               </div>
