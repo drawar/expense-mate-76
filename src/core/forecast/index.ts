@@ -14,3 +14,8 @@ export {
 } from "./SpendingPatternAnalyzer";
 export { SpenderProfiler, spenderProfiler } from "./SpenderProfiler";
 export { ForecastService, forecastService } from "./ForecastService";
+export {
+  detectRecurringMerchantsForToday,
+  recurringMerchantReminder,
+  type RecurringReminder,
+} from "./RecurringMerchantReminder";
