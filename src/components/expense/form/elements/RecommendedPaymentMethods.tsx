@@ -35,10 +35,8 @@ const RecommendedPaymentMethods: React.FC<RecommendedPaymentMethodsProps> = ({
   const paymentMethodId =
     (form.watch("paymentMethodId") as string | undefined) ?? "";
 
-  const recommendations = useRecommendedPaymentMethods(
-    merchantName,
-    paymentMethods
-  );
+  const { paymentMethods: recommendations, canonicalMerchantName } =
+    useRecommendedPaymentMethods(merchantName, paymentMethods);
 
   // Hide once any PM is set (whether via pill or dropdown) OR when we
   // have nothing to recommend. Keeps the UI collapsed to the standard
@@ -46,6 +44,11 @@ const RecommendedPaymentMethods: React.FC<RecommendedPaymentMethodsProps> = ({
   if (paymentMethodId || recommendations.length === 0) {
     return null;
   }
+
+  // Prefer the stored merchant name (e.g. "Uber") over the raw form
+  // input (e.g. "uber") so the label matches the merchant's canonical
+  // spelling from history.
+  const displayName = canonicalMerchantName ?? merchantName;
 
   const handlePick = (pmId: string) => {
     form.setValue("paymentMethodId", pmId, { shouldValidate: true });
@@ -59,7 +62,7 @@ const RecommendedPaymentMethods: React.FC<RecommendedPaymentMethodsProps> = ({
   return (
     <div className="mb-2">
       <p className="text-[11px] text-muted-foreground mb-1.5">
-        Recently used at {merchantName}
+        Recently used at {displayName}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {recommendations.map((pm) => (
