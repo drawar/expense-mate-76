@@ -1380,6 +1380,7 @@ export type Database = {
           currency: string | null;
           date: string;
           deleted_at: string | null;
+          exclude_from_budget: boolean | null;
           id: string;
           is_contactless: boolean | null;
           is_deleted: boolean | null;
@@ -1412,6 +1413,7 @@ export type Database = {
           currency?: string | null;
           date: string;
           deleted_at?: string | null;
+          exclude_from_budget?: boolean | null;
           id?: string;
           is_contactless?: boolean | null;
           is_deleted?: boolean | null;
@@ -1444,6 +1446,7 @@ export type Database = {
           currency?: string | null;
           date?: string;
           deleted_at?: string | null;
+          exclude_from_budget?: boolean | null;
           id?: string;
           is_contactless?: boolean | null;
           is_deleted?: boolean | null;

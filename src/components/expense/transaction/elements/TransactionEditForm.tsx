@@ -42,6 +42,7 @@ export const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             merchantAddress: transaction.merchant.address,
             isOnline: transaction.merchant.isOnline,
             isContactless: !!transaction.isContactless,
+            excludeFromBudget: !!transaction.excludeFromBudget,
             amount: transaction.amount.toString(),
             currency: transaction.currency,
             paymentMethodId: transaction.paymentMethod.id,

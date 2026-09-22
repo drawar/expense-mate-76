@@ -38,6 +38,9 @@ export type Transaction = {
   // Tags for grouping transactions (comma-separated slugs)
   tags?: string;
 
+  // When true, excluded from monthly/period budget aggregation
+  excludeFromBudget?: boolean;
+
   is_deleted?: boolean;
   deleted_at?: string;
 };

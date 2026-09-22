@@ -688,6 +688,7 @@ export class StorageService {
         autoCategoryConfidence: row.auto_category_confidence ?? undefined,
         needsReview: row.needs_review ?? false,
         categorySuggestionReason: row.category_suggestion_reason || undefined,
+        excludeFromBudget: row.exclude_from_budget ?? false,
         // Split payment
         splitGroupId: row.split_group_id || undefined,
         // Tags
@@ -878,6 +879,7 @@ export class StorageService {
           transactionData.categorySuggestionReason ??
           autoCategoryResult?.reason ??
           null,
+        exclude_from_budget: transactionData.excludeFromBudget ?? false,
         user_id: session.user.id,
         // Tags
         tags: transactionData.tags || null,
@@ -932,6 +934,7 @@ export class StorageService {
         autoCategoryConfidence: data.auto_category_confidence ?? undefined,
         needsReview: data.needs_review ?? false,
         categorySuggestionReason: data.category_suggestion_reason || undefined,
+        excludeFromBudget: data.exclude_from_budget ?? false,
         // Tags
         tags: data.tags || undefined,
       };
@@ -1093,6 +1096,8 @@ export class StorageService {
       if (updates.categorySuggestionReason !== undefined)
         updateData.category_suggestion_reason =
           updates.categorySuggestionReason;
+      if (updates.excludeFromBudget !== undefined)
+        updateData.exclude_from_budget = updates.excludeFromBudget;
 
       // Tags
       if (updates.tags !== undefined) updateData.tags = updates.tags;
@@ -1209,6 +1214,7 @@ export class StorageService {
     isContactless: boolean;
     notes?: string;
     userCategory?: string;
+    excludeFromBudget?: boolean;
   }): Promise<Transaction[]> {
     console.log("StorageService.addSplitTransaction called with:", input);
 
@@ -1323,6 +1329,7 @@ export class StorageService {
           split_group_id: splitGroupData.id,
           user_id: session.user.id,
           reimbursement_amount: portion.reimbursementAmount,
+          exclude_from_budget: input.excludeFromBudget ?? false,
         };
 
         const { data: txData, error: txError } = await supabase
@@ -1361,6 +1368,7 @@ export class StorageService {
           category: txData.category || undefined,
           splitGroupId: splitGroupData.id,
           reimbursementAmount: txData.reimbursement_amount ?? undefined,
+          excludeFromBudget: txData.exclude_from_budget ?? false,
         };
 
         createdTransactions.push(newTransaction);
@@ -1488,6 +1496,7 @@ export class StorageService {
     isContactless: boolean;
     notes?: string;
     userCategory?: string;
+    excludeFromBudget?: boolean;
   }): Promise<Transaction[]> {
     console.log("StorageService.updateSplitTransaction called with:", input);
 
@@ -1603,6 +1612,7 @@ export class StorageService {
             user_category: userCategory,
             category: userCategory,
             reimbursement_amount: portion.reimbursementAmount,
+            exclude_from_budget: input.excludeFromBudget ?? false,
             updated_at: new Date().toISOString(),
           };
 
@@ -1641,6 +1651,7 @@ export class StorageService {
             category: txData.category || undefined,
             splitGroupId: input.splitGroupId,
             reimbursementAmount: txData.reimbursement_amount ?? undefined,
+            excludeFromBudget: txData.exclude_from_budget ?? false,
           });
         } else {
           // Create new transaction for additional portion
@@ -1663,6 +1674,7 @@ export class StorageService {
             split_group_id: input.splitGroupId,
             user_id: session.user.id,
             reimbursement_amount: portion.reimbursementAmount,
+            exclude_from_budget: input.excludeFromBudget ?? false,
           };
 
           const { data: txData, error: txError } = await supabase
@@ -1702,6 +1714,7 @@ export class StorageService {
             category: txData.category || undefined,
             splitGroupId: input.splitGroupId,
             reimbursementAmount: txData.reimbursement_amount ?? undefined,
+            excludeFromBudget: txData.exclude_from_budget ?? false,
           });
         }
       }

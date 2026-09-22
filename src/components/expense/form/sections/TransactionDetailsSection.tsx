@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { MossCard } from "@/components/ui/moss-card";
 import { MossInput } from "@/components/ui/moss-input";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
@@ -331,6 +332,44 @@ export const TransactionDetailsSection: React.FC<
                 </FormItem>
               )}
             />
+
+            {/* Exclude from Budget Field */}
+            <FormField
+              control={form.control}
+              name="excludeFromBudget"
+              render={({ field }) => (
+                <FormItem className="!space-y-0 flex flex-row items-center justify-between h-10">
+                  <FormLabel
+                    className="!mb-0 !mt-0 !leading-none inline-flex items-center gap-1.5"
+                    style={{
+                      fontSize: "var(--font-size-label)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
+                    Exclude from Budget
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            Large one-off purchases (e.g. a car) won&apos;t
+                            count toward your monthly budget totals
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </div>
         </CollapsibleSection>
       )}
@@ -421,6 +460,44 @@ export const TransactionDetailsSection: React.FC<
                   />
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Exclude from Budget Field */}
+          <FormField
+            control={form.control}
+            name="excludeFromBudget"
+            render={({ field }) => (
+              <FormItem className="!space-y-0 flex flex-row items-center justify-between h-10">
+                <FormLabel
+                  className="!mb-0 !mt-0 !leading-none inline-flex items-center gap-1.5"
+                  style={{
+                    fontSize: "var(--font-size-label)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  Exclude from Budget
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Large one-off purchases (e.g. a car) won&apos;t count
+                          toward your monthly budget totals
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
               </FormItem>
             )}
           />

@@ -39,6 +39,7 @@ export interface SplitTransactionInput {
   isContactless: boolean;
   notes?: string;
   userCategory?: string;
+  excludeFromBudget?: boolean;
 }
 
 interface ExpenseFormProps {
@@ -222,6 +223,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           isContactless:
             !(values.isOnline as boolean) && (values.isContactless as boolean),
           notes: values.notes as string,
+          excludeFromBudget: values.excludeFromBudget as boolean,
         };
 
         console.log("Split transaction data being submitted:", splitInput);
@@ -337,6 +339,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         isContactless:
           !(values.isOnline as boolean) && (values.isContactless as boolean),
         reimbursementAmount: reimbursementAmount,
+        excludeFromBudget: values.excludeFromBudget as boolean,
         // Tags for grouping transactions
         tags: (values.tags as string) || undefined,
         // Don't set category here - let StorageService auto-categorize based on

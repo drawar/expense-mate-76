@@ -93,6 +93,7 @@ export const useExpenseForm = ({
       merchantAddress: defaultValues?.merchantAddress || "",
       isOnline: defaultValues?.isOnline ?? false,
       isContactless: defaultValues?.isContactless ?? false,
+      excludeFromBudget: defaultValues?.excludeFromBudget ?? false,
       amount: defaultValues?.amount || "",
       currency: defaultValues?.currency || CurrencyService.getDefaultCurrency(),
       paymentMethodId: defaultValues?.paymentMethodId || "",

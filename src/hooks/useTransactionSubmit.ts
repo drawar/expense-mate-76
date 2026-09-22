@@ -78,6 +78,7 @@ export const useTransactionSubmit = (useLocalStorage: boolean = false) => {
         isContactless: input.isContactless,
         notes: input.notes,
         userCategory: input.userCategory,
+        excludeFromBudget: input.excludeFromBudget,
       });
 
       if (!result || result.length === 0) {

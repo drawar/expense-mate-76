@@ -7,6 +7,7 @@ export const formSchema = z
     merchantAddress: z.string().optional(),
     isOnline: z.boolean().default(false),
     isContactless: z.boolean().default(false),
+    excludeFromBudget: z.boolean().default(false),
     amount: z.coerce.number(), // Allows negative for refunds
     currency: z.string().min(1, "Currency is required"),
     paymentMethodId: z.string().min(1, "Payment method is required"),

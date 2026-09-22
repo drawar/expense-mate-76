@@ -329,6 +329,7 @@ function aggregateSpent(
   for (const tx of transactions) {
     const rawDate = tx.date;
     if (!rawDate) continue;
+    if (tx.excludeFromBudget) continue;
     const txDate =
       typeof rawDate === "string" ? parseISO(rawDate.slice(0, 10)) : rawDate;
     if (isBefore(txDate, start) || !isBefore(txDate, endExclusive)) continue;

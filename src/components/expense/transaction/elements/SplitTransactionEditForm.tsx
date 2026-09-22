@@ -33,6 +33,7 @@ const formSchema = z.object({
   merchantAddress: z.string().optional(),
   isOnline: z.boolean(),
   isContactless: z.boolean(),
+  excludeFromBudget: z.boolean().optional(),
   amount: z.string().min(1, "Amount is required"),
   currency: z.string(),
   date: z.date(),
@@ -71,6 +72,7 @@ export const SplitTransactionEditForm: React.FC<
       merchantAddress: transaction.merchant.address || "",
       isOnline: transaction.merchant.isOnline,
       isContactless: transaction.isContactless || false,
+      excludeFromBudget: transaction.excludeFromBudget || false,
       amount: "0", // Will be set from split group total
       currency: transaction.currency,
       date: parseISO(transaction.date),
@@ -277,6 +279,7 @@ export const SplitTransactionEditForm: React.FC<
         portions: portionsWithReimbursement,
         isContactless: !values.isOnline && values.isContactless,
         notes: values.notes || undefined,
+        excludeFromBudget: values.excludeFromBudget,
       });
 
       onSubmit(updatedTransactions);
