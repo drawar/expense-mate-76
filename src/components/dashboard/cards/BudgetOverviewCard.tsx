@@ -46,11 +46,10 @@ import SpendingOverviewCard from "@/components/dashboard/cards/SpendingOverviewC
  * above the Save First tile in the KPI column.
  */
 const SavingsHero: React.FC = () => {
-  const { displayCurrency, dashboardData } = useDashboardContext();
-  const filteredTransactions = dashboardData?.filteredTransactions ?? [];
+  const { displayCurrency, transactions } = useDashboardContext();
   const { period, periodOnlyTotalSpent } = useActiveBudgetPeriod(
     displayCurrency,
-    filteredTransactions
+    transactions
   );
 
   if (!period) return null;
@@ -105,8 +104,7 @@ interface BudgetOverviewCardProps {
 const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
   className = "",
 }) => {
-  const { dashboardData } = useDashboardContext();
-  const filteredTransactions = dashboardData?.filteredTransactions ?? [];
+  const { transactions } = useDashboardContext();
 
   return (
     <Card className={className}>
@@ -115,10 +113,7 @@ const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         <div className="grid gap-4 md:grid-cols-[33%_1fr]">
           <div className="flex flex-col gap-3 min-w-0">
             <SavingsHero />
-            <BudgetSpendingCard
-              transactions={filteredTransactions}
-              layout="kpi-only"
-            />
+            <BudgetSpendingCard transactions={transactions} layout="kpi-only" />
           </div>
           <div className="min-w-0">
             <SpendingOverviewCard bare />
@@ -128,7 +123,7 @@ const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
         {/* Row 2: Categories bar chart full width */}
         <div className="mt-4 pt-4 border-t border-border/50">
           <BudgetSpendingCard
-            transactions={filteredTransactions}
+            transactions={transactions}
             layout="categories-only"
           />
         </div>
