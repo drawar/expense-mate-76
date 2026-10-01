@@ -11,6 +11,7 @@ import {
   InsightConditionType,
 } from "@/types";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
+import { localDateKey } from "@/utils/date/localDateKey";
 import {
   getSpendingTier,
   getBehavioralCategory,
@@ -1364,7 +1365,7 @@ export class InsightService {
         // Check if user has transactions for consecutive days
         if (days) {
           const uniqueDates = new Set(
-            context.transactions.map((tx) => tx.date.split("T")[0])
+            context.transactions.map((tx) => localDateKey(tx.date))
           );
           triggered = uniqueDates.size >= days;
           data.days = uniqueDates.size;

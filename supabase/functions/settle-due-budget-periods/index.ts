@@ -26,6 +26,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Same secret already used by monthly-spending-summary.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +49,17 @@ const PARENT_CATEGORY_IDS = [
   "work_education",
   "financial_other",
 ] as const;
+
+// Deliberately duplicated (Deno can't reach into src/) — mirror of
+// PARENT_CATEGORIES' id → name in src/utils/constants/categories.ts.
+const PARENT_NAMES: Record<string, string> = {
+  essentials: "Essentials",
+  lifestyle: "Lifestyle",
+  home_living: "Home & Living",
+  personal_care: "Personal Care",
+  work_education: "Work & Education",
+  financial_other: "Financial & Other",
+};
 
 type ParentCategoryId = (typeof PARENT_CATEGORY_IDS)[number];
 type Cadence = "per_period" | "monthly";
@@ -119,11 +132,33 @@ function isoDate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// Single-user app — no stored timezone preference, so this is hardcoded
+// rather than built generically. See plan notes for the trade-off.
+const USER_TIMEZONE = "America/Vancouver";
+
 function parseISODate(s: string): Date {
-  // "YYYY-MM-DD" or full ISO — take the date portion, UTC-noon so
-  // day-boundary comparisons don't slip a day in either direction.
-  const [y, m, d] = s.slice(0, 10).split("-").map(Number);
-  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12));
+  // Bare "YYYY-MM-DD" period boundaries are already an unambiguous
+  // calendar date — read the digits directly, no timezone conversion.
+  // Full timestamps (transaction dates) must be interpreted in the
+  // user's local timezone first: a transaction entered in the evening
+  // local time can have a UTC date-string one day ahead of the true
+  // local calendar day, so naively taking the date portion (the previous
+  // behavior here) mis-bucketed it into the wrong day/period/month.
+  let y: number, m: number, d: number;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    [y, m, d] = s.split("-").map(Number);
+  } else {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: USER_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(s));
+    y = Number(parts.find((p) => p.type === "year")!.value);
+    m = Number(parts.find((p) => p.type === "month")!.value);
+    d = Number(parts.find((p) => p.type === "day")!.value);
+  }
+  return new Date(Date.UTC(y, m - 1, d, 12));
 }
 
 function startOfMonth(d: Date): Date {
@@ -405,6 +440,240 @@ function aggregateSpent(
 }
 
 // ============================================================================
+// Settlement email (Resend) — mirrors src/utils/budget/settlementSummary.ts
+// and the dashboard's PeriodSettlementBody copy discipline. Duplicated here
+// for the same reason as PARENT_NAMES/SUB_TO_PARENT above: edge functions
+// don't import from src/.
+// ============================================================================
+
+function formatCurrency(amount: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+function sumSpendingSlots(map: Record<string, number>): number {
+  let sum = 0;
+  for (const [k, v] of Object.entries(map)) {
+    if (k === SAVINGS_ID) continue;
+    sum += Number(v) || 0;
+  }
+  return sum;
+}
+
+function topContributions(
+  map: Record<string, number>,
+  predicate: (v: number) => boolean,
+  n = 3
+): { parentId: string; amount: number }[] {
+  return Object.entries(map)
+    .filter(([k]) => k !== SAVINGS_ID)
+    .map(([k, v]) => ({ parentId: k, amount: Number(v) || 0 }))
+    .filter((c) => predicate(c.amount))
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+    .slice(0, n);
+}
+
+interface SettlementEmailSummary {
+  rolledContribs: { parentId: string; amount: number }[];
+  rolledTotal: number;
+  rolloverDeficit: number;
+  overspendTotal: number;
+  closedOutTotal: number;
+}
+
+function buildSettlementSummary(row: {
+  carry_out: Record<string, number>;
+  closed_out: Record<string, number>;
+  overspend: Record<string, number>;
+}): SettlementEmailSummary {
+  const rolledContribs = topContributions(row.carry_out, (v) => v > 0);
+  const rolledTotal = rolledContribs.reduce((s, c) => s + c.amount, 0);
+
+  const rolloverDeficit = Object.entries(row.carry_out)
+    .filter(([k]) => k !== SAVINGS_ID)
+    .reduce((s, [, v]) => s + Math.min(0, Number(v) || 0), 0);
+  const overspendTotal =
+    Math.abs(rolloverDeficit) + sumSpendingSlots(row.overspend);
+  const closedOutTotal = sumSpendingSlots(row.closed_out);
+
+  return {
+    rolledContribs,
+    rolledTotal,
+    rolloverDeficit,
+    overspendTotal,
+    closedOutTotal,
+  };
+}
+
+function generateSettlementEmailHtml(
+  periodStart: string,
+  periodEnd: string,
+  currency: string,
+  summary: SettlementEmailSummary
+): string {
+  const rolledRows = summary.rolledContribs
+    .map(
+      (c) =>
+        `<tr><td style="padding: 6px 12px; border-bottom: 1px solid #e9ecef;">${PARENT_NAMES[c.parentId] ?? c.parentId}</td><td style="padding: 6px 12px; border-bottom: 1px solid #e9ecef; text-align: right; color: #2d5a27;">+${formatCurrency(c.amount, currency)}</td></tr>`
+    )
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget period settled</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f5f5f5;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <tr>
+      <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 24px; text-align: center;">
+        <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 600;">Budget period settled</h1>
+        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">${periodStart} – ${periodEnd}</p>
+      </td>
+    </tr>
+    ${
+      summary.closedOutTotal > 0
+        ? `<tr><td style="padding: 24px 24px 0;">
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 16px 20px;">
+          <p style="margin: 0 0 4px; color: #6c757d; font-size: 13px;">Extra available to save</p>
+          <p style="margin: 0; font-size: 22px; font-weight: 700; color: #2d5a27;">+${formatCurrency(summary.closedOutTotal, currency)}</p>
+        </div>
+      </td></tr>`
+        : ""
+    }
+    ${
+      summary.rolledTotal > 0
+        ? `<tr><td style="padding: 20px 24px 0;">
+        <h2 style="margin: 0 0 8px; font-size: 15px; color: #1a1a1a;">Rolled forward: +${formatCurrency(summary.rolledTotal, currency)}</h2>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size: 14px;">
+          <tbody>${rolledRows}</tbody>
+        </table>
+      </td></tr>`
+        : ""
+    }
+    ${
+      summary.overspendTotal > 0
+        ? `<tr><td style="padding: 20px 24px 0;">
+        <div style="background: #fdf2f0; border-radius: 8px; padding: 16px 20px;">
+          <p style="margin: 0 0 4px; color: #6c757d; font-size: 13px;">Over budget</p>
+          <p style="margin: 0; font-size: 20px; font-weight: 700; color: #a94442;">−${formatCurrency(summary.overspendTotal, currency)}</p>
+          <p style="margin: 6px 0 0; font-size: 12px; color: #6c757d;">${summary.rolloverDeficit < 0 ? "Rollover deficits carry into this period." : "Reset-category overspend closed with the cycle."}</p>
+        </div>
+      </td></tr>`
+        : ""
+    }
+    <tr>
+      <td style="background: #f8f9fa; padding: 20px 24px; text-align: center; margin-top: 24px;">
+        <p style="margin: 0; font-size: 12px; color: #6c757d;">Sent by Clairo - Your expense tracking assistant</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+}
+
+function generateSettlementEmailText(
+  periodStart: string,
+  periodEnd: string,
+  currency: string,
+  summary: SettlementEmailSummary
+): string {
+  let text = `Budget period settled: ${periodStart} - ${periodEnd}\n`;
+  text += `${"=".repeat(50)}\n\n`;
+
+  if (summary.closedOutTotal > 0) {
+    text += `Extra available to save: +${formatCurrency(summary.closedOutTotal, currency)}\n\n`;
+  }
+  if (summary.rolledTotal > 0) {
+    text += `Rolled forward: +${formatCurrency(summary.rolledTotal, currency)}\n`;
+    summary.rolledContribs.forEach((c) => {
+      text += `  ${PARENT_NAMES[c.parentId] ?? c.parentId}: +${formatCurrency(c.amount, currency)}\n`;
+    });
+    text += `\n`;
+  }
+  if (summary.overspendTotal > 0) {
+    text += `Over budget: -${formatCurrency(summary.overspendTotal, currency)}\n\n`;
+  }
+
+  text += `---\nSent by Clairo - Your expense tracking assistant\n`;
+  return text;
+}
+
+/**
+ * Send the "period settled" email. Best-effort: logs and swallows errors
+ * so an email failure never blocks or undoes a successful settlement.
+ */
+async function sendSettlementEmail(args: {
+  userEmail: string;
+  periodStart: string;
+  periodEnd: string;
+  currency: string;
+  result: {
+    carry_out: Record<string, number>;
+    closed_out: Record<string, number>;
+    overspend: Record<string, number>;
+  };
+}): Promise<{ sent: boolean; reason?: string }> {
+  const { userEmail, periodStart, periodEnd, currency, result } = args;
+  const summary = buildSettlementSummary(result);
+  if (
+    summary.rolledTotal === 0 &&
+    summary.closedOutTotal === 0 &&
+    summary.overspendTotal === 0
+  ) {
+    return { sent: false, reason: "nothing to report" };
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Clairo <noreply@clairoapp.com>",
+        to: userEmail,
+        subject: `Budget period settled: ${periodStart}–${periodEnd}`,
+        html: generateSettlementEmailHtml(
+          periodStart,
+          periodEnd,
+          currency,
+          summary
+        ),
+        text: generateSettlementEmailText(
+          periodStart,
+          periodEnd,
+          currency,
+          summary
+        ),
+      }),
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error(
+        `[settle] settlement email failed for ${userEmail}: ${response.status} ${errBody}`
+      );
+      return { sent: false, reason: `Resend ${response.status}: ${errBody}` };
+    }
+    // Respect Resend's 2 req/s rate limit across a cron run settling many
+    // periods/users.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return { sent: true };
+  } catch (err) {
+    console.error(`[settle] settlement email threw for ${userEmail}:`, err);
+    return { sent: false, reason: String(err) };
+  }
+}
+
+// ============================================================================
 // Per-user settlement pipeline
 // ============================================================================
 
@@ -423,6 +692,12 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
   if (!dueRaw || dueRaw.length === 0) return { settled: 0, skipped: 0 };
 
   const settings = await loadUserSettings(supabase, userId);
+
+  // Fetched once per user (not per period) — cheap since we only get here
+  // when there's actually due work, and a user rarely has more than one
+  // due period per run.
+  const { data: userData } = await supabase.auth.admin.getUserById(userId);
+  const userEmail: string | undefined = userData?.user?.email ?? undefined;
 
   const earliestStart = dueRaw
     .map((r: { period_start: string }) => parseISODate(r.period_start))
@@ -519,8 +794,24 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
       skipped++;
       continue;
     }
-    if (!updated || updated.length === 0) skipped++;
-    else settled++;
+    if (!updated || updated.length === 0) {
+      skipped++;
+      continue;
+    }
+    settled++;
+
+    // Only the caller whose write actually flipped closed_at (guarded
+    // above) reaches here — never fires again for a later resettle of
+    // this same period.
+    if (userEmail) {
+      await sendSettlementEmail({
+        userEmail,
+        periodStart: period.period_start,
+        periodEnd: period.period_end,
+        currency: period.currency,
+        result,
+      });
+    }
   }
 
   return { settled, skipped };

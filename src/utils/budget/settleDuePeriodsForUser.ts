@@ -23,19 +23,13 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  addDays,
-  endOfMonth,
-  formatISO,
-  isBefore,
-  parseISO,
-  startOfMonth,
-} from "date-fns";
+import { endOfMonth, formatISO, parseISO, startOfMonth } from "date-fns";
 
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import type { Currency, Transaction } from "@/types";
 import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { SUBCATEGORY_TO_PARENT } from "@/utils/constants/categories";
+import { localDateKey } from "@/utils/date/localDateKey";
 import {
   DEFAULT_CADENCE,
   DEFAULT_END_BEHAVIOR,
@@ -79,15 +73,15 @@ function aggregateSpent(
   ) as Record<ParentCategoryId, number>;
   if (!window) return zero;
 
-  const start = parseISO(window.startISO);
-  const endExclusive = addDays(parseISO(window.endISO), 1);
-
   for (const tx of transactions) {
     const rawDate = tx.date;
     if (!rawDate) continue;
-    const txDate =
-      typeof rawDate === "string" ? parseISO(rawDate.slice(0, 10)) : rawDate;
-    if (isBefore(txDate, start) || !isBefore(txDate, endExclusive)) continue;
+    // Local-timezone calendar date, not a naive slice of the raw UTC ISO
+    // string — an evening entry's UTC date can be a day ahead of the true
+    // local day. window bounds are already "YYYY-MM-DD" strings, so a
+    // plain lexicographic compare is correct.
+    const txDateKey = localDateKey(rawDate);
+    if (txDateKey < window.startISO || txDateKey > window.endISO) continue;
 
     const category = getEffectiveCategory(tx);
     const parentConfig = SUBCATEGORY_TO_PARENT[category];
@@ -221,6 +215,36 @@ async function ownsMonthClose(
 export interface SettleDueResult {
   settled: number;
   skipped: number;
+}
+
+/**
+ * Ask the send-settlement-email edge function to email the user about a
+ * period this client just settled. Ownership- and settled-state-checked
+ * server-side (see supabase/functions/send-settlement-email) — this can
+ * only ever trigger an email for the caller's own, already-closed period.
+ * Fire-and-forget: never throws, so a failed email request never affects
+ * settlement itself.
+ */
+async function requestSettlementEmail(
+  supabase: SupabaseClient,
+  periodId: string
+): Promise<void> {
+  try {
+    const { error } = await supabase.functions.invoke("send-settlement-email", {
+      body: { period_id: periodId },
+    });
+    if (error) {
+      console.error(
+        "[settleDuePeriodsForUser] settlement email request failed:",
+        error
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[settleDuePeriodsForUser] settlement email request threw:",
+      err
+    );
+  }
 }
 
 /**
@@ -381,8 +405,16 @@ export async function settleDuePeriodsForUser({
         settings,
         transactions,
       });
-      if (changed) settled++;
-      else skipped++;
+      if (changed) {
+        settled++;
+        // This call only ever sees `changed === true` when it was the one
+        // that flipped closed_at from null (the guarded UPDATE in
+        // settleOnePeriod) — so this fires exactly once per genuinely-new
+        // settlement, never on a cron/other-caller race loss.
+        void requestSettlementEmail(supabase, period.id);
+      } else {
+        skipped++;
+      }
     }
 
     return { settled, skipped };

@@ -5,18 +5,20 @@ import { storageService } from "@/core/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatISO, parseISO } from "date-fns";
+import { formatISO } from "date-fns";
 import { scheduleResettleFromDate } from "@/utils/budget/resettleFromDate";
+import { localDateKey } from "@/utils/date/localDateKey";
 
 /**
- * Extract a stable ISO "YYYY-MM-DD" from a Transaction.date, which can
- * be a bare date, a full ISO timestamp, or (rarely) a Date object.
+ * Extract a stable local-timezone "YYYY-MM-DD" from a Transaction.date,
+ * which can be a bare date, a full ISO timestamp, or (rarely) a Date
+ * object. Uses localDateKey, not a naive string slice — an evening entry's
+ * UTC date can be a day ahead of the true local day.
  */
 function txDateISO(tx: Partial<Transaction> | undefined): string | null {
   if (!tx?.date) return null;
-  if (typeof tx.date === "string") return tx.date.slice(0, 10);
   try {
-    return formatISO(tx.date as unknown as Date, { representation: "date" });
+    return localDateKey(tx.date as unknown as string | Date);
   } catch {
     return null;
   }

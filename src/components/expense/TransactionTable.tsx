@@ -47,17 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import { PaymentMethodIcon } from "@/components/ui/payment-method-select-item";
 import { formatCardShortName } from "@/utils/cardNetworkUtils";
-
-/**
- * Get a YYYY-MM-DD key from a Date using LOCAL timezone (not UTC)
- * This fixes timezone issues where transactions appear on wrong days
- */
-function getLocalDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+import { localDateKey as getLocalDateKey } from "@/utils/date/localDateKey";
 
 /**
  * Format date for group header (Today, Yesterday, or full date)

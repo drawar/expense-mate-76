@@ -18,14 +18,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  addDays,
-  endOfMonth,
-  formatISO,
-  isBefore,
-  parseISO,
-  startOfMonth,
-} from "date-fns";
+import { endOfMonth, formatISO, parseISO, startOfMonth } from "date-fns";
 
 import { CurrencyService } from "@/core/currency/CurrencyService";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +38,7 @@ import {
   PARENT_CATEGORIES,
   SUBCATEGORY_TO_PARENT,
 } from "@/utils/constants/categories";
+import { localDateKey } from "@/utils/date/localDateKey";
 
 export interface BudgetPeriodRow {
   id: string;
@@ -323,16 +317,16 @@ function aggregateSpent(
   ) as Record<ParentCategoryId, number>;
   if (!window) return zero;
 
-  const start = parseISO(window.start);
-  const endExclusive = addDays(parseISO(window.end), 1);
-
   for (const tx of transactions) {
     const rawDate = tx.date;
     if (!rawDate) continue;
     if (tx.excludeFromBudget) continue;
-    const txDate =
-      typeof rawDate === "string" ? parseISO(rawDate.slice(0, 10)) : rawDate;
-    if (isBefore(txDate, start) || !isBefore(txDate, endExclusive)) continue;
+    // Local-timezone calendar date, not a naive slice of the raw UTC ISO
+    // string — an evening entry's UTC date can be a day ahead of the true
+    // local day. window.start/end are already "YYYY-MM-DD" strings, so a
+    // plain lexicographic compare is correct.
+    const txDateKey = localDateKey(rawDate);
+    if (txDateKey < window.start || txDateKey > window.end) continue;
 
     const category = getEffectiveCategory(tx);
     const parentConfig = SUBCATEGORY_TO_PARENT[category];
