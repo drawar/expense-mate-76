@@ -217,6 +217,9 @@ const TransactionTable = ({
                 ...group.transactions.map((transaction) => {
                   const category = transactionCategories[transaction.id];
                   const categoryColor = getCategoryColor(category);
+                  const netAmount =
+                    transaction.amount - (transaction.reimbursementAmount || 0);
+                  const hasReimbursement = netAmount !== transaction.amount;
 
                   return (
                     <TableRow
@@ -332,10 +335,18 @@ const TransactionTable = ({
                       {/* Amount + Points Column */}
                       <TableCell>
                         <div>
-                          <div className="font-medium">
+                          <div className="relative inline-block font-medium">
                             {CurrencyService.format(
-                              transaction.amount,
+                              netAmount,
                               transaction.currency
+                            )}
+                            {hasReimbursement && (
+                              <span
+                                className="absolute -top-1 -right-2.5 text-xs text-muted-foreground"
+                                title={`Original amount: ${CurrencyService.format(transaction.amount, transaction.currency)} (reimbursed ${CurrencyService.format(transaction.reimbursementAmount || 0, transaction.currency)})`}
+                              >
+                                *
+                              </span>
                             )}
                           </div>
                           {transaction.currency !==
