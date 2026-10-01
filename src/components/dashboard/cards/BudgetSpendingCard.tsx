@@ -36,6 +36,7 @@ import {
 } from "@/hooks/useActiveBudgetPeriod";
 import type { Transaction } from "@/types";
 import { CategoryIcon, type CategoryIconName } from "@/utils/constants/icons";
+import { getSubcategoriesForParent } from "@/utils/constants/categories";
 import { PeriodSettlementBody } from "@/components/dashboard/cards/PeriodSettlementTile";
 
 interface BudgetSpendingCardProps {
@@ -323,8 +324,17 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                 type="button"
                 onClick={() => {
                   onCategoryClick?.(row.parentId, row.name);
+                  // The Transactions page filters by subcategory NAME
+                  // (?category=, comma-separated) — it has no concept of
+                  // parent-category ids, so expand to every subcategory
+                  // under this parent.
+                  const subcategoryNames = getSubcategoriesForParent(
+                    row.parentId
+                  ).map((s) => s.name);
                   const params = new URLSearchParams();
-                  params.set("parent", row.parentId);
+                  if (subcategoryNames.length > 0) {
+                    params.set("category", subcategoryNames.join(","));
+                  }
                   navigate(`/transactions?${params.toString()}`);
                 }}
                 className={`w-full grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
