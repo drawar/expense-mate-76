@@ -161,6 +161,37 @@ function parseISODate(s: string): Date {
   return new Date(Date.UTC(y, m - 1, d, 12));
 }
 
+// Mirror of calcWindowBudgetForKey (src/hooks/useMonthlyBudgetTarget.ts) —
+// prorated sum of one allocation key across every period overlapping
+// [from, to], weighted by day-overlap. Duplicated per this file's
+// self-contained convention (edge functions don't import from src/).
+function calcWindowBudgetForKey(
+  periods: {
+    period_start: string;
+    period_end: string;
+    allocations: Record<string, number>;
+  }[],
+  from: Date,
+  to: Date,
+  key: string
+): number {
+  let total = 0;
+  for (const p of periods) {
+    const pStart = parseISODate(p.period_start);
+    const pEnd = parseISODate(p.period_end);
+    const overlapStart = pStart > from ? pStart : from;
+    const overlapEnd = pEnd < to ? pEnd : to;
+    const overlapDays =
+      Math.round((overlapEnd.getTime() - overlapStart.getTime()) / 86400000) +
+      1;
+    const totalDays =
+      Math.round((pEnd.getTime() - pStart.getTime()) / 86400000) + 1;
+    if (overlapDays <= 0 || totalDays <= 0) continue;
+    total += (Number(p.allocations?.[key]) || 0) * (overlapDays / totalDays);
+  }
+  return total;
+}
+
 function startOfMonth(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 12));
 }
@@ -735,16 +766,58 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
     );
     const ownsMonth = await ownsMonthClose(supabase, userId, period);
 
+    const monthStart = startOfMonth(parseISODate(period.period_end));
+    const monthEnd = endOfMonth(parseISODate(period.period_end));
+
     const perPeriodSpent = aggregateSpent(
       period.period_start,
       period.period_end,
       transactions
     );
     const monthlySpent = aggregateSpent(
-      isoDate(startOfMonth(parseISODate(period.period_end))),
-      isoDate(endOfMonth(parseISODate(period.period_end))),
+      isoDate(monthStart),
+      isoDate(monthEnd),
       transactions
     );
+
+    // Monthly-cadence categories are funded by every pay period that
+    // overlaps the calendar month, not just this one (prorated by days —
+    // same math the dashboard/chart already use). Only matters when this
+    // period owns the month-close; pass-through periods never read base.
+    let effectiveAllocations = period.allocations;
+    if (ownsMonth) {
+      const { data: monthPeriodsRaw } = await supabase
+        .from("budget_periods")
+        .select("period_start, period_end, allocations")
+        .eq("user_id", userId)
+        .eq("currency", period.currency)
+        .lte("period_start", isoDate(monthEnd))
+        .gte("period_end", isoDate(monthStart));
+      const monthPeriods = (monthPeriodsRaw ?? []).map(
+        (r: {
+          period_start: string;
+          period_end: string;
+          allocations: Record<string, number> | null;
+        }) => ({
+          period_start: r.period_start,
+          period_end: r.period_end,
+          allocations: r.allocations ?? {},
+        })
+      );
+      effectiveAllocations = { ...period.allocations };
+      for (const parentId of PARENT_CATEGORY_IDS) {
+        const cad =
+          settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
+        if (cad === "monthly") {
+          effectiveAllocations[parentId] = calcWindowBudgetForKey(
+            monthPeriods,
+            monthStart,
+            monthEnd,
+            parentId
+          );
+        }
+      }
+    }
 
     const spentByCategory: Record<string, number> = {};
     const passThroughCategories: ParentCategoryId[] = [];
@@ -764,7 +837,7 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
     }
 
     const result = settleBudgetPeriod({
-      period: { id: period.id, allocations: period.allocations },
+      period: { id: period.id, allocations: effectiveAllocations },
       carryInByCategory: carryIn,
       cadenceByCategory: settings.cadenceByCategory,
       endBehaviorByCategory: settings.endBehaviorByCategory,

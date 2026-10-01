@@ -8,6 +8,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { formatISO, parseISO, subDays } from "date-fns";
 
 import type { Currency, RecurringIncome } from "@/types";
 import { computeBudgetPeriod } from "./computeBudgetPeriod";
@@ -62,6 +63,58 @@ async function loadAllocations(
 }
 
 /**
+ * When a new/edited salary income lands, the *previous* pay period's
+ * cadence-guessed period_end may no longer be accurate — the real next
+ * payday is now known. Align the immediately-preceding OPEN period's
+ * period_end to (next.startDate - 1 day) so periods stay contiguous with
+ * actual paychecks instead of a cadence projection.
+ *
+ * Only touches open (unsettled) periods — a period that already closed on
+ * the old cadence guess is left alone (rare; a separate fix). Best-effort:
+ * never throws, so a failed alignment doesn't roll back the income save.
+ */
+async function alignPrecedingPeriodEnd(
+  supabase: SupabaseClient,
+  userId: string,
+  currency: string,
+  nextIncomeId: string,
+  nextStartDate: string
+): Promise<void> {
+  try {
+    const { data: preceding, error } = await supabase
+      .from("budget_periods")
+      .select("id, period_start, period_end")
+      .eq("user_id", userId)
+      .eq("currency", currency)
+      .is("closed_at", null)
+      .neq("income_id", nextIncomeId)
+      .lt("period_start", nextStartDate)
+      .order("period_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (!preceding) return;
+
+    const newEnd = formatISO(subDays(parseISO(nextStartDate), 1), {
+      representation: "date",
+    });
+    // Skip: would produce a zero/negative-length period (e.g. paychecks
+    // logged out of chronological order), or nothing actually changed.
+    if (newEnd <= preceding.period_start || newEnd === preceding.period_end) {
+      return;
+    }
+
+    const { error: updateErr } = await supabase
+      .from("budget_periods")
+      .update({ period_end: newEnd })
+      .eq("id", preceding.id);
+    if (updateErr) throw updateErr;
+  } catch (err) {
+    console.error("[alignPrecedingPeriodEnd] failed:", err);
+  }
+}
+
+/**
  * Sync the budget_periods row for a just-upserted income row.
  * Never throws — errors are logged and swallowed so a failed sync does not
  * roll back the income upsert.
@@ -101,6 +154,17 @@ export async function syncBudgetPeriodForIncome({
 
     // Cases (a), (b), (c): still (or newly) a matching salary — upsert.
     if (!next.startDate) return; // guarded upstream but be safe
+
+    // Align the immediately-preceding open period's end date to the real
+    // payday now that we know it. Runs regardless of next's own settlement
+    // state below — this touches a different row.
+    await alignPrecedingPeriodEnd(
+      supabase,
+      userId,
+      next.currency,
+      next.id,
+      next.startDate
+    );
 
     // Immutability guard: if the existing row is already settled
     // (closed_at IS NOT NULL), do NOT rewrite its snapshot — that would

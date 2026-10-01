@@ -31,6 +31,10 @@ import { getEffectiveCategory } from "@/utils/categoryMapping";
 import { SUBCATEGORY_TO_PARENT } from "@/utils/constants/categories";
 import { localDateKey } from "@/utils/date/localDateKey";
 import {
+  calcWindowBudgetForKey,
+  type BudgetPeriodSlim,
+} from "@/hooks/useMonthlyBudgetTarget";
+import {
   DEFAULT_CADENCE,
   DEFAULT_END_BEHAVIOR,
   PARENT_CATEGORY_IDS,
@@ -274,23 +278,59 @@ async function settleOnePeriod(args: {
   });
   const ownsMonth = await ownsMonthClose(supabase, userId, period);
 
+  const monthStartISO = formatISO(startOfMonth(parseISO(period.period_end)), {
+    representation: "date",
+  });
+  const monthEndISO = formatISO(endOfMonth(parseISO(period.period_end)), {
+    representation: "date",
+  });
+
   const perPeriodSpent = aggregateSpent(
     { startISO: period.period_start, endISO: period.period_end },
     transactions,
     period.currency
   );
   const monthlySpent = aggregateSpent(
-    {
-      startISO: formatISO(startOfMonth(parseISO(period.period_end)), {
-        representation: "date",
-      }),
-      endISO: formatISO(endOfMonth(parseISO(period.period_end)), {
-        representation: "date",
-      }),
-    },
+    { startISO: monthStartISO, endISO: monthEndISO },
     transactions,
     period.currency
   );
+
+  // Monthly-cadence categories are funded by every pay period that
+  // overlaps the calendar month, not just this one (prorated by days —
+  // same math the dashboard/chart already use via calcWindowBudgetForKey).
+  // Only matters when this period owns the month-close; pass-through
+  // periods never read the base.
+  let effectiveAllocations = period.allocations;
+  if (ownsMonth) {
+    const { data: monthPeriodsRaw } = await supabase
+      .from("budget_periods")
+      .select("period_start, period_end, allocations")
+      .eq("user_id", userId)
+      .eq("currency", period.currency)
+      .lte("period_start", monthEndISO)
+      .gte("period_end", monthStartISO);
+    const monthPeriods: BudgetPeriodSlim[] = (monthPeriodsRaw ?? []).map(
+      (r) => ({
+        period_start: r.period_start,
+        period_end: r.period_end,
+        allocations: (r.allocations as Record<string, number>) ?? {},
+      })
+    );
+    effectiveAllocations = { ...period.allocations };
+    for (const parentId of PARENT_CATEGORY_IDS) {
+      const cad =
+        settings.cadenceByCategory[parentId] ?? DEFAULT_CADENCE[parentId];
+      if (cad === "monthly") {
+        effectiveAllocations[parentId] = calcWindowBudgetForKey(
+          monthPeriods,
+          monthStartISO,
+          monthEndISO,
+          parentId
+        );
+      }
+    }
+  }
 
   const spentByCategory: Record<string, number> = {};
   const passThroughCategories: ParentCategoryId[] = [];
@@ -313,7 +353,7 @@ async function settleOnePeriod(args: {
   }
 
   const result = settleBudgetPeriod({
-    period: { id: period.id, allocations: period.allocations },
+    period: { id: period.id, allocations: effectiveAllocations },
     carryInByCategory: carryIn,
     cadenceByCategory: settings.cadenceByCategory,
     endBehaviorByCategory: settings.endBehaviorByCategory,
