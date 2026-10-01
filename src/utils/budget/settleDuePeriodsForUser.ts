@@ -192,16 +192,23 @@ async function loadUserAllocationSettings(
 }
 
 /**
- * Does `period` own the calendar-month close for its month? Returns
- * true iff no other budget_periods row (same user/currency) starts in
- * the same calendar month AFTER this period.
+ * Does `period` own the calendar-month close for the month it STARTS in?
+ * Returns true iff no other budget_periods row (same user/currency) has a
+ * later period_start still within that same calendar month.
+ *
+ * Keyed to period_start's month, not period_end's: a period can start in
+ * month M and end in month M+1 (e.g. a semi-monthly period spanning a
+ * month boundary). Such a period must still be the one to own M's close,
+ * since nothing else ever starts in M after it — keying off period_end's
+ * month instead would mean M is never asked about at all once this
+ * period's own "month" (by its end date) has moved on to M+1.
  */
 async function ownsMonthClose(
   supabase: SupabaseClient,
   userId: string,
   period: DuePeriodRow
 ): Promise<boolean> {
-  const monthEndISO = formatISO(endOfMonth(parseISO(period.period_end)), {
+  const monthEndISO = formatISO(endOfMonth(parseISO(period.period_start)), {
     representation: "date",
   });
   const { data, error } = await supabase
@@ -209,7 +216,7 @@ async function ownsMonthClose(
     .select("id")
     .eq("user_id", userId)
     .eq("currency", period.currency)
-    .gt("period_start", period.period_end)
+    .gt("period_start", period.period_start)
     .lte("period_start", monthEndISO)
     .limit(1);
   if (error) throw error;
@@ -278,10 +285,13 @@ async function settleOnePeriod(args: {
   });
   const ownsMonth = await ownsMonthClose(supabase, userId, period);
 
-  const monthStartISO = formatISO(startOfMonth(parseISO(period.period_end)), {
+  // Keyed to period_start's month — see ownsMonthClose's docstring for
+  // why (a period spanning a month boundary must settle the EARLIER
+  // month it started in, not the later month it happens to end in).
+  const monthStartISO = formatISO(startOfMonth(parseISO(period.period_start)), {
     representation: "date",
   });
-  const monthEndISO = formatISO(endOfMonth(parseISO(period.period_end)), {
+  const monthEndISO = formatISO(endOfMonth(parseISO(period.period_start)), {
     representation: "date",
   });
 

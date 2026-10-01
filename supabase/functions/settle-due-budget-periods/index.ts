@@ -417,18 +417,24 @@ async function loadPreviousSettledCarry(
 }
 
 // deno-lint-ignore no-explicit-any
+// Keyed to period_start's month, not period_end's: a period can start in
+// month M and end in month M+1 (e.g. a semi-monthly period spanning a
+// month boundary). Such a period must still be the one to own M's close,
+// since nothing else ever starts in M after it — keying off period_end's
+// month would mean M is never asked about once this period's own "month"
+// (by its end date) has moved on to M+1.
 async function ownsMonthClose(
   supabase: any,
   userId: string,
   period: DuePeriodRow
 ): Promise<boolean> {
-  const monthEnd = isoDate(endOfMonth(parseISODate(period.period_end)));
+  const monthEnd = isoDate(endOfMonth(parseISODate(period.period_start)));
   const { data, error } = await supabase
     .from("budget_periods")
     .select("id")
     .eq("user_id", userId)
     .eq("currency", period.currency)
-    .gt("period_start", period.period_end)
+    .gt("period_start", period.period_start)
     .lte("period_start", monthEnd)
     .limit(1);
   if (error) throw error;
@@ -766,8 +772,9 @@ async function settleForUser(supabase: any, userId: string, todayISO: string) {
     );
     const ownsMonth = await ownsMonthClose(supabase, userId, period);
 
-    const monthStart = startOfMonth(parseISODate(period.period_end));
-    const monthEnd = endOfMonth(parseISODate(period.period_end));
+    // Keyed to period_start's month — see ownsMonthClose's comment above.
+    const monthStart = startOfMonth(parseISODate(period.period_start));
+    const monthEnd = endOfMonth(parseISODate(period.period_start));
 
     const perPeriodSpent = aggregateSpent(
       period.period_start,
