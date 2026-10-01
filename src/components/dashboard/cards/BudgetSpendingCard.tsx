@@ -335,6 +335,23 @@ const BudgetSpendingCard: React.FC<BudgetSpendingCardProps> = ({
                   if (subcategoryNames.length > 0) {
                     params.set("category", subcategoryNames.join(","));
                   }
+                  // Auto-filter the date range to match this row's own
+                  // cadence window — monthly cats span the whole calendar
+                  // month, per_period cats span just the active pay period.
+                  if (period) {
+                    const [from, to] =
+                      row.cadence === "monthly"
+                        ? [
+                            startOfMonth(parseISO(period.period_start)),
+                            endOfMonth(parseISO(period.period_start)),
+                          ]
+                        : [
+                            parseISO(period.period_start),
+                            parseISO(period.period_end),
+                          ];
+                    params.set("from", format(from, "yyyy-MM-dd"));
+                    params.set("to", format(to, "yyyy-MM-dd"));
+                  }
                   navigate(`/transactions?${params.toString()}`);
                 }}
                 className={`w-full grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 py-2 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors text-left ${hasBudget ? "" : "opacity-60"}`}
