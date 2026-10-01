@@ -291,7 +291,7 @@ export const SUBCATEGORIES: SubcategoryConfig[] = [
   {
     id: "gifts",
     name: "Gifts & Donations",
-    parentCategory: "financial_other",
+    parentCategory: "lifestyle",
     icon: "gifts",
     description: "Birthday/holiday gifts, charitable donations",
   },

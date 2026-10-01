@@ -100,6 +100,7 @@ const SUB_TO_PARENT: Record<string, ParentCategoryId> = {
   Entertainment: "lifestyle",
   "Hobbies & Recreation": "lifestyle",
   "Travel & Vacation": "lifestyle",
+  "Gifts & Donations": "lifestyle",
   // Home & Living
   "Home Improvement": "home_living",
   Furniture: "home_living",
@@ -116,7 +117,6 @@ const SUB_TO_PARENT: Record<string, ParentCategoryId> = {
   "Subscriptions & Memberships": "financial_other",
   "Financial Services": "financial_other",
   Insurance: "financial_other",
-  "Gifts & Donations": "financial_other",
   "Cash & ATM": "financial_other",
   "Fees & Charges": "financial_other",
 };
